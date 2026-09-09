@@ -4,7 +4,7 @@ Run the open-source [Pascal 3D building editor](https://editor.pascal.app) local
 from your terminal—without cloning or building the Pascal repository.
 
 [![npm version](https://img.shields.io/npm/v/@pascal-app/cli?label=npm)](https://www.npmjs.com/package/@pascal-app/cli)
-[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](../../LICENSE)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Pascal documentation](https://img.shields.io/badge/docs-editor.pascal.app-111111)](https://editor.pascal.app/docs/developers/local-editor)
 
 ```bash

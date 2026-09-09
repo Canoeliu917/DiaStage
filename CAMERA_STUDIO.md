@@ -94,6 +94,6 @@ Studio、Edit、第一人称、Capture、二维及 Preview 的挂载和旧镜头
 
 ## 来源与许可
 
-Pascal 原始版权为 **Copyright (c) 2026 Pascal Group Inc.**，按 MIT License 提供。本目录保留原始 `LICENSE`；复制或再分发时须保留原版权及许可声明。官方许可文件：<https://github.com/pascalorg/editor/blob/main/LICENSE>。
+Pascal 原始版权为 **Copyright (c) 2026 Pascal Group Inc.**，按 MIT License 提供。本目录在 `LICENSES/PASCAL-MIT.txt` 中保留原始许可；复制或再分发时须保留原版权及许可声明。官方许可文件：<https://github.com/pascalorg/editor/blob/main/LICENSE>。
 
 这是一份开源自托管版，尚未部署到公网。保留完整开源源码，代表可继续编辑、运行和扩展这份本地代码。它不包含线上账号、私有服务、付费 AI 或云端功能的复刻；这些能力仍取决于相应服务、配置和授权。
