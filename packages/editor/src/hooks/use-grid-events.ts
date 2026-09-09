@@ -1,0 +1,142 @@
+import {
+  type AnyNodeId,
+  type EventSuffix,
+  emitter,
+  type GridEvent,
+  sceneRegistry,
+} from '@pascal-app/core'
+import { timeSpan, useViewer } from '@pascal-app/viewer'
+import { useThree } from '@react-three/fiber'
+import { useEffect, useRef } from 'react'
+import { Plane, Raycaster, Vector2, Vector3 } from 'three'
+import { getPlacementSurface } from '../lib/active-placement-surface'
+import { resolveTerrainGroundHit } from '../lib/ground-surface'
+
+/**
+ * Custom grid events hook that uses manual raycasting instead of mesh events.
+ * This ensures grid events work even when other meshes block pointer events with stopPropagation.
+ */
+export function useGridEvents(gridY: number) {
+  const { camera, gl } = useThree()
+  const raycaster = useRef(new Raycaster())
+  const pointer = useRef(new Vector2())
+  const groundPlane = useRef(new Plane(new Vector3(0, 1, 0), 0))
+  const intersectionPoint = useRef(new Vector3())
+
+  // Update ground plane when grid Y changes
+  useEffect(() => {
+    groundPlane.current.constant = -gridY
+  }, [gridY])
+
+  useEffect(() => {
+    const canvas = gl.domElement
+
+    const getIntersection = (nativeEvent: MouseEvent | PointerEvent): Vector3 | null => {
+      // Convert mouse position to normalized device coordinates (-1 to +1)
+      const rect = canvas.getBoundingClientRect()
+      pointer.current.x = ((nativeEvent.clientX - rect.left) / rect.width) * 2 - 1
+      pointer.current.y = -((nativeEvent.clientY - rect.top) / rect.height) * 2 + 1
+
+      // Update raycaster
+      raycaster.current.setFromCamera(pointer.current, camera)
+
+      // Sculpted ground wins over the plane, but only while the plane IS the
+      // ground (see `isSiteGroundPlane`): a plane riding a storey base or a slab
+      // top is a real flat surface and must stay planar. The march is what removes
+      // the perspective skew — a ray intersected at the datum instead of at the
+      // hillside reports an XZ that slides along the ray, so every tool consuming
+      // `position`/`localPosition` was placing short of the cursor on a slope.
+      //
+      // The plane's own height is the query height, not the `gridY` argument: this
+      // effect is keyed on `[camera, gl]` (re-attaching listeners mid-drag would
+      // drop the gesture), so the argument in this closure is the value from mount.
+      // `constant = -gridY` by construction in the effect above.
+      const { origin, direction } = raycaster.current.ray
+      const fixedConstructionPlane = getPlacementSurface()?.projection === 'fixed-plane'
+      const hit = fixedConstructionPlane
+        ? null
+        : resolveTerrainGroundHit(
+            [origin.x, origin.y, origin.z],
+            [direction.x, direction.y, direction.z],
+            -groundPlane.current.constant,
+          )
+      if (hit) return intersectionPoint.current.set(hit.x, hit.y, hit.z).clone()
+
+      // Intersect with ground plane
+      if (raycaster.current.ray.intersectPlane(groundPlane.current, intersectionPoint.current)) {
+        return intersectionPoint.current.clone()
+      }
+
+      return null
+    }
+
+    const emit = (suffix: EventSuffix, nativeEvent: MouseEvent | PointerEvent) => {
+      const point = getIntersection(nativeEvent)
+      if (!point) return
+
+      // Convert world-space point to building-local for tools that live inside a building.
+      const buildingId = useViewer.getState().selection.buildingId
+      const buildingMesh = buildingId ? sceneRegistry.nodes.get(buildingId as AnyNodeId) : null
+      const localPoint = buildingMesh ? buildingMesh.worldToLocal(point.clone()) : point
+
+      const eventKey = `grid:${suffix}` as `grid:${EventSuffix}`
+      const payload: GridEvent = {
+        position: [point.x, point.y, point.z],
+        localPosition: [localPoint.x, localPoint.y, localPoint.z],
+        nativeEvent: nativeEvent as any, // Type compatibility with ThreeEvent
+      }
+
+      emitter.emit(eventKey, payload)
+    }
+
+    const handlePointerDown = (e: PointerEvent) => {
+      if (useViewer.getState().cameraDragging) return
+      if (e.button !== 0) return
+      emit('pointerdown', e)
+    }
+
+    const handlePointerUp = (e: PointerEvent) => {
+      if (useViewer.getState().cameraDragging) return
+      if (e.button !== 0) return
+      emit('pointerup', e)
+    }
+
+    const handleClick = (e: PointerEvent) => {
+      if (useViewer.getState().cameraDragging) return
+      if (e.button !== 0) return
+      emit('click', e)
+    }
+
+    const handlePointerMove = (e: PointerEvent) => {
+      // Emit move even if camera is dragging, so tools like PolygonEditor still work
+      timeSpan('pointer', () => emit('move', e))
+    }
+
+    const handleDoubleClick = (e: MouseEvent) => {
+      if (useViewer.getState().cameraDragging) return
+      emit('double-click', e)
+    }
+
+    const handleContextMenu = (e: MouseEvent) => {
+      if (useViewer.getState().cameraDragging) return
+      emit('context-menu', e)
+    }
+
+    // Attach listeners to canvas
+    canvas.addEventListener('pointerdown', handlePointerDown)
+    canvas.addEventListener('pointerup', handlePointerUp)
+    canvas.addEventListener('click', handleClick)
+    canvas.addEventListener('pointermove', handlePointerMove)
+    canvas.addEventListener('dblclick', handleDoubleClick)
+    canvas.addEventListener('contextmenu', handleContextMenu)
+
+    return () => {
+      canvas.removeEventListener('pointerdown', handlePointerDown)
+      canvas.removeEventListener('pointerup', handlePointerUp)
+      canvas.removeEventListener('click', handleClick)
+      canvas.removeEventListener('pointermove', handlePointerMove)
+      canvas.removeEventListener('dblclick', handleDoubleClick)
+      canvas.removeEventListener('contextmenu', handleContextMenu)
+    }
+  }, [camera, gl])
+}

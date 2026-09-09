@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "shots": [
+    {
+      "id": "wide-push",
+      "name": "01 · 全景缓推",
+      "duration": 8,
+      "keyframes": [
+        {
+          "id": "20ad4317-38fe-4f73-86d6-bf2412603adf",
+          "time": 0,
+          "position": [
+            0.12,
+            1.65,
+            5.3
+          ],
+          "lookAt": [
+            0,
+            1.1,
+            0
+          ],
+          "fov": 40
+        },
+        {
+          "id": "1b6fef8b-0129-4ff7-900c-e12f995d1162",
+          "time": 8,
+          "position": [
+            0.12,
+            1.5,
+            3.7
+          ],
+          "lookAt": [
+            0,
+            1,
+            0.05
+          ],
+          "fov": 40
+        }
+      ],
+      "follow": null,
+      "motion": null
+    },
+    {
+      "id": "table-arc",
+      "name": "02 · 绕桌侧拍",
+      "duration": 10,
+      "keyframes": [
+        {
+          "id": "4193bcb5-9c62-46e4-bb95-e68e94b5624f",
+          "time": 0,
+          "position": [
+            -2.8,
+            2,
+            3.4
+          ],
+          "lookAt": [
+            0,
+            0.9,
+            0.1
+          ],
+          "fov": 40
+        },
+        {
+          "id": "42984be9-c63e-43c3-9235-4a74a03016b6",
+          "time": 5,
+          "position": [
+            0,
+            2.2,
+            4.2
+          ],
+          "lookAt": [
+            0,
+            0.9,
+            0.1
+          ],
+          "fov": 40
+        },
+        {
+          "id": "8906b2e2-31ea-409b-bb0b-d9bc097879fa",
+          "time": 10,
+          "position": [
+            2.8,
+            2,
+            3.4
+          ],
+          "lookAt": [
+            0,
+            0.9,
+            0.1
+          ],
+          "fov": 40
+        }
+      ],
+      "follow": null,
+      "motion": null
+    },
+    {
+      "id": "follow-chair",
+      "name": "03 · 跟随行动线",
+      "duration": 8,
+      "keyframes": [
+        {
+          "id": "dc371f7a-fb74-4267-9b83-1fcc63c546fb",
+          "time": 0,
+          "position": [
+            2.8,
+            2,
+            3.2
+          ],
+          "lookAt": [
+            0.82,
+            0.7,
+            0.08
+          ],
+          "fov": 40
+        }
+      ],
+      "follow": {
+        "nodeId": "block_stage_receiver",
+        "mode": "offset",
+        "offset": [
+          1.4,
+          1.6,
+          2.6
+        ],
+        "lookAtOffset": [
+          0,
+          0.65,
+          0
+        ]
+      },
+      "motion": {
+        "nodeId": "block_stage_receiver",
+        "keyframes": [
+          {
+            "time": 0,
+            "position": [
+              0.752,
+              0,
+              -0.314
+            ]
+          },
+          {
+            "time": 4,
+            "position": [
+              1.18,
+              0,
+              -0.65
+            ]
+          },
+          {
+            "time": 8,
+            "position": [
+              1.6,
+              0,
+              -1.5
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

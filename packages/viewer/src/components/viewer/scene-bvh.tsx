@@ -1,0 +1,141 @@
+import { useThree } from '@react-three/fiber'
+import { forwardRef, type ReactNode, useEffect, useImperativeHandle, useRef } from 'react'
+import { type BufferGeometry, type Group, Mesh } from 'three'
+import {
+  acceleratedRaycast,
+  computeBoundsTree,
+  disposeBoundsTree,
+  SAH,
+  type SplitStrategy,
+} from 'three-mesh-bvh'
+
+type SceneBvhProps = {
+  children?: ReactNode
+  enabled?: boolean
+  firstHitOnly?: boolean
+  strategy?: SplitStrategy
+  verbose?: boolean
+  setBoundingBox?: boolean
+  maxDepth?: number
+  maxLeafSize?: number
+  indirect?: boolean
+}
+
+const isMesh = (object: unknown): object is Mesh =>
+  !!object && typeof object === 'object' && (object as Mesh).isMesh === true
+
+export const isSceneBvhExcluded = (object: Mesh) => object.userData.excludeFromBvh === true
+
+const hasBvhCompatibleGeometry = (geometry?: BufferGeometry | null) => {
+  if (!geometry) return false
+
+  const position = geometry.getAttribute('position')
+  if (!position) return false
+
+  const vertexCount = geometry.getIndex()?.count ?? position.count
+  return vertexCount >= 3
+}
+
+export const SceneBvh = forwardRef<Group, SceneBvhProps>(
+  (
+    {
+      children,
+      enabled = true,
+      firstHitOnly = false,
+      strategy = SAH,
+      verbose = false,
+      setBoundingBox = true,
+      maxDepth = 40,
+      maxLeafSize = 10,
+      indirect = false,
+    },
+    forwardedRef,
+  ) => {
+    const ref = useRef<Group>(null)
+    const raycaster = useThree((state) => state.raycaster)
+
+    useImperativeHandle(forwardedRef, () => ref.current!, [])
+
+    useEffect(() => {
+      if (!enabled || !ref.current) return
+
+      const options = {
+        strategy,
+        verbose,
+        setBoundingBox,
+        maxDepth,
+        maxLeafSize,
+        indirect,
+      }
+      const group = ref.current
+      const acceleratedMeshes = new Set<Mesh>()
+      const computedGeometries = new Set<BufferGeometry>()
+
+      ;(raycaster as any).firstHitOnly = firstHitOnly
+
+      group.traverse((child) => {
+        if (!isMesh(child)) return
+        if (isSceneBvhExcluded(child)) return
+
+        if (child.raycast === Mesh.prototype.raycast) {
+          child.raycast = acceleratedRaycast
+          acceleratedMeshes.add(child)
+        }
+
+        if (child.raycast !== acceleratedRaycast) return
+
+        const geometry = child.geometry
+        if (geometry.boundsTree || !hasBvhCompatibleGeometry(geometry)) return
+
+        try {
+          // The three-mesh-bvh + @types/three combo doesn't agree on
+          // BVH option / class identity (ComputeBVHOptions vs
+          // MeshBVHOptions, GeometryBVH vs MeshBVH) — cast through
+          // `unknown` to bypass the structural mismatch. Runtime is
+          // fine; we're just calling the library's own helpers.
+          ;(geometry as { computeBoundsTree?: unknown }).computeBoundsTree =
+            computeBoundsTree as unknown as typeof geometry.computeBoundsTree
+          ;(geometry as { disposeBoundsTree?: unknown }).disposeBoundsTree =
+            disposeBoundsTree as unknown as typeof geometry.disposeBoundsTree
+          geometry.computeBoundsTree(options)
+          computedGeometries.add(geometry)
+        } catch (error) {
+          console.warn('[viewer] Skipping BVH for incompatible mesh geometry.', {
+            mesh: child.name || child.type,
+            error,
+          })
+        }
+      })
+
+      return () => {
+        delete (raycaster as any).firstHitOnly
+
+        for (const geometry of computedGeometries) {
+          if (geometry.boundsTree) {
+            geometry.disposeBoundsTree()
+          }
+        }
+
+        for (const mesh of acceleratedMeshes) {
+          if (mesh.raycast === acceleratedRaycast) {
+            mesh.raycast = Mesh.prototype.raycast
+          }
+        }
+      }
+    }, [
+      enabled,
+      firstHitOnly,
+      strategy,
+      verbose,
+      setBoundingBox,
+      maxDepth,
+      maxLeafSize,
+      indirect,
+      raycaster,
+    ])
+
+    return <group ref={ref}>{children}</group>
+  },
+)
+
+SceneBvh.displayName = 'SceneBvh'

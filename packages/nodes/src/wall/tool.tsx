@@ -1,0 +1,951 @@
+import {
+  type AnyNode,
+  type AnyNodeId,
+  calculateLevelMiters,
+  collectAlignmentAnchors,
+  DEFAULT_LEVEL_HEIGHT,
+  emitter,
+  GROUND_SUPPORT_ID,
+  type GridEvent,
+  getWallMiterBoundaryPoints,
+  type LevelNode,
+  type Point2D,
+  resolveAlignment,
+  resolveBuildingForLevel,
+  sceneRegistry,
+  useScene,
+  type WallMiterData,
+  type WallNode,
+  wallClosesRoom,
+} from '@pascal-app/core'
+import {
+  CursorSphere,
+  chainEndJoinsExistingWall,
+  clearPlacementSurface,
+  createWallOnCurrentLevel,
+  EDITOR_LAYER,
+  formatAngleRadians,
+  formatLinearMeasurement,
+  getAngleArcToSegmentReference,
+  getAngleToSegmentReference,
+  getSegmentAngleReferenceAtPoint,
+  type HorizontalConstructionPlane,
+  isAlignmentGuideActive,
+  isAngleSnapActive,
+  isMagneticSnapActive,
+  markToolCancelConsumed,
+  publishHorizontalConstructionPlane,
+  publishPlacementSurface,
+  resampleTerrainConstructionPlane,
+  resolveEventConstructionPlane,
+  resolvePointerSupportSurface,
+  type SegmentAngleReference,
+  snapWallDraftPointDetailed,
+  triggerSFX,
+  useAlignmentGuides,
+  useEditor,
+  useFloorplanDraftPreview,
+  useSegmentDraftChain,
+  useWallSnapIndicator,
+  WALL_CONNECT_SNAP_RADIUS,
+  WALL_JOIN_SNAP_RADIUS,
+  type WallPlanPoint,
+} from '@pascal-app/editor'
+import { getSceneTheme, useViewer } from '@pascal-app/viewer'
+import { useThree } from '@react-three/fiber'
+import { useEffect, useRef, useState } from 'react'
+import { DoubleSide, type Group, type Mesh, Vector3 } from 'three'
+import {
+  DraftAngleArc,
+  type DraftAngleLabel,
+  type DraftAxisGuideState,
+  DraftAxisGuides,
+  DraftMeasurementLabel,
+  getNearestAxisAngleLabel,
+} from '../shared/draft-axis-guides'
+
+/**
+ * Phase 5 Stage D — wall placement tool (kind-owned).
+ *
+ * 1:1 port of the legacy `WallTool`. Two-click flow: click 1 sets the
+ * start, click 2 creates the wall. Between clicks a vertical preview
+ * rectangle + length/angle measurement HUD follow the pointer. Snapping is
+ * governed by the global snapping mode (`'off'` is the bypass); Esc cancels.
+ *
+ * Not a `DragAction` — same reasoning as fence/slab/ceiling placement:
+ * stateful sequence of grid:click events, not a single drag-up.
+ *
+ * Mounted via `def.tool` from `wall/definition.ts`.
+ */
+const DRAFT_WALL_THICKNESS = 0.1
+/** Figma-style alignment-snap threshold (meters), matching the move tools. */
+const ALIGNMENT_THRESHOLD_M = 0.08
+// HUD label heights are measured from the top of the preview bar, so they
+// track whatever height a seeded preset draws at (`previewHeight`).
+const DRAFT_LABEL_Y_OFFSET = 0.22
+const DRAFT_ANGLE_LABEL_Y_OFFSET = 0.08
+const DRAFT_ANGLE_ARC_Y_OFFSET = 0.012
+const DRAFT_ANGLE_ARC_MIN_RADIUS = 0.32
+const DRAFT_ANGLE_ARC_MAX_RADIUS = 0.72
+
+// Grid-plane surface publish (pointer-decided): scratch + constant normal so
+// per-move publishes don't allocate.
+const SURFACE_UP = new Vector3(0, 1, 0)
+const surfacePointScratch = new Vector3()
+const wallSurfaceWorldScratch = new Vector3()
+const wallSurfaceLocalScratch = new Vector3()
+
+type DraftMeasurementState = {
+  lengthLabel: string
+  lengthPosition: [number, number, number]
+  angleLabels: DraftAngleLabel[]
+} | null
+
+type FaceAngleCandidate = {
+  index: number
+  point: WallPlanPoint
+  vector: WallPlanPoint
+}
+
+type FaceAnglePair = {
+  draft: FaceAngleCandidate
+  connected: FaceAngleCandidate
+  distance: number
+}
+
+type AngleSource = {
+  arcCenter: WallPlanPoint
+  connectedVector: WallPlanPoint
+  draftVector: WallPlanPoint
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function distanceSquared(a: WallPlanPoint, b: WallPlanPoint) {
+  const dx = a[0] - b[0]
+  const dz = a[1] - b[1]
+
+  return dx * dx + dz * dz
+}
+
+function pointMatches(a: WallPlanPoint, b: WallPlanPoint, tolerance = 1e-5) {
+  return distanceSquared(a, b) <= tolerance * tolerance
+}
+
+function isWithinWallJoinSnapRadius(point: WallPlanPoint, vertex: Vector3) {
+  const dx = point[0] - vertex.x
+  const dz = point[1] - vertex.z
+
+  return dx * dx + dz * dz <= WALL_JOIN_SNAP_RADIUS * WALL_JOIN_SNAP_RADIUS
+}
+
+function toWallPlanPoint(point: Point2D): WallPlanPoint {
+  return [point.x, point.y]
+}
+
+function getWallEndpointKind(point: WallPlanPoint, wall: WallNode): 'start' | 'end' | null {
+  if (pointMatches(point, wall.start)) return 'start'
+  if (pointMatches(point, wall.end)) return 'end'
+
+  return null
+}
+
+function buildDraftWall(start: WallPlanPoint, end: WallPlanPoint): WallNode {
+  return {
+    object: 'node',
+    id: 'wall_draft' as WallNode['id'],
+    type: 'wall',
+    name: 'Draft wall',
+    parentId: null,
+    visible: true,
+    metadata: {},
+    children: [],
+    start,
+    end,
+    thickness: DRAFT_WALL_THICKNESS,
+    frontSide: 'unknown',
+    backSide: 'unknown',
+  }
+}
+
+function getWallFaceAngleCandidates(
+  point: WallPlanPoint,
+  wall: WallNode,
+  miterData: WallMiterData,
+): FaceAngleCandidate[] {
+  const endpoint = getWallEndpointKind(point, wall)
+  const reference = getSegmentAngleReferenceAtPoint(point, wall)
+  if (!(endpoint && reference)) return []
+
+  const boundaryPoints = getWallMiterBoundaryPoints(wall, miterData)
+  if (!boundaryPoints) return []
+
+  const points =
+    endpoint === 'start'
+      ? [boundaryPoints.startLeft, boundaryPoints.startRight]
+      : [boundaryPoints.endLeft, boundaryPoints.endRight]
+
+  return points.map((facePoint, index) => ({
+    index,
+    point: toWallPlanPoint(facePoint),
+    vector: reference.vector,
+  }))
+}
+
+function getMatchingFaceAnglePairs(
+  draftCandidates: FaceAngleCandidate[],
+  connectedCandidates: FaceAngleCandidate[],
+) {
+  const candidates: FaceAnglePair[] = []
+
+  for (const draftCandidate of draftCandidates) {
+    for (const connectedCandidate of connectedCandidates) {
+      candidates.push({
+        draft: draftCandidate,
+        connected: connectedCandidate,
+        distance: distanceSquared(draftCandidate.point, connectedCandidate.point),
+      })
+    }
+  }
+
+  candidates.sort((a, b) => a.distance - b.distance)
+
+  const exactPairs = candidates.filter((pair) => pair.distance <= 1e-6)
+  const sourcePairs = exactPairs.length > 0 ? exactPairs : candidates.slice(0, 1)
+  const usedDraftIndexes = new Set<number>()
+  const usedConnectedIndexes = new Set<number>()
+  const pairs: FaceAnglePair[] = []
+
+  for (const pair of sourcePairs) {
+    if (usedDraftIndexes.has(pair.draft.index) || usedConnectedIndexes.has(pair.connected.index)) {
+      continue
+    }
+
+    usedDraftIndexes.add(pair.draft.index)
+    usedConnectedIndexes.add(pair.connected.index)
+    pairs.push(pair)
+
+    if (pairs.length === 2) break
+  }
+
+  return pairs
+}
+
+function getAngleSource(
+  endpointPoint: WallPlanPoint,
+  endpointDraftVector: WallPlanPoint,
+  connectedReference: SegmentAngleReference,
+  facePairs: FaceAnglePair[],
+): AngleSource {
+  if (facePairs.length === 0) {
+    return {
+      arcCenter: endpointPoint,
+      connectedVector: connectedReference.vector,
+      draftVector: endpointDraftVector,
+    }
+  }
+
+  const arc = getAngleArcToSegmentReference(endpointDraftVector, connectedReference)
+  const angleDirection: WallPlanPoint = arc
+    ? [Math.cos(arc.midAngle), Math.sin(arc.midAngle)]
+    : [endpointDraftVector[0], endpointDraftVector[1]]
+  const bestPair =
+    facePairs
+      .map((pair) => {
+        const arcCenter: WallPlanPoint = [
+          (pair.draft.point[0] + pair.connected.point[0]) / 2,
+          (pair.draft.point[1] + pair.connected.point[1]) / 2,
+        ]
+        const fromEndpoint: WallPlanPoint = [
+          arcCenter[0] - endpointPoint[0],
+          arcCenter[1] - endpointPoint[1],
+        ]
+
+        return {
+          arcCenter,
+          pair,
+          score: fromEndpoint[0] * angleDirection[0] + fromEndpoint[1] * angleDirection[1],
+        }
+      })
+      .sort((a, b) => b.score - a.score)[0]?.pair ?? facePairs[0]!
+
+  return {
+    arcCenter: [
+      (bestPair.draft.point[0] + bestPair.connected.point[0]) / 2,
+      (bestPair.draft.point[1] + bestPair.connected.point[1]) / 2,
+    ],
+    connectedVector: bestPair.connected.vector,
+    draftVector: bestPair.draft.vector,
+  }
+}
+
+function getDraftAngleLabels(
+  start: WallPlanPoint,
+  end: WallPlanPoint,
+  walls: WallNode[],
+  baseY: number,
+  previewHeight: number,
+): DraftAngleLabel[] {
+  const draftFromStart: WallPlanPoint = [end[0] - start[0], end[1] - start[1]]
+  const draftFromEnd: WallPlanPoint = [start[0] - end[0], start[1] - end[1]]
+  const draftWall = buildDraftWall(start, end)
+  const miterData = calculateLevelMiters([...walls, draftWall])
+  const endpoints = [
+    { id: 'start', point: start, draftVector: draftFromStart },
+    { id: 'end', point: end, draftVector: draftFromEnd },
+  ]
+  const labels: DraftAngleLabel[] = []
+
+  for (const endpoint of endpoints) {
+    const connectedWall = walls.find((wall) =>
+      Boolean(getSegmentAngleReferenceAtPoint(endpoint.point, wall)),
+    )
+    if (!connectedWall) continue
+    const connectedReference = getSegmentAngleReferenceAtPoint(endpoint.point, connectedWall)
+    if (!connectedReference) continue
+
+    const draftFaceCandidates = getWallFaceAngleCandidates(endpoint.point, draftWall, miterData)
+    const connectedFaceCandidates = getWallFaceAngleCandidates(
+      endpoint.point,
+      connectedWall,
+      miterData,
+    )
+    const facePairs = getMatchingFaceAnglePairs(draftFaceCandidates, connectedFaceCandidates)
+    const { arcCenter, connectedVector, draftVector } = getAngleSource(
+      endpoint.point,
+      endpoint.draftVector,
+      connectedReference,
+      facePairs,
+    )
+    const angle = getAngleToSegmentReference(draftVector, {
+      ...connectedReference,
+      vector: connectedVector,
+    })
+    if (angle === null) continue
+    const arc = getAngleArcToSegmentReference(draftVector, {
+      ...connectedReference,
+      vector: connectedVector,
+    })
+    if (!arc || arc.angle < 0.01) continue
+    const draftLength = Math.hypot(draftVector[0], draftVector[1])
+    const referenceLength = Math.hypot(connectedVector[0], connectedVector[1])
+    const radius = clamp(
+      Math.min(draftLength, referenceLength) * 0.28,
+      DRAFT_ANGLE_ARC_MIN_RADIUS,
+      DRAFT_ANGLE_ARC_MAX_RADIUS,
+    )
+    labels.push({
+      id: endpoint.id,
+      label: formatAngleRadians(angle),
+      position: [
+        arcCenter[0] + Math.cos(arc.midAngle) * (radius + 0.16),
+        baseY + previewHeight + DRAFT_ANGLE_LABEL_Y_OFFSET,
+        arcCenter[1] + Math.sin(arc.midAngle) * (radius + 0.16),
+      ],
+      arc: {
+        center: arcCenter,
+        radius,
+        startAngle: arc.startAngle,
+        endAngle: arc.endAngle,
+        y: baseY + previewHeight + DRAFT_ANGLE_ARC_Y_OFFSET,
+      },
+    })
+  }
+
+  return labels
+}
+
+function getDraftMeasurementState(
+  start: WallPlanPoint,
+  end: WallPlanPoint,
+  walls: WallNode[],
+  unit: 'metric' | 'imperial',
+  metricNotation: 'meters' | 'millimeters',
+  baseY: number,
+  previewHeight: number,
+): DraftMeasurementState {
+  const dx = end[0] - start[0]
+  const dz = end[1] - start[1]
+  const length = Math.hypot(dx, dz)
+  if (length < 0.01) return null
+  return {
+    lengthLabel: formatLinearMeasurement(length, unit, metricNotation),
+    lengthPosition: [
+      (start[0] + end[0]) / 2,
+      baseY + previewHeight + DRAFT_LABEL_Y_OFFSET,
+      (start[1] + end[1]) / 2,
+    ],
+    angleLabels: getDraftAngleLabels(start, end, walls, baseY, previewHeight),
+  }
+}
+
+function updateWallPreview(
+  mesh: Mesh,
+  start: Vector3,
+  end: Vector3,
+  previewHeight: number,
+  previewThickness: number,
+) {
+  const direction = new Vector3(end.x - start.x, 0, end.z - start.z)
+  const length = direction.length()
+  if (length < 0.01) {
+    mesh.visible = false
+    return
+  }
+  mesh.visible = true
+  direction.normalize()
+
+  const angle = Math.atan2(direction.z, direction.x)
+
+  mesh.position.set((start.x + end.x) / 2, start.y + previewHeight / 2, (start.z + end.z) / 2)
+  mesh.rotation.y = -angle
+  mesh.scale.set(length, previewHeight, previewThickness)
+}
+
+function getLevelWalls(levelId: string | null, nodes: Record<string, AnyNode>): WallNode[] {
+  if (!levelId) return []
+  const levelNode = nodes[levelId]
+  if (levelNode?.type !== 'level') return []
+  return (levelNode as LevelNode).children
+    .map((childId) => nodes[childId])
+    .filter((node): node is WallNode => node?.type === 'wall')
+}
+
+function getCurrentLevelWalls(): WallNode[] {
+  const currentLevelId = useViewer.getState().selection.levelId
+  const { nodes } = useScene.getState()
+  return getLevelWalls(currentLevelId ?? null, nodes)
+}
+
+// Walls on the level directly beneath the active one. Levels share the same
+// local XZ origin (they only differ in world Y), so these walls live in the
+// identical coordinate frame and can be fed straight into the snap pipeline —
+// letting the user draw a new wall aligned with the floor below. They are
+// snap references only; `createWallOnCurrentLevel` re-derives its own
+// current-level wall list, so the floor below is never split or mutated.
+function getBelowLevelWalls(): WallNode[] {
+  const currentLevelId = useViewer.getState().selection.levelId
+  const { nodes } = useScene.getState()
+  if (!currentLevelId) return []
+  const currentLevel = nodes[currentLevelId]
+  if (currentLevel?.type !== 'level') return []
+  const buildingId = resolveBuildingForLevel(currentLevelId, nodes)
+  if (!buildingId) return []
+  const building = nodes[buildingId]
+  if (building?.type !== 'building') return []
+  const currentIndex = (currentLevel as LevelNode).level
+  const belowLevel = (building.children ?? [])
+    .map((childId) => nodes[childId])
+    .filter((node): node is LevelNode => node?.type === 'level' && node.level < currentIndex)
+    .sort((a, b) => b.level - a.level)[0]
+  return getLevelWalls(belowLevel?.id ?? null, nodes)
+}
+
+export const WallTool: React.FC = () => {
+  const unit = useViewer((state) => state.unit)
+  const metricNotation = useViewer((state) => state.metricNotation)
+  const isDark = useViewer((state) => getSceneTheme(state.sceneTheme).appearance === 'dark')
+  const activeLevelId = useViewer((state) => state.selection.levelId)
+  const activeLevelHeight = useScene((state) => {
+    const level = activeLevelId ? state.nodes[activeLevelId] : undefined
+    return level?.type === 'level' ? (level.height ?? DEFAULT_LEVEL_HEIGHT) : DEFAULT_LEVEL_HEIGHT
+  })
+  // A placed wall preset seeds `toolDefaults.wall` (height / thickness …)
+  // before the tool mounts, so the draft preview is drawn at the preset's
+  // dimensions rather than the generic fallbacks — matching the wall that
+  // will be created. Read through refs so the live event handlers below see
+  // the latest values without re-subscribing.
+  const wallDefaults = useEditor((s) => s.toolDefaults.wall)
+  // Camera for the pointer-support resolution (deck top vs floor) — read
+  // through a ref so the event handlers below see the live camera.
+  const camera = useThree((state) => state.camera)
+  const cameraRef = useRef(camera)
+  cameraRef.current = camera
+  const previewHeight =
+    typeof wallDefaults?.height === 'number' ? wallDefaults.height : activeLevelHeight
+  const previewThickness =
+    typeof wallDefaults?.thickness === 'number' ? wallDefaults.thickness : DRAFT_WALL_THICKNESS
+  const previewHeightRef = useRef(previewHeight)
+  previewHeightRef.current = previewHeight
+  const previewThicknessRef = useRef(previewThickness)
+  previewThicknessRef.current = previewThickness
+  const cursorRef = useRef<Group>(null)
+  const wallPreviewRef = useRef<Mesh>(null!)
+  const startingPoint = useRef(new Vector3(0, 0, 0))
+  const endingPoint = useRef(new Vector3(0, 0, 0))
+  const chainFirstVertex = useRef<Vector3 | null>(null)
+  // Ids of the walls committed by the current chain — the exclusion set for
+  // the "segment tees into an existing wall" chain-termination test, so
+  // snapping onto the chain's own segments never reads as a join.
+  const chainWallIds = useRef<string[]>([])
+  const constructionPlane = useRef<HorizontalConstructionPlane | null>(null)
+  const flatConstructionBase = useRef(false)
+  const buildingState = useRef(0)
+  const [draftMeasurement, setDraftMeasurement] = useState<DraftMeasurementState>(null)
+  const [axisGuide, setAxisGuide] = useState<DraftAxisGuideState>(null)
+  const measurementColor = isDark ? '#ffffff' : '#111111'
+  const measurementShadowColor = isDark ? '#111111' : '#ffffff'
+
+  // Clear preset-seeded defaults on deactivation so a later manual wall draw
+  // isn't built with a stale preset's parameters. Unmount-only.
+  useEffect(() => () => useEditor.getState().setToolDefaults('wall', null), [])
+
+  useEffect(() => {
+    let gridPosition: WallPlanPoint = [0, 0]
+    let previousWallEnd: [number, number] | null = null
+
+    // Alignment candidates — anchors of every alignable object. Refreshed
+    // after each segment commits (the new wall becomes a candidate too).
+    let alignmentCandidates = collectAlignmentAnchors(useScene.getState().nodes, '')
+    const refreshAlignmentCandidates = () => {
+      alignmentCandidates = collectAlignmentAnchors(useScene.getState().nodes, '')
+    }
+
+    // Align the drafted point onto another object's nearest real anchor and
+    // publish the guide. Returns the possibly snapped point.
+    const alignPoint = (point: WallPlanPoint, options?: { applySnap?: boolean }): WallPlanPoint => {
+      // Figma alignment lines onto existing wall corners / edges are DISPLAYED
+      // in every mode except Off (isAlignmentGuideActive); the magnetic pull
+      // onto them is applied only in 'lines' mode (isMagneticSnapActive).
+      if (!isAlignmentGuideActive() || alignmentCandidates.length === 0) {
+        useAlignmentGuides.getState().clear()
+        return point
+      }
+      const ar = resolveAlignment({
+        moving: [{ nodeId: '__wall-draft__', kind: 'corner', x: point[0], z: point[1] }],
+        candidates: alignmentCandidates,
+        threshold: ALIGNMENT_THRESHOLD_M,
+      })
+      const magnetic = isMagneticSnapActive()
+      // In non-magnetic modes nothing pulls the point onto a guide, so an
+      // axis-alignment dot on a far corner reads as a false "connect here" cue.
+      // Only surface guides whose anchor is within connect distance — the same
+      // tight range the wall-body connect uses — so a corner is no more
+      // magnetic-looking than any other point on the wall. 'lines' keeps the
+      // wider guides since its magnetic snap closes the gap.
+      const guides = magnetic
+        ? ar.guides
+        : ar.guides.filter(
+            (guide) =>
+              Math.hypot(point[0] - guide.anchor.x, point[1] - guide.anchor.z) <=
+              WALL_CONNECT_SNAP_RADIUS,
+          )
+      useAlignmentGuides.getState().set(guides)
+      return ar.snap && options?.applySnap !== false && magnetic
+        ? [point[0] + ar.snap.dx, point[1] + ar.snap.dz]
+        : point
+    }
+
+    // The walking surface the pointer actually aims at (deck top when over
+    // the deck, floor/ground underneath it) — only for genuine 3D pointer
+    // events. The 2D floor plan emits synthetic grid events with no camera
+    // ray behind them; those keep the uncapped max election and leave the
+    // grid plane alone.
+    const pointedSurfaceFor = (event: GridEvent) =>
+      event.nativeEvent?.target instanceof HTMLCanvasElement
+        ? resolvePointerSupportSurface(cameraRef.current, event.position, {
+            includeNodeTopSurfaces: true,
+          })
+        : null
+
+    const snappedWallConstructionPlane = (
+      targetWallIds: string[],
+      walls: WallNode[],
+    ): HorizontalConstructionPlane | null => {
+      const activeWallIds = new Set(walls.map((wall) => wall.id))
+      const targetIds = targetWallIds.filter((id) => activeWallIds.has(id as WallNode['id']))
+      if (targetIds.length === 0) return null
+
+      const buildingId = useViewer.getState().selection.buildingId
+      const buildingMesh = buildingId ? sceneRegistry.nodes.get(buildingId as AnyNodeId) : undefined
+      const currentLevelId = useViewer.getState().selection.levelId
+      const levelMesh = currentLevelId
+        ? sceneRegistry.nodes.get(currentLevelId as AnyNodeId)
+        : undefined
+      let resolved: HorizontalConstructionPlane | null = null
+
+      for (const id of targetIds) {
+        const targetWall = walls.find((wall) => wall.id === id)
+        if (!targetWall) continue
+        const wallMesh = sceneRegistry.nodes.get(id as AnyNodeId)
+        if (!wallMesh) continue
+        wallMesh.getWorldPosition(wallSurfaceWorldScratch)
+        const worldY = wallSurfaceWorldScratch.y
+
+        wallSurfaceLocalScratch.copy(wallSurfaceWorldScratch)
+        if (buildingMesh) buildingMesh.worldToLocal(wallSurfaceLocalScratch)
+        const localY = wallSurfaceLocalScratch.y
+
+        wallSurfaceLocalScratch.copy(wallSurfaceWorldScratch)
+        if (levelMesh) levelMesh.worldToLocal(wallSurfaceLocalScratch)
+        const elevation = wallSurfaceLocalScratch.y
+
+        if (
+          resolved &&
+          (Math.abs(resolved.worldY - worldY) > 1e-4 ||
+            Math.abs((resolved.elevation ?? elevation) - elevation) > 1e-4 ||
+            resolved.supportSlabId !== (targetWall.supportSlabId ?? null))
+        ) {
+          // An ambiguous junction at different elevations transfers no plane.
+          return null
+        }
+        resolved = {
+          localY,
+          worldY,
+          elevation,
+          supportSlabId: targetWall.supportSlabId ?? null,
+          sourceNodeId: targetWall.id as AnyNodeId,
+        }
+      }
+
+      return resolved
+    }
+
+    const stopDrafting = () => {
+      buildingState.current = 0
+      constructionPlane.current = null
+      flatConstructionBase.current = false
+      chainFirstVertex.current = null
+      chainWallIds.current = []
+      const draftPreview = useFloorplanDraftPreview.getState()
+      draftPreview.setWallDraftStart(null)
+      draftPreview.setWallDraftEnd(null)
+      if (wallPreviewRef.current) {
+        wallPreviewRef.current.visible = false
+      }
+      setDraftMeasurement(null)
+      setAxisGuide(null)
+      useAlignmentGuides.getState().clear()
+      useWallSnapIndicator.getState().clear()
+      useSegmentDraftChain.getState().clear('wall')
+      clearPlacementSurface()
+    }
+
+    const onGridMove = (event: GridEvent) => {
+      if (!(cursorRef.current && wallPreviewRef.current)) return
+
+      // Ride the grid event plane on the pointed surface: aiming at an
+      // elevated deck lifts the plane to the deck top, so the draft's XZ
+      // lands where the cursor points and the preview/cursor Y
+      // (`event.localPosition[1]`) sits at the base the committed wall
+      // will elect. Aiming past the deck edge drops it back to the floor.
+      const pointed = buildingState.current === 0 ? pointedSurfaceFor(event) : null
+      if (constructionPlane.current) {
+        publishHorizontalConstructionPlane(event, constructionPlane.current)
+      } else if (pointed) {
+        publishPlacementSurface(
+          surfacePointScratch.set(event.position[0], pointed.worldY, event.position[2]),
+          SURFACE_UP,
+        )
+      }
+
+      const walls = getCurrentLevelWalls()
+      // Add walls on the floor below as extra snap references so the new wall
+      // can align with the level beneath it. Kept separate from `walls` so the
+      // measurement HUD only reports against the active level.
+      const snapWalls = [...walls, ...getBelowLevelWalls()]
+      const localPoint: WallPlanPoint = pointed?.localPoint
+        ? [pointed.localPoint[0], pointed.localPoint[2]]
+        : [event.localPosition[0], event.localPosition[2]]
+      // Snapping is governed entirely by the snapping mode (grid / lines /
+      // angles / off). `'off'` is the bypass — there is no Shift hold-to-bypass.
+      const angleLocked = buildingState.current === 1 && isAngleSnapActive()
+      const snapResult = snapWallDraftPointDetailed({
+        point: localPoint,
+        walls: snapWalls,
+        start: angleLocked ? [startingPoint.current.x, startingPoint.current.z] : undefined,
+        angleSnap: angleLocked,
+        magnetic: isMagneticSnapActive(),
+      })
+      gridPosition = alignPoint(snapResult.point, { applySnap: !angleLocked })
+      // Stand the magnetic beacon at the endpoint when it locked onto an
+      // existing wall corner / wall point; clear it for plain grid/angle moves.
+      useWallSnapIndicator
+        .getState()
+        .set(
+          snapResult.snap
+            ? { x: gridPosition[0], z: gridPosition[1], kind: snapResult.snap }
+            : null,
+        )
+
+      if (buildingState.current === 1) {
+        const snappedLocal = gridPosition
+        const draftY = constructionPlane.current?.localY ?? event.localPosition[1]
+        endingPoint.current.set(snappedLocal[0], draftY, snappedLocal[1])
+        const draftPreview = useFloorplanDraftPreview.getState()
+        draftPreview.setWallDraftStart([startingPoint.current.x, startingPoint.current.z])
+        draftPreview.setWallDraftEnd(snappedLocal)
+        cursorRef.current.position.copy(endingPoint.current)
+        setAxisGuide({
+          origin: [startingPoint.current.x, startingPoint.current.z],
+          endOrigin: snappedLocal,
+          y: startingPoint.current.y,
+          angleLabel: getNearestAxisAngleLabel(
+            [startingPoint.current.x, startingPoint.current.z],
+            snappedLocal,
+            startingPoint.current.y,
+          ),
+        })
+
+        const currentWallEnd: [number, number] = [snappedLocal[0], snappedLocal[1]]
+        if (
+          previousWallEnd &&
+          (currentWallEnd[0] !== previousWallEnd[0] || currentWallEnd[1] !== previousWallEnd[1])
+        ) {
+          triggerSFX('sfx:grid-snap')
+        }
+        previousWallEnd = currentWallEnd
+
+        updateWallPreview(
+          wallPreviewRef.current,
+          startingPoint.current,
+          endingPoint.current,
+          previewHeightRef.current,
+          previewThicknessRef.current,
+        )
+        setDraftMeasurement(
+          getDraftMeasurementState(
+            [startingPoint.current.x, startingPoint.current.z],
+            snappedLocal,
+            walls,
+            unit,
+            metricNotation,
+            startingPoint.current.y,
+            previewHeightRef.current,
+          ),
+        )
+      } else {
+        const hoverPlane = resampleTerrainConstructionPlane(
+          resolveEventConstructionPlane(event, pointed),
+          gridPosition,
+        )
+        cursorRef.current.position.set(gridPosition[0], hoverPlane.localY, gridPosition[1])
+        setDraftMeasurement(null)
+        setAxisGuide(null)
+      }
+    }
+
+    const onGridClick = (event: GridEvent) => {
+      if (!wallPreviewRef.current) return
+
+      if (buildingState.current === 1 && event.nativeEvent.detail >= 2) {
+        stopDrafting()
+        return
+      }
+
+      const walls = getCurrentLevelWalls()
+      const snapWalls = [...walls, ...getBelowLevelWalls()]
+      const pointed = buildingState.current === 0 ? pointedSurfaceFor(event) : null
+      const localClick: WallPlanPoint = pointed?.localPoint
+        ? [pointed.localPoint[0], pointed.localPoint[2]]
+        : [event.localPosition[0], event.localPosition[2]]
+
+      if (buildingState.current === 0) {
+        const snapResult = snapWallDraftPointDetailed({
+          point: localClick,
+          walls: snapWalls,
+          magnetic: isMagneticSnapActive(),
+        })
+        const snappedStart = alignPoint(snapResult.point)
+        const resolvedPlane =
+          (pointed?.sourceNodeId
+            ? resolveEventConstructionPlane(event, pointed)
+            : pointMatches(snappedStart, snapResult.point)
+              ? snappedWallConstructionPlane(snapResult.targetWallIds, walls)
+              : null) ?? resolveEventConstructionPlane(event, pointed)
+        const plane = resampleTerrainConstructionPlane(resolvedPlane, snappedStart)
+        constructionPlane.current = plane
+        flatConstructionBase.current = pointed?.sourceNodeId != null
+        publishHorizontalConstructionPlane(event, plane)
+        gridPosition = snappedStart
+        startingPoint.current.set(snappedStart[0], plane.localY, snappedStart[1])
+        chainFirstVertex.current = startingPoint.current.clone()
+        endingPoint.current.copy(startingPoint.current)
+        buildingState.current = 1
+        const draftPreview = useFloorplanDraftPreview.getState()
+        draftPreview.setWallDraftStart(snappedStart)
+        draftPreview.setWallDraftEnd(snappedStart)
+        setAxisGuide({
+          origin: snappedStart,
+          endOrigin: null,
+          y: plane.localY,
+          angleLabel: null,
+        })
+        triggerSFX('sfx:structure-build-start')
+        // Visibility is owned by `updateWallPreview`. Leave the
+        // unit box hidden until the first pointer move scales and
+        // positions it for the active segment.
+        setDraftMeasurement(null)
+      } else if (buildingState.current === 1) {
+        const angleLocked = isAngleSnapActive()
+        const snappedEnd = alignPoint(
+          snapWallDraftPointDetailed({
+            point: localClick,
+            walls: snapWalls,
+            start: angleLocked ? [startingPoint.current.x, startingPoint.current.z] : undefined,
+            angleSnap: angleLocked,
+            magnetic: isMagneticSnapActive(),
+          }).point,
+          { applySnap: !angleLocked },
+        )
+        const dx = snappedEnd[0] - startingPoint.current.x
+        const dz = snappedEnd[1] - startingPoint.current.z
+        if (dx * dx + dz * dz < 0.01 * 0.01) return
+        // A ground(terrain)-hosted chain keeps its frozen construction plane;
+        // any other chain re-resolves the aimed surface per commit so a later
+        // segment can still elect the slab it visibly crosses instead of
+        // being capped at the first click's elevation.
+        const draftPlane = constructionPlane.current
+        const commitPointed =
+          draftPlane?.supportSlabId === GROUND_SUPPORT_ID ? null : pointedSurfaceFor(event)
+        // Both start and end are building-local ✓
+        const createdWall = createWallOnCurrentLevel(
+          [startingPoint.current.x, startingPoint.current.z],
+          snappedEnd,
+          {
+            supportCap: commitPointed ? commitPointed.elevation : (draftPlane?.elevation ?? null),
+            preferredSupportSlabId: draftPlane?.supportSlabId ?? null,
+            constructionElevation: draftPlane?.elevation ?? null,
+            constructionHeight: previewHeightRef.current,
+            constructionSourceNodeId: constructionPlane.current?.sourceNodeId ?? null,
+            flatConstructionBase: flatConstructionBase.current,
+          },
+        )
+        if (!createdWall) return
+        chainWallIds.current.push(createdWall.id)
+
+        // The new segment is now a real node — make it an alignment target
+        // for the next segment, and drop the just-shown guide.
+        refreshAlignmentCandidates()
+        useAlignmentGuides.getState().clear()
+        useWallSnapIndicator.getState().clear()
+
+        if (useEditor.getState().getContinuation('wall') === 'single') {
+          stopDrafting()
+          return
+        }
+
+        const closedToChainStart =
+          chainFirstVertex.current &&
+          isWithinWallJoinSnapRadius(createdWall.end, chainFirstVertex.current)
+
+        // Auto-close also fires when the segment seals a room against the
+        // existing wall network (e.g. a bay closed onto the middle of another
+        // wall), not just when the chain loops back to its own start. Shares the
+        // room graph with auto slab/ceiling detection so the two never disagree.
+        // A resolved end that tees into wall geometry outside the chain also
+        // terminates even without an enclosed room — nobody continues drawing
+        // from a T-junction into an existing wall; a dead end in free space
+        // keeps the chain going.
+        const levelWalls = getCurrentLevelWalls()
+        if (
+          closedToChainStart ||
+          chainEndJoinsExistingWall(createdWall.end, levelWalls, chainWallIds.current) ||
+          wallClosesRoom(levelWalls, createdWall)
+        ) {
+          stopDrafting()
+          return
+        }
+
+        const nextStart = createdWall.end
+        // Publish the resolved chain start so the 2D floor-plan draft
+        // chains its next segment from the same point (its own snap
+        // pipeline can resolve a slightly different endpoint).
+        useSegmentDraftChain.getState().setChainStart('wall', [nextStart[0], nextStart[1]])
+        const draftY = constructionPlane.current?.localY ?? event.localPosition[1]
+        startingPoint.current.set(nextStart[0], draftY, nextStart[1])
+        endingPoint.current.copy(startingPoint.current)
+        const draftPreview = useFloorplanDraftPreview.getState()
+        draftPreview.setWallDraftEnd(null)
+        draftPreview.setWallDraftStart(nextStart)
+        draftPreview.setWallDraftEnd(nextStart)
+        cursorRef.current?.position.copy(startingPoint.current)
+        buildingState.current = 1
+        setAxisGuide({
+          origin: nextStart,
+          endOrigin: null,
+          y: draftY,
+          angleLabel: null,
+        })
+        // Hide the preview until the next `onGridMove` scales and
+        // repositions it. Otherwise the prior segment stays visible
+        // for a frame on top of the freshly committed wall.
+        if (wallPreviewRef.current) {
+          wallPreviewRef.current.visible = false
+        }
+        setDraftMeasurement(null)
+      }
+    }
+
+    const onCancel = () => {
+      if (buildingState.current === 1) {
+        markToolCancelConsumed()
+        stopDrafting()
+      }
+    }
+
+    emitter.on('grid:move', onGridMove)
+    emitter.on('grid:click', onGridClick)
+    emitter.on('tool:cancel', onCancel)
+
+    return () => {
+      emitter.off('grid:move', onGridMove)
+      emitter.off('grid:click', onGridClick)
+      emitter.off('tool:cancel', onCancel)
+      clearPlacementSurface()
+      useAlignmentGuides.getState().clear()
+      useWallSnapIndicator.getState().clear()
+      useSegmentDraftChain.getState().clear('wall')
+      const draftPreview = useFloorplanDraftPreview.getState()
+      draftPreview.setWallDraftStart(null)
+      draftPreview.setWallDraftEnd(null)
+    }
+  }, [unit, metricNotation])
+
+  return (
+    <group>
+      <DraftAxisGuides
+        guide={axisGuide}
+        labelColor={measurementColor}
+        labelShadowColor={measurementShadowColor}
+      />
+      <CursorSphere height={previewHeight} ref={cursorRef} />
+      <mesh layers={EDITOR_LAYER} ref={wallPreviewRef} renderOrder={1} visible={false}>
+        <boxGeometry />
+        <meshBasicMaterial
+          color="#818cf8"
+          depthTest={false}
+          depthWrite={false}
+          opacity={0.5}
+          side={DoubleSide}
+          transparent
+        />
+      </mesh>
+      {draftMeasurement && (
+        <>
+          <DraftMeasurementLabel
+            color={measurementColor}
+            label={draftMeasurement.lengthLabel}
+            position={draftMeasurement.lengthPosition}
+            shadowColor={measurementShadowColor}
+          />
+          {draftMeasurement.angleLabels.map((angleLabel) => (
+            <group key={angleLabel.id}>
+              <DraftAngleArc arc={angleLabel.arc} color={measurementColor} />
+              <DraftMeasurementLabel
+                color={measurementColor}
+                label={angleLabel.label}
+                position={angleLabel.position}
+                shadowColor={measurementShadowColor}
+              />
+            </group>
+          ))}
+        </>
+      )}
+    </group>
+  )
+}
+
+export default WallTool

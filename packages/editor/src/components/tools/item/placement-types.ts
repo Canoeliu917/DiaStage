@@ -1,0 +1,151 @@
+import type {
+  AnyNode,
+  AnyNodeId,
+  AssetInput,
+  CeilingNode,
+  ItemNode,
+  LevelNode,
+  WallNode,
+} from '@pascal-app/core'
+import type { Vector3 } from 'three'
+
+// ============================================================================
+// PLACEMENT STATE
+// ============================================================================
+
+export type SurfaceType =
+  | 'floor'
+  | 'wall'
+  | 'roof-wall'
+  | 'block-face'
+  | 'ceiling'
+  | 'item-surface'
+  | 'shelf-surface'
+
+/**
+ * Tracks which surface the draft item is currently on.
+ * Replaces the scattered isOnWall, isOnCeiling refs and currentWallId, currentCeilingId variables.
+ */
+export interface PlacementState {
+  surface: SurfaceType
+  wallId: string | null
+  /**
+   * Active roof-segment when `surface === 'roof-wall'` — wall-attach
+   * items also host on the vertical wall faces a roof segment generates
+   * (base walls + coplanar gable ends).
+   */
+  roofSegmentId: string | null
+  /** Active planar node face used as a wall-like attachment host. */
+  blockId?: AnyNodeId | null
+  ceilingId: string | null
+  surfaceItemId: string | null
+  /**
+   * Active shelf when `surface === 'shelf-surface'`. Items host on the
+   * shelf board closest to the cursor's local Y; the row index isn't
+   * stored separately because every move re-derives it from cursor
+   * position via `shelfRowSurfaceYs`.
+   */
+  shelfId: string | null
+}
+
+// ============================================================================
+// STRATEGY CONTEXT
+// ============================================================================
+
+/**
+ * Read-only snapshot passed to every strategy call.
+ */
+export interface PlacementContext {
+  asset: AssetInput
+  levelId: LevelNode['id'] | null
+  draftItem: ItemNode | null
+  gridPosition: Vector3
+  state: PlacementState
+  /**
+   * Current world Y rotation of the placement cursor — the user's intended
+   * orientation, preserved across surface transitions. Strategies that
+   * re-parent the draft (e.g. floor → item-surface) read this to compute the
+   * matching parent-local rotation so the world orientation doesn't jump.
+   */
+  currentCursorRotationY: number
+}
+
+// ============================================================================
+// STRATEGY RESULTS
+// ============================================================================
+
+/**
+ * Returned by strategy move handlers.
+ */
+export interface PlacementResult {
+  gridPosition: [number, number, number]
+  cursorPosition: [number, number, number]
+  cursorRotationY: number
+  cursorRotation?: [number, number, number]
+  nodeUpdate: Partial<ItemNode> | null
+  stopPropagation: boolean
+  dirtyNodeId: AnyNode['id'] | null
+  hostFaceId?: string | null
+}
+
+/**
+ * Returned by enter/leave handlers (surface transitions).
+ */
+export interface TransitionResult {
+  stateUpdate: Partial<PlacementState>
+  nodeUpdate: Partial<ItemNode>
+  gridPosition: [number, number, number]
+  cursorPosition: [number, number, number]
+  cursorRotationY: number
+  cursorRotation?: [number, number, number]
+  stopPropagation: boolean
+  hostFaceId?: string | null
+}
+
+/**
+ * Returned by click handlers (commit placement).
+ */
+export interface CommitResult {
+  nodeUpdate: Partial<ItemNode>
+  stopPropagation: boolean
+  dirtyNodeId: AnyNode['id'] | null
+}
+
+// ============================================================================
+// SPATIAL VALIDATORS
+// ============================================================================
+
+/**
+ * Type for the useSpatialQuery() return value.
+ */
+export interface SpatialValidators {
+  canPlaceOnFloor: (
+    levelId: LevelNode['id'],
+    position: [number, number, number],
+    dimensions: [number, number, number],
+    rotation: [number, number, number],
+    ignoreIds?: string[],
+  ) => { valid: boolean }
+  canPlaceOnWall: (
+    levelId: LevelNode['id'],
+    wallId: WallNode['id'],
+    localX: number,
+    localY: number,
+    dimensions: [number, number, number],
+    attachType: 'wall' | 'wall-side',
+    side?: 'front' | 'back',
+    ignoreIds?: string[],
+  ) => { valid: boolean; adjustedY?: number; wasAdjusted?: boolean }
+  canPlaceOnCeiling: (
+    ceilingId: CeilingNode['id'],
+    position: [number, number, number],
+    dimensions: [number, number, number],
+    rotation: [number, number, number],
+    ignoreIds?: string[],
+  ) => { valid: boolean }
+}
+
+/**
+ * Resolver function type for finding a node's level.
+ */
+export type LevelResolver = (node: AnyNode, nodes: Record<string, AnyNode>) => string

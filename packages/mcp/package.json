@@ -1,0 +1,88 @@
+{
+  "name": "@pascal-app/mcp",
+  "version": "1.0.0-beta.6",
+  "description": "Model Context Protocol server for Pascal 3D editor",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "import": "./dist/server.js",
+      "default": "./dist/server.js"
+    },
+    "./storage": {
+      "types": "./dist/storage/index.d.ts",
+      "import": "./dist/storage/index.js",
+      "default": "./dist/storage/index.js"
+    },
+    "./storage/types": {
+      "types": "./dist/storage/types.d.ts",
+      "import": "./dist/storage/types.js",
+      "default": "./dist/storage/types.js"
+    },
+    "./operations": {
+      "types": "./dist/operations/index.d.ts",
+      "import": "./dist/operations/index.js",
+      "default": "./dist/operations/index.js"
+    },
+    "./bridge": {
+      "types": "./dist/bridge/index.d.ts",
+      "import": "./dist/bridge/index.js",
+      "default": "./dist/bridge/index.js"
+    }
+  },
+  "bin": {
+    "pascal-mcp": "./dist/bin/pascal-mcp.js"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsgo --build --watch",
+    "start": "bun dist/bin/pascal-mcp.js",
+    "test": "bun test",
+    "smoke": "bun run scripts/smoke.ts",
+    "prepublishOnly": "bun run build && bun test"
+  },
+  "peerDependencies": {
+    "@pascal-app/core": "^1.0.0-beta.5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "@pascal-app/lingo": "^0.2.0",
+    "zod": ">=4.5.4 <4.6"
+  },
+  "devDependencies": {
+    "@pascal-app/core": "^1.0.0-beta.5",
+    "@pascal/typescript-config": "*",
+    "@types/node": "^22.19.20",
+    "typescript": "6.0.3"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "pascal",
+    "3d",
+    "building",
+    "editor",
+    "ai"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pascalorg/editor.git",
+    "directory": "packages/mcp"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/pascalorg/editor/tree/main/packages/mcp#readme",
+  "bugs": "https://github.com/pascalorg/editor/issues"
+}

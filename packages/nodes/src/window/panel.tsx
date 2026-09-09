@@ -1,0 +1,953 @@
+'use client'
+
+import {
+  type AnyNode,
+  type AnyNodeId,
+  useInteractive,
+  useScene,
+  WindowNode,
+} from '@pascal-app/core'
+import {
+  ActionButton,
+  ActionGroup,
+  cn,
+  PanelSection,
+  PanelWrapper,
+  SegmentedControl,
+  SliderControl,
+  ToggleControl,
+  triggerSFX,
+  useEditor,
+} from '@pascal-app/editor'
+import { useViewer } from '@pascal-app/viewer'
+import { Copy, FlipHorizontal2, Move, Trash2 } from 'lucide-react'
+import { useCallback, useRef } from 'react'
+import { OpeningDocumentationFields } from '../shared/opening-documentation-fields'
+
+function isSameWindowValue(current: unknown, next: unknown): boolean {
+  if (typeof current === 'number' && typeof next === 'number') {
+    return Math.abs(current - next) < 1e-6
+  }
+
+  if (Array.isArray(current) && Array.isArray(next)) {
+    return (
+      current.length === next.length &&
+      current.every((value, index) => isSameWindowValue(value, next[index]))
+    )
+  }
+
+  return Object.is(current, next)
+}
+
+function getMaxSharedWindowRadius(width: number, height: number) {
+  return Math.max(0, Math.min(width / 2, height / 2))
+}
+
+function normalizeWindowCornerRadii(
+  radii: [number, number, number, number],
+  width: number,
+  height: number,
+): [number, number, number, number] {
+  const next = radii.map((radius) => Math.max(radius, 0)) as [number, number, number, number]
+  const scale = Math.min(
+    1,
+    Math.max(width, 0) / Math.max(next[0] + next[1], 1e-6),
+    Math.max(width, 0) / Math.max(next[3] + next[2], 1e-6),
+    Math.max(height, 0) / Math.max(next[0] + next[3], 1e-6),
+    Math.max(height, 0) / Math.max(next[1] + next[2], 1e-6),
+  )
+
+  if (scale >= 1) return next
+
+  return next.map((radius) => radius * scale) as [number, number, number, number]
+}
+
+function isSameRadiusTuple(
+  current: [number, number, number, number],
+  next: [number, number, number, number],
+) {
+  return current.every((value, index) => Math.abs(value - (next[index] ?? 0)) < 1e-6)
+}
+
+const windowTypeOptions: Array<{ label: string; value: WindowNode['windowType'] }> = [
+  { label: '固定', value: 'fixed' },
+  { label: '推拉', value: 'sliding' },
+  { label: '平开窗', value: 'casement' },
+  { label: '上悬窗', value: 'awning' },
+  { label: '单提拉窗', value: 'single-hung' },
+  { label: '双提拉窗', value: 'double-hung' },
+  { label: '凸窗', value: 'bay' },
+  { label: '弧形凸窗', value: 'bow' },
+  { label: '百叶窗', value: 'louvered' },
+]
+
+const shapedWindowTypes = new Set<WindowNode['windowType']>([
+  'fixed',
+  'casement',
+  'awning',
+  'hopper',
+  'louvered',
+])
+
+const silllessWindowTypes = new Set<WindowNode['windowType']>(['bay', 'bow'])
+
+export default function WindowPanel() {
+  const selectedId = useViewer((s) => s.selection.selectedIds[0])
+  const setSelection = useViewer((s) => s.setSelection)
+  const deleteNode = useScene((s) => s.deleteNode)
+  const setMovingNode = useEditor((s) => s.setMovingNode)
+  const previewRef = useRef<{
+    id: AnyNodeId
+    key: keyof WindowNode
+    value: unknown
+  } | null>(null)
+
+  const node = useScene((s) =>
+    selectedId ? (s.nodes[selectedId as AnyNode['id']] as WindowNode | undefined) : undefined,
+  )
+
+  // Panel slider-drag fix recipe (plans/editor-node-registry.md). Without
+  // it, the 15+ SliderControls in this panel would loop on drag.
+  const handleUpdate = useCallback(
+    (updates: Partial<WindowNode>) => {
+      if (!selectedId) return
+      const liveNode = useScene.getState().nodes[selectedId as AnyNodeId]
+      if (liveNode?.type !== 'window') return
+
+      const hasChange = Object.entries(updates).some(([key, value]) => {
+        const currentValue = liveNode[key as keyof WindowNode]
+        return !isSameWindowValue(currentValue, value)
+      })
+      if (!hasChange) return
+
+      useScene.getState().updateNode(selectedId as AnyNode['id'], updates)
+      const scene = useScene.getState()
+      scene.dirtyNodes.add(selectedId as AnyNodeId)
+      if (liveNode.parentId) scene.dirtyNodes.add(liveNode.parentId as AnyNodeId)
+    },
+    [selectedId],
+  )
+
+  const previewWindowUpdate = useCallback(
+    <K extends keyof WindowNode>(key: K, value: WindowNode[K]) => {
+      if (!selectedId) return
+      const liveNode = useScene.getState().nodes[selectedId as AnyNodeId]
+      if (liveNode?.type !== 'window') return
+
+      if (
+        !(
+          previewRef.current &&
+          previewRef.current.id === selectedId &&
+          previewRef.current.key === key
+        )
+      ) {
+        previewRef.current = {
+          id: selectedId as AnyNodeId,
+          key,
+          value: liveNode[key],
+        }
+      }
+
+      if (isSameWindowValue(liveNode[key], value)) return
+
+      ;(liveNode as WindowNode)[key] = value
+      useScene.getState().dirtyNodes.add(selectedId as AnyNodeId)
+    },
+    [selectedId],
+  )
+
+  const commitWindowPreview = useCallback(
+    <K extends keyof WindowNode>(key: K, value: WindowNode[K]) => {
+      if (!selectedId) return
+
+      const scene = useScene.getState()
+      const liveNode = scene.nodes[selectedId as AnyNodeId]
+      const preview = previewRef.current
+      if (liveNode?.type === 'window' && preview?.id === selectedId && preview.key === key) {
+        ;(liveNode as WindowNode)[key] = preview.value as WindowNode[K]
+        scene.dirtyNodes.add(selectedId as AnyNodeId)
+      }
+      previewRef.current = null
+
+      useScene.getState().updateNode(
+        selectedId as AnyNode['id'],
+        {
+          [key]: value,
+        } as Partial<WindowNode>,
+      )
+      scene.dirtyNodes.add(selectedId as AnyNodeId)
+    },
+    [selectedId],
+  )
+
+  const handleClose = useCallback(() => {
+    setSelection({ selectedIds: [] })
+  }, [setSelection])
+
+  const handleFlip = useCallback(() => {
+    if (!node) return
+    handleUpdate({
+      side: node.side === 'front' ? 'back' : 'front',
+      rotation: [node.rotation[0], node.rotation[1] + Math.PI, node.rotation[2]],
+    })
+  }, [node, handleUpdate])
+
+  const handleMove = useCallback(() => {
+    if (!node) return
+    triggerSFX('sfx:item-pick')
+    setMovingNode(node)
+    setSelection({ selectedIds: [] })
+  }, [node, setMovingNode, setSelection])
+
+  const handleDelete = useCallback(() => {
+    if (!(selectedId && node)) return
+    triggerSFX('sfx:item-delete')
+    deleteNode(selectedId as AnyNode['id'])
+    if (node.parentId) useScene.getState().dirtyNodes.add(node.parentId as AnyNodeId)
+    setSelection({ selectedIds: [] })
+  }, [selectedId, node, deleteNode, setSelection])
+
+  const handleDuplicate = useCallback(() => {
+    if (!node?.parentId) return
+    triggerSFX('sfx:item-pick')
+    useScene.temporal.getState().pause()
+    const duplicate = WindowNode.parse({
+      position: [...node.position] as [number, number, number],
+      rotation: [...node.rotation] as [number, number, number],
+      side: node.side,
+      wallId: node.wallId,
+      dormerId: node.dormerId,
+      dormerFace: node.dormerFace,
+      roofSegmentId: node.roofSegmentId,
+      roofFace: node.roofFace,
+      parentId: node.parentId,
+      width: node.width,
+      height: node.height,
+      roughOpeningWidth: node.roughOpeningWidth,
+      roughOpeningHeight: node.roughOpeningHeight,
+      windowType: node.windowType,
+      operationState: node.operationState,
+      awningDirection: node.awningDirection,
+      casementStyle: node.casementStyle,
+      hingesSide: node.hingesSide,
+      frameThickness: node.frameThickness,
+      frameDepth: node.frameDepth,
+      openingKind: node.openingKind,
+      openingShape: node.openingShape,
+      openingRadiusMode: node.openingRadiusMode ?? 'all',
+      openingCornerRadii: [...(node.openingCornerRadii ?? [0.15, 0.15, 0.15, 0.15])],
+      cornerRadius: node.cornerRadius,
+      archHeight: node.archHeight,
+      openingRevealRadius: node.openingRevealRadius,
+      columnRatios: [...node.columnRatios],
+      rowRatios: [...node.rowRatios],
+      columnDividerThickness: node.columnDividerThickness,
+      rowDividerThickness: node.rowDividerThickness,
+      sill: node.sill,
+      sillDepth: node.sillDepth,
+      sillThickness: node.sillThickness,
+      metadata: { isNew: true },
+    })
+    useScene.getState().createNode(duplicate, node.parentId as AnyNodeId)
+    setMovingNode(duplicate)
+    setSelection({ selectedIds: [] })
+  }, [node, setMovingNode, setSelection])
+
+  if (!(node && node.type === 'window' && selectedId)) return null
+
+  const numCols = node.columnRatios.length
+  const numRows = node.rowRatios.length
+
+  const colSum = node.columnRatios.reduce((a, b) => a + b, 0)
+  const rowSum = node.rowRatios.reduce((a, b) => a + b, 0)
+  const normCols = node.columnRatios.map((r) => r / colSum)
+  const normRows = node.rowRatios.map((r) => r / rowSum)
+  const isOpening = node.openingKind === 'opening'
+  const openingShape = node.openingShape ?? 'rectangle'
+  const windowShape =
+    openingShape === 'arch' || openingShape === 'rounded' ? openingShape : 'rectangle'
+  const openingRadiusMode = node.openingRadiusMode ?? 'all'
+  const openingCornerRadii = node.openingCornerRadii ?? [0.15, 0.15, 0.15, 0.15]
+  const cornerRadius = node.cornerRadius ?? 0.15
+  const archHeight = node.archHeight ?? 0.35
+  const openingRevealRadius = node.openingRevealRadius ?? 0.025
+  const maxRoundedRadius = Math.max(0.01, getMaxSharedWindowRadius(node.width, node.height))
+  const displayedWindowType = node.windowType === 'hopper' ? 'awning' : (node.windowType ?? 'fixed')
+  const awningDirection = node.windowType === 'hopper' ? 'down' : (node.awningDirection ?? 'up')
+  const windowType = node.windowType ?? 'fixed'
+  const isFixedWindow = windowType === 'fixed'
+  const isTrackSashWindow =
+    windowType === 'sliding' || windowType === 'single-hung' || windowType === 'double-hung'
+  const isOperableSashWindow =
+    windowType === 'casement' ||
+    windowType === 'awning' ||
+    windowType === 'hopper' ||
+    windowType === 'louvered'
+  const isOperableWindow = isTrackSashWindow || isOperableSashWindow
+  const supportsWindowShape = shapedWindowTypes.has(node.windowType ?? 'fixed')
+  const supportsGrid = isFixedWindow
+  const supportsSill = !silllessWindowTypes.has(node.windowType)
+  const showWindowTypeSection = !isOpening
+  const showWindowShapeSection = !isOpening && supportsWindowShape
+  const showOpeningShapeSection = isOpening
+  const showFrameSection = !isOpening
+  const showGridSection = !isOpening && supportsGrid
+  const showSillSection = !isOpening && supportsSill
+  const showOperationSection = !isOpening && isOperableWindow
+  const showAwningDirectionSection = !isOpening && displayedWindowType === 'awning'
+  const showCasementSection = !isOpening && windowType === 'casement'
+  const showFlipSide = !isOpening
+  const operationLabel = isTrackSashWindow
+    ? windowType === 'sliding'
+      ? '滑动'
+      : '提升'
+    : windowType === 'casement'
+      ? '开启'
+      : windowType === 'louvered'
+        ? '百叶片'
+        : '倾斜'
+
+  const setOperationState = (value: number) => {
+    useInteractive.getState().cancelWindowAnimation(node.id)
+    useInteractive.getState().removeWindowOpenState(node.id)
+    handleUpdate({ operationState: Math.max(0, Math.min(1, value)) })
+  }
+
+  const getDimensionUpdates = (updates: Partial<Pick<WindowNode, 'width' | 'height'>>) => {
+    const nextWidth = updates.width ?? node.width
+    const nextHeight = updates.height ?? node.height
+    const nextUpdates: Partial<WindowNode> = { ...updates }
+
+    if (openingShape === 'rounded') {
+      if (openingRadiusMode === 'individual') {
+        const currentRadii = openingCornerRadii as [number, number, number, number]
+        const nextRadii = normalizeWindowCornerRadii(
+          openingCornerRadii as [number, number, number, number],
+          nextWidth,
+          nextHeight,
+        )
+        if (!isSameRadiusTuple(currentRadii, nextRadii)) {
+          nextUpdates.openingCornerRadii = nextRadii
+        }
+      } else {
+        const nextRadius = Math.min(
+          Math.max(cornerRadius, 0),
+          getMaxSharedWindowRadius(nextWidth, nextHeight),
+        )
+        if (Math.abs(nextRadius - cornerRadius) > 1e-6) {
+          nextUpdates.cornerRadius = nextRadius
+        }
+      }
+    }
+
+    if (openingShape === 'arch') {
+      const nextArchHeight = Math.min(Math.max(archHeight, 0.05), Math.max(nextHeight, 0.05))
+      if (Math.abs(nextArchHeight - archHeight) > 1e-6) {
+        nextUpdates.archHeight = nextArchHeight
+      }
+    }
+
+    return nextUpdates
+  }
+
+  const setOpeningCornerRadius = (index: number, value: number, commit = false) => {
+    const next = [...openingCornerRadii] as [number, number, number, number]
+    next[index] = value
+    if (commit) {
+      commitWindowPreview('openingCornerRadii', next)
+    } else {
+      previewWindowUpdate('openingCornerRadii', next)
+    }
+  }
+
+  const setColumnRatio = (index: number, newVal: number) => {
+    const clamped = Math.max(0.05, Math.min(0.95, newVal))
+    const neighborIdx = index < numCols - 1 ? index + 1 : index - 1
+    const delta = clamped - normCols[index]!
+    const neighborVal = Math.max(0.05, normCols[neighborIdx]! - delta)
+    const newRatios = normCols.map((v, i) => {
+      if (i === index) return clamped
+      if (i === neighborIdx) return neighborVal
+      return v
+    })
+    handleUpdate({ columnRatios: newRatios })
+  }
+
+  const setRowRatio = (index: number, newVal: number) => {
+    const clamped = Math.max(0.05, Math.min(0.95, newVal))
+    const neighborIdx = index < numRows - 1 ? index + 1 : index - 1
+    const delta = clamped - normRows[index]!
+    const neighborVal = Math.max(0.05, normRows[neighborIdx]! - delta)
+    const newRatios = normRows.map((v, i) => {
+      if (i === index) return clamped
+      if (i === neighborIdx) return neighborVal
+      return v
+    })
+    handleUpdate({ rowRatios: newRatios })
+  }
+
+  return (
+    <PanelWrapper
+      icon="/icons/window.webp"
+      onClose={handleClose}
+      title={node.name || '窗户'}
+      width={320}
+    >
+      <PanelSection title="类型">
+        <SegmentedControl
+          onChange={(value) =>
+            handleUpdate({
+              openingKind: value as WindowNode['openingKind'],
+              ...(value === 'opening'
+                ? {
+                    openingShape,
+                    openingRadiusMode,
+                    openingCornerRadii,
+                    cornerRadius,
+                    archHeight,
+                    openingRevealRadius,
+                  }
+                : {}),
+            })
+          }
+          options={[
+            { value: 'window', label: '窗户' },
+            { value: 'opening', label: '洞口' },
+          ]}
+          value={node.openingKind ?? 'window'}
+        />
+      </PanelSection>
+
+      <PanelSection title="图纸信息">
+        <OpeningDocumentationFields
+          constructionType={node.constructionType}
+          dimensionReference={node.dimensionReference}
+          finishOpeningHeight={node.finishOpeningHeight}
+          finishOpeningWidth={node.finishOpeningWidth}
+          mark={node.mark}
+          masonryOpeningHeight={node.masonryOpeningHeight}
+          masonryOpeningWidth={node.masonryOpeningWidth}
+          onChange={handleUpdate}
+          roughOpeningHeight={node.roughOpeningHeight}
+          roughOpeningWidth={node.roughOpeningWidth}
+        />
+      </PanelSection>
+
+      {showWindowTypeSection && (
+        <PanelSection title="窗户类型">
+          <div className="grid grid-cols-2 gap-2 px-1 pt-1">
+            {windowTypeOptions.map((option) => {
+              const isSelected = displayedWindowType === option.value
+              return (
+                <button
+                  className={cn(
+                    'flex min-h-12 items-center rounded-lg border px-3 py-2.5 text-left text-xs transition-colors',
+                    isSelected
+                      ? 'border-orange-400/60 bg-orange-400/10 text-foreground'
+                      : 'border-border/50 bg-[#2C2C2E] text-muted-foreground hover:bg-[#3e3e3e] hover:text-foreground',
+                  )}
+                  key={option.value}
+                  onClick={() =>
+                    handleUpdate({
+                      windowType: option.value,
+                      ...(option.value === 'awning' ? { awningDirection } : {}),
+                      ...(!shapedWindowTypes.has(option.value)
+                        ? { openingShape: 'rectangle' }
+                        : {}),
+                      ...(silllessWindowTypes.has(option.value) ? { sill: false } : {}),
+                    })
+                  }
+                  type="button"
+                >
+                  <span className="truncate font-medium">{option.label}</span>
+                </button>
+              )
+            })}
+          </div>
+          {showAwningDirectionSection && (
+            <div className="mt-2">
+              <SegmentedControl
+                onChange={(value) =>
+                  handleUpdate({
+                    windowType: 'awning',
+                    awningDirection: value as WindowNode['awningDirection'],
+                  })
+                }
+                options={[
+                  { value: 'up', label: '上' },
+                  { value: 'down', label: '下' },
+                ]}
+                value={awningDirection}
+              />
+            </div>
+          )}
+          {showCasementSection && (
+            <div className="mt-2 space-y-2">
+              <SegmentedControl
+                onChange={(value) =>
+                  handleUpdate({ casementStyle: value as WindowNode['casementStyle'] })
+                }
+                options={[
+                  { value: 'single', label: '单扇' },
+                  { value: 'french', label: '双开' },
+                ]}
+                value={node.casementStyle ?? 'single'}
+              />
+              {(node.casementStyle ?? 'single') === 'single' && (
+                <SegmentedControl
+                  onChange={(value) =>
+                    handleUpdate({ hingesSide: value as WindowNode['hingesSide'] })
+                  }
+                  options={[
+                    { value: 'left', label: '左' },
+                    { value: 'right', label: '右' },
+                  ]}
+                  value={node.hingesSide ?? 'left'}
+                />
+              )}
+            </div>
+          )}
+          {showOperationSection && (
+            <div className="mt-2">
+              <SliderControl
+                label={operationLabel}
+                max={1}
+                min={0}
+                onChange={setOperationState}
+                precision={2}
+                restoreOnCommit={false}
+                step={0.05}
+                value={Math.round((node.operationState ?? 0) * 100) / 100}
+              />
+            </div>
+          )}
+        </PanelSection>
+      )}
+
+      <PanelSection title="位置">
+        <SliderControl
+          label={
+            <>
+              X<sub className="ml-[1px] text-[11px] opacity-70">位置</sub>
+            </>
+          }
+          onChange={(v) => handleUpdate({ position: [v, node.position[1], node.position[2]] })}
+          precision={2}
+          step={0.1}
+          unit="m"
+          value={Math.round(node.position[0] * 100) / 100}
+        />
+        <SliderControl
+          label={
+            <>
+              Y<sub className="ml-[1px] text-[11px] opacity-70">位置</sub>
+            </>
+          }
+          onChange={(v) => handleUpdate({ position: [node.position[0], v, node.position[2]] })}
+          precision={2}
+          step={0.1}
+          unit="m"
+          value={Math.round(node.position[1] * 100) / 100}
+        />
+        {showFlipSide && (
+          <div className="px-1 pt-2 pb-1">
+            <ActionButton
+              className="w-full"
+              icon={<FlipHorizontal2 className="h-4 w-4" />}
+              label="翻转朝向"
+              onClick={handleFlip}
+            />
+          </div>
+        )}
+      </PanelSection>
+
+      <PanelSection title="尺寸">
+        <SliderControl
+          label="宽度"
+          min={0}
+          onChange={(v) => handleUpdate(getDimensionUpdates({ width: v }))}
+          precision={2}
+          restoreOnCommit={false}
+          step={0.1}
+          unit="m"
+          value={Math.round(node.width * 100) / 100}
+        />
+        <SliderControl
+          label="高度"
+          min={0}
+          onChange={(v) => handleUpdate(getDimensionUpdates({ height: v }))}
+          precision={2}
+          restoreOnCommit={false}
+          step={0.1}
+          unit="m"
+          value={Math.round(node.height * 100) / 100}
+        />
+      </PanelSection>
+
+      {showWindowShapeSection && (
+        <PanelSection title="顶部形状">
+          <SegmentedControl
+            onChange={(value) =>
+              handleUpdate({
+                openingShape: value as WindowNode['openingShape'],
+                ...(value === 'rounded'
+                  ? {
+                      openingRadiusMode,
+                      openingCornerRadii,
+                      cornerRadius: Math.min(cornerRadius, maxRoundedRadius),
+                      openingRevealRadius,
+                      sill: false,
+                    }
+                  : {}),
+                ...(value === 'arch' ? { archHeight } : {}),
+              })
+            }
+            options={[
+              { value: 'rectangle', label: '矩形' },
+              { value: 'rounded', label: '圆角' },
+              { value: 'arch', label: '拱形' },
+            ]}
+            value={windowShape}
+          />
+          {windowShape === 'rounded' && (
+            <div className="mt-2 flex flex-col gap-1">
+              <SegmentedControl
+                onChange={(value) =>
+                  handleUpdate({ openingRadiusMode: value as WindowNode['openingRadiusMode'] })
+                }
+                options={[
+                  { value: 'all', label: '全部' },
+                  { value: 'individual', label: '单独' },
+                ]}
+                value={openingRadiusMode}
+              />
+              {openingRadiusMode === 'all' ? (
+                <SliderControl
+                  label="转角半径"
+                  max={maxRoundedRadius}
+                  min={0}
+                  onChange={(value) => previewWindowUpdate('cornerRadius', value)}
+                  onCommit={(value) => commitWindowPreview('cornerRadius', value)}
+                  precision={2}
+                  step={0.05}
+                  unit="m"
+                  value={Math.round(cornerRadius * 100) / 100}
+                />
+              ) : (
+                <>
+                  {[
+                    ['左上', 0],
+                    ['右上', 1],
+                    ['右下', 2],
+                    ['左下', 3],
+                  ].map(([label, index]) => (
+                    <SliderControl
+                      key={label}
+                      label={label}
+                      max={maxRoundedRadius}
+                      min={0}
+                      onChange={(value) => setOpeningCornerRadius(index as number, value)}
+                      onCommit={(value) => setOpeningCornerRadius(index as number, value, true)}
+                      precision={2}
+                      step={0.05}
+                      unit="m"
+                      value={Math.round((openingCornerRadii[index as number] ?? 0) * 100) / 100}
+                    />
+                  ))}
+                </>
+              )}
+              <SliderControl
+                label="收口半径"
+                max={0.08}
+                min={0}
+                onChange={(value) => previewWindowUpdate('openingRevealRadius', value)}
+                onCommit={(value) => commitWindowPreview('openingRevealRadius', value)}
+                precision={3}
+                step={0.005}
+                unit="m"
+                value={Math.round(openingRevealRadius * 1000) / 1000}
+              />
+            </div>
+          )}
+          {windowShape === 'arch' && (
+            <div className="mt-2 flex flex-col gap-1">
+              <SliderControl
+                label="拱高"
+                max={Math.max(0.05, node.height)}
+                min={0.05}
+                onChange={(value) => handleUpdate({ archHeight: value })}
+                precision={2}
+                restoreOnCommit={false}
+                step={0.05}
+                unit="m"
+                value={Math.round(archHeight * 100) / 100}
+              />
+            </div>
+          )}
+        </PanelSection>
+      )}
+
+      {showOpeningShapeSection && (
+        <PanelSection title="洞口形状">
+          <SegmentedControl
+            onChange={(value) =>
+              handleUpdate({ openingShape: value as WindowNode['openingShape'] })
+            }
+            options={[
+              { value: 'rectangle', label: '矩形' },
+              { value: 'rounded', label: '圆角' },
+              { value: 'arch', label: '拱形' },
+            ]}
+            value={openingShape}
+          />
+          {openingShape === 'rounded' && (
+            <div className="mt-2 flex flex-col gap-1">
+              <SegmentedControl
+                onChange={(value) =>
+                  handleUpdate({ openingRadiusMode: value as WindowNode['openingRadiusMode'] })
+                }
+                options={[
+                  { value: 'all', label: '全部' },
+                  { value: 'individual', label: '单独' },
+                ]}
+                value={openingRadiusMode}
+              />
+              {openingRadiusMode === 'all' ? (
+                <SliderControl
+                  label="转角半径"
+                  max={maxRoundedRadius}
+                  min={0}
+                  onChange={(value) => previewWindowUpdate('cornerRadius', value)}
+                  onCommit={(value) => commitWindowPreview('cornerRadius', value)}
+                  precision={2}
+                  step={0.05}
+                  unit="m"
+                  value={Math.round(cornerRadius * 100) / 100}
+                />
+              ) : (
+                <>
+                  {[
+                    ['左上', 0],
+                    ['右上', 1],
+                    ['右下', 2],
+                    ['左下', 3],
+                  ].map(([label, index]) => (
+                    <SliderControl
+                      key={label}
+                      label={label}
+                      max={maxRoundedRadius}
+                      min={0}
+                      onChange={(value) => setOpeningCornerRadius(index as number, value)}
+                      onCommit={(value) => setOpeningCornerRadius(index as number, value, true)}
+                      precision={2}
+                      step={0.05}
+                      unit="m"
+                      value={Math.round((openingCornerRadii[index as number] ?? 0) * 100) / 100}
+                    />
+                  ))}
+                </>
+              )}
+              <SliderControl
+                label="收口半径"
+                max={0.08}
+                min={0}
+                onChange={(value) => previewWindowUpdate('openingRevealRadius', value)}
+                onCommit={(value) => commitWindowPreview('openingRevealRadius', value)}
+                precision={3}
+                step={0.005}
+                unit="m"
+                value={Math.round(openingRevealRadius * 1000) / 1000}
+              />
+            </div>
+          )}
+          {openingShape === 'arch' && (
+            <div className="mt-2 flex flex-col gap-1">
+              <SliderControl
+                label="拱高"
+                max={Math.max(0.05, node.height)}
+                min={0.05}
+                onChange={(value) => handleUpdate({ archHeight: value })}
+                precision={2}
+                restoreOnCommit={false}
+                step={0.05}
+                unit="m"
+                value={Math.round(archHeight * 100) / 100}
+              />
+            </div>
+          )}
+        </PanelSection>
+      )}
+
+      {!isOpening && (
+        <>
+          {showFrameSection && (
+            <PanelSection title="框架">
+              <SliderControl
+                label="厚度"
+                min={0}
+                onChange={(v) => handleUpdate({ frameThickness: v })}
+                precision={3}
+                step={0.01}
+                unit="m"
+                value={Math.round(node.frameThickness * 1000) / 1000}
+              />
+              <SliderControl
+                label="深度"
+                min={0}
+                onChange={(v) => handleUpdate({ frameDepth: v })}
+                precision={3}
+                step={0.01}
+                unit="m"
+                value={Math.round(node.frameDepth * 1000) / 1000}
+              />
+            </PanelSection>
+          )}
+
+          {showGridSection && (
+            <PanelSection title="网格">
+              <SliderControl
+                label="列"
+                max={8}
+                min={1}
+                onChange={(v) => {
+                  const n = Math.max(1, Math.min(8, Math.round(v)))
+                  handleUpdate({ columnRatios: Array(n).fill(1 / n) })
+                }}
+                precision={0}
+                step={1}
+                value={numCols}
+              />
+              <SliderControl
+                label="行数"
+                max={8}
+                min={1}
+                onChange={(v) => {
+                  const n = Math.max(1, Math.min(8, Math.round(v)))
+                  handleUpdate({ rowRatios: Array(n).fill(1 / n) })
+                }}
+                precision={0}
+                step={1}
+                value={numRows}
+              />
+
+              {numCols > 1 && (
+                <div className="mt-2 flex flex-col gap-1">
+                  <div className="mb-1 px-1 font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
+                    列宽
+                  </div>
+                  {normCols.map((ratio, i) => (
+                    <SliderControl
+                      key={`c-${i}`}
+                      label={`列 ${i + 1}`}
+                      max={95}
+                      min={5}
+                      onChange={(v) => setColumnRatio(i, v / 100)}
+                      precision={1}
+                      step={1}
+                      unit="%"
+                      value={Math.round(ratio * 100 * 10) / 10}
+                    />
+                  ))}
+                  <div className="mt-1 border-border/50 border-t pt-1">
+                    <SliderControl
+                      label="分隔条"
+                      max={0.1}
+                      min={0.005}
+                      onChange={(v) => handleUpdate({ columnDividerThickness: v })}
+                      precision={3}
+                      step={0.01}
+                      unit="m"
+                      value={Math.round((node.columnDividerThickness ?? 0.03) * 1000) / 1000}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {numRows > 1 && (
+                <div className="mt-2 flex flex-col gap-1">
+                  <div className="mb-1 px-1 font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
+                    行高
+                  </div>
+                  {normRows.map((ratio, i) => (
+                    <SliderControl
+                      key={`r-${i}`}
+                      label={`行 ${i + 1}`}
+                      max={95}
+                      min={5}
+                      onChange={(v) => setRowRatio(i, v / 100)}
+                      precision={1}
+                      step={1}
+                      unit="%"
+                      value={Math.round(ratio * 100 * 10) / 10}
+                    />
+                  ))}
+                  <div className="mt-1 border-border/50 border-t pt-1">
+                    <SliderControl
+                      label="分隔条"
+                      max={0.1}
+                      min={0.005}
+                      onChange={(v) => handleUpdate({ rowDividerThickness: v })}
+                      precision={3}
+                      step={0.01}
+                      unit="m"
+                      value={Math.round((node.rowDividerThickness ?? 0.03) * 1000) / 1000}
+                    />
+                  </div>
+                </div>
+              )}
+            </PanelSection>
+          )}
+
+          {showSillSection && (
+            <PanelSection title="窗台">
+              <ToggleControl
+                checked={node.sill}
+                label="启用窗台"
+                onChange={(checked) => handleUpdate({ sill: checked })}
+              />
+              {node.sill && (
+                <div className="mt-1 flex flex-col gap-1">
+                  <SliderControl
+                    label="深度"
+                    min={0}
+                    onChange={(v) => handleUpdate({ sillDepth: v })}
+                    precision={3}
+                    step={0.01}
+                    unit="m"
+                    value={Math.round(node.sillDepth * 1000) / 1000}
+                  />
+                  <SliderControl
+                    label="厚度"
+                    min={0}
+                    onChange={(v) => handleUpdate({ sillThickness: v })}
+                    precision={3}
+                    step={0.01}
+                    unit="m"
+                    value={Math.round(node.sillThickness * 1000) / 1000}
+                  />
+                </div>
+              )}
+            </PanelSection>
+          )}
+        </>
+      )}
+
+      <PanelSection title="操作">
+        <ActionGroup>
+          <ActionButton icon={<Move className="h-3.5 w-3.5" />} label="移动" onClick={handleMove} />
+          <ActionButton
+            icon={<Copy className="h-3.5 w-3.5" />}
+            label="复制"
+            onClick={handleDuplicate}
+          />
+          <ActionButton
+            className="hover:bg-red-500/20"
+            icon={<Trash2 className="h-3.5 w-3.5 text-red-400" />}
+            label="删除"
+            onClick={handleDelete}
+          />
+        </ActionGroup>
+      </PanelSection>
+    </PanelWrapper>
+  )
+}

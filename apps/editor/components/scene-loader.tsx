@@ -1,0 +1,297 @@
+'use client'
+
+// Node registry bootstrap is loaded once at the root via
+// `<ClientBootstrap>` in `app/layout.tsx` — no per-page side-effect
+// import here.
+import { applySceneGraphToEditor, Editor, type SceneGraph } from '@pascal-app/editor'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
+import { type PersistedSceneGraph, sceneGraphSignature } from '@/lib/scene-signature'
+import { cn } from '@/lib/utils'
+import { CameraRehearsalSystem } from './camera-rehearsal-system'
+import { CameraMonitor } from './camera-studio/camera-monitor'
+import { CameraStageFloorplan } from './camera-studio/camera-stage-floorplan'
+import { CameraStageSystem } from './camera-studio/camera-stage-system'
+import { CameraStudioDock } from './camera-studio/dock'
+import { CameraStudioRuntime } from './camera-studio/runtime'
+import { LightingFloorplan } from './lighting/floorplan'
+import { LightingPersistence } from './lighting/persistence'
+import { LightingSystem } from './lighting/system'
+import { RemountPreviewSystem } from './remount-preview-system'
+import { StageOverviewPanel } from './stage-overview-panel'
+import { StudioNavigation } from './studio-navigation'
+import { useStudioSidebar } from './studio-sidebar'
+import { CommunityViewerToolbarLeft, CommunityViewerToolbarRight } from './viewer-toolbar'
+
+export interface SceneMeta {
+  id: string
+  name: string
+  projectId: string | null
+  thumbnailUrl: string | null
+  version: number
+  createdAt: string
+  updatedAt: string
+  ownerId: string | null
+  sizeBytes: number
+  nodeCount: number
+}
+
+interface SceneLoaderProps {
+  initialScene: SceneGraph
+  meta: SceneMeta
+}
+
+interface LiveSceneEvent {
+  eventId: number
+  sceneId: string
+  version: number
+  kind: string
+  createdAt: string
+  graph: PersistedSceneGraph
+}
+
+/**
+ * `?disable=postFx` is read at post-processing module load, so it only takes
+ * effect on a full page load. Reading it here as well lets the flag survive a
+ * client-side navigation, since `disablePostFx` is a live prop.
+ */
+function isLightPreviewQuery(searchParams: URLSearchParams): boolean {
+  const disable = searchParams.get('disable') ?? ''
+  return disable.split(',').some((p) => p.trim() === 'postFx')
+}
+
+export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
+  const { group, onGroupChange, sidebarTabs } = useStudioSidebar(meta.id)
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const versionRef = useRef(meta.version)
+  // Node count of the graph the server is known to hold. Guards against the
+  // autosave wipe class: a save fired from a not-yet-hydrated (empty) editor
+  // store must never overwrite a populated server copy.
+  const serverNodeCountRef = useRef(meta.nodeCount)
+  const lastRemoteGraphJsonRef = useRef<string | null>(null)
+  const suppressRemoteSaveUntilRef = useRef(0)
+  const [conflict, setConflict] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  const lightPreview = isLightPreviewQuery(searchParams)
+
+  const handleLoad = useCallback(async () => initialScene, [initialScene])
+
+  const handleSave = useCallback(
+    async (graph: SceneGraph, options?: { keepalive?: boolean }) => {
+      const graphJson = sceneGraphSignature(graph)
+      const isRecentRemoteApply = Date.now() < suppressRemoteSaveUntilRef.current
+      if (lastRemoteGraphJsonRef.current === graphJson) {
+        lastRemoteGraphJsonRef.current = null
+        suppressRemoteSaveUntilRef.current = 0
+        return
+      }
+      if (isRecentRemoteApply) return
+
+      // Wipe guard: never PUT an empty graph over a populated server copy.
+      // An empty serialization here means the editor store was not hydrated
+      // (load in flight or failed), not that the user deleted everything.
+      const outgoingNodeCount = countGraphNodes(graph)
+      if (isEmptyGraphOverwrite(outgoingNodeCount, serverNodeCountRef.current)) {
+        console.error(
+          `[scene-loader] Blocked autosave: refusing to overwrite scene ${meta.id} ` +
+            `(${serverNodeCountRef.current} nodes on the server) with an empty graph.`,
+        )
+        setSaveError('已阻止自动保存：场景尚未加载完成，请稍后重试。')
+        return
+      }
+
+      try {
+        const response = await fetch(`/api/scenes/${meta.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'If-Match': String(versionRef.current),
+          },
+          body: JSON.stringify({ name: meta.name, graph }),
+          // `keepalive` lets the request outlive a page unload (the autosave
+          // flush on refresh/close). Browsers cap keepalive bodies at 64KB, so
+          // only the unload flush opts in — normal debounced saves omit it and
+          // can carry arbitrarily large scenes.
+          keepalive: options?.keepalive,
+        })
+
+        if (response.status === 409) {
+          const body = (await response.json().catch(() => null)) as { error?: string } | null
+          if (body?.error === 'empty_graph_rejected') {
+            // Server-side wipe guard (defense in depth behind the client-side
+            // check above) — not a concurrent-session conflict.
+            console.error(
+              `[scene-loader] Server rejected an empty-graph save for scene ${meta.id}.`,
+            )
+            setSaveError('已阻止自动保存：场景尚未加载完成，请稍后重试。')
+            return
+          }
+          setConflict(true)
+          return
+        }
+
+        if (!response.ok) {
+          setSaveError(`保存失败（${response.status}），请检查连接后重试。`)
+          return
+        }
+
+        const next = (await response.json()) as SceneMeta
+        versionRef.current = next.version
+        serverNodeCountRef.current = next.nodeCount
+        setSaveError(null)
+      } catch (error) {
+        setSaveError(
+          error instanceof Error ? `保存失败：${error.message}` : '保存失败，请稍后重试。',
+        )
+      }
+    },
+    [meta.id, meta.name],
+  )
+
+  useEffect(() => {
+    const source = new EventSource(`/api/scenes/${meta.id}/events`)
+
+    source.addEventListener('scene', (event) => {
+      let payload: LiveSceneEvent
+      try {
+        payload = JSON.parse((event as MessageEvent<string>).data) as LiveSceneEvent
+      } catch {
+        return
+      }
+      if (payload.sceneId !== meta.id) return
+      if (payload.version <= versionRef.current) return
+
+      versionRef.current = payload.version
+      serverNodeCountRef.current = countGraphNodes(payload.graph)
+      lastRemoteGraphJsonRef.current = sceneGraphSignature(payload.graph)
+      suppressRemoteSaveUntilRef.current = Date.now() + 2500
+      applySceneGraphToEditor(payload.graph)
+      setConflict(false)
+      setSaveError(null)
+    })
+
+    source.addEventListener('error', () => {
+      if (source.readyState === EventSource.CLOSED) {
+        setSaveError('场景实时连接已断开，请刷新页面重新连接。')
+      }
+    })
+
+    return () => source.close()
+  }, [meta.id])
+
+  const handleThumb = useCallback(
+    async (_blob: Blob) => {
+      // TODO(phase7): upload thumbnail via POST /api/scenes/[id]/thumbnail.
+      // Stub endpoint is not yet implemented in v0.1 — skip upload for now.
+      await fetch(`/api/scenes/${meta.id}/thumbnail`, {
+        method: 'POST',
+        // Intentionally no body — endpoint is a stub.
+      }).catch(() => {
+        // Swallow errors silently; thumbnail upload is best-effort.
+      })
+    },
+    [meta.id],
+  )
+
+  return (
+    <div className="studio-workspace" data-studio-group={group}>
+      <LightingPersistence sceneId={meta.id} />
+      {conflict && (
+        <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-border bg-background p-4 shadow-xl">
+          <h2 className="font-semibold text-sm">此场景已在其他窗口更新</h2>
+          <p className="mt-1 text-muted-foreground text-xs">
+            当前修改尚未保存。重新加载以获取最新版本。
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <button
+              className="rounded-md border border-border bg-accent px-3 py-1.5 font-medium text-xs hover:bg-accent/80"
+              onClick={() => router.refresh()}
+              type="button"
+            >
+              重新加载
+            </button>
+            <button
+              className="rounded-md border border-border bg-background px-3 py-1.5 font-medium text-xs hover:bg-accent/40"
+              onClick={() => setConflict(false)}
+              type="button"
+            >
+              关闭提示
+            </button>
+          </div>
+        </div>
+      )}
+      {saveError && !conflict && (
+        <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-destructive/50 bg-background p-3 shadow-xl">
+          <p className="font-medium text-destructive text-xs">{saveError}</p>
+        </div>
+      )}
+      <div className="relative min-h-0 flex-1">
+        <Editor
+          navbarSlot={
+            <StudioNavigation
+              sceneName={meta.name}
+              group={group}
+              onGroupChange={onGroupChange}
+              actions={
+                <button
+                  aria-pressed={lightPreview}
+                  className={cn(
+                    'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
+                    lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
+                  )}
+                  onClick={() =>
+                    router.push(
+                      lightPreview ? `/scene/${meta.id}` : `/scene/${meta.id}?disable=postFx`,
+                    )
+                  }
+                  title="关闭后期处理以降低显卡负担；环境光遮蔽和选择轮廓将停用"
+                  type="button"
+                >
+                  轻量显示
+                </button>
+              }
+            />
+          }
+          disablePostFx={lightPreview}
+          layoutVersion="v2"
+          onLoad={handleLoad}
+          onSave={handleSave}
+          onThumbnailCapture={handleThumb}
+          projectId={meta.projectId ?? 'default'}
+          viewerRuntimeSlot={
+            <>
+              <CameraStudioRuntime />
+              <LightingSystem enabled={group === 'director'} sceneId={meta.id} />
+            </>
+          }
+          viewerSceneSlot={
+            <>
+              <RemountPreviewSystem sceneId={meta.id} />
+              <CameraStageSystem enabled={group === 'director'} />
+            </>
+          }
+          studioSceneSlot={<CameraRehearsalSystem sceneId={meta.id} />}
+          floorplanSceneSlot={
+            <>
+              <CameraStageFloorplan enabled={group === 'director'} />
+              <LightingFloorplan enabled={group === 'director'} sceneId={meta.id} />
+            </>
+          }
+          sidebarTabs={sidebarTabs}
+          sidebarTopSlot={<StageOverviewPanel key={meta.id} sceneId={meta.id} />}
+          showPluginPanels={false}
+          viewerToolbarLeft={<CommunityViewerToolbarLeft />}
+          viewerToolbarRight={<CommunityViewerToolbarRight />}
+        />
+        <CameraMonitor
+          enabled={group === 'director'}
+          className="absolute right-4 bottom-4 z-30 max-w-[calc(100%-400px)]"
+        />
+      </div>
+      <CameraStudioDock sceneId={meta.id} />
+    </div>
+  )
+}

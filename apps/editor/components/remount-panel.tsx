@@ -1,0 +1,716 @@
+'use client'
+
+import { useScene } from '@pascal-app/core'
+import {
+  createStageFrame,
+  toFrameCoordinates,
+  type Vec3,
+  type VenueProfile,
+} from '@pascal-app/core/remount'
+import { useEditor, useInteractionScope } from '@pascal-app/editor'
+import { useEffect, useMemo, useState } from 'react'
+import { useCameraDirectorState } from '@/lib/camera-director'
+import {
+  applyRemount,
+  canUndoLastRemount,
+  captureProductionLayout,
+  getRemountCandidates,
+  initializeRemount,
+  isRemountPreviewCurrent,
+  previewRemount,
+  reloadRemount,
+  saveRemountConfig,
+  undoLastRemount,
+  updateRemountInput,
+  useRemountDraft,
+} from '@/lib/remount-scene'
+import { useCameraStudio } from './camera-studio/store'
+import './remount.css'
+
+const STEPS = ['源场地', '目标场地', '空间校准', '映射预览', '实体落位', '复台验收']
+const xyz = (point: Vec3) => point.map((value) => value.toFixed(3)).join(' / ')
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  min,
+}: {
+  label: string
+  value: number
+  onChange: (value: number) => void
+  min?: number
+}) {
+  const [text, setText] = useState(String(value))
+  useEffect(() => setText(String(value)), [value])
+  const number = Number(text)
+  const valid =
+    text.trim() !== '' && Number.isFinite(number) && (min === undefined || number >= min)
+  return (
+    <label className="rm-field">
+      <span>{label}</span>
+      <input
+        type="number"
+        step="0.01"
+        min={min}
+        value={text}
+        aria-invalid={!valid}
+        onChange={(event) => {
+          const next = event.target.value
+          useRemountDraft.setState({ plan: null, previewNodes: null })
+          setText(next)
+          if (
+            next.trim() &&
+            Number.isFinite(Number(next)) &&
+            (min === undefined || Number(next) >= min)
+          )
+            onChange(Number(next))
+        }}
+        onBlur={() => {
+          if (!valid) setText(String(value))
+        }}
+      />
+    </label>
+  )
+}
+
+function VenueFields({
+  venue,
+  onChange,
+}: {
+  venue: VenueProfile
+  onChange: (venue: VenueProfile) => void
+}) {
+  return (
+    <>
+      <label className="rm-field">
+        <span>场地名称</span>
+        <input
+          value={venue.name}
+          onChange={(event) => {
+            if (event.target.value.trim()) onChange({ ...venue, name: event.target.value })
+          }}
+        />
+      </label>
+      <div className="rm-grid-three">
+        {(['width', 'depth', 'height'] as const).map((key, index) => (
+          <NumberField
+            key={key}
+            label={`${['宽', '深', '高'][index]} / 米`}
+            value={venue.bounds[key]}
+            min={0.01}
+            onChange={(value) => onChange({ ...venue, bounds: { ...venue.bounds, [key]: value } })}
+          />
+        ))}
+      </div>
+    </>
+  )
+}
+
+function AnchorFields({
+  venue,
+  onChange,
+}: {
+  venue: VenueProfile
+  onChange: (venue: VenueProfile) => void
+}) {
+  return (
+    <fieldset className="rm-anchors">
+      <legend>{venue.name}</legend>
+      {venue.anchors.map((anchor, index) => (
+        <div key={anchor.id}>
+          <p>{['台口中点 · CL / PL', '舞台右侧基准', '舞台后方基准'][index]}</p>
+          <div className="rm-grid-three">
+            {(['X', 'Y', 'Z'] as const).map((axis, axisIndex) => (
+              <NumberField
+                key={axis}
+                label={`${axis} / 米`}
+                value={anchor.position[axisIndex]!}
+                onChange={(value) => {
+                  const anchors: VenueProfile['anchors'] = structuredClone(venue.anchors)
+                  anchors[index]!.position[axisIndex] = value
+                  // Keep incomplete three-point edits in the draft; preview validates the full frame.
+                  let frame = venue.frame
+                  try {
+                    frame = createStageFrame(anchors)
+                  } catch {
+                    /* The next coordinate may complete the triangle. */
+                  }
+                  onChange({ ...venue, anchors, frame })
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </fieldset>
+  )
+}
+
+export function RemountPanel({ sceneId }: { sceneId: string }) {
+  const draft = useRemountDraft()
+  const nodes = useScene((state) => state.nodes)
+  const roots = useScene((state) => state.rootNodeIds)
+  const readOnly = useScene((state) => state.readOnly)
+  const exclusive = useEditor(
+    (state) => state.isCaptureMode || state.isFirstPersonMode || state.isPreviewMode,
+  )
+  const editing = useInteractionScope((state) => state.scope.kind !== 'idle')
+  const playing = useCameraStudio((state) => state.playing || state.previewing)
+  const director = useCameraDirectorState(sceneId)
+  const blocked =
+    readOnly || exclusive || editing || playing || director.transport.status !== 'idle'
+  const [step, setStep] = useState(0)
+  const [selected, setSelected] = useState<string[]>([])
+  const [message, setMessage] = useState('')
+  const [error, setError] = useState('')
+  const [reviewed, setReviewed] = useState(false)
+  const [pathText, setPathText] = useState('')
+  const candidates = useMemo(() => {
+    void nodes
+    return getRemountCandidates()
+  }, [nodes])
+  const scans = Object.values(nodes).filter((node) => node.type === 'scan')
+  const ready = draft.sceneKey === JSON.stringify([sceneId, roots])
+
+  useEffect(() => {
+    if (roots.length === 0) return
+    try {
+      initializeRemount(sceneId)
+      const current = useRemountDraft.getState()
+      setSelected(current.layout?.objectNodeIds ?? [])
+      setPathText(current.layout?.paths[0]?.points.map((point) => point.join(' ')).join('\n') ?? '')
+      setError('')
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : '复台初始化失败。')
+    }
+  }, [sceneId, roots])
+
+  const run = (action: () => void) => {
+    setError('')
+    setMessage('')
+    try {
+      if (blocked) throw new Error('请先结束播放、取景或编辑操作，并退出只读预览。')
+      action()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : '操作未完成。')
+    }
+  }
+  const changeVenue = (key: 'sourceVenue' | 'targetVenue', venue: VenueProfile) =>
+    run(() => {
+      updateRemountInput(sceneId, { [key]: venue })
+      setReviewed(false)
+    })
+  const makePreview = () =>
+    run(() => {
+      previewRemount(sceneId)
+      useEditor.getState().setViewMode('3d')
+      setReviewed(false)
+      setStep(3)
+    })
+  const plan = draft.plan
+  const errors = plan?.conflicts.filter((conflict) => conflict.severity === 'error') ?? []
+  const warnings = plan?.conflicts.filter((conflict) => conflict.severity === 'warning') ?? []
+  const stale = plan !== null && !isRemountPreviewCurrent(sceneId)
+  const canApply =
+    ready &&
+    plan !== null &&
+    !stale &&
+    plan.calibration.valid &&
+    errors.length === 0 &&
+    reviewed &&
+    !blocked
+
+  return (
+    <div className="rm-panel">
+      <header className="rm-heading">
+        <span>REMOUNT / 01</span>
+        <h2>复台</h2>
+        <p>让同一场戏，抵达另一个空间。</p>
+      </header>
+      <nav className="rm-steps" aria-label="复台步骤">
+        {STEPS.map((label, index) => (
+          <button
+            key={label}
+            type="button"
+            aria-current={step === index ? 'step' : undefined}
+            onClick={() => setStep(index)}
+          >
+            <span>0{index + 1}</span>
+            {label}
+          </button>
+        ))}
+      </nav>
+      {error && (
+        <p className="rm-notice rm-error" role="alert">
+          {error}
+        </p>
+      )}
+      {message && (
+        <p className="rm-notice" role="status">
+          {message}
+        </p>
+      )}
+      {blocked && (
+        <p className="rm-notice">当前模式不可修改复台。请结束取景、播放或正在进行的编辑。</p>
+      )}
+      {ready && (
+        <fieldset disabled={blocked} className="rm-content">
+          <h3>
+            0{step + 1} / {STEPS[step]}
+          </h3>
+          {step === 0 && (
+            <>
+              <VenueFields
+                venue={draft.sourceVenue}
+                onChange={(venue) => changeVenue('sourceVenue', venue)}
+              />
+              <p className="rm-help">
+                选取本次搬运的道具。子物件随组合一起记录，建筑结构留在原场地。
+              </p>
+              <div className="rm-candidates">
+                {candidates.length === 0 && <p>请先在搭台中放置物件或块体。</p>}
+                {candidates.map((candidate) => (
+                  <label key={candidate.nodeId} className="rm-candidate">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(candidate.nodeId)}
+                      disabled={!candidate.eligible}
+                      onChange={(event) =>
+                        setSelected((current) =>
+                          event.target.checked
+                            ? [...current, candidate.nodeId]
+                            : current.filter((id) => id !== candidate.nodeId),
+                        )
+                      }
+                    />
+                    <span>
+                      {candidate.name}
+                      {candidate.reason && <small>{candidate.reason}</small>}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="rm-actions">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelected(
+                      candidates
+                        .filter((candidate) => candidate.eligible)
+                        .map((candidate) => candidate.nodeId),
+                    )
+                  }
+                >
+                  全选可搬运物件
+                </button>
+                <button type="button" onClick={() => setSelected([])}>
+                  清空选择
+                </button>
+              </div>
+              <button
+                className="rm-primary"
+                type="button"
+                onClick={() =>
+                  run(() => {
+                    captureProductionLayout(sceneId, selected)
+                    setMessage(
+                      `已记录 ${useRemountDraft.getState().sourceSnapshots.length} 个物件的原始位置。`,
+                    )
+                    setStep(1)
+                  })
+                }
+              >
+                记录演出布置 →
+              </button>
+              {draft.layout && (
+                <p className="rm-help">
+                  已记录 {draft.sourceSnapshots.length}{' '}
+                  个物件。重新记录会以当前场景为源，替换旧快照。
+                </p>
+              )}
+            </>
+          )}
+          {step === 1 && (
+            <>
+              <VenueFields
+                venue={draft.targetVenue}
+                onChange={(venue) => changeVenue('targetVenue', venue)}
+              />
+              <label className="rm-field">
+                <span>目标扫描参考层（可选）</span>
+                <select
+                  value={draft.targetVenue.scanNodeId ?? ''}
+                  onChange={(event) =>
+                    changeVenue('targetVenue', {
+                      ...draft.targetVenue,
+                      scanNodeId: event.target.value || undefined,
+                    })
+                  }
+                >
+                  <option value="">仅使用手工场地边界</option>
+                  {scans.map((scan) => (
+                    <option key={scan.id} value={scan.id}>
+                      {scan.name || '扫描参考'}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="rm-help">
+                场地宽度以中线 CL 为中心，深度从台口线 PL 向台后延伸。扫描层仅用于目视参考。
+                请开启扫描参考的模型显示，并等待加载完成。
+              </p>
+              <div className="rm-metric">
+                <span>空间映射比例</span>
+                <strong>1 : 1</strong>
+                <small>实际尺寸保持不变</small>
+              </div>
+              <button className="rm-primary" type="button" onClick={() => setStep(2)}>
+                设置三个对应基准点 →
+              </button>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <p className="rm-help">
+                在两个场地输入同一套基准三角形：台口中点、右侧基准、后方基准。默认两条基线各 1
+                米，不能用不同场地的边角代替对应点。X/Z 为地面，Y 向上。
+              </p>
+              <AnchorFields
+                venue={draft.sourceVenue}
+                onChange={(venue) => changeVenue('sourceVenue', venue)}
+              />
+              <AnchorFields
+                venue={draft.targetVenue}
+                onChange={(venue) => changeVenue('targetVenue', venue)}
+              />
+              <div className="rm-grid-two">
+                <NumberField
+                  label="校准容差 / 米"
+                  min={0}
+                  value={draft.tolerance}
+                  onChange={(tolerance) => run(() => updateRemountInput(sceneId, { tolerance }))}
+                />
+                <NumberField
+                  label="安全净距 / 米"
+                  min={0}
+                  value={draft.clearance}
+                  onChange={(clearance) => run(() => updateRemountInput(sceneId, { clearance }))}
+                />
+              </div>
+              <p className="rm-help">
+                当前只接受水平、向上的舞台坐标系。容差用于检验输入点，不代表现场测量精度。
+              </p>
+              <button className="rm-primary" type="button" onClick={makePreview}>
+                校准并生成预览 →
+              </button>
+            </>
+          )}
+          {step === 3 && (
+            <>
+              <button className="rm-primary" type="button" onClick={makePreview}>
+                {plan ? '重新计算并查看全景' : '生成映射预览'}
+              </button>
+              <div className="rm-legend">
+                <span data-tone="source">蓝 · 原位置</span>
+                <span data-tone="safe">绿 · 可落位</span>
+                <span data-tone="warning">黄 · 净距提示</span>
+                <span data-tone="error">红 · 冲突</span>
+                <span>灰 · 场地参考</span>
+              </div>
+              <p className="rm-help">
+                Ghost 为道具尺寸包围盒。虚线为手工走位线；不会在确认前改动场景节点。
+              </p>
+              {draft.obstacleWarnings.map((warning) => (
+                <p className="rm-notice" key={warning}>
+                  {warning}
+                </p>
+              ))}
+              {plan && (
+                <>
+                  <div className="rm-metric">
+                    <span>总体校准误差 RMS</span>
+                    <strong>
+                      {(plan.calibration.rmsError * 1000).toFixed(2)} <small>mm</small>
+                    </strong>
+                    <small>
+                      最大 {(plan.calibration.maxError * 1000).toFixed(2)} mm ·{' '}
+                      {plan.calibration.valid ? '通过' : '超过容差，禁止应用'}
+                    </small>
+                  </div>
+                  <p className="rm-notice">
+                    {plan.placements.length} 个物件 · {errors.length} 项冲突 · {warnings.length}{' '}
+                    项提示
+                  </p>
+                  {stale && (
+                    <p className="rm-notice rm-error">场景已变化，预览过期。请重新计算。</p>
+                  )}
+                  {plan.placements.map((placement) => {
+                    const local = toFrameCoordinates(
+                      placement.targetPosition,
+                      draft.targetVenue.frame,
+                    )
+                    const conflicts = plan.conflicts.filter(
+                      (conflict) =>
+                        conflict.nodeId === placement.nodeId ||
+                        conflict.otherNodeId === placement.nodeId,
+                    )
+                    return (
+                      <details className="rm-placement" key={placement.nodeId}>
+                        <summary>
+                          {placement.name}
+                          <span>
+                            {conflicts.some((conflict) => conflict.severity === 'error')
+                              ? '冲突'
+                              : conflicts.length
+                                ? '提示'
+                                : '可落位'}
+                          </span>
+                        </summary>
+                        <dl>
+                          <dt>原位置 X / Y / Z · 米</dt>
+                          <dd>{xyz(placement.sourcePosition)}</dd>
+                          <dt>目标位置 X / Y / Z · 米</dt>
+                          <dd>{xyz(placement.targetPosition)}</dd>
+                          <dt>距 CL / 距 PL · 米（有向）</dt>
+                          <dd>
+                            {local[0].toFixed(3)} / {local[2].toFixed(3)}
+                          </dd>
+                          <dt>原旋转 X / Y / Z · 度</dt>
+                          <dd>
+                            {xyz(
+                              placement.sourceRotation.map(
+                                (value) => (value * 180) / Math.PI,
+                              ) as Vec3,
+                            )}
+                          </dd>
+                          <dt>目标旋转 X / Y / Z · 度</dt>
+                          <dd>
+                            {xyz(
+                              placement.targetRotation.map(
+                                (value) => (value * 180) / Math.PI,
+                              ) as Vec3,
+                            )}
+                          </dd>
+                        </dl>
+                        {conflicts.map((conflict, index) => (
+                          <p className="rm-notice" key={`${conflict.type}-${index}`}>
+                            {conflict.message}
+                          </p>
+                        ))}
+                      </details>
+                    )
+                  })}
+                  <button className="rm-primary" type="button" onClick={() => setStep(4)}>
+                    检查实体落位 →
+                  </button>
+                </>
+              )}
+              {draft.layout && (
+                <details className="rm-placement">
+                  <summary>走位线与物件表示</summary>
+                  <label className="rm-field">
+                    <span>一条走位线，每行 X Y Z（米）</span>
+                    <textarea
+                      rows={4}
+                      value={pathText}
+                      placeholder={'0 0 0\n1 0 -1'}
+                      onChange={(event) => {
+                        setPathText(event.target.value)
+                        useRemountDraft.setState({ plan: null, previewNodes: null })
+                      }}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      run(() => {
+                        const points = pathText.trim()
+                          ? pathText
+                              .trim()
+                              .split(/\n/)
+                              .map((line) =>
+                                line
+                                  .trim()
+                                  .split(/[\s,，]+/)
+                                  .map(Number),
+                              )
+                          : []
+                        if (
+                          points.length &&
+                          (points.length < 2 ||
+                            points.some(
+                              (point) =>
+                                point.length !== 3 ||
+                                point.some((value) => !Number.isFinite(value)),
+                            ))
+                        )
+                          throw new Error('走位线至少需要两点，每行三个有效坐标。')
+                        updateRemountInput(sceneId, {
+                          paths: points.length
+                            ? [{ id: 'manual-path', name: '演员走位', points: points as Vec3[] }]
+                            : [],
+                        })
+                        setMessage('走位线已更新，请重新生成预览。')
+                      })
+                    }
+                  >
+                    更新走位线
+                  </button>
+                  {draft.sourceSnapshots.map((snapshot) => (
+                    <label className="rm-field" key={snapshot.nodeId}>
+                      <span>{snapshot.name}</span>
+                      <select
+                        value={snapshot.representation}
+                        onChange={(event) =>
+                          run(() =>
+                            updateRemountInput(sceneId, {
+                              representations: {
+                                [snapshot.nodeId]: event.target.value as
+                                  | 'physical'
+                                  | 'proxy'
+                                  | 'virtual',
+                              },
+                            }),
+                          )
+                        }
+                      >
+                        <option value="physical">实体道具</option>
+                        <option value="proxy">替代道具</option>
+                        <option value="virtual">虚拟参考</option>
+                      </select>
+                    </label>
+                  ))}
+                </details>
+              )}
+            </>
+          )}
+          {step === 4 && (
+            <>
+              <p className="rm-help">
+                确认后，将预览中的全部物件作为一次操作写入场景，并保存场地、校准点与原始布局。已有场景自动保存继续生效。
+              </p>
+              {!plan && <p className="rm-notice">请先生成映射预览。</p>}
+              {plan && (
+                <>
+                  <p className="rm-notice">
+                    {plan.placements.length} 个物件 · 比例 1 : 1 · {errors.length} 项冲突 ·{' '}
+                    {warnings.length} 项提示
+                  </p>
+                  {(!plan.calibration.valid || errors.length > 0 || stale) && (
+                    <p className="rm-notice rm-error">
+                      当前预览不可应用。请检查校准误差、冲突或过期状态。
+                    </p>
+                  )}
+                </>
+              )}
+              <p className="rm-help">
+                碰撞覆盖物件、块体、墙和柱的尺寸包围体。墙体不扣除门窗洞；扫描、未支持的挂接构件及现场人员不作实体碰撞验收。
+              </p>
+              {draft.obstacleWarnings.map((warning) => (
+                <p className="rm-notice" key={warning}>
+                  {warning}
+                </p>
+              ))}
+              <label className="rm-candidate">
+                <input
+                  type="checkbox"
+                  checked={reviewed}
+                  onChange={(event) => setReviewed(event.target.checked)}
+                />
+                <span>我已核对位置、尺寸、净距提示与现场条件</span>
+              </label>
+              <button
+                className="rm-primary"
+                type="button"
+                disabled={!canApply}
+                onClick={() =>
+                  run(() => {
+                    applyRemount(sceneId, blocked)
+                    setMessage('已确认复台。场景自动保存中，可一次撤销。')
+                    setReviewed(false)
+                    setStep(5)
+                  })
+                }
+              >
+                确认复台
+              </button>
+              <button type="button" onClick={() => setStep(3)}>
+                返回映射预览
+              </button>
+            </>
+          )}
+          {step === 5 && (
+            <>
+              <div className="rm-metric">
+                <span>数字落位记录</span>
+                <strong>
+                  {draft.lastPlan ? `${draft.lastPlan.placements.length} 个物件` : '尚未确认'}
+                </strong>
+                <small>
+                  {draft.lastPlan ? '已写入场景，沿用自动保存' : '完成前五步后在此查看记录'}
+                </small>
+              </div>
+              {draft.lastPlan && (
+                <p className="rm-help">
+                  比例 1 : 1 · 校准 RMS {(draft.lastPlan.calibration.rmsError * 1000).toFixed(2)}{' '}
+                  mm。现场复测、逐件签收与验收清单将在第二阶段接入。
+                </p>
+              )}
+              <button
+                type="button"
+                disabled={!canUndoLastRemount(sceneId)}
+                onClick={() =>
+                  run(() => {
+                    if (undoLastRemount(sceneId, blocked))
+                      setMessage('本次复台已一次撤销，原始布局仍可重新预览。')
+                  })
+                }
+              >
+                撤销本次复台
+              </button>
+              <p className="rm-help">
+                若已继续编辑，可通过编辑器历史记录撤销。复台不会更改镜头关键帧。
+              </p>
+            </>
+          )}
+        </fieldset>
+      )}
+      <footer className="rm-footer">
+        <div className="rm-actions">
+          <button
+            type="button"
+            disabled={!ready || blocked}
+            onClick={() =>
+              run(() => {
+                saveRemountConfig(sceneId, blocked)
+                setMessage('复台配置已写入场景，沿用自动保存；物件位置未改变。')
+              })
+            }
+          >
+            保存复台配置
+          </button>
+          <button
+            type="button"
+            disabled={blocked}
+            onClick={() =>
+              run(() => {
+                reloadRemount(sceneId)
+                const current = useRemountDraft.getState()
+                setSelected(current.layout?.objectNodeIds ?? [])
+                setPathText(
+                  current.layout?.paths[0]?.points.map((point) => point.join(' ')).join('\n') ?? '',
+                )
+                setReviewed(false)
+                setMessage('已重新载入场景中的复台配置。')
+              })
+            }
+          >
+            放弃草稿并载入
+          </button>
+        </div>
+        <p>米 / 弧度 · 确定性坐标映射 · 第一阶段</p>
+      </footer>
+    </div>
+  )
+}

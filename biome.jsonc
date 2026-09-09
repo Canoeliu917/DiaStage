@@ -1,0 +1,149 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded",
+      "trailingCommas": "all",
+      "quoteStyle": "single",
+      "jsxQuoteStyle": "double"
+    }
+  },
+  "linter": {
+    "rules": {
+      "style": {
+        "useDefaultSwitchClause": "off",
+        "useConsistentTypeDefinitions": "off",
+        "useAtIndex": "off",
+        "useConsistentArrayType": "off",
+        "noNestedTernary": "off",
+        "useBlockStatements": "off",
+        "noNonNullAssertion": "off",
+        "useConst": "off",
+        "noMagicNumbers": "off"
+      },
+      "performance": {
+        "noNamespaceImport": "off",
+        "noImgElement": "off",
+        "noBarrelFile": "off",
+        "noDelete": "off"
+      },
+      "suspicious": {
+        "noEmptyBlockStatements": "off",
+        "noImplicitAnyLet": "off",
+        "noGlobalIsNan": "off",
+        "noExplicitAny": "off",
+        "useAwait": "off",
+        "noConsole": "off",
+        "noArrayIndexKey": "off",
+        "noEvolvingTypes": "off",
+        "noDocumentCookie": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": "off",
+        "noForEach": "off",
+        "noBannedTypes": "off",
+        "noUselessFragments": "off",
+        "useLiteralKeys": "off"
+      },
+      "correctness": {
+        "noUnusedVariables": "off",
+        "noUnusedFunctionParameters": "off",
+        "noUnusedImports": {
+          "level": "warn",
+          "fix": "safe"
+        },
+        "useExhaustiveDependencies": "info",
+        "noPrecisionLoss": "off"
+      },
+      "a11y": {
+        "noSvgWithoutTitle": "off",
+        "useSemanticElements": "off",
+        "noLabelWithoutControl": "off",
+        "useKeyWithClickEvents": "off",
+        "noStaticElementInteractions": "off",
+        "noNoninteractiveElementInteractions": "off",
+        "useButtonType": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "info"
+      }
+    }
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": [
+      "packages/**/*.ts",
+      "packages/**/*.tsx",
+      "packages/**/*.js",
+      "packages/**/*.jsx",
+      "packages/**/*.json",
+      "packages/**/*.css",
+      "packages/**/*.md",
+      "packages/**/*.mdx",
+      "apps/**/*.ts",
+      "apps/**/*.tsx",
+      "apps/**/*.js",
+      "apps/**/*.jsx",
+      "!**/node_modules",
+      "!**/.next",
+      "!**/dist",
+      "!**/build",
+      "!**/public",
+      "!**/components/ui",
+      "!**/next-env.d.ts"
+    ]
+  },
+  "overrides": [
+    {
+      "includes": ["packages/editor/components/debug/react-scan.tsx"],
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "packages/core/**/*.ts",
+        "packages/core/**/*.tsx",
+        "packages/viewer/**/*.ts",
+        "packages/viewer/**/*.tsx",
+        "packages/editor/**/*.ts",
+        "packages/editor/**/*.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@pascal-app/nodes": "Framework packages must not import from @pascal-app/nodes — consult nodeRegistry.get(kind) instead. See plans/editor-node-registry.md."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

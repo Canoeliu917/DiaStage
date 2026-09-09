@@ -1,0 +1,3992 @@
+diff --git a/src/catalog-lamp-config.ts b/src/catalog-lamp-config.ts
+--- a/src/catalog-lamp-config.ts
++++ b/src/catalog-lamp-config.ts
+@@ -31,8 +31,8 @@
+ export const CATALOG_LAMP_VARIANTS = [
+   {
+     kind: 'streetscape:high-mast-crown-light',
+-    label: 'High-mast lowering crown',
+-    description: 'Tapered high mast with a serviceable carrier ring and six outward-aimed LED luminaires.',
++    label: "可降式高杆灯",
++    description: "渐缩高杆，配可维护灯盘和六盏朝外的 LED 灯具。",
+     family: 'roadway',
+     schema: HighMastCrownLightNode,
+     height: [STANDARD_LAMP_HEIGHT_MIN_M, STANDARD_LAMP_HEIGHT_MAX_M, 18],
+@@ -41,8 +41,8 @@
+   },
+   {
+     kind: 'streetscape:shoebox-area-light',
+-    label: 'LED area pole',
+-    description: 'Single-sided parking-area pole with one low-profile multi-cell LED luminaire.',
++    label: "LED 场地灯",
++    description: "单侧停车场灯杆，配低矮多单元 LED 灯具。",
+     family: 'roadway',
+     schema: ShoeboxAreaLightNode,
+     height: SHARED_HEIGHT,
+@@ -51,8 +51,8 @@
+   },
+   {
+     kind: 'streetscape:floodlight-pole',
+-    label: 'Floodlight pole',
+-    description: 'Braced pole with an adjustable yoke-mounted LED projector for sports, yards, and façades.',
++    label: "投光灯杆",
++    description: "带支撑灯杆与可调支架式 LED 投光灯，适用于运动场、庭院和建筑立面。",
+     family: 'roadway',
+     schema: FloodlightPoleNode,
+     height: SHARED_HEIGHT,
+@@ -61,8 +61,8 @@
+   },
+   {
+     kind: 'streetscape:solar-street-light',
+-    label: 'Solar street light',
+-    description: 'Single-sided solar roadway pole with one all-in-one PV, battery, control, and LED head.',
++    label: "太阳能路灯",
++    description: "单侧太阳能路灯，集光伏、电池、控制器和 LED 灯头于一体。",
+     family: 'roadway',
+     schema: SolarStreetLightNode,
+     height: SHARED_HEIGHT,
+@@ -71,8 +71,8 @@
+   },
+   {
+     kind: 'streetscape:traditional-post-top-lantern',
+-    label: 'Traditional lantern',
+-    description: 'Pitched-roof post-top lantern for heritage streetscapes.',
++    label: "传统灯笼",
++    description: "用于传统街景的坡顶柱顶灯笼。",
+     family: 'pedestrian',
+     schema: TraditionalPostTopLanternNode,
+     height: SHARED_HEIGHT,
+@@ -81,8 +81,8 @@
+   },
+   {
+     kind: 'streetscape:globe-post-top-light',
+-    label: 'Globe / acorn',
+-    description: 'Traditional prismatic acorn post-top lamp for parks, campuses, and civic paths.',
++    label: "球形／橡果形",
++    description: "传统棱镜橡果形柱顶灯，适用于公园、校园和公共步道。",
+     family: 'pedestrian',
+     schema: GlobePostTopLightNode,
+     height: SHARED_HEIGHT,
+@@ -91,8 +91,8 @@
+   },
+   {
+     kind: 'streetscape:decorative-candelabra-light',
+-    label: 'Decorative candelabra',
+-    description: 'Three-light heritage lamp with cast scroll arms for plazas and promenades.',
++    label: "装饰枝形灯",
++    description: "三头传统装饰灯，配铸造卷曲支臂，适用于广场和步行道。",
+     family: 'pedestrian',
+     schema: DecorativeCandelabraLightNode,
+     height: SHARED_HEIGHT,
+@@ -101,8 +101,8 @@
+   },
+   {
+     kind: 'streetscape:path-garden-light',
+-    label: 'Path / garden',
+-    description: 'Professional twin-head path light with opposed warm pools for walkways and planting beds.',
++    label: "步道／庭园灯",
++    description: "双头步道灯，向两侧投射暖光，适用于步道和花坛。",
+     family: 'pedestrian',
+     schema: PathGardenLightNode,
+     height: [0.55, 1.05, 0.78],
+@@ -111,8 +111,8 @@
+   },
+   {
+     kind: 'streetscape:bollard-light',
+-    label: 'Bollard',
+-    description: 'Shielded architectural bollard with a louvered 360-degree optic for paths and plazas.',
++    label: "灯柱",
++    description: "带遮光百叶与全向光学组件的景观灯柱，适用于步道和广场。",
+     family: 'pedestrian',
+     schema: BollardLightNode,
+     height: [
+@@ -125,8 +125,8 @@
+   },
+   {
+     kind: 'streetscape:catenary-street-light',
+-    label: 'Catenary / suspended',
+-    description: 'Aerodynamic twin-optic roadway luminaire with a serviceable cable saddle and tapered support poles.',
++    label: "悬索／悬吊灯",
++    description: "流线型双光学道路灯具，配可维护索鞍与渐缩支柱。",
+     family: 'structure',
+     schema: CatenaryStreetLightNode,
+     height: SHARED_HEIGHT,
+@@ -135,8 +135,8 @@
+   },
+   {
+     kind: 'streetscape:wall-arm-light',
+-    label: 'Architectural wall-arm',
+-    description: 'Tapered facade bracket with a curved lower tie and low-profile LED roadway head.',
++    label: "建筑壁臂灯",
++    description: "渐缩立面支架，配弯曲下拉杆与低矮 LED 道路灯头。",
+     family: 'structure',
+     schema: WallArmLightNode,
+     height: SHARED_HEIGHT,
+@@ -145,8 +145,8 @@
+   },
+   {
+     kind: 'streetscape:wall-pack-light',
+-    label: 'Wall-pack / bulkhead',
+-    description: 'Full-cutoff architectural LED wall pack with a shielded downward optic.',
++    label: "壁装／舱壁灯",
++    description: "全截光建筑 LED 壁灯，配遮光向下光学组件。",
+     family: 'structure',
+     schema: WallPackLightNode,
+     height: [1.8, 6, 2.7],
+@@ -155,8 +155,8 @@
+   },
+   {
+     kind: 'streetscape:tunnel-luminaire',
+-    label: 'Tunnel / underpass',
+-    description: 'Sealed continuous-line LED fixture with clip mounts and dual optics.',
++    label: "隧道／下穿灯",
++    description: "密封连续线形 LED 灯具，配卡扣安装座与双光学组件。",
+     family: 'structure',
+     schema: TunnelLuminaireNode,
+     height: SHARED_HEIGHT,
+@@ -165,8 +165,8 @@
+   },
+   {
+     kind: 'streetscape:canopy-soffit-light',
+-    label: 'Canopy / soffit',
+-    description: 'Compact ceiling-hosted canopy light with twin glare-controlled optical modules.',
++    label: "雨棚／檐底灯",
++    description: "紧凑顶装雨棚灯，配双防眩光学模块。",
+     family: 'structure',
+     schema: CanopySoffitLightNode,
+     height: SHARED_HEIGHT,
+@@ -182,7 +182,7 @@
+ export const LAMP_VISUAL_FAMILIES = [
+   {
+     id: 'roadway-head',
+-    label: 'Roadway and area heads',
++    label: "道路与场地灯头",
+     kinds: [
+       'streetscape:street-light',
+       'streetscape:cobra-head-light',
+@@ -197,7 +197,7 @@
+   },
+   {
+     id: 'post-top',
+-    label: 'Post-top and civic heads',
++    label: "柱顶与公共景观灯头",
+     kinds: [
+       'streetscape:pedestrian-post-light',
+       'streetscape:traditional-post-top-lantern',
+@@ -208,12 +208,12 @@
+   },
+   {
+     id: 'path-scale',
+-    label: 'Path and low-scale lights',
++    label: "步道与低位照明",
+     kinds: ['streetscape:path-garden-light', 'streetscape:bollard-light'],
+   },
+   {
+     id: 'structure-mounted',
+-    label: 'Structure-mounted lights',
++    label: "建筑安装灯具",
+     kinds: [
+       'streetscape:catenary-street-light',
+       'streetscape:wall-arm-light',
+@@ -237,24 +237,24 @@
+ /** Related silhouettes that can be swapped from one shared placement brush. */
+ export const CATALOG_LAMP_STYLE_OPTIONS: Record<CatalogLampFamily, readonly CatalogLampStyleOption[]> = {
+   roadway: [
+-    { value: 'high-mast', label: 'High mast' },
+-    { value: 'shoebox', label: 'Shoebox' },
+-    { value: 'floodlight', label: 'Floodlight' },
+-    { value: 'solar', label: 'Solar' },
++    { value: 'high-mast', label: "高杆" },
++    { value: 'shoebox', label: "方盒灯" },
++    { value: 'floodlight', label: "投光灯" },
++    { value: 'solar', label: "太阳能" },
+   ],
+   pedestrian: [
+-    { value: 'lantern', label: 'Lantern' },
+-    { value: 'globe', label: 'Globe' },
+-    { value: 'candelabra', label: 'Candelabra' },
+-    { value: 'path', label: 'Path' },
+-    { value: 'bollard', label: 'Bollard' },
++    { value: 'lantern', label: "灯笼" },
++    { value: 'globe', label: "球形" },
++    { value: 'candelabra', label: "枝形灯" },
++    { value: 'path', label: "步道灯" },
++    { value: 'bollard', label: "灯柱" },
+   ],
+   structure: [
+-    { value: 'catenary', label: 'Catenary' },
+-    { value: 'wall-arm', label: 'Wall arm' },
+-    { value: 'wall-pack', label: 'Wall pack' },
+-    { value: 'tunnel', label: 'Tunnel' },
+-    { value: 'canopy', label: 'Canopy' },
++    { value: 'catenary', label: "悬索灯" },
++    { value: 'wall-arm', label: "壁臂灯" },
++    { value: 'wall-pack', label: "壁灯" },
++    { value: 'tunnel', label: "隧道" },
++    { value: 'canopy', label: "雨棚" },
+   ],
+ }
+ export type CatalogLampNode =
+diff --git a/src/catalog-lamp-definition.ts b/src/catalog-lamp-definition.ts
+--- a/src/catalog-lamp-definition.ts
++++ b/src/catalog-lamp-definition.ts
+@@ -298,9 +298,9 @@
+     preview: () => import('./catalog-lamp-preview'),
+     tool: () => import('./catalog-lamp-tool'),
+     toolHints: [
+-      { key: 'Left click', label: `Place ${variant.label.toLowerCase()}` },
+-      ...(isWallHosted ? [] : [{ key: 'R', label: 'Rotate 45°' }]),
+-      { key: 'Esc', label: 'Stop' },
++      { key: 'Left click', label: `放置${variant.label}` },
++      ...(isWallHosted ? [] : [{ key: 'R', label: "旋转 45°" }]),
++      { key: 'Esc', label: "停止" },
+     ],
+     presentation: {
+       label: variant.label,
+@@ -310,7 +310,7 @@
+       hidden: true,
+     },
+     mcp: {
+-      description: `${variant.description} Adjustable height, reach, colors, intensity, orientation, and on/off state.`,
++      description: `${variant.description} 可调高度、伸出距离、颜色、强度、朝向和开关。`,
+     },
+   }
+ }
+diff --git a/src/catalog-lamp-parametrics.ts b/src/catalog-lamp-parametrics.ts
+--- a/src/catalog-lamp-parametrics.ts
++++ b/src/catalog-lamp-parametrics.ts
+@@ -4,7 +4,7 @@
+ export const catalogLampParametrics: ParametricDescriptor<CatalogLampNode> = {
+   groups: [
+     {
+-      label: 'Lamp form',
++      label: "灯具形式",
+       fields: [
+         {
+           key: 'height',
+@@ -23,7 +23,7 @@
+       ],
+     },
+     {
+-      label: 'Lamp',
++      label: "灯具",
+       fields: [
+         { key: 'lightOn', kind: 'boolean' },
+         { key: 'lightColor', kind: 'color', visibleIf: (n) => n.lightOn },
+@@ -31,7 +31,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/cobra-head-light-definition.ts b/src/cobra-head-light-definition.ts
+--- a/src/cobra-head-light-definition.ts
++++ b/src/cobra-head-light-definition.ts
+@@ -103,14 +103,14 @@
+   preview: () => import('./cobra-head-light-preview'),
+   tool: () => import('./cobra-head-light-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place cobra-head roadway light' },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置眼镜蛇头道路灯" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Cobra-head',
+-    description: 'A classic roadway light with a swept mast arm and prismatic cobra-head optic.',
++    label: "眼镜蛇头灯",
++    description: "经典道路灯，配后掠支臂与棱镜式眼镜蛇头光学组件。",
+     icon: { kind: 'iconify', name: 'lucide:lightbulb' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -118,6 +118,6 @@
+ 
+   mcp: {
+     description:
+-      'A classic swept-arm cobra-head roadway light with a die-cast housing, prismatic optic, and adjustable height, arm length, finish, lamp color, intensity, orientation, and on/off state.',
++      "经典后掠支臂道路灯，配压铸外壳与棱镜光学组件。可调高度、支臂长度、表面、灯光颜色、强度、朝向和开关。",
+   },
+ }
+diff --git a/src/cobra-head-light-parametrics.ts b/src/cobra-head-light-parametrics.ts
+--- a/src/cobra-head-light-parametrics.ts
++++ b/src/cobra-head-light-parametrics.ts
+@@ -4,7 +4,7 @@
+ export const cobraHeadLightParametrics: ParametricDescriptor<CobraHeadLightNode> = {
+   groups: [
+     {
+-      label: 'Cobra-head roadway light',
++      label: "眼镜蛇头道路灯",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 0.5, max: 30, step: 0.1 },
+         { key: 'armLength', kind: 'number', unit: 'm', min: 0.5, max: 3, step: 0.1 },
+@@ -12,7 +12,7 @@
+       ],
+     },
+     {
+-      label: 'Lamp',
++      label: "灯具",
+       fields: [
+         { key: 'lightOn', kind: 'boolean' },
+         { key: 'lightColor', kind: 'color', visibleIf: (n) => n.lightOn },
+@@ -27,7 +27,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/driveway-gate-open-control.tsx b/src/driveway-gate-open-control.tsx
+--- a/src/driveway-gate-open-control.tsx
++++ b/src/driveway-gate-open-control.tsx
+@@ -20,7 +20,7 @@
+ 
+   return (
+     <SliderControl
+-      label="Open"
++      label="打开"
+       max={100}
+       min={0}
+       onChange={(value) => {
+diff --git a/src/heritage-crook-light-definition.ts b/src/heritage-crook-light-definition.ts
+--- a/src/heritage-crook-light-definition.ts
++++ b/src/heritage-crook-light-definition.ts
+@@ -108,14 +108,14 @@
+   preview: () => import('./heritage-crook-light-preview'),
+   tool: () => import('./heritage-crook-light-tool'),
+   toolHints: [
+-    { key: 'Left click', label: "Place Bishop's Crook light" },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置牧杖形路灯" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: "Bishop's Crook",
+-    description: 'A heritage curved pole with a pendant teardrop lamp.',
++    label: "牧杖形路灯",
++    description: "传统弯曲灯杆，配悬垂水滴形灯具。",
+     icon: { kind: 'iconify', name: 'lucide:lamp-wall-up' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -123,6 +123,6 @@
+ 
+   mcp: {
+     description:
+-      "A heritage Bishop's Crook street lamp with adjustable height, arm reach, pole color, lamp color, intensity, orientation, and on/off state.",
++      "传统牧杖形路灯，可调高度、支臂伸出、灯杆颜色、灯光颜色、强度、朝向和开关。",
+   },
+ }
+diff --git a/src/heritage-crook-light-parametrics.ts b/src/heritage-crook-light-parametrics.ts
+--- a/src/heritage-crook-light-parametrics.ts
++++ b/src/heritage-crook-light-parametrics.ts
+@@ -4,7 +4,7 @@
+ export const heritageCrookLightParametrics: ParametricDescriptor<HeritageCrookLightNode> = {
+   groups: [
+     {
+-      label: "Bishop's Crook",
++      label: "牧杖形路灯",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 0.5, max: 30, step: 0.1 },
+         { key: 'armReach', kind: 'number', unit: 'm', min: 0.5, max: 1.5, step: 0.05 },
+@@ -12,7 +12,7 @@
+       ],
+     },
+     {
+-      label: 'Lamp',
++      label: "灯具",
+       fields: [
+         { key: 'lightOn', kind: 'boolean' },
+         { key: 'lightColor', kind: 'color', visibleIf: (n) => n.lightOn },
+@@ -27,7 +27,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/index.test.ts b/src/index.test.ts
+--- a/src/index.test.ts
++++ b/src/index.test.ts
+@@ -246,11 +246,11 @@
+     const keys = groups.flatMap((group) => group.fields.map((field) => field.key))
+ 
+ 		expect(labels).toEqual([
+-			'Style',
+-			'Roadside',
+-			'Terrain',
+-			'Road',
+-			'Junction',
++			"样式",
++			"路侧",
++			"地形",
++			"道路",
++			"路口",
+ 		])
+     expect(labels).not.toContain('Directed lanes')
+     expect(labels).not.toContain('Lane movements')
+@@ -906,12 +906,12 @@
+ 
+     const panel = readFileSync(new URL('./presets-panel.tsx', import.meta.url), 'utf8')
+     expect(panel).toContain('data-road-auto-infrastructure')
+-    expect(panel).toContain('Automatic infrastructure')
+-    expect(panel).toContain('Add automatically')
++    expect(panel).toContain("自动市政设施")
++    expect(panel).toContain("自动添加")
+     const roadsideInspector = readFileSync(new URL('./roadside-decoration-rules.tsx', import.meta.url), 'utf8')
+     expect(panel).not.toContain('Selected road items')
+     expect(panel).not.toContain('data-roadside-item-delete')
+-    expect(roadsideInspector).toContain('Roadside item visibility')
++    expect(roadsideInspector).toContain("路侧物体可见性")
+     expect(roadsideInspector).toContain('ROAD_AUTO_INFRASTRUCTURE_OPTIONS.map')
+     expect(roadsideInspector).not.toContain('Show lamps and signs')
+ 
+diff --git a/src/index.ts b/src/index.ts
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -116,11 +116,11 @@
+ 
+ export const streetscapeHostPanel: PluginHostPanel = {
+   id: 'pascal:streetscape:streetscape',
+-  label: 'Streetscape',
++  label: "街景",
+   icon: { kind: 'url', src: STREETSCAPE_ICON },
+   component: () => import('./presets-panel'),
+   pluginId: streetscapePlugin.id,
+-  description: 'Procedural systems and assets for building complete outdoor streetscapes.',
++  description: "用于构建完整室外街景的程序化系统与资产。",
+   creator: {
+     name: 'Pascal',
+     url: 'https://github.com/sudhir9297',
+diff --git a/src/mailbox-open-control.tsx b/src/mailbox-open-control.tsx
+--- a/src/mailbox-open-control.tsx
++++ b/src/mailbox-open-control.tsx
+@@ -20,7 +20,7 @@
+ 
+   return (
+     <SliderControl
+-      label="Open"
++      label="打开"
+       max={100}
+       min={0}
+       onChange={(value) => {
+diff --git a/src/multi-head-area-light-definition.ts b/src/multi-head-area-light-definition.ts
+--- a/src/multi-head-area-light-definition.ts
++++ b/src/multi-head-area-light-definition.ts
+@@ -104,14 +104,14 @@
+   preview: () => import('./multi-head-area-light-preview'),
+   tool: () => import('./multi-head-area-light-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place multi-head area pole' },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置多头场地灯" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Triple/four-way area pole',
+-    description: 'A radial three- or four-head pole for junctions and parking areas.',
++    label: "三向／四向场地灯",
++    description: "用于路口和停车场的放射式三头或四头灯杆。",
+     icon: { kind: 'iconify', name: 'lucide:lamp-ceiling' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -119,6 +119,6 @@
+ 
+   mcp: {
+     description:
+-      'A three- or four-head radial roadway area pole with adjustable height, arm length, head count, colors, intensity, orientation, and on/off state.',
++      "放射式三头或四头道路场地灯，可调高度、支臂长度、灯头数量、颜色、强度、朝向和开关。",
+   },
+ }
+diff --git a/src/multi-head-area-light-parametrics.ts b/src/multi-head-area-light-parametrics.ts
+--- a/src/multi-head-area-light-parametrics.ts
++++ b/src/multi-head-area-light-parametrics.ts
+@@ -4,7 +4,7 @@
+ export const multiHeadAreaLightParametrics: ParametricDescriptor<MultiHeadAreaLightNode> = {
+   groups: [
+     {
+-      label: 'Multi-head area pole',
++      label: "多头场地灯",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 0.5, max: 30, step: 0.1 },
+         { key: 'armLength', kind: 'number', unit: 'm', min: 0.5, max: 3, step: 0.1 },
+@@ -13,7 +13,7 @@
+       ],
+     },
+     {
+-      label: 'Lamps',
++      label: "灯具",
+       fields: [
+         { key: 'lightOn', kind: 'boolean' },
+         { key: 'lightColor', kind: 'color', visibleIf: (n) => n.lightOn },
+@@ -28,7 +28,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/parcel-box-open-control.tsx b/src/parcel-box-open-control.tsx
+--- a/src/parcel-box-open-control.tsx
++++ b/src/parcel-box-open-control.tsx
+@@ -20,7 +20,7 @@
+ 
+   return (
+     <SliderControl
+-      label="Open"
++      label="打开"
+       max={100}
+       min={0}
+       onChange={(value) => {
+diff --git a/src/post-top-light-definition.ts b/src/post-top-light-definition.ts
+--- a/src/post-top-light-definition.ts
++++ b/src/post-top-light-definition.ts
+@@ -90,14 +90,14 @@
+   preview: () => import('./post-top-light-preview'),
+   tool: () => import('./post-top-light-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place pedestrian post-top light' },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置步道柱顶灯" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Pedestrian Post-top',
+-    description: 'A modern pedestrian-scale post-top lamp with symmetric downward light.',
++    label: "步道柱顶灯",
++    description: "现代步道柱顶灯，配对称向下照明。",
+     icon: { kind: 'iconify', name: 'lucide:lamp-ceiling' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -105,6 +105,6 @@
+ 
+   mcp: {
+     description:
+-      'A modern pedestrian-scale post-top lamp with adjustable height, pole color, lamp color, intensity, position, and on/off state.',
++      "现代步道柱顶灯，可调高度、灯杆颜色、灯光颜色、强度、位置和开关。",
+   },
+ }
+diff --git a/src/post-top-light-parametrics.ts b/src/post-top-light-parametrics.ts
+--- a/src/post-top-light-parametrics.ts
++++ b/src/post-top-light-parametrics.ts
+@@ -4,14 +4,14 @@
+ export const postTopLightParametrics: ParametricDescriptor<PedestrianPostLightNode> = {
+   groups: [
+     {
+-      label: 'Pedestrian post-top',
++      label: "步道柱顶灯",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 0.5, max: 30, step: 0.1 },
+         { key: 'poleColor', kind: 'color' },
+       ],
+     },
+     {
+-      label: 'Lamp',
++      label: "灯具",
+       fields: [
+         { key: 'lightOn', kind: 'boolean' },
+         { key: 'lightColor', kind: 'color', visibleIf: (n) => n.lightOn },
+@@ -26,7 +26,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/presets-panel.tsx b/src/presets-panel.tsx
+--- a/src/presets-panel.tsx
++++ b/src/presets-panel.tsx
+@@ -76,6 +76,13 @@
+ const ROAD_SIGN_KIND = 'streetscape:road-sign'
+ const ROAD_NETWORK_KIND = 'streetscape:road-network'
+ 
++const FAMILY_LABELS: Record<string, string> = {
++  roadway: '道路', pedestrian: '步道', structure: '建筑',
++  'Traffic control': '交通控制', Drainage: '排水', 'Fire safety': '消防安全',
++  'Traffic safety': '交通安全', 'Residential frontage': '住宅临街设施',
++  'Traffic calming': '交通减速设施',
++}
++
+ const STREET_INFRASTRUCTURE_THUMBNAILS: Record<StreetInfrastructureKind, string> = {
+   'streetscape:traffic-signal': TRAFFIC_SIGNAL_THUMBNAIL,
+   'streetscape:drainage-inlet': DRAINAGE_INLET_THUMBNAIL,
+@@ -93,7 +100,7 @@
+ }
+ 
+ function roadSegmentLabel(count: number): string {
+-  return `${count} road segment${count === 1 ? '' : 's'}`
++  return `${count} 个路段`
+ }
+ 
+ const ROAD_SIDE_COMPONENT_CONTROLS: Array<{
+@@ -102,12 +109,12 @@
+   max: number
+   step: number
+ }> = [
+-  { key: 'parkingLaneWidth', label: 'Parking lane', max: 4, step: 0.1 },
+-  { key: 'bikeLaneWidth', label: 'Bike lane', max: 3, step: 0.1 },
+-  { key: 'gutterWidth', label: 'Gutter', max: 2, step: 0.05 },
+-  { key: 'curbWidth', label: 'Curb', max: 1, step: 0.05 },
+-  { key: 'vergeWidth', label: 'Verge', max: 8, step: 0.1 },
+-  { key: 'sidewalkWidth', label: 'Sidewalk', max: 6, step: 0.1 },
++  { key: 'parkingLaneWidth', label: "停车带", max: 4, step: 0.1 },
++  { key: 'bikeLaneWidth', label: "自行车道", max: 3, step: 0.1 },
++  { key: 'gutterWidth', label: "排水沟", max: 2, step: 0.05 },
++  { key: 'curbWidth', label: "路缘石", max: 1, step: 0.05 },
++  { key: 'vergeWidth', label: "路侧绿带", max: 8, step: 0.1 },
++  { key: 'sidewalkWidth', label: "人行道", max: 6, step: 0.1 },
+ ]
+ 
+ const activateRoadNetworkTool = () => {
+@@ -207,7 +214,7 @@
+ function StreetLightArtwork() {
+   return (
+     <img
+-      alt="Street light"
++      alt="路灯"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={STREET_LIGHT_THUMBNAIL}
+@@ -218,7 +225,7 @@
+ function PostTopLightArtwork() {
+   return (
+     <img
+-      alt="Pedestrian post-top light"
++      alt="步道柱顶灯"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={POST_TOP_LIGHT_THUMBNAIL}
+@@ -229,7 +236,7 @@
+ function HeritageCrookLightArtwork() {
+   return (
+     <img
+-      alt="Heritage Bishop's Crook light"
++      alt="传统牧杖形路灯"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={HERITAGE_CROOK_LIGHT_THUMBNAIL}
+@@ -240,7 +247,7 @@
+ function CobraHeadLightArtwork() {
+   return (
+     <img
+-      alt="Cobra-head roadway light"
++      alt="眼镜蛇头道路灯"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={COBRA_HEAD_LIGHT_THUMBNAIL}
+@@ -251,7 +258,7 @@
+ function TwinArmMedianLightArtwork() {
+   return (
+     <img
+-      alt="Twin-arm median roadway light"
++      alt="中央双臂道路灯"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={TWIN_ARM_MEDIAN_LIGHT_THUMBNAIL}
+@@ -262,7 +269,7 @@
+ function MultiHeadAreaLightArtwork() {
+   return (
+     <img
+-      alt="Triple or four-way area pole"
++      alt="三向或四向场地灯"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={MULTI_HEAD_AREA_LIGHT_THUMBNAIL}
+@@ -273,7 +280,7 @@
+ function TrussRoadwayLightArtwork() {
+   return (
+     <img
+-      alt="Truss roadway light"
++      alt="桁架道路灯"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={TRUSS_ROADWAY_LIGHT_THUMBNAIL}
+@@ -295,7 +302,7 @@
+ function UtilityPoleArtwork() {
+   return (
+     <img
+-      alt="Utility pole"
++      alt="电线杆"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={UTILITY_POLE_THUMBNAIL}
+@@ -323,7 +330,7 @@
+ function RoadSignArtwork({ signId }: { signId: RoadSignId }) {
+   return (
+     <img
+-      alt={`${signId} road sign`}
++      alt={`${ROAD_SIGN_CATALOG.find((sign) => sign.id === signId)?.label ?? '道路标志'}`}
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={ROAD_SIGN_THUMBNAILS[signId]}
+@@ -334,7 +341,7 @@
+ function RoadNetworkArtwork() {
+   return (
+     <img
+-      alt="Road network"
++      alt="道路网络"
+       className="aspect-square w-full rounded-lg object-cover ring-1 ring-black/10"
+       draggable={false}
+       src={ROAD_NETWORK_THUMBNAIL}
+@@ -562,23 +569,23 @@
+ 
+   const copySelectedRoadGraph = async () => {
+     if (!selectedRoadNetwork) {
+-      setRoadExchangeStatus({ kind: 'error', message: 'Select one road network first.' })
++      setRoadExchangeStatus({ kind: 'error', message: "请先选择一个道路网络。" })
+       return
+     }
+     try {
+       await navigator.clipboard.writeText(exportRoadNetworkGraph(selectedRoadNetwork))
+       setRoadExchangeStatus({
+         kind: 'success',
+-        message: `Copied ${roadSegmentLabel(Object.keys(selectedRoadNetwork.edges).length)} as JSON.`,
++        message: `已将 ${roadSegmentLabel(Object.keys(selectedRoadNetwork.edges).length)} 复制为 JSON。`,
+       })
+     } catch {
+-      setRoadExchangeStatus({ kind: 'error', message: 'Clipboard access was not available.' })
++      setRoadExchangeStatus({ kind: 'error', message: "无法访问剪贴板。" })
+     }
+   }
+ 
+   const reviewSelectedRoadCleanup = () => {
+     if (!selectedRoadNetwork) {
+-      setRoadExchangeStatus({ kind: 'error', message: 'Select one road network first.' })
++      setRoadExchangeStatus({ kind: 'error', message: "请先选择一个道路网络。" })
+       return
+     }
+     const plan = planRoadGraphCleanup(selectedRoadNetwork, {
+@@ -590,8 +597,8 @@
+     setRoadExchangeStatus({
+       kind: 'success',
+       message: plan.changes.length === 0
+-        ? 'No cleanup changes are needed.'
+-        : `Review ${plan.changes.length} proposed cleanup change${plan.changes.length === 1 ? '' : 's'} before applying.`,
++        ? "无需清理变更。"
++        : `应用前请审阅 ${plan.changes.length} 项清理建议。`,
+     })
+   }
+ 
+@@ -601,7 +608,7 @@
+       || !roadCleanupReview
+       || roadCleanupReview.networkId !== selectedRoadNetwork.id
+     ) {
+-      setRoadExchangeStatus({ kind: 'error', message: 'The reviewed road is no longer selected.' })
++      setRoadExchangeStatus({ kind: 'error', message: "已审阅的道路当前未被选中。" })
+       return
+     }
+     const changeCount = roadCleanupReview.plan.changes.length
+@@ -614,13 +621,13 @@
+     setRoadCleanupReview(null)
+     setRoadExchangeStatus({
+       kind: 'success',
+-      message: `Applied ${changeCount} reviewed cleanup change${changeCount === 1 ? '' : 's'}.`,
++      message: `已应用 ${changeCount} 项审阅后的清理变更。`,
+     })
+   }
+ 
+   const importRoadGraphFromClipboard = async () => {
+     if (!activeLevelId) {
+-      setRoadExchangeStatus({ kind: 'error', message: 'Open a level before importing roads.' })
++      setRoadExchangeStatus({ kind: 'error', message: "导入道路前请先打开一个楼层。" })
+       return
+     }
+     try {
+@@ -632,7 +639,7 @@
+         useStreetscapeStore.getState().setRoadElementSelection(null)
+         setRoadExchangeStatus({
+           kind: 'success',
+-          message: `Replaced the selected road with ${roadSegmentLabel(Object.keys(graph.edges).length)}.`,
++          message: `已将选中道路替换为 ${roadSegmentLabel(Object.keys(graph.edges).length)}。`,
+         })
+         return
+       }
+@@ -642,12 +649,12 @@
+       useViewer.getState().setSelection({ selectedIds: [network.id as AnyNodeId] })
+       setRoadExchangeStatus({
+         kind: 'success',
+-        message: `Imported ${roadSegmentLabel(Object.keys(graph.edges).length)}.`,
++        message: `已导入 ${roadSegmentLabel(Object.keys(graph.edges).length)}。`,
+       })
+     } catch (error) {
+       setRoadExchangeStatus({
+         kind: 'error',
+-        message: error instanceof Error ? error.message : 'Road import failed.',
++        message: error instanceof Error ? error.message : "道路导入失败。",
+       })
+     }
+   }
+@@ -656,35 +663,35 @@
+     <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto p-4 text-sidebar-foreground">
+       <header className="flex flex-col gap-3">
+         <div className="flex items-center justify-between">
+-          <h2 className="font-semibold text-base">Streetscape</h2>
++          <h2 className="font-semibold text-base">街景</h2>
+           <span className="rounded-full bg-sidebar-accent px-2 py-0.5 text-sidebar-foreground/70 text-xs">
+-            {count} placed
++            {count} 个已放置
+           </span>
+         </div>
+         <SegmentedControl
+           onChange={setPanelCategory}
+           options={[
+-            { label: 'Roads', value: 'roads' },
+-            { label: 'Lights', value: 'lighting' },
+-            { label: 'Signs', value: 'signs' },
+-            { label: 'Utilities', value: 'utilities' },
++            { label: "道路", value: 'roads' },
++            { label: "灯光", value: 'lighting' },
++            { label: "标志", value: 'signs' },
++            { label: "市政设施", value: 'utilities' },
+           ]}
+           value={panelCategory}
+         />
+         <p className="text-sidebar-foreground/50 text-xs">
+           {panelCategory === 'roads'
+             ? roadNetworkArmed
+-              ? 'Click the ground to set road points. Enter or double-click finishes the path.'
+-              : 'Click or drag Road into the scene, then set two or more points.'
++              ? "点击地面设置道路点，按 Enter 或双击完成路径。"
++              : "点击或拖动“道路”进入场景，然后设置至少两个点。"
+             : panelCategory === 'signs' && roadSignArmed
+-              ? 'Click repeatedly to place signs. Press Esc to stop.'
++              ? "连续点击可放置标志，按 Esc 停止。"
+               : armed
+-                  ? 'Click repeatedly to place. Press Esc to stop.'
++                  ? "连续点击可放置，按 Esc 停止。"
+                   : panelCategory === 'lighting'
+-                    ? 'Choose a lamp, then click the ground to place it.'
++                    ? "选择灯具，然后点击地面放置。"
+                     : panelCategory === 'signs'
+-                      ? 'Choose a sign, then click the ground to place it.'
+-                      : 'Choose a utility asset, then click the ground to place it.'}
++                      ? "选择标志，然后点击地面放置。"
++                      : "选择市政设施，然后点击地面放置。"}
+         </p>
+       </header>
+ 
+@@ -700,20 +707,20 @@
+             draggable
+             onClick={activateRoadNetworkTool}
+             onDragStart={dragRoadNetworkTool}
+-            title="Click or drag to start drawing a connected road network"
++            title="点击或拖动以开始绘制相连道路网络"
+             type="button"
+           >
+             <div className="transition-transform group-hover:scale-[1.01]">
+               <RoadNetworkArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-2 px-0.5 font-medium text-xs">
+-              <span>Road</span>
++              <span>道路</span>
+               <span className="font-normal text-sidebar-foreground/45">
+-                {roadSegmentCount} segment{roadSegmentCount === 1 ? '' : 's'}
++                {roadSegmentCount} 个路段
+               </span>
+             </span>
+             <span className="px-0.5 text-[11px] text-sidebar-foreground/50">
+-              Drag or click to draw straight, spline and connected roads
++              拖动或点击可绘制直线、样条和相连道路
+             </span>
+             {roadNetworkArmed && (
+               <span className="absolute top-3 right-3 h-2 w-2 rounded-full bg-sidebar-ring ring-2 ring-sidebar-accent" />
+@@ -724,19 +731,19 @@
+             <div className="flex items-start justify-between gap-2">
+               <div className="flex flex-col gap-0.5">
+                 <span className="font-medium text-sidebar-foreground text-sm">
+-                  Road cross-section
++                  道路横断面
+                 </span>
+                 <span className="text-[11px] text-sidebar-foreground/50">
+-                  {roadLaneCount} lane{roadLaneCount === 1 ? '' : 's'} ·{' '}
+-                  {roadCrossSection.totalWidth.toFixed(2)} m overall
++                  {roadLaneCount} 条车道 ·{' '}
++                  {roadCrossSection.totalWidth.toFixed(2)} m 总宽
+                 </span>
+               </div>
+             </div>
+ 
+             <label className="flex flex-col gap-1.5">
+-              <span className="font-medium text-sidebar-foreground/65 text-xs">Preset</span>
++              <span className="font-medium text-sidebar-foreground/65 text-xs">预设</span>
+               <select
+-                aria-label="Road preset"
++                aria-label="道路预设"
+                 className="h-8 rounded-md border border-sidebar-border bg-sidebar px-2 text-sidebar-foreground text-xs outline-none focus:ring-1 focus:ring-sidebar-ring"
+                 onChange={(event) =>
+                   useStreetscapeStore
+@@ -756,9 +763,9 @@
+             <SegmentedControl
+               onChange={useStreetscapeStore.getState().setRoadCrossSectionEditorTab}
+               options={[
+-                { label: 'Roadway', value: 'roadway' },
+-                { label: 'Left', value: 'left' },
+-                { label: 'Right', value: 'right' },
++                { label: "车行道", value: 'roadway' },
++                { label: "左侧", value: 'left' },
++                { label: "右侧", value: 'right' },
+               ]}
+               value={roadCrossSectionEditorTab}
+             />
+@@ -766,7 +773,7 @@
+             {selectedRoadSide === null ? (
+               <>
+                 <SliderControl
+-                  label="Lane count"
++                  label="车道数量"
+                   max={12}
+                   min={1}
+                   onChange={useStreetscapeStore.getState().setRoadLaneCount}
+@@ -776,7 +783,7 @@
+                   value={roadLaneCount}
+                 />
+                 <SliderControl
+-                  label="Lane width"
++                  label="车道宽度"
+                   max={5}
+                   min={2.4}
+                   onChange={useStreetscapeStore.getState().setRoadLaneWidth}
+@@ -787,7 +794,7 @@
+                   value={roadLaneWidth}
+                 />
+                 <SliderControl
+-                  label="Shoulder"
++                  label="路肩"
+                   max={4}
+                   min={0}
+                   onChange={useStreetscapeStore.getState().setRoadShoulderWidth}
+@@ -798,7 +805,7 @@
+                   value={roadShoulderWidth}
+                 />
+                 <SliderControl
+-                  label="Median"
++                  label="中央分隔带"
+                   max={12}
+                   min={0}
+                   onChange={useStreetscapeStore.getState().setRoadMedianWidth}
+@@ -812,7 +819,7 @@
+             ) : (
+               <>
+                 <span className="text-[11px] text-sidebar-foreground/45">
+-                  Set a width to zero to remove that component from this side.
++                  将宽度设为零，可移除此侧的相应组成部分。
+                 </span>
+                 {ROAD_SIDE_COMPONENT_CONTROLS.map((control) => (
+                   <SliderControl
+@@ -842,19 +849,19 @@
+           </div>
+ 
+           <div className="flex flex-col gap-1.5">
+-            <span className="font-medium text-sidebar-foreground/65 text-xs">Alignment</span>
++            <span className="font-medium text-sidebar-foreground/65 text-xs">线形</span>
+             <SegmentedControl
+               onChange={useStreetscapeStore.getState().setRoadAlignmentMode}
+               options={[
+-                { label: 'Straight', value: 'straight' },
+-                { label: 'Spline', value: 'spline' },
++                { label: "直线", value: 'straight' },
++                { label: "样条", value: 'spline' },
+               ]}
+               value={roadAlignmentMode}
+             />
+           </div>
+ 
+           <SliderControl
+-            label="Bend radius"
++            label="弯曲半径"
+             max={25}
+             min={0.5}
+             onChange={useStreetscapeStore.getState().setRoadBendRadius}
+@@ -866,7 +873,7 @@
+           />
+ 
+           <div className="flex flex-col gap-1.5">
+-            <span className="font-medium text-sidebar-foreground/65 text-xs">Elevation</span>
++            <span className="font-medium text-sidebar-foreground/65 text-xs">标高</span>
+             <SegmentedControl
+               onChange={useStreetscapeStore.getState().setRoadElevationMode}
+               options={ROAD_ELEVATION_OPTIONS}
+@@ -875,12 +882,12 @@
+           </div>
+ 
+           <div className="flex flex-col gap-1.5">
+-            <span className="font-medium text-sidebar-foreground/65 text-xs">Crossings</span>
++            <span className="font-medium text-sidebar-foreground/65 text-xs">交叉口</span>
+             <SegmentedControl
+               onChange={useStreetscapeStore.getState().setRoadJoinMode}
+               options={[
+-                { label: 'Auto join', value: 'auto' },
+-                { label: 'No join', value: 'suppress' },
++                { label: "自动连接", value: 'auto' },
++                { label: "不连接", value: 'suppress' },
+               ]}
+               value={roadJoinMode}
+             />
+@@ -892,15 +899,15 @@
+           >
+             <div className="flex flex-col gap-0.5">
+               <span className="font-medium text-sidebar-foreground text-sm">
+-                Automatic infrastructure
++                自动市政设施
+               </span>
+               <span className="text-[11px] text-sidebar-foreground/50">
+-                Add editable utility assets when each road segment is committed.
++                提交每个路段时添加可编辑的市政设施。
+               </span>
+             </div>
+             <ToggleControl
+               checked={roadAutoInfrastructure.enabled}
+-              label="Add automatically"
++              label="自动添加"
+               onChange={useStreetscapeStore.getState().setRoadAutoInfrastructureEnabled}
+             />
+             {roadAutoInfrastructure.enabled ? (
+@@ -921,23 +928,23 @@
+               </div>
+             ) : null}
+             <span className="text-[10px] leading-snug text-sidebar-foreground/45">
+-              Items stay independent after placement, so moving or rotating them will not snap them back.
++              放置后物体保持独立，移动或旋转不会使其吸附回原位。
+             </span>
+             {roadAutoInfrastructure.enabled ? (
+               <span className="text-[10px] leading-snug text-sidebar-foreground/45">
+-                Drainage reserves {AUTO_DRAINAGE_MIN_GUTTER_WIDTH.toFixed(2)} m gutters; hydrants reserve a{' '}
+-                {AUTO_HYDRANT_MIN_VERGE_WIDTH.toFixed(2)} m roadside verge.
++                排水设施预留 {AUTO_DRAINAGE_MIN_GUTTER_WIDTH.toFixed(2)} m 排水沟；消火栓预留{' '}
++                {AUTO_HYDRANT_MIN_VERGE_WIDTH.toFixed(2)} m 路侧绿带。
+               </span>
+             ) : null}
+           </div>
+ 
+           <div className="flex flex-col gap-2 rounded-xl border border-sidebar-border p-3">
+             <div className="flex flex-col gap-0.5">
+-              <span className="font-medium text-sidebar-foreground text-sm">Road graph data</span>
++              <span className="font-medium text-sidebar-foreground text-sm">道路图数据</span>
+               <span className="text-[11px] text-sidebar-foreground/50">
+                 {selectedRoadNetwork
+-                  ? `${roadSegmentLabel(Object.keys(selectedRoadNetwork.edges).length)} selected`
+-                  : 'Import creates a new road; select one to replace or export it.'}
++                  ? `已选择 ${roadSegmentLabel(Object.keys(selectedRoadNetwork.edges).length)}`
++                  : "导入将创建新道路；选中已有道路后可替换或导出。"}
+               </span>
+             </div>
+             <div className="grid grid-cols-2 gap-2">
+@@ -947,7 +954,7 @@
+                 onClick={copySelectedRoadGraph}
+                 type="button"
+               >
+-                Copy JSON
++                复制 JSON
+               </button>
+               <button
+                 className="rounded-md border border-sidebar-border bg-sidebar px-2 py-1.5 font-medium text-xs transition-colors hover:bg-sidebar-accent disabled:cursor-not-allowed disabled:opacity-40"
+@@ -955,7 +962,7 @@
+                 onClick={importRoadGraphFromClipboard}
+                 type="button"
+               >
+-                Import JSON
++                导入 JSON
+               </button>
+               <button
+                 className="col-span-2 rounded-md border border-sidebar-border bg-sidebar px-2 py-1.5 font-medium text-xs transition-colors hover:bg-sidebar-accent disabled:cursor-not-allowed disabled:opacity-40"
+@@ -964,7 +971,7 @@
+                 onClick={reviewSelectedRoadCleanup}
+                 type="button"
+               >
+-                Review cleanup
++                审阅清理
+               </button>
+             </div>
+             {roadCleanupReview && roadCleanupReview.networkId === selectedRoadNetwork?.id && (
+@@ -974,19 +981,19 @@
+               >
+                 <div className="flex items-start justify-between gap-2">
+                   <div className="flex flex-col gap-0.5">
+-                    <span className="font-semibold text-xs">Cleanup review</span>
++                    <span className="font-semibold text-xs">清理审阅</span>
+                     <span className="text-[10px] text-sidebar-foreground/55">
+-                      {roadCleanupReview.plan.options.horizontalTolerance.toFixed(2)} m plan ·{' '}
+-                      {roadCleanupReview.plan.options.verticalTolerance.toFixed(2)} m vertical
++                      {roadCleanupReview.plan.options.horizontalTolerance.toFixed(2)} m 平面 ·{' '}
++                      {roadCleanupReview.plan.options.verticalTolerance.toFixed(2)} m 垂直
+                     </span>
+                   </div>
+                   <span className="rounded-full bg-sidebar px-2 py-0.5 font-medium text-[10px]">
+-                    {roadCleanupReview.plan.changes.length} changes
++                    {roadCleanupReview.plan.changes.length} 项变更
+                   </span>
+                 </div>
+                 {roadCleanupReview.plan.changes.length === 0 ? (
+                   <p className="m-0 text-[11px] text-sidebar-foreground/65">
+-                    This road graph is already clean at the shown tolerances.
++                    在当前容差下，此道路图无需清理。
+                   </p>
+                 ) : (
+                   <ol className="m-0 flex max-h-52 list-decimal flex-col gap-1.5 overflow-y-auto pl-4">
+@@ -1006,8 +1013,8 @@
+                 )}
+                 {roadCleanupReview.plan.afterIssues.length > 0 && (
+                   <div className="rounded-md bg-amber-500/10 px-2 py-1.5 text-[10px] text-amber-700 dark:text-amber-300">
+-                    {roadCleanupReview.plan.afterIssues.length} validation issue
+-                    {roadCleanupReview.plan.afterIssues.length === 1 ? '' : 's'} will remain after cleanup.
++                    {roadCleanupReview.plan.afterIssues.length} 项校验问题
++                    将在清理后保留。
+                   </div>
+                 )}
+                 <div className="grid grid-cols-2 gap-2">
+@@ -1016,7 +1023,7 @@
+                     onClick={() => setRoadCleanupReview(null)}
+                     type="button"
+                   >
+-                    Cancel
++                    取消
+                   </button>
+                   <button
+                     className="rounded-md bg-sidebar-primary px-2 py-1.5 font-medium text-sidebar-primary-foreground text-xs disabled:cursor-not-allowed disabled:opacity-40"
+@@ -1025,7 +1032,7 @@
+                     onClick={applyReviewedRoadCleanup}
+                     type="button"
+                   >
+-                    Apply changes
++                    应用变更
+                   </button>
+                 </div>
+               </div>
+@@ -1050,7 +1057,7 @@
+       {panelCategory === 'lighting' && (
+         <div className="grid grid-cols-2 gap-2">
+           <div className="col-span-2 pt-1 font-medium text-sidebar-foreground/55 text-xs uppercase tracking-wide">
+-            Roadway and area heads
++            道路与场地灯头
+           </div>
+           <button
+             className={`group relative flex flex-col gap-2 rounded-xl border p-2 transition-all ${
+@@ -1065,7 +1072,7 @@
+               <StreetLightArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-1 pl-0.5 font-medium text-xs">
+-              Street light{' '}
++              路灯{' '}
+               <span className="font-normal text-sidebar-foreground/45">{streetLightCount}</span>
+             </span>
+             {streetLightArmed && (
+@@ -1085,7 +1092,7 @@
+               <PostTopLightArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-1 pl-0.5 font-medium text-xs">
+-              Post-top{' '}
++              柱顶灯{' '}
+               <span className="font-normal text-sidebar-foreground/45">{postTopLightCount}</span>
+             </span>
+             {postTopLightArmed && (
+@@ -1105,7 +1112,7 @@
+               <HeritageCrookLightArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-1 pl-0.5 font-medium text-xs">
+-              Bishop's Crook{' '}
++              牧杖形路灯{' '}
+               <span className="font-normal text-sidebar-foreground/45">
+                 {heritageCrookLightCount}
+               </span>
+@@ -1127,7 +1134,7 @@
+               <CobraHeadLightArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-1 pl-0.5 font-medium text-xs">
+-              Cobra-head{' '}
++              眼镜蛇头灯{' '}
+               <span className="font-normal text-sidebar-foreground/45">{cobraHeadLightCount}</span>
+             </span>
+             {cobraHeadLightArmed && (
+@@ -1147,7 +1154,7 @@
+               <TwinArmMedianLightArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-1 pl-0.5 font-medium text-xs">
+-              Twin-arm median{' '}
++              中央双臂灯{' '}
+               <span className="font-normal text-sidebar-foreground/45">
+                 {twinArmMedianLightCount}
+               </span>
+@@ -1169,7 +1176,7 @@
+               <MultiHeadAreaLightArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-1 pl-0.5 font-medium text-xs">
+-              Area pole{' '}
++              场地灯杆{' '}
+               <span className="font-normal text-sidebar-foreground/45">
+                 {multiHeadAreaLightCount}
+               </span>
+@@ -1191,7 +1198,7 @@
+               <TrussRoadwayLightArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-1 pl-0.5 font-medium text-xs">
+-              Truss roadway{' '}
++              桁架道路灯{' '}
+               <span className="font-normal text-sidebar-foreground/45">
+                 {trussRoadwayLightCount}
+               </span>
+@@ -1209,7 +1216,7 @@
+               <Fragment key={variant.kind}>
+                 {showFamilyHeading && (
+                   <div className="col-span-2 pt-2 font-medium text-sidebar-foreground/55 text-xs uppercase tracking-wide">
+-                    {variant.family} styles
++                    {FAMILY_LABELS[variant.family] ?? variant.family}样式
+                   </div>
+                 )}
+                 <button
+@@ -1243,7 +1250,7 @@
+       {panelCategory === 'utilities' && (
+         <div className="grid grid-cols-2 gap-2">
+           <div className="col-span-2 pt-1 font-medium text-sidebar-foreground/55 text-xs uppercase tracking-wide">
+-            Utility network
++            市政管线网络
+           </div>
+           <button
+             className={`group relative flex flex-col gap-2 rounded-xl border p-2 text-left transition-all ${
+@@ -1258,7 +1265,7 @@
+               <UtilityPoleArtwork />
+             </div>
+             <span className="flex items-center justify-between gap-1 pl-0.5 font-medium text-xs">
+-              Utility pole{' '}
++              电线杆{' '}
+               <span className="font-normal text-sidebar-foreground/45">{utilityPoleCount}</span>
+             </span>
+             {utilityPoleArmed && (
+@@ -1273,7 +1280,7 @@
+               <Fragment key={variant.kind}>
+                 {showFamilyHeading ? (
+                   <div className="col-span-2 pt-2 font-medium text-sidebar-foreground/55 text-xs uppercase tracking-wide">
+-                    {variant.family}
++                    {FAMILY_LABELS[variant.family] ?? variant.family}
+                   </div>
+                 ) : null}
+                 <button
+@@ -1308,7 +1315,7 @@
+       {panelCategory === 'signs' && (
+         <div className="grid grid-cols-2 gap-2">
+           <div className="col-span-2 pt-1 font-medium text-sidebar-foreground/55 text-xs uppercase tracking-wide">
+-            Common signs
++            常用标志
+           </div>
+           {ROAD_SIGN_CATALOG.map((sign) => {
+             const signArmed = roadSignArmed && roadSignId === sign.id
+@@ -1343,7 +1350,7 @@
+       {panelCategory === 'lighting' && streetLightArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Height"
++            label="高度"
+             max={STANDARD_LAMP_HEIGHT_MAX_M}
+             min={STANDARD_LAMP_HEIGHT_MIN_M}
+             onChange={useStreetscapeStore.getState().setStreetLightHeight}
+@@ -1354,7 +1361,7 @@
+             value={height}
+           />
+           <SliderControl
+-            label="Arm"
++            label="支臂"
+             max={3}
+             min={0.3}
+             onChange={useStreetscapeStore.getState().setStreetLightArmLength}
+@@ -1366,7 +1373,7 @@
+           />
+           <ToggleControl
+             checked={lightOn}
+-            label="Lamp on"
++            label="开启灯具"
+             onChange={useStreetscapeStore.getState().setStreetLightOn}
+           />
+         </div>
+@@ -1374,7 +1381,7 @@
+       {panelCategory === 'lighting' && postTopLightArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Height"
++            label="高度"
+             max={STANDARD_LAMP_HEIGHT_MAX_M}
+             min={STANDARD_LAMP_HEIGHT_MIN_M}
+             onChange={useStreetscapeStore.getState().setPostTopLightHeight}
+@@ -1386,7 +1393,7 @@
+           />
+           <ToggleControl
+             checked={postTopLightOn}
+-            label="Lamp on"
++            label="开启灯具"
+             onChange={useStreetscapeStore.getState().setPostTopLightOn}
+           />
+         </div>
+@@ -1394,7 +1401,7 @@
+       {panelCategory === 'lighting' && heritageCrookLightArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Height"
++            label="高度"
+             max={STANDARD_LAMP_HEIGHT_MAX_M}
+             min={STANDARD_LAMP_HEIGHT_MIN_M}
+             onChange={useStreetscapeStore.getState().setHeritageCrookHeight}
+@@ -1405,7 +1412,7 @@
+             value={heritageCrookHeight}
+           />
+           <SliderControl
+-            label="Arm reach"
++            label="支臂伸出"
+             max={1.5}
+             min={0.5}
+             onChange={useStreetscapeStore.getState().setHeritageCrookArmReach}
+@@ -1417,7 +1424,7 @@
+           />
+           <ToggleControl
+             checked={heritageCrookLightOn}
+-            label="Lamp on"
++            label="开启灯具"
+             onChange={useStreetscapeStore.getState().setHeritageCrookLightOn}
+           />
+         </div>
+@@ -1425,7 +1432,7 @@
+       {panelCategory === 'lighting' && cobraHeadLightArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Height"
++            label="高度"
+             max={STANDARD_LAMP_HEIGHT_MAX_M}
+             min={STANDARD_LAMP_HEIGHT_MIN_M}
+             onChange={useStreetscapeStore.getState().setCobraHeadHeight}
+@@ -1436,7 +1443,7 @@
+             value={cobraHeadHeight}
+           />
+           <SliderControl
+-            label="Arm"
++            label="支臂"
+             max={3}
+             min={0.5}
+             onChange={useStreetscapeStore.getState().setCobraHeadArmLength}
+@@ -1448,7 +1455,7 @@
+           />
+           <ToggleControl
+             checked={cobraHeadLightOn}
+-            label="Lamp on"
++            label="开启灯具"
+             onChange={useStreetscapeStore.getState().setCobraHeadLightOn}
+           />
+         </div>
+@@ -1456,7 +1463,7 @@
+       {panelCategory === 'lighting' && twinArmMedianLightArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Height"
++            label="高度"
+             max={STANDARD_LAMP_HEIGHT_MAX_M}
+             min={STANDARD_LAMP_HEIGHT_MIN_M}
+             onChange={useStreetscapeStore.getState().setTwinArmMedianHeight}
+@@ -1467,7 +1474,7 @@
+             value={twinArmMedianHeight}
+           />
+           <SliderControl
+-            label="Arm"
++            label="支臂"
+             max={3}
+             min={0.5}
+             onChange={useStreetscapeStore.getState().setTwinArmMedianArmLength}
+@@ -1479,7 +1486,7 @@
+           />
+           <ToggleControl
+             checked={twinArmMedianLightOn}
+-            label="Lamps on"
++            label="开启灯具"
+             onChange={useStreetscapeStore.getState().setTwinArmMedianLightOn}
+           />
+         </div>
+@@ -1487,7 +1494,7 @@
+       {panelCategory === 'lighting' && multiHeadAreaLightArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Height"
++            label="高度"
+             max={STANDARD_LAMP_HEIGHT_MAX_M}
+             min={STANDARD_LAMP_HEIGHT_MIN_M}
+             onChange={useStreetscapeStore.getState().setMultiHeadAreaHeight}
+@@ -1498,7 +1505,7 @@
+             value={multiHeadAreaHeight}
+           />
+           <SliderControl
+-            label="Arm"
++            label="支臂"
+             max={3}
+             min={0.5}
+             onChange={useStreetscapeStore.getState().setMultiHeadAreaArmLength}
+@@ -1513,14 +1520,14 @@
+               useStreetscapeStore.getState().setMultiHeadAreaHeadCount(Number(value) as 3 | 4)
+             }
+             options={[
+-              { label: '3 heads', value: '3' },
+-              { label: '4 heads', value: '4' },
++              { label: "3 个灯头", value: '3' },
++              { label: "4 个灯头", value: '4' },
+             ]}
+             value={String(multiHeadAreaHeadCount)}
+           />
+           <ToggleControl
+             checked={multiHeadAreaLightOn}
+-            label="Lamps on"
++            label="开启灯具"
+             onChange={useStreetscapeStore.getState().setMultiHeadAreaLightOn}
+           />
+         </div>
+@@ -1528,7 +1535,7 @@
+       {panelCategory === 'lighting' && trussRoadwayLightArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Height"
++            label="高度"
+             max={STANDARD_LAMP_HEIGHT_MAX_M}
+             min={STANDARD_LAMP_HEIGHT_MIN_M}
+             onChange={useStreetscapeStore.getState().setTrussRoadwayHeight}
+@@ -1539,7 +1546,7 @@
+             value={trussRoadwayHeight}
+           />
+           <SliderControl
+-            label="Arm"
++            label="支臂"
+             max={3.5}
+             min={0.8}
+             onChange={useStreetscapeStore.getState().setTrussRoadwayArmLength}
+@@ -1550,7 +1557,7 @@
+             value={trussRoadwayArmLength}
+           />
+           <SliderControl
+-            label="Brace depth"
++            label="支撑深度"
+             max={1.2}
+             min={0.35}
+             onChange={useStreetscapeStore.getState().setTrussRoadwayBraceDepth}
+@@ -1562,7 +1569,7 @@
+           />
+           <ToggleControl
+             checked={trussRoadwayLightOn}
+-            label="Lamp on"
++            label="开启灯具"
+             onChange={useStreetscapeStore.getState().setTrussRoadwayLightOn}
+           />
+         </div>
+@@ -1570,7 +1577,7 @@
+       {panelCategory === 'lighting' && catalogLampArmed && (
+         <div className="flex flex-col gap-0.5">
+           <p className="px-2 pt-1 text-sidebar-foreground/55 text-xs">
+-            Shared {activeCatalogVariant?.family ?? 'lamp'} family style
++            共用{FAMILY_LABELS[activeCatalogVariant?.family ?? ''] ?? '灯具'}系列样式
+           </p>
+           <SegmentedControl
+             onChange={useStreetscapeStore.getState().setCatalogLampVisualStyle}
+@@ -1584,7 +1591,7 @@
+             && activeCatalogVariant?.projection !== 'tunnel'
+             && activeCatalogVariant?.projection !== 'canopy' && (
+             <SliderControl
+-              label="Height"
++              label="高度"
+               max={activeCatalogVariant?.height[1] ?? STANDARD_LAMP_HEIGHT_MAX_M}
+               min={activeCatalogVariant?.height[0] ?? STANDARD_LAMP_HEIGHT_MIN_M}
+               onChange={useStreetscapeStore.getState().setCatalogLampHeight}
+@@ -1597,12 +1604,12 @@
+           )}
+           <SliderControl
+             label={activeCatalogVariant?.projection === 'path'
+-              ? 'Twin head span'
++              ? "双灯头跨度"
+               : activeCatalogVariant?.projection === 'canopy'
+-                ? 'Fixture width'
++                ? "灯具宽度"
+                 : activeCatalogVariant?.projection === 'wall-pack'
+-                  ? 'Fixture depth'
+-                  : 'Reach / span'}
++                  ? "灯具深度"
++                  : "伸出／跨度"}
+             max={activeCatalogVariant?.arm[1] ?? 12}
+             min={activeCatalogVariant?.arm[0] ?? 0.15}
+             onChange={useStreetscapeStore.getState().setCatalogLampArmLength}
+@@ -1618,7 +1625,7 @@
+           />
+           <ToggleControl
+             checked={catalogLampLightOn}
+-            label="Lamp on"
++            label="开启灯具"
+             onChange={useStreetscapeStore.getState().setCatalogLampLightOn}
+           />
+         </div>
+@@ -1626,7 +1633,7 @@
+       {panelCategory === 'utilities' && utilityPoleArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Height"
++            label="高度"
+             max={15.85}
+             min={7.62}
+             onChange={useStreetscapeStore.getState().setUtilityPoleHeight}
+@@ -1637,7 +1644,7 @@
+             value={utilityPoleHeight}
+           />
+           <SliderControl
+-            label="Crossarm"
++            label="横担"
+             max={3.66}
+             min={STANDARD_UTILITY_POLE_CROSSARM_LENGTH_M}
+             onChange={useStreetscapeStore.getState().setUtilityPoleCrossarmLength}
+@@ -1648,27 +1655,27 @@
+             value={utilityPoleCrossarmLength}
+           />
+           <span className="px-2 pt-2 font-medium text-sidebar-foreground/55 text-xs">
+-            Assembly
++            杆型
+           </span>
+           <SegmentedControl
+             onChange={(value) =>
+               useStreetscapeStore.getState().setUtilityPoleAssembly(value as UtilityPoleAssembly)
+             }
+             options={[
+-              { label: 'Tangent', value: 'tangent' },
+-              { label: 'Small angle', value: 'small-angle' },
+-              { label: 'Tap junction', value: 'junction' },
+-              { label: 'Dead-end', value: 'dead-end' },
++              { label: "直线杆", value: 'tangent' },
++              { label: "小转角杆", value: 'small-angle' },
++              { label: "分支杆", value: 'junction' },
++              { label: "终端杆", value: 'dead-end' },
+             ]}
+             value={utilityPoleAssembly}
+           />
+           <ToggleControl
+             checked={utilityPoleTransformerMounted}
+-            label="Transformer"
++            label="变压器"
+             onChange={useStreetscapeStore.getState().setUtilityPoleTransformerMounted}
+           />
+           <p className="px-2 pt-2 text-sidebar-foreground/45 text-xs">
+-            Inserts into a nearby line or branches to the nearest pole within{' '}
++            接入附近线路，或分支连接到以下距离内最近的电线杆：{' '}
+             {STANDARD_UTILITY_POLE_AUTO_CONNECT_DISTANCE_M.toFixed(1)} m.
+           </p>
+         </div>
+@@ -1676,7 +1683,7 @@
+       {panelCategory === 'signs' && roadSignArmed && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Post height"
++            label="立柱高度"
+             max={4.5}
+             min={1.2}
+             onChange={useStreetscapeStore.getState().setRoadSignPostHeight}
+@@ -1687,7 +1694,7 @@
+             value={roadSignPostHeight}
+           />
+           <SliderControl
+-            label="Sign scale"
++            label="标志缩放"
+             max={2.5}
+             min={0.5}
+             onChange={useStreetscapeStore.getState().setRoadSignScale}
+@@ -1701,8 +1708,8 @@
+               useStreetscapeStore.getState().setRoadSignMounting(value as 'single-post' | 'double-post')
+             }
+             options={[
+-              { label: 'Single post', value: 'single-post' },
+-              { label: 'Double post', value: 'double-post' },
++              { label: "单柱", value: 'single-post' },
++              { label: "双柱", value: 'double-post' },
+             ]}
+             value={roadSignMounting}
+           />
+diff --git a/src/road-auto-infrastructure-settings.ts b/src/road-auto-infrastructure-settings.ts
+--- a/src/road-auto-infrastructure-settings.ts
++++ b/src/road-auto-infrastructure-settings.ts
+@@ -35,10 +35,10 @@
+   kind: RoadAutoInfrastructureKind
+   label: string
+ }> = [
+-  { kind: 'streetscape:traffic-signal', label: 'Traffic signals' },
+-  { kind: 'streetscape:drainage-inlet', label: 'Drainage grates' },
+-  { kind: 'streetscape:manhole-cover', label: 'Manhole covers' },
+-  { kind: 'streetscape:fire-hydrant', label: 'Fire hydrants' },
+-  { kind: 'streetscape:traffic-bollard', label: 'Traffic bollards' },
+-  { kind: 'streetscape:road-barrier', label: 'Road barriers' },
++  { kind: 'streetscape:traffic-signal', label: "交通信号灯" },
++  { kind: 'streetscape:drainage-inlet', label: "排水篦子" },
++  { kind: 'streetscape:manhole-cover', label: "井盖" },
++  { kind: 'streetscape:fire-hydrant', label: "消火栓" },
++  { kind: 'streetscape:traffic-bollard', label: "交通隔离柱" },
++  { kind: 'streetscape:road-barrier', label: "道路护栏" },
+ ]
+diff --git a/src/road-draft-numeric.ts b/src/road-draft-numeric.ts
+--- a/src/road-draft-numeric.ts
++++ b/src/road-draft-numeric.ts
+@@ -67,10 +67,10 @@
+ }
+ 
+ export function roadDraftNumericLabel(field: RoadDraftNumericField): string {
+-	if (field === "bearing") return "Bearing";
+-	if (field === "radius") return "Bend radius";
+-	if (field === "tangent") return "Tangent";
+-	return "Length";
++	if (field === "bearing") return "方位角";
++	if (field === "radius") return "弯曲半径";
++	if (field === "tangent") return "切线长";
++	return "长度";
+ }
+ 
+ export function roadDraftNumericUnit(field: RoadDraftNumericField): string {
+diff --git a/src/road-draft-validity.test.ts b/src/road-draft-validity.test.ts
+--- a/src/road-draft-validity.test.ts
++++ b/src/road-draft-validity.test.ts
+@@ -16,8 +16,8 @@
+ 
+ 		expect(roadDraftInvalidState(preview)).toEqual({
+ 			code: "too-short",
+-			message: "Move the cursor at least 0.05 m away from the previous point.",
+-			title: "Cannot place road",
++			message: "请将光标移至距上一点至少 0.05 m 的位置。",
++			title: "无法放置道路",
+ 		});
+ 	});
+ 
+@@ -27,8 +27,8 @@
+ 		const invalid = roadDraftInvalidState(preview);
+ 
+ 		expect(invalid?.code).toBe("duplicate");
+-		expect(invalid?.message).toContain("already exists");
+-		expect(invalid?.message).toContain("different endpoint");
++		expect(invalid?.message).toContain("已存在");
++		expect(invalid?.message).toContain("其他端点");
+ 	});
+ 
+ 	test("returns no error for a valid new road", () => {
+diff --git a/src/road-draft-validity.ts b/src/road-draft-validity.ts
+--- a/src/road-draft-validity.ts
++++ b/src/road-draft-validity.ts
+@@ -7,25 +7,25 @@
+ export type RoadDraftInvalidState = {
+ 	code: "duplicate" | "too-short" | RoadValidationIssue["code"];
+ 	message: string;
+-	title: "Cannot place road";
++	title: "无法放置道路";
+ };
+ 
+ function blockingIssueAction(issue: RoadValidationIssue): string {
+ 	switch (issue.code) {
+ 		case "duplicate-edge":
+-			return "That connection already exists. Choose a different endpoint or extend from an open end.";
++			return "该连接已存在。请选择其他端点，或从开放端点继续延伸。";
+ 		case "short-edge":
+ 		case "self-edge":
+-			return "Move the endpoint farther from the previous point.";
++			return "请将端点移至距上一点更远的位置。";
+ 		case "missing-endpoint":
+-			return "Repair or remove the broken road edge before adding another road.";
++			return "请先修复或移除损坏路段，再添加道路。";
+ 		case "non-finite-alignment":
+ 		case "non-finite-position":
+-			return "Reset the malformed road point before continuing.";
++			return "请先重置无效道路点，再继续操作。";
+ 		case "invalid-vertical-profile":
+-			return "Fix the road profile stations before adding another segment.";
++			return "请先修复道路纵断面桩号，再添加路段。";
+ 		default:
+-			return `Resolve “${issue.message}” before adding this road.`;
++			return `添加此道路前，请先解决“${issue.message}”。`;
+ 	}
+ }
+ 
+@@ -36,16 +36,16 @@
+ 	if (preview.operation === "too-short") {
+ 		return {
+ 			code: "too-short",
+-			message: "Move the cursor at least 0.05 m away from the previous point.",
+-			title: "Cannot place road",
++			message: "请将光标移至距上一点至少 0.05 m 的位置。",
++			title: "无法放置道路",
+ 		};
+ 	}
+ 	if (preview.operation === "duplicate") {
+ 		return {
+ 			code: "duplicate",
+ 			message:
+-				"That road segment already exists. Choose a different endpoint or extend from an open end.",
+-			title: "Cannot place road",
++				"该路段已存在。请选择其他端点，或从开放端点继续延伸。",
++			title: "无法放置道路",
+ 		};
+ 	}
+ 
+@@ -56,7 +56,7 @@
+ 		? {
+ 				code: issue.code,
+ 				message: blockingIssueAction(issue),
+-				title: "Cannot place road",
++				title: "无法放置道路",
+ 			}
+ 		: null;
+ }
+diff --git a/src/road-junction-boundary-editor.test.tsx b/src/road-junction-boundary-editor.test.tsx
+--- a/src/road-junction-boundary-editor.test.tsx
++++ b/src/road-junction-boundary-editor.test.tsx
+@@ -69,9 +69,9 @@
+ 				onUpdate: () => {},
+ 			}),
+ 		);
+-		expect(controls).toContain('aria-label="Manual junction boundary editor"');
+-		expect(controls).toContain('aria-label="Boundary point 1 X"');
+-		expect(controls).toContain("Reset");
++		expect(controls).toContain("aria-label=\"手动路口边界编辑器\"");
++		expect(controls).toContain('aria-label="边界点 1 X"');
++		expect(controls).toContain("重置");
+ 
+ 		const model = renderToStaticMarkup(
+ 			createElement(RoadNetworkModel, {
+diff --git a/src/road-network-cleanup.ts b/src/road-network-cleanup.ts
+--- a/src/road-network-cleanup.ts
++++ b/src/road-network-cleanup.ts
+@@ -203,8 +203,8 @@
+ 		delete graph.edges[edgeId];
+ 		addChange(
+ 			"remove-edge",
+-			`Remove edge ${edgeId}`,
+-			`${reason}${removedAttachments.length ? ` Also removes ${removedAttachments.length} attached asset reference${removedAttachments.length === 1 ? "" : "s"}.` : ""}`,
++			`移除路段 ${edgeId}`,
++			`${reason}${removedAttachments.length ? `同时移除 ${removedAttachments.length} 个附属资产引用。` : ""}`,
+ 			[edge.startNodeId, edge.endNodeId],
+ 			[edgeId],
+ 		);
+@@ -218,13 +218,13 @@
+ 			const start = graph.graphNodes[edge.startNodeId];
+ 			const end = graph.graphNodes[edge.endNodeId];
+ 			if (!start || !end) {
+-				removeEdge(edgeId, "One or both endpoint nodes are missing.");
++				removeEdge(edgeId, "一个或两个端点节点缺失。");
+ 			} else if (edge.startNodeId === edge.endNodeId) {
+-				removeEdge(edgeId, "The edge loops back to the same node.");
++				removeEdge(edgeId, "路段回接到了同一节点。");
+ 			} else if (edgeLength(graph, edge) < options.minEdgeLength) {
+ 				removeEdge(
+ 					edgeId,
+-					`Its plan length is below ${options.minEdgeLength.toFixed(2)} m.`,
++					`其平面长度小于 ${options.minEdgeLength.toFixed(2)} m。`,
+ 				);
+ 			}
+ 		}
+@@ -235,7 +235,7 @@
+ 			const pair = [edge.startNodeId, edge.endNodeId].sort().join("|");
+ 			const keeper = seen.get(pair);
+ 			if (keeper) {
+-				removeEdge(edgeId, `It duplicates edge ${keeper}.`);
++				removeEdge(edgeId, `该路段与 ${keeper} 重复。`);
+ 			} else {
+ 				seen.set(pair, edgeId);
+ 			}
+@@ -254,8 +254,8 @@
+ 		graph.activeStyleId = DEFAULT_ROAD_STYLE_ID;
+ 		addChange(
+ 			"repair-style",
+-			"Restore default road styles",
+-			"The graph had no usable style presets, so the built-in road styles will be restored.",
++			"恢复默认道路样式",
++			"道路图没有可用的样式预设，将恢复内建道路样式。",
+ 		);
+ 	}
+ 	const fallbackStyleId = graph.stylePresets[graph.activeStyleId]
+@@ -268,8 +268,8 @@
+ 		graph.activeStyleId = fallbackStyleId;
+ 		addChange(
+ 			"repair-style",
+-			"Repair active road style",
+-			`Replace missing active style ${previous} with ${fallbackStyleId}.`,
++			"修复活动道路样式",
++			`将缺失的活动样式 ${previous} 替换为 ${fallbackStyleId}。`,
+ 		);
+ 	}
+ 	for (const edgeId of sortedIds(graph.edges)) {
+@@ -280,8 +280,8 @@
+ 		graph.edges[edgeId] = { ...edge, styleId: fallbackStyleId };
+ 		addChange(
+ 			"repair-style",
+-			`Repair style on ${edgeId}`,
+-			`Replace missing style ${previous} with ${fallbackStyleId}.`,
++			`修复 ${edgeId} 的样式`,
++			`将缺失样式 ${previous} 替换为 ${fallbackStyleId}。`,
+ 			[],
+ 			[edgeId],
+ 		);
+@@ -341,8 +341,8 @@
+ 					delete graph.graphNodes[removedId];
+ 					addChange(
+ 						"merge-nodes",
+-						`Merge node ${removedId} into ${keeperId}`,
+-						`The nodes are ${distanceXZ(keeper.position, removed.position).toFixed(2)} m apart at a compatible level. Incident edges and junction state will use ${keeperId}.`,
++						`将节点 ${removedId} 合并到 ${keeperId}`,
++						`两节点高程兼容，间距为 ${distanceXZ(keeper.position, removed.position).toFixed(2)} m。相连路段与路口状态将使用 ${keeperId}。`,
+ 						[keeperId, removedId],
+ 					);
+ 					removeInvalidEdges();
+@@ -424,8 +424,8 @@
+ 				}
+ 				addChange(
+ 					"snap-node-to-edge",
+-					`Snap ${nodeId} to ${best.edgeId}`,
+-					`Move the dangling endpoint ${best.distance.toFixed(2)} m to the compatible road centerline and split that edge at the new T-junction.`,
++					`将 ${nodeId} 吸附到 ${best.edgeId}`,
++					`将悬空端点移动 ${best.distance.toFixed(2)} m 至兼容道路中心线，并在新丁字路口处分割路段。`,
+ 					[nodeId],
+ 					[best.edgeId, splitEdgeId, sourceEdge.id],
+ 				);
+@@ -493,8 +493,8 @@
+ 					}
+ 					addChange(
+ 						"split-crossing",
+-						`Create crossing at ${crossingNodeId}`,
+-						`Split ${first.id} and ${second.id} at their same-level centerline crossing and connect all four approaches.`,
++						`在 ${crossingNodeId} 创建交叉口`,
++						`在同高程中心线交点处分割 ${first.id} 与 ${second.id}，连接四条接入道路。`,
+ 						[crossingNodeId],
+ 						[first.id, firstSplitId, second.id, secondSplitId],
+ 					);
+@@ -524,8 +524,8 @@
+ 		delete graph.junctions[nodeId];
+ 		addChange(
+ 			"remove-node",
+-			`Remove isolated node ${nodeId}`,
+-			`No road edge references this node${hadJunction ? "; its stale junction record is removed too" : ""}.`,
++			`移除孤立节点 ${nodeId}`,
++			`没有路段引用此节点${hadJunction ? '；同时移除过期路口记录' : ''}。`,
+ 			[nodeId],
+ 		);
+ 	}
+@@ -543,10 +543,10 @@
+ 		if (junctionsBefore[nodeId] === stableJunction(graph.junctions[nodeId])) continue;
+ 		addChange(
+ 			"rebuild-junction",
+-			`Rebuild junction ${nodeId}`,
++			`重建路口 ${nodeId}`,
+ 			graph.junctions[nodeId]
+-				? "Regenerate editable junction classification, primary-road candidates, and curb corners from the cleaned topology."
+-				: "Remove the obsolete junction record because this node is no longer a multi-approach junction.",
++				? "依据清理后的拓扑重新生成可编辑路口分类、主路候选和路缘转角。"
++				: "此节点已不再是多路交叉口，将移除过期路口记录。",
+ 			[nodeId],
+ 			incidentRoadEdges(graph, nodeId).map((edge) => edge.id),
+ 		);
+diff --git a/src/road-network-cross-section-inspector.tsx b/src/road-network-cross-section-inspector.tsx
+--- a/src/road-network-cross-section-inspector.tsx
++++ b/src/road-network-cross-section-inspector.tsx
+@@ -26,13 +26,13 @@
+ 	min: number;
+ 	step: number;
+ }> = [
+-	{ key: "laneCount", label: "Lane count", min: 1, max: 12, step: 1 },
+-	{ key: "laneWidth", label: "Lane width", min: 2.4, max: 5, step: 0.05 },
+-	{ key: "shoulderWidth", label: "Shoulder width", min: 0, max: 4, step: 0.05 },
+-	{ key: "medianWidth", label: "Median width", min: 0, max: 12, step: 0.1 },
++	{ key: "laneCount", label: "车道数量", min: 1, max: 12, step: 1 },
++	{ key: "laneWidth", label: "车道宽度", min: 2.4, max: 5, step: 0.05 },
++	{ key: "shoulderWidth", label: "路肩宽度", min: 0, max: 4, step: 0.05 },
++	{ key: "medianWidth", label: "中央分隔带宽度", min: 0, max: 12, step: 0.1 },
+ 	{
+ 		key: "surfaceThickness",
+-		label: "Surface thickness",
++		label: "路面厚度",
+ 		min: 0.02,
+ 		max: 1,
+ 		step: 0.01,
+@@ -45,10 +45,10 @@
+ 	max: number;
+ 	step: number;
+ }> = [
+-	{ key: "gutterWidth", label: "Gutter", max: 2, step: 0.05 },
+-	{ key: "curbWidth", label: "Kerb", max: 1, step: 0.05 },
+-	{ key: "vergeWidth", label: "Verge", max: 8, step: 0.1 },
+-	{ key: "sidewalkWidth", label: "Sidewalk", max: 6, step: 0.1 },
++	{ key: "gutterWidth", label: "排水沟", max: 2, step: 0.05 },
++	{ key: "curbWidth", label: "路缘石", max: 1, step: 0.05 },
++	{ key: "vergeWidth", label: "路侧绿带", max: 8, step: 0.1 },
++	{ key: "sidewalkWidth", label: "人行道", max: 6, step: 0.1 },
+ ];
+ 
+ const SIDE_CONTROLS: Array<{
+@@ -57,8 +57,8 @@
+ 	max: number;
+ 	step: number;
+ }> = [
+-	{ key: "parkingLaneWidth", label: "Parking lane", max: 4, step: 0.1 },
+-	{ key: "bikeLaneWidth", label: "Bike lane", max: 3, step: 0.1 },
++	{ key: "parkingLaneWidth", label: "停车带", max: 4, step: 0.1 },
++	{ key: "bikeLaneWidth", label: "自行车道", max: 3, step: 0.1 },
+ ];
+ 
+ function RoadDimension({
+@@ -79,7 +79,7 @@
+ 	value: number;
+ }) {
+ 	return (
+-		<div aria-label={`${accessibilityLabel} in metres`}>
++		<div aria-label={label === '车道数量' ? accessibilityLabel : `${accessibilityLabel}（米）`}>
+ 			<SliderControl
+ 				label={label}
+ 				max={max}
+@@ -87,7 +87,7 @@
+ 				onChange={onChange}
+ 				precision={step >= 1 ? 0 : step >= 0.1 ? 1 : 2}
+ 				step={step}
+-				unit={label === "Lane count" ? "" : "m"}
++				unit={label === "车道数量" ? "" : "m"}
+ 				value={value}
+ 			/>
+ 		</div>
+@@ -138,7 +138,7 @@
+ 		<div className="flex flex-col gap-2">
+ 			{scope.edgeId ? (
+ 				<ActionButton
+-					label="Use network style"
++					label="使用网络样式"
+ 					onClick={() => {
+ 						const patch = resetRoadEdgeStyle(node, scope.edgeId!);
+ 						if (patch) onUpdate(patch);
+@@ -147,7 +147,7 @@
+ 				/>
+ 			) : null}
+ 			<div className="flex flex-col gap-1">
+-				<RoadPanelSubheading>Roadway</RoadPanelSubheading>
++				<RoadPanelSubheading>车行道</RoadPanelSubheading>
+ 				{ROADWAY_CONTROLS.map((control) => (
+ 					<RoadDimension
+ 						accessibilityLabel={control.label}
+@@ -162,10 +162,10 @@
+ 				))}
+ 			</div>
+ 			<div className="flex flex-col gap-1">
+-				<RoadPanelSubheading>Shared roadside</RoadPanelSubheading>
++				<RoadPanelSubheading>共用路侧设施</RoadPanelSubheading>
+ 				{SHARED_SIDE_CONTROLS.map((control) => (
+ 					<RoadDimension
+-						accessibilityLabel={`Shared ${control.label.toLowerCase()}`}
++						accessibilityLabel={`共用${control.label}`}
+ 						key={control.key}
+ 						label={control.label}
+ 						max={control.max}
+@@ -177,7 +177,7 @@
+ 			</div>
+ 			{(["left", "right"] as const).map((side: RoadSide) => {
+ 				const components = resolveRoadSideComponents(style, side);
+-				const sideLabel = side === "left" ? "Left side" : "Right side";
++				const sideLabel = side === "left" ? "左侧" : "右侧";
+ 				return (
+ 					<div
+ 						key={side}
+@@ -186,7 +186,7 @@
+ 						<RoadPanelSubheading>{sideLabel}</RoadPanelSubheading>
+ 						{SIDE_CONTROLS.map((control) => (
+ 							<RoadDimension
+-								accessibilityLabel={`${sideLabel} ${control.label.toLowerCase()}`}
++								accessibilityLabel={`${sideLabel}${control.label}`}
+ 								key={control.key}
+ 								label={control.label}
+ 								max={control.max}
+diff --git a/src/road-network-definition.ts b/src/road-network-definition.ts
+--- a/src/road-network-definition.ts
++++ b/src/road-network-definition.ts
+@@ -472,10 +472,10 @@
+ 		const splineAction = hasSplineAlignment
+ 			? {
+ 					id: "road:edit-spline",
+-					label: splineEditing ? "Finish spline edit" : "Edit spline",
++					label: splineEditing ? "完成样条编辑" : "编辑样条",
+ 					title: splineEditing
+-						? "Hide the spline reshape handles"
+-						: "Show draggable controls for reshaping this spline road",
++						? "隐藏样条形状调整控制柄"
++						: "显示可拖动的控制柄以调整样条道路形状",
+ 					icon: { kind: "iconify" as const, name: "lucide:move" },
+ 					run: () => {
+ 						useStreetscapeStore
+@@ -552,8 +552,8 @@
+ 		const placeSignalAssetsAction = signalized
+ 			? {
+ 					id: "road:place-signal-assets",
+-					label: signalAttachments.length > 0 ? "Refresh signal assets" : "Place signal assets",
+-					title: "Create a sparse pair of editable roadside mast-arm signals",
++					label: signalAttachments.length > 0 ? "刷新信号灯设施" : "放置信号灯设施",
++					title: "创建一对可编辑的路侧悬臂信号灯",
+ 					icon: { kind: "iconify" as const, name: "lucide:traffic-cone" },
+ 					history: "single" as const,
+ 					run: ({
+@@ -634,10 +634,10 @@
+ 			...(placeSignalAssetsAction ? [placeSignalAssetsAction] : []),
+ 			{
+ 				id: "road:toggle-roundabout",
+-				label: roundabout ? "Standard junction" : "Roundabout",
++				label: roundabout ? "标准路口" : "环岛",
+ 				title: roundabout
+-					? "Convert the selected junction back to automatic"
+-					: "Convert the selected junction to a roundabout",
++					? "将选中路口恢复为自动处理"
++					: "将选中路口转换为环岛",
+ 				icon: { kind: "iconify" as const, name: "lucide:circle-dot" },
+ 				history: "single" as const,
+ 				run: ({
+@@ -654,8 +654,8 @@
+ 			},
+ 			{
+ 				id: "road:cycle-primary",
+-				label: "Change primary road",
+-				title: "Cycle the through-road pair for the selected junction",
++				label: "更改主路",
++				title: "循环切换选中路口的贯通道路对",
+ 				icon: { kind: "iconify" as const, name: "lucide:route" },
+ 				history: "single" as const,
+ 				run: ({
+@@ -676,8 +676,8 @@
+ 				? [
+ 						{
+ 							id: "road:tighten-corner",
+-							label: "Tighter corner",
+-							title: "Reduce only the selected curb-return radius by 1 metre",
++							label: "缩小转角",
++							title: "将选中路缘转角的半径减小 1 m",
+ 							icon: { kind: "iconify" as const, name: "lucide:shrink" },
+ 							history: "single" as const,
+ 							run: ({
+@@ -700,8 +700,8 @@
+ 						},
+ 						{
+ 							id: "road:widen-corner",
+-							label: "Wider corner",
+-							title: "Increase only the selected curb-return radius by 1 metre",
++							label: "增大转角",
++							title: "将选中路缘转角的半径增大 1 m",
+ 							icon: { kind: "iconify" as const, name: "lucide:expand" },
+ 							history: "single" as const,
+ 							run: ({
+@@ -733,12 +733,12 @@
+ 	preview: () => import("./road-network-preview"),
+ 	tool: () => import("./road-network-tool"),
+ 	toolHints: [
+-		{ key: "Left click", label: "Add road or spline point" },
+-		{ key: "Enter", label: "Finish current road" },
+-		{ key: "Double click", label: "Finish current road" },
++		{ key: "Left click", label: "添加道路或样条点" },
++		{ key: "Enter", label: "完成当前道路" },
++		{ key: "Double click", label: "完成当前道路" },
+ 		{
+ 			key: "C",
+-			label: "Alignment",
++			label: "线形",
+ 			chip: {
+ 				subscribe: (onChange: () => void) =>
+ 					useStreetscapeStore.subscribe(onChange),
+@@ -762,7 +762,7 @@
+ 		},
+ 		{
+ 			key: "B",
+-			label: "Elevation",
++			label: "标高",
+ 			chip: {
+ 				subscribe: (onChange: () => void) =>
+ 					useStreetscapeStore.subscribe(onChange),
+@@ -784,23 +784,23 @@
+ 				tooltip: "Road elevation — click or press B to cycle",
+ 			},
+ 		},
+-		{ key: "L", label: "Enter exact road length" },
+-		{ key: "A", label: "Enter exact bearing" },
+-		{ key: "R", label: "Enter bend radius" },
+-		{ key: "T", label: "Enter bend tangent" },
+-		{ key: "J", label: "Toggle automatic junctions" },
+-		{ key: "Esc", label: "Stop road tool" },
++		{ key: "L", label: "输入精确道路长度" },
++		{ key: "A", label: "输入精确方位角" },
++		{ key: "R", label: "输入弯曲半径" },
++		{ key: "T", label: "输入弯曲切线长" },
++		{ key: "J", label: "切换自动路口" },
++		{ key: "Esc", label: "停止道路工具" },
+ 	] as unknown as NonNullable<RoadNetworkDefinition["toolHints"]>,
+ 	presentation: {
+-		label: "Road",
++		label: "道路",
+ 		description:
+-			"Draw independently selectable connected roads with automatic junction topology.",
++			"绘制可独立选择的相连道路，并自动生成路口拓扑。",
+ 		icon: { kind: "iconify", name: "lucide:route" },
+ 		paletteSection: "structure",
+ 		paletteOrder: 15,
+ 	},
+ 	mcp: {
+ 		description:
+-			"One connected road centerline component whose surface and junction shapes are generated automatically.",
++			"相连道路中心线组件，路面与路口形状自动生成。",
+ 	},
+ };
+diff --git a/src/road-network-io.test.ts b/src/road-network-io.test.ts
+--- a/src/road-network-io.test.ts
++++ b/src/road-network-io.test.ts
+@@ -60,12 +60,12 @@
+   })
+ 
+   test('rejects unrelated, malformed, and topologically invalid payloads', () => {
+-    expect(() => importRoadNetworkGraph('not json')).toThrow('valid road-network JSON')
+-    expect(() => importRoadNetworkGraph('{}')).toThrow('supported Pascal road-network')
++    expect(() => importRoadNetworkGraph('not json')).toThrow("有效的道路网络 JSON")
++    expect(() => importRoadNetworkGraph('{}')).toThrow('受支持的 Pascal 道路网络')
+ 
+     const envelope = JSON.parse(exportRoadNetworkGraph(sampleNetwork()))
+     const edge = Object.values(envelope.graph.edges)[0] as { endNodeId: string }
+     edge.endNodeId = 'missing-node'
+-    expect(() => importRoadNetworkGraph(JSON.stringify(envelope))).toThrow('missing endpoint')
++    expect(() => importRoadNetworkGraph(JSON.stringify(envelope))).toThrow('缺失端点')
+   })
+ })
+diff --git a/src/road-network-io.ts b/src/road-network-io.ts
+--- a/src/road-network-io.ts
++++ b/src/road-network-io.ts
+@@ -61,12 +61,12 @@
+   try {
+     value = JSON.parse(source)
+   } catch {
+-    throw new Error('The clipboard does not contain valid road-network JSON.')
++    throw new Error("剪贴板中没有有效的道路网络 JSON。")
+   }
+ 
+   const parsed = RoadNetworkExchange.safeParse(value)
+   if (!parsed.success) {
+-    throw new Error('This is not a supported Pascal road-network exchange file.')
++    throw new Error("此文件不是受支持的 Pascal 道路网络交换文件。")
+   }
+ 
+   const graph = RoadNetworkSemanticGraph.parse({
+@@ -79,7 +79,7 @@
+   const blockingIssues = validateRoadGraph(graph)
+     .filter((issue) => issue.severity === 'error')
+   if (blockingIssues.length > 0) {
+-    throw new Error(`Road graph rejected: ${blockingIssues[0]!.message}`)
++    throw new Error(`道路图被拒绝：${blockingIssues[0]!.message}`)
+   }
+   return graph
+ }
+diff --git a/src/road-network-junction-inspector.test.tsx b/src/road-network-junction-inspector.test.tsx
+--- a/src/road-network-junction-inspector.test.tsx
++++ b/src/road-network-junction-inspector.test.tsx
+@@ -37,11 +37,11 @@
+ 				onUpdate: () => {},
+ 			}),
+ 		);
+-		expect(markup).toContain('aria-label="Selected junction treatment"');
++		expect(markup).toContain("aria-label=\"选中路口处理方式\"");
+ 		for (const treatment of ["auto", "stop", "yield", "signal", "roundabout"]) {
+ 			expect(markup).toContain(`value="${treatment}"`);
+ 		}
+-		expect(markup.match(/aria-label="Approach \d control"/g)).toHaveLength(3);
++		expect(markup.match(/aria-label="接入道路 \d 控制"/g)).toHaveLength(3);
+ 	});
+ 
+ 	test("overrides exactly one junction approach control", () => {
+@@ -62,7 +62,7 @@
+ 				onUpdate: () => {},
+ 			}),
+ 		);
+-		expect(markup).toContain('aria-label="Road junction"');
+-		expect(markup).toContain("Choose junction");
++		expect(markup).toContain("aria-label=\"道路交叉口\"");
++		expect(markup).toContain("选择路口");
+ 	});
+ });
+diff --git a/src/road-network-junction-inspector.tsx b/src/road-network-junction-inspector.tsx
+--- a/src/road-network-junction-inspector.tsx
++++ b/src/road-network-junction-inspector.tsx
+@@ -30,6 +30,12 @@
+ 	"roundabout",
+ ] as const satisfies ReadonlyArray<RoadJunction["treatment"]>;
+ 
++const JUNCTION_LABELS: Record<string, string> = {
++  tee: '丁字路口', y: 'Y 形路口', 'four-way-plus': '十字路口',
++  'four-way-x': '斜交十字路口', 'multi-leg': '多路交叉口',
++  auto: '自动', none: '无', stop: '停车', yield: '让行', signal: '信号灯', roundabout: '环岛',
++};
++
+ export const ROAD_APPROACH_CONTROLS = [
+ 	"auto",
+ 	"none",
+@@ -88,12 +94,12 @@
+ 			: null;
+ 	const junction = junctionId ? node.junctions[junctionId] : null;
+ 	if (junctionEntries.length === 0) {
+-		return <RoadPanelEmpty>No junctions</RoadPanelEmpty>;
++		return <RoadPanelEmpty>暂无路口</RoadPanelEmpty>;
+ 	}
+ 	return (
+ 		<div className="flex flex-col gap-2">
+ 			<select
+-				aria-label="Road junction"
++				aria-label="道路交叉口"
+ 				className={ROAD_PANEL_SELECT_CLASS}
+ 				onChange={(event) => {
+ 					const id = event.currentTarget.value;
+@@ -103,10 +109,10 @@
+ 				}}
+ 				value={junctionId ?? ""}
+ 			>
+-				<option value="">Choose junction…</option>
++				<option value="">选择路口…</option>
+ 				{junctionEntries.map((candidate, index) => (
+ 					<option key={candidate.nodeId} value={candidate.nodeId}>
+-						{index + 1}. {candidate.kind.replaceAll("-", " ")}
++						{index + 1}. {JUNCTION_LABELS[candidate.kind] ?? candidate.kind}
+ 					</option>
+ 				))}
+ 			</select>
+@@ -117,7 +123,7 @@
+ 					onUpdate={onUpdate}
+ 				/>
+ 			) : (
+-				<RoadPanelEmpty>Select a junction</RoadPanelEmpty>
++				<RoadPanelEmpty>选择一个路口</RoadPanelEmpty>
+ 			)}
+ 		</div>
+ 	);
+@@ -150,7 +156,7 @@
+ 		<div className="flex flex-col gap-2">
+ 			{selectedCornerKey ? (
+ 				<SliderControl
+-					label="Corner radius"
++					label="转角半径"
+ 					max={100}
+ 					min={0.5}
+ 					onChange={(radius) => onUpdate({
+@@ -172,9 +178,9 @@
+ 					value={junction.cornerRadii[selectedCornerKey]!}
+ 				/>
+ 			) : null}
+-			<RoadPanelField label="Treatment">
++			<RoadPanelField label="处理方式">
+ 				<select
+-					aria-label="Selected junction treatment"
++					aria-label="选中路口处理方式"
+ 					className={ROAD_PANEL_SELECT_CLASS}
+ 					onChange={(event) => {
+ 						const treatment = event.currentTarget.value as RoadJunction["treatment"];
+@@ -189,17 +195,17 @@
+ 				>
+ 					{ROAD_JUNCTION_TREATMENTS.map((treatment) => (
+ 						<option key={treatment} value={treatment}>
+-							{treatment[0]!.toUpperCase() + treatment.slice(1)}
++							{JUNCTION_LABELS[treatment] ?? treatment}
+ 						</option>
+ 					))}
+ 				</select>
+ 			</RoadPanelField>
+ 			<div className="flex flex-col gap-1.5">
+-				<RoadPanelSubheading>Approaches</RoadPanelSubheading>
++				<RoadPanelSubheading>接入道路</RoadPanelSubheading>
+ 				{approachEdges.map((edge, index) => (
+-					<RoadPanelField key={edge.id} label={`Approach ${index + 1}`}>
++					<RoadPanelField key={edge.id} label={`接入道路 ${index + 1}`}>
+ 						<select
+-							aria-label={`Approach ${index + 1} control`}
++							aria-label={`接入道路 ${index + 1} 控制`}
+ 							className={ROAD_PANEL_SELECT_CLASS}
+ 							onChange={(event) => {
+ 								const junctions = overrideRoadJunctionApproachControl(
+@@ -213,18 +219,18 @@
+ 							value={junction.approachControls?.[edge.id] ?? "auto"}
+ 						>
+ 							{ROAD_APPROACH_CONTROLS.map((control) => (
+-								<option key={control} value={control}>{control[0]!.toUpperCase() + control.slice(1)}</option>
++								<option key={control} value={control}>{JUNCTION_LABELS[control] ?? control}</option>
+ 							))}
+ 						</select>
+ 					</RoadPanelField>
+ 				))}
+ 			</div>
+ 			<div
+-				aria-label="Manual junction boundary editor"
++				aria-label="手动路口边界编辑器"
+ 				className="flex flex-col gap-2 border-border/50 border-t pt-2"
+ 			>
+ 				<RoadPanelSubheading>
+-					Boundary · {junction.manualBoundaryEnabled ? "Manual" : "Automatic"}
++					边界 · {junction.manualBoundaryEnabled ? "手动" : "自动"}
+ 				</RoadPanelSubheading>
+ 				{junction.manualBoundaryEnabled ? (
+ 					<>
+@@ -238,7 +244,7 @@
+ 									<div className="grid grid-cols-2 gap-1">
+ 										{([0, 1] as const).map((axis) => (
+ 											<div
+-												aria-label={`Boundary point ${index + 1} ${axis === 0 ? "X" : "Z"}`}
++												aria-label={`边界点 ${index + 1} ${axis === 0 ? "X" : "Z"}`}
+ 												key={axis}
+ 											>
+ 												<MetricControl
+@@ -264,10 +270,10 @@
+ 										))}
+ 									</div>
+ 									<ActionButton
+-										aria-label={`Remove boundary point ${index + 1}`}
++										aria-label={`移除边界点 ${index + 1}`}
+ 										className="h-8 text-red-300"
+ 										disabled={junction.manualBoundaryPoints.length <= 3}
+-										label="Remove"
++										label="移除"
+ 										onClick={() => {
+ 											const junctions = removeRoadManualJunctionBoundaryPoint(node, junctionId, index);
+ 											if (junctions) onUpdate({ junctions });
+@@ -279,7 +285,7 @@
+ 						</div>
+ 						<ActionGroup>
+ 							<ActionButton
+-								label="Add point"
++								label="添加点"
+ 								onClick={() => {
+ 									const junctions = addRoadManualJunctionBoundaryPoint(node, junctionId);
+ 									if (junctions) onUpdate({ junctions });
+@@ -287,7 +293,7 @@
+ 								type="button"
+ 							/>
+ 							<ActionButton
+-								label="Reset"
++								label="重置"
+ 								onClick={() => {
+ 									const junctions = resetRoadManualJunctionBoundary(node, junctionId);
+ 									if (junctions) onUpdate({ junctions });
+@@ -298,7 +304,7 @@
+ 					</>
+ 				) : (
+ 					<ActionButton
+-						label="Edit boundary"
++						label="编辑边界"
+ 						onClick={() => {
+ 							const junctions = enableRoadManualJunctionBoundary(node, junctionId);
+ 							if (junctions) onUpdate({ junctions });
+diff --git a/src/road-network-parametrics.ts b/src/road-network-parametrics.ts
+--- a/src/road-network-parametrics.ts
++++ b/src/road-network-parametrics.ts
+@@ -13,7 +13,7 @@
+ 		.map((attachment) => attachment.assetNodeId as AnyNodeId),
+ 	groups: [
+ 		{
+-			label: "Style",
++			label: "样式",
+ 			fields: [
+ 				{
+ 					key: "presetLibrary",
+@@ -23,7 +23,7 @@
+ 			],
+ 		},
+ 		{
+-			label: "Roadside",
++			label: "路侧",
+ 			fields: [
+ 				{
+ 					key: "roadsideDecorationEditor",
+@@ -33,7 +33,7 @@
+ 			],
+ 		},
+ 		{
+-			label: "Terrain",
++			label: "地形",
+ 			fields: [
+ 				{
+ 					key: "terrainOffset",
+@@ -73,7 +73,7 @@
+ 			],
+ 		},
+ 		{
+-			label: "Road",
++			label: "道路",
+ 			fields: [
+ 				{
+ 					key: "crossSectionEditor",
+@@ -88,7 +88,7 @@
+ 			],
+ 		},
+ 		{
+-			label: "Junction",
++			label: "路口",
+ 			fields: [
+ 				{
+ 					key: "junctionEditor",
+diff --git a/src/road-network-preset-library.test.tsx b/src/road-network-preset-library.test.tsx
+--- a/src/road-network-preset-library.test.tsx
++++ b/src/road-network-preset-library.test.tsx
+@@ -21,9 +21,9 @@
+ 				onUpdate: () => {},
+ 			}),
+ 		);
+-		expect(markup).toContain('aria-label="Saved road-style preset"');
+-		expect(markup).toContain("Right driving");
+-		expect(markup).toContain("Apply to every segment");
++		expect(markup).toContain("aria-label=\"已保存的道路样式预设\"");
++		expect(markup).toContain("靠右行驶");
++		expect(markup).toContain("应用到所有路段");
+ 		expect(markup).not.toContain("Save as");
+ 		expect(markup).not.toContain("Save preset");
+ 	});
+diff --git a/src/road-network-preset-library.tsx b/src/road-network-preset-library.tsx
+--- a/src/road-network-preset-library.tsx
++++ b/src/road-network-preset-library.tsx
+@@ -29,14 +29,14 @@
+ 			<SegmentedControl
+ 				onChange={(regionalPack) => onUpdate({ regionalPack })}
+ 				options={[
+-					{ label: "Right driving", value: "right-driving" },
+-					{ label: "Left driving", value: "left-driving" },
++					{ label: "靠右行驶", value: "right-driving" },
++					{ label: "靠左行驶", value: "left-driving" },
+ 				]}
+ 				value={node.regionalPack}
+ 			/>
+-			<RoadPanelField label="Preset">
++			<RoadPanelField label="预设">
+ 				<select
+-					aria-label="Saved road-style preset"
++					aria-label="已保存的道路样式预设"
+ 					className={ROAD_PANEL_SELECT_CLASS}
+ 					onChange={(event) => {
+ 						const patch = loadRoadStylePreset(node, event.currentTarget.value);
+@@ -53,7 +53,7 @@
+ 			</RoadPanelField>
+ 			<ToggleControl
+ 				checked={node.applyStyleToAll}
+-				label="Apply to every segment"
++				label="应用到所有路段"
+ 				onChange={(applyStyleToAll) => onUpdate({ applyStyleToAll })}
+ 			/>
+ 		</div>
+diff --git a/src/road-network-spline-inspector.tsx b/src/road-network-spline-inspector.tsx
+--- a/src/road-network-spline-inspector.tsx
++++ b/src/road-network-spline-inspector.tsx
+@@ -96,7 +96,7 @@
+ 				value={point[0]}
+ 			/>
+ 			<SliderControl
+-				label="Elevation"
++				label="标高"
+ 				max={1000}
+ 				min={-1000}
+ 				onChange={(value) => updateCoordinate(1, value)}
+@@ -118,18 +118,18 @@
+ 			{selection.kind === "control" ? (
+ 				<ActionGroup className="flex-wrap pt-1">
+ 					<ActionButton
+-						label="Flatten"
++						label="整平"
+ 						onClick={() => runSelectedPointCommand("flatten")}
+ 						type="button"
+ 					/>
+ 					<ActionButton
+-						label="Grade"
++						label="坡度"
+ 						onClick={() => runSelectedPointCommand("grade")}
+ 						type="button"
+ 					/>
+ 					<ActionButton
+ 						className="min-w-full text-red-300"
+-						label={`Delete${selectedIndices.length > 1 ? ` (${selectedIndices.length})` : ""}`}
++						label={`删除${selectedIndices.length > 1 ? ` (${selectedIndices.length})` : ""}`}
+ 						onClick={() => runSelectedPointCommand("delete")}
+ 						type="button"
+ 					/>
+diff --git a/src/road-network-style-editing.test.tsx b/src/road-network-style-editing.test.tsx
+--- a/src/road-network-style-editing.test.tsx
++++ b/src/road-network-style-editing.test.tsx
+@@ -49,24 +49,24 @@
+ 			}),
+ 		);
+ 		for (const label of [
+-			"Lane count",
+-			"Lane width",
+-			"Shoulder width",
+-			"Median width",
+-			"Surface thickness",
+-			"Left side parking lane",
+-			"Left side bike lane",
+-			"Right side parking lane",
+-			"Right side bike lane",
+-			"Shared gutter",
+-			"Shared kerb",
+-			"Shared verge",
+-			"Shared sidewalk",
++			"车道数量",
++			"车道宽度",
++			"路肩宽度",
++			"中央分隔带宽度",
++			"路面厚度",
++			"左侧停车带",
++			"左侧自行车道",
++			"右侧停车带",
++			"右侧自行车道",
++			"共用排水沟",
++			"共用路缘石",
++			"共用路侧绿带",
++			"共用人行道",
+ 		]) {
+-			expect(markup).toContain(`aria-label="${label} in metres"`);
++			expect(markup).toContain(`aria-label="${label}${label === "车道数量" ? "" : "（米）"}"`);
+ 		}
+-		expect(markup).not.toContain('aria-label="Left side sidewalk in metres"');
+-		expect(markup).not.toContain('aria-label="Right side sidewalk in metres"');
++		expect(markup).not.toContain('aria-label="左侧人行道（米）"');
++		expect(markup).not.toContain('aria-label="右侧人行道（米）"');
+ 	});
+ 
+ 	test("creates an edge-local style while preserving the network default", () => {
+diff --git a/src/road-network-terrain-inspector.tsx b/src/road-network-terrain-inspector.tsx
+--- a/src/road-network-terrain-inspector.tsx
++++ b/src/road-network-terrain-inspector.tsx
+@@ -67,7 +67,7 @@
+ 
+ 	const conformRoad = () => {
+ 		if (!site) {
+-			report("Add a site before conforming the road.");
++			report("请先添加场地，再将道路贴合地形。");
+ 			return;
+ 		}
+ 		const field =
+@@ -77,14 +77,14 @@
+ 		onUpdate(result.value);
+ 		report(
+ 			result.changed > 0
+-				? `Conformed ${result.changed} road points. Bridge edges were preserved.`
+-				: "Road already matches the terrain, or only bridge edges were present.",
++				? `已贴合 ${result.changed} 个道路点，桥梁路段保持原样。`
++				: "道路已贴合地形，或当前仅有桥梁路段。",
+ 		);
+ 	};
+ 
+ 	const gradeTerrain = () => {
+ 		if (!site) {
+-			report("Add a site before grading terrain.");
++			report("请先添加场地，再调整地形坡度。");
+ 			return;
+ 		}
+ 		const field =
+@@ -100,16 +100,16 @@
+ 		}
+ 		report(
+ 			result.changed > 0
+-				? `Graded ${result.changed} terrain samples with a ${terrainFalloff.toFixed(2)} m falloff.`
+-				: "Terrain already matches the road corridor.",
++				? `已调整 ${result.changed} 个地形采样点，衰减范围为 ${terrainFalloff.toFixed(2)} m。`
++				: "地形已贴合道路走廊。",
+ 		);
+ 	};
+ 
+ 	return (
+ 		<div className="flex flex-col gap-2">
+ 			<ActionGroup>
+-				<ActionButton label="Conform road" onClick={conformRoad} type="button" />
+-				<ActionButton label="Grade terrain" onClick={gradeTerrain} type="button" />
++				<ActionButton label="道路贴合地形" onClick={conformRoad} type="button" />
++				<ActionButton label="地形调坡" onClick={gradeTerrain} type="button" />
+ 			</ActionGroup>
+ 			{message ? (
+ 				<RoadPanelStatus>{message}</RoadPanelStatus>
+diff --git a/src/road-network-tool.test.tsx b/src/road-network-tool.test.tsx
+--- a/src/road-network-tool.test.tsx
++++ b/src/road-network-tool.test.tsx
+@@ -95,14 +95,14 @@
+   test('exposes roadway dimensions and independent left/right components', () => {
+     const source = readFileSync(new URL('./presets-panel.tsx', import.meta.url), 'utf8')
+ 
+-    expect(source).toContain('Road cross-section')
+-    expect(source).toContain('aria-label="Road preset"')
+-    expect(source).toContain("{ label: 'Roadway', value: 'roadway' }")
+-    expect(source).toContain("{ label: 'Left', value: 'left' }")
+-    expect(source).toContain("{ label: 'Right', value: 'right' }")
+-    expect(source).toContain('label="Lane count"')
+-    expect(source).toContain('label="Lane width"')
+-    expect(source).toContain("label: 'Parking lane'")
++    expect(source).toContain("道路横断面")
++    expect(source).toContain("aria-label=\"道路预设\"")
++    expect(source).toContain('{ label: "车行道", value: \'roadway\' }')
++    expect(source).toContain('{ label: "左侧", value: \'left\' }')
++    expect(source).toContain('{ label: "右侧", value: \'right\' }')
++    expect(source).toContain('label="车道数量"')
++    expect(source).toContain('label="车道宽度"')
++    expect(source).toContain('label: "停车带"')
+   })
+ 
+   test('uses the complete draft style for previews and committed segments', () => {
+@@ -117,10 +117,10 @@
+   test('reviews road cleanup changes before applying them', () => {
+     const source = readFileSync(new URL('./presets-panel.tsx', import.meta.url), 'utf8')
+ 
+-    expect(source).toContain('Review cleanup')
++    expect(source).toContain("审阅清理")
+     expect(source).toContain('data-road-cleanup-review')
+     expect(source).toContain('data-road-cleanup-change={change.kind}')
+-    expect(source).toContain('Apply changes')
++    expect(source).toContain("应用变更")
+     expect(source.indexOf('planRoadGraphCleanup')).toBeLessThan(
+       source.indexOf('updateNode(\n      selectedRoadNetwork.id'),
+     )
+diff --git a/src/road-network-tool.tsx b/src/road-network-tool.tsx
+--- a/src/road-network-tool.tsx
++++ b/src/road-network-tool.tsx
+@@ -148,19 +148,19 @@
+ 										{roadDraftNumericUnit(numeric.field)}
+ 									</strong>
+ 									<span style={{ color: "#94a3b8", fontSize: 10 }}>
+-										Type a value · Enter to apply · Esc to cancel
++										输入数值 · Enter 应用 · Esc 取消
+ 									</span>
+ 								</>
+ 							) : (
+ 								<>
+ 									<strong style={{ fontSize: 12, lineHeight: "16px" }}>
+-										Exact road constraint
++										精确道路约束
+ 									</strong>
+ 									<span style={{ color: "#c7d2fe", fontSize: 11 }}>
+ 										{numericSummary}
+ 									</span>
+ 									<span style={{ color: "#94a3b8", fontSize: 10 }}>
+-										L length · A bearing · R radius · T tangent
++										L 长度 · A 方位角 · R 半径 · T 切线长
+ 									</span>
+ 								</>
+ 							)}
+diff --git a/src/road-network-validation.test.ts b/src/road-network-validation.test.ts
+--- a/src/road-network-validation.test.ts
++++ b/src/road-network-validation.test.ts
+@@ -170,6 +170,6 @@
+ 		expect(issue?.severity).toBe("warning");
+ 		expect(issue?.point?.[0]).toBeCloseTo(0);
+ 		expect(issue?.point?.[2]).toBeCloseTo(0);
+-		expect(issue?.message).toContain("4.50 m is required");
++		expect(issue?.message).toContain("要求 4.50 m");
+ 	});
+ });
+diff --git a/src/road-network-validation.ts b/src/road-network-validation.ts
+--- a/src/road-network-validation.ts
++++ b/src/road-network-validation.ts
+@@ -49,7 +49,7 @@
+ 				code: "missing-endpoint",
+ 				severity: "error",
+ 				edgeId: edge.id,
+-				message: `Edge ${edge.id} references a missing endpoint.`,
++				message: `路段 ${edge.id} 引用了缺失端点。`,
+ 			});
+ 			continue;
+ 		}
+@@ -60,7 +60,7 @@
+ 				code: "self-edge",
+ 				severity: "error",
+ 				edgeId: edge.id,
+-				message: `Edge ${edge.id} loops back to the same node.`,
++				message: `路段 ${edge.id} 回接到了同一节点。`,
+ 			});
+ 		}
+ 		const length = Math.hypot(
+@@ -72,7 +72,7 @@
+ 				code: "short-edge",
+ 				severity: "error",
+ 				edgeId: edge.id,
+-				message: `Edge ${edge.id} is shorter than 0.05 m.`,
++				message: `路段 ${edge.id} 短于 0.05 m。`,
+ 			});
+ 		}
+ 		if (!graph.stylePresets[edge.styleId]) {
+@@ -80,7 +80,7 @@
+ 				code: "missing-style",
+ 				severity: "warning",
+ 				edgeId: edge.id,
+-				message: `Edge ${edge.id} uses missing style ${edge.styleId}.`,
++				message: `路段 ${edge.id} 使用了缺失样式 ${edge.styleId}。`,
+ 			});
+ 		}
+ 		if (edge.alignment.some((point) => !point.every(Number.isFinite))) {
+@@ -88,7 +88,7 @@
+ 				code: "non-finite-alignment",
+ 				severity: "error",
+ 				edgeId: edge.id,
+-				message: `Edge ${edge.id} has a non-finite alignment control point.`,
++				message: `路段 ${edge.id} 的线形控制点包含非有限数值。`,
+ 			});
+ 		}
+ 		if (edge.profileMode === "designed") {
+@@ -107,7 +107,7 @@
+ 					code: "invalid-vertical-profile",
+ 					severity: "error",
+ 					edgeId: edge.id,
+-					message: `Edge ${edge.id} has invalid or unordered vertical-profile points.`,
++					message: `路段 ${edge.id} 的纵断面点无效或顺序不正确。`,
+ 				});
+ 			} else {
+ 				const summary = roadVerticalProfileSummary(graph, edge);
+@@ -116,7 +116,7 @@
+ 						code: "excessive-grade",
+ 						severity: "warning",
+ 						edgeId: edge.id,
+-						message: `Edge ${edge.id} reaches ${(summary.maxAbsGrade * 100).toFixed(1)}% grade, above the ${(maxRoadGrade * 100).toFixed(1)}% advisory limit.`,
++						message: `路段 ${edge.id} 的坡度达到 ${(summary.maxAbsGrade * 100).toFixed(1)}%，超过建议上限 ${(maxRoadGrade * 100).toFixed(1)}%。`,
+ 					});
+ 				}
+ 			}
+@@ -128,7 +128,7 @@
+ 				code: "duplicate-edge",
+ 				severity: "error",
+ 				edgeId: edge.id,
+-				message: `Edges ${duplicate} and ${edge.id} connect the same nodes.`,
++				message: `路段 ${duplicate} 与 ${edge.id} 连接了相同节点。`,
+ 			});
+ 		} else pairs.set(pair, edge.id);
+ 	}
+@@ -138,7 +138,7 @@
+ 				code: "non-finite-position",
+ 				severity: "error",
+ 				nodeId: node.id,
+-				message: `Node ${node.id} has a non-finite position.`,
++				message: `节点 ${node.id} 的位置包含非有限数值。`,
+ 			});
+ 		}
+ 		if ((incidentCount[node.id] ?? 0) === 0) {
+@@ -146,7 +146,7 @@
+ 				code: "isolated-node",
+ 				severity: "warning",
+ 				nodeId: node.id,
+-				message: `Node ${node.id} is not connected to a road edge.`,
++				message: `节点 ${node.id} 未连接任何路段。`,
+ 			});
+ 		}
+ 		if (node.curveRadius !== undefined) {
+@@ -180,7 +180,7 @@
+ 							code: "curve-radius-does-not-fit",
+ 							severity: "warning",
+ 							nodeId: node.id,
+-							message: `The ${node.curveRadius.toFixed(1)} m bend radius is reduced to fit its adjacent roads.`,
++							message: `已缩小 ${node.curveRadius.toFixed(1)} m 的弯曲半径，以适应相邻道路。`,
+ 						});
+ 					}
+ 				}
+@@ -195,7 +195,7 @@
+ 				code: "missing-junction-node",
+ 				severity: "error",
+ 				nodeId,
+-				message: `Junction ${nodeId} references a missing graph node.`,
++				message: `路口 ${nodeId} 引用了缺失的图节点。`,
+ 			});
+ 			continue;
+ 		}
+@@ -211,7 +211,7 @@
+ 				code: "invalid-junction-primary",
+ 				severity: "warning",
+ 				nodeId,
+-				message: `Junction ${nodeId} has a primary road that is no longer incident.`,
++				message: `路口 ${nodeId} 的主路已不再与其相连。`,
+ 			});
+ 		}
+ 		if (
+@@ -224,7 +224,7 @@
+ 				code: "invalid-junction-corner",
+ 				severity: "warning",
+ 				nodeId,
+-				message: `Junction ${nodeId} has a curb corner that references a removed approach.`,
++				message: `路口 ${nodeId} 的路缘转角引用了已移除的接入道路。`,
+ 			});
+ 		}
+ 	}
+@@ -234,7 +234,7 @@
+ 				code: "missing-junction-record",
+ 				severity: "warning",
+ 				nodeId,
+-				message: `Junction ${nodeId} needs its editable state regenerated.`,
++				message: `路口 ${nodeId} 需要重新生成可编辑状态。`,
+ 			});
+ 		}
+ 	}
+@@ -249,7 +249,7 @@
+ 				severity: "warning",
+ 				edgeId: check.bridgeEdgeId,
+ 				point: check.point,
+-				message: `Bridge ${check.bridgeEdgeId} has ${check.clearance.toFixed(2)} m clearance above ${check.lowerEdgeId}; ${check.required.toFixed(2)} m is required by the current scene setting.`,
++				message: `桥梁 ${check.bridgeEdgeId} 在 ${check.lowerEdgeId} 上方的净空为 ${check.clearance.toFixed(2)} m；当前场景设置要求 ${check.required.toFixed(2)} m。`,
+ 			});
+ 		}
+ 	}
+diff --git a/src/road-network-vertical-profile-inspector.tsx b/src/road-network-vertical-profile-inspector.tsx
+--- a/src/road-network-vertical-profile-inspector.tsx
++++ b/src/road-network-vertical-profile-inspector.tsx
+@@ -58,12 +58,12 @@
+ 		.join(" ");
+ 	return (
+ 		<svg
+-			aria-label="Vertical profile preview"
++			aria-label="纵断面预览"
+ 			className="h-[62px] w-full rounded-lg border border-border/40 bg-black/20"
+ 			role="img"
+ 			viewBox="0 0 260 62"
+ 		>
+-			<title>Vertical profile preview</title>
++			<title>纵断面预览</title>
+ 			<line stroke="rgba(148,163,184,.25)" x1="0" x2="260" y1="54" y2="54" />
+ 			<polyline fill="none" points={points} stroke="#60a5fa" strokeWidth="2" />
+ 		</svg>
+@@ -94,7 +94,7 @@
+ 		[edge, node],
+ 	);
+ 	if (!edge || !summary) {
+-		return <RoadPanelEmpty>No road segments</RoadPanelEmpty>;
++		return <RoadPanelEmpty>暂无路段</RoadPanelEmpty>;
+ 	}
+ 	const profileMode = edge.profileMode ?? "legacy";
+ 	const profile = edge.verticalProfile ?? [];
+@@ -115,22 +115,22 @@
+ 	return (
+ 		<div className="flex flex-col gap-2">
+ 			{edgeIds.length > 1 ? (
+-				<RoadPanelField label="Segment">
++				<RoadPanelField label="路段">
+ 					<select
+-						aria-label="Vertical profile road segment"
++						aria-label="道路纵断面路段"
+ 						className={ROAD_PANEL_SELECT_CLASS}
+ 						onChange={(event) => setEdgeId(event.target.value)}
+ 						value={edge.id}
+ 					>
+ 						{edgeIds.map((id, index) => (
+-							<option key={id} value={id}>{`Segment ${index + 1}`}</option>
++							<option key={id} value={id}>{`路段 ${index + 1}`}</option>
+ 						))}
+ 					</select>
+ 				</RoadPanelField>
+ 			) : null}
+ 			{profileMode !== "designed" ? (
+ 				<ActionButton
+-					label="Enable vertical profile"
++					label="启用纵断面"
+ 					onClick={() => run(enableRoadVerticalProfile)}
+ 					type="button"
+ 				/>
+@@ -139,12 +139,12 @@
+ 					<ProfilePreview edge={edge} node={node} />
+ 					{gradeWarning ? (
+ 						<RoadPanelStatus>
+-							Grade {(summary.maxAbsGrade * 100).toFixed(1)}% exceeds {(maxGrade * 100).toFixed(1)}%
++							坡度 {(summary.maxAbsGrade * 100).toFixed(1)}% 超过 {(maxGrade * 100).toFixed(1)}%
+ 						</RoadPanelStatus>
+ 					) : null}
+ 					<ActionGroup>
+-						<ActionButton label="Add point" onClick={() => run(addRoadVerticalProfilePoint)} type="button" />
+-						<ActionButton label="Smooth" onClick={() => run(smoothRoadVerticalProfile)} type="button" />
++						<ActionButton label="添加点" onClick={() => run(addRoadVerticalProfilePoint)} type="button" />
++						<ActionButton label="平滑" onClick={() => run(smoothRoadVerticalProfile)} type="button" />
+ 					</ActionGroup>
+ 					{profile.map((point, index) => (
+ 						<div
+@@ -153,7 +153,7 @@
+ 						>
+ 							<RoadPanelSubheading>{`PVI ${index + 1}`}</RoadPanelSubheading>
+ 							<SliderControl
+-								label="Station"
++								label="桩号"
+ 								max={summary.length}
+ 								min={0}
+ 									value={point.station}
+@@ -171,7 +171,7 @@
+ 									unit="m"
+ 								/>
+ 							<SliderControl
+-								label="Elevation"
++								label="标高"
+ 								max={1000}
+ 								min={-1000}
+ 									value={point.elevation}
+@@ -189,7 +189,7 @@
+ 									unit="m"
+ 								/>
+ 							<SliderControl
+-								label="Curve length"
++								label="曲线长度"
+ 								max={1000}
+ 								min={0}
+ 									value={point.curveLength}
+@@ -208,7 +208,7 @@
+ 								/>
+ 							<ActionButton
+ 								className="text-red-300"
+-								label="Remove point"
++								label="移除点"
+ 								onClick={() => {
+ 									const patch = deleteRoadVerticalProfilePoint(
+ 										node,
+@@ -222,7 +222,7 @@
+ 						</div>
+ 					))}
+ 					<ActionButton
+-						label="Bake to spline"
++						label="烘焙为样条"
+ 						onClick={() => run(bakeRoadVerticalProfile)}
+ 						type="button"
+ 					/>
+diff --git a/src/road-regional-packs.ts b/src/road-regional-packs.ts
+--- a/src/road-regional-packs.ts
++++ b/src/road-regional-packs.ts
+@@ -16,14 +16,14 @@
+ 		centerlineColor: "#e8c447",
+ 		drivingSide: "right",
+ 		id: "right-driving",
+-		label: "Right-driving",
++		label: "靠右行驶",
+ 		markingColor: "#f3f1df",
+ 	},
+ 	"left-driving": {
+ 		centerlineColor: "#f3f1df",
+ 		drivingSide: "left",
+ 		id: "left-driving",
+-		label: "Left-driving",
++		label: "靠左行驶",
+ 		markingColor: "#f3f1df",
+ 	},
+ };
+diff --git a/src/road-sign-config.ts b/src/road-sign-config.ts
+--- a/src/road-sign-config.ts
++++ b/src/road-sign-config.ts
+@@ -45,8 +45,8 @@
+ export const ROAD_SIGN_CATALOG: readonly RoadSignCatalogEntry[] = [
+   {
+     id: 'stop',
+-    label: 'Stop',
+-    description: 'Red octagonal stop sign on a single roadside post.',
++    label: "停车",
++    description: "单柱红色八角形停车标志。",
+     category: 'regulatory',
+     shape: 'octagon',
+     postStyle: 'u-channel',
+@@ -59,8 +59,8 @@
+   },
+   {
+     id: 'yield',
+-    label: 'Yield',
+-    description: 'Yield or give-way triangle with a high-contrast border.',
++    label: "让行",
++    description: "高对比边框的三角形减速让行标志。",
+     category: 'regulatory',
+     shape: 'triangle',
+     postStyle: 'u-channel',
+@@ -73,8 +73,8 @@
+   },
+   {
+     id: 'speed-limit',
+-    label: 'Speed limit',
+-    description: 'Circular speed-limit plate with editable display text.',
++    label: "限速",
++    description: "圆形限速牌，显示文字可编辑。",
+     category: 'regulatory',
+     shape: 'circle',
+     postStyle: 'u-channel',
+@@ -87,8 +87,8 @@
+   },
+   {
+     id: 'no-entry',
+-    label: 'No entry',
+-    description: 'Red circular no-entry sign with a white horizontal bar.',
++    label: "禁止驶入",
++    description: "红色圆形禁止驶入标志，带白色横杠。",
+     category: 'regulatory',
+     shape: 'circle',
+     postStyle: 'u-channel',
+@@ -101,8 +101,8 @@
+   },
+   {
+     id: 'no-parking',
+-    label: 'No parking',
+-    description: 'Blue parking restriction plate with a red slash.',
++    label: "禁止停车",
++    description: "蓝底红斜杠禁止停车牌。",
+     category: 'regulatory',
+     shape: 'circle',
+     postStyle: 'u-channel',
+@@ -115,8 +115,8 @@
+   },
+   {
+     id: 'pedestrian-crossing',
+-    label: 'Pedestrian crossing',
+-    description: 'High-visibility crossing warning plate.',
++    label: "人行横道",
++    description: "醒目的人行横道警示牌。",
+     category: 'warning',
+     shape: 'diamond',
+     postStyle: 'u-channel',
+@@ -129,8 +129,8 @@
+   },
+   {
+     id: 'warning',
+-    label: 'General warning',
+-    description: 'Generic yellow diamond warning sign for hazards or works.',
++    label: "一般警告",
++    description: "用于危险或施工提示的黄色菱形警告标志。",
+     category: 'warning',
+     shape: 'diamond',
+     postStyle: 'u-channel',
+@@ -143,8 +143,8 @@
+   },
+   {
+     id: 'directional',
+-    label: 'Directional',
+-    description: 'Blue rectangular wayfinding sign with an arrow.',
++    label: "方向指示",
++    description: "带箭头的蓝色矩形导向牌。",
+     category: 'guidance',
+     shape: 'rectangle',
+     postStyle: 'u-channel',
+diff --git a/src/road-sign-definition.ts b/src/road-sign-definition.ts
+--- a/src/road-sign-definition.ts
++++ b/src/road-sign-definition.ts
+@@ -104,14 +104,14 @@
+   preview: () => import('./road-sign-preview'),
+   tool: () => import('./road-sign-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place road sign' },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置道路标志" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Road sign',
+-    description: 'A reusable catalog-driven roadside sign with a procedural post and vector face graphic.',
++    label: "道路标志",
++    description: "可复用的目录道路标志，包含程序化立柱与矢量标志面。",
+     icon: { kind: 'iconify', name: 'lucide:signpost' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -119,6 +119,6 @@
+ 
+   mcp: {
+     description:
+-      'A catalog-driven road sign with selectable sign type, scale, post height, single or double mounting, editable display text, colors, orientation, preview, and floorplan support.',
++      "目录道路标志，可选择类型、缩放、立柱高度、单柱或双柱安装、显示文字、颜色与朝向，支持预览和平面图。",
+   },
+ }
+diff --git a/src/road-sign-parametrics.ts b/src/road-sign-parametrics.ts
+--- a/src/road-sign-parametrics.ts
++++ b/src/road-sign-parametrics.ts
+@@ -6,7 +6,7 @@
+ export const roadSignParametrics: ParametricDescriptor<RoadSignNode> = {
+   groups: [
+     {
+-      label: 'Sign',
++      label: "标志",
+       fields: [
+         { key: 'signId', kind: 'enum', options: ROAD_SIGN_IDS, display: 'select' },
+         {
+@@ -20,7 +20,7 @@
+       ],
+     },
+     {
+-      label: 'Mounting',
++      label: "安装方式",
+       fields: [
+         { key: 'postHeight', kind: 'number', unit: 'm', min: 1.2, max: 4.5, step: 0.05 },
+         { key: 'postColor', kind: 'color' },
+@@ -28,7 +28,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/road-sign-text-editor.tsx b/src/road-sign-text-editor.tsx
+--- a/src/road-sign-text-editor.tsx
++++ b/src/road-sign-text-editor.tsx
+@@ -11,12 +11,12 @@
+ }) {
+   return (
+     <label className="flex flex-col gap-1 px-2 py-1 text-sidebar-foreground/70 text-xs">
+-      <span>Display text</span>
++      <span>显示文字</span>
+       <input
+         className="rounded-md border border-sidebar-border bg-sidebar-accent/40 px-2 py-1.5 text-sidebar-foreground outline-none focus:border-sidebar-ring"
+         maxLength={32}
+         onChange={(event) => onUpdate({ text: event.target.value })}
+-        placeholder="Uses catalog default"
++        placeholder="使用目录默认值"
+         type="text"
+         value={node.text ?? ''}
+       />
+diff --git a/src/road-style-presets.ts b/src/road-style-presets.ts
+--- a/src/road-style-presets.ts
++++ b/src/road-style-presets.ts
+@@ -48,31 +48,31 @@
+ /** Real-world-ish starting sections; all dimensions are metres. */
+ export const DEFAULT_ROAD_STYLE_PRESETS = {
+   alley: {
+-    id: 'alley', name: 'Alley', laneCount: 1, laneWidth: 3.2, shoulderWidth: 0,
++    id: 'alley', name: "巷道", laneCount: 1, laneWidth: 3.2, shoulderWidth: 0,
+     sidewalkWidth: 0, medianWidth: 0, surfaceThickness: 0.1,
+     surfaceColor: '#484a4d', markingColor: '#f3f1df', markings: false,
+     leftSide: { ...NO_SIDE_COMPONENTS }, rightSide: { ...NO_SIDE_COMPONENTS },
+   },
+   'local-street': {
+-    id: 'local-street', name: 'Local street', laneCount: 2, laneWidth: 3.25,
++    id: 'local-street', name: "支路", laneCount: 2, laneWidth: 3.25,
+     shoulderWidth: 0.5, sidewalkWidth: 0.5, medianWidth: 0, surfaceThickness: 0.14,
+     surfaceColor: '#3f4246', markingColor: '#f3f1df', markings: true,
+     leftSide: { ...LOCAL_SIDE_COMPONENTS }, rightSide: { ...LOCAL_SIDE_COMPONENTS },
+   },
+   collector: {
+-    id: 'collector', name: 'Collector', laneCount: 2, laneWidth: 3.5,
++    id: 'collector', name: "集散道路", laneCount: 2, laneWidth: 3.5,
+     shoulderWidth: 1, sidewalkWidth: 0.6, medianWidth: 0, surfaceThickness: 0.18,
+     surfaceColor: '#393c40', markingColor: '#f3f1df', markings: true,
+     leftSide: { ...COLLECTOR_SIDE_COMPONENTS }, rightSide: { ...COLLECTOR_SIDE_COMPONENTS },
+   },
+   arterial: {
+-    id: 'arterial', name: 'Divided arterial', laneCount: 4, laneWidth: 3.5,
++    id: 'arterial', name: "分隔式主干道", laneCount: 4, laneWidth: 3.5,
+     shoulderWidth: 0.75, sidewalkWidth: 0.67, medianWidth: 2.4, surfaceThickness: 0.22,
+     surfaceColor: '#35383c', markingColor: '#f3f1df', markings: true,
+     leftSide: { ...ARTERIAL_SIDE_COMPONENTS }, rightSide: { ...ARTERIAL_SIDE_COMPONENTS },
+   },
+   highway: {
+-    id: 'highway', name: 'Highway', laneCount: 4, laneWidth: 3.65,
++    id: 'highway', name: "高速公路", laneCount: 4, laneWidth: 3.65,
+     shoulderWidth: 2.5, sidewalkWidth: 0, medianWidth: 3, surfaceThickness: 0.28,
+     surfaceColor: '#303338', markingColor: '#f3f1df', markings: true,
+     leftSide: { ...HIGHWAY_SIDE_COMPONENTS }, rightSide: { ...HIGHWAY_SIDE_COMPONENTS },
+diff --git a/src/roadside-decoration-rules.test.tsx b/src/roadside-decoration-rules.test.tsx
+--- a/src/roadside-decoration-rules.test.tsx
++++ b/src/roadside-decoration-rules.test.tsx
+@@ -813,16 +813,16 @@
+ 			node: longRoad(),
+ 			onUpdate: () => {},
+ 		}));
+-		expect(markup).toContain('aria-label="Roadside decorations"');
+-		expect(markup).toContain('aria-label="Roadside item visibility"');
+-		expect(markup).toContain('aria-label="Roadside lamp sides"');
+-		expect(markup).toContain('aria-label="Roadside decoration spacing"');
+-		expect(markup).toContain('aria-label="Auto-fill roadside"');
+-		expect(markup).toContain("Auto-fill roadside");
+-		expect(markup).toContain("Roadside lamps");
+-		expect(markup).toContain("Traffic signals");
+-		expect(markup).toContain("Lamps on both sides");
+-		expect(markup).toContain("Spacing");
++		expect(markup).toContain("aria-label=\"路侧装饰\"");
++		expect(markup).toContain("aria-label=\"路侧物体可见性\"");
++		expect(markup).toContain("aria-label=\"路侧灯具侧别\"");
++		expect(markup).toContain("aria-label=\"路侧装饰间距\"");
++		expect(markup).toContain("aria-label=\"自动填充路侧\"");
++		expect(markup).toContain("自动填充路侧");
++		expect(markup).toContain("路侧灯具");
++		expect(markup).toContain("交通信号灯");
++		expect(markup).toContain("两侧均设灯具");
++		expect(markup).toContain("间距");
+ 		expect(markup).not.toContain("Sparse");
+ 		expect(markup).not.toContain("Standard");
+ 		expect(markup).not.toContain("Dense");
+diff --git a/src/roadside-decoration-rules.tsx b/src/roadside-decoration-rules.tsx
+--- a/src/roadside-decoration-rules.tsx
++++ b/src/roadside-decoration-rules.tsx
+@@ -681,8 +681,8 @@
+ 			&& (metadata as Record<string, unknown>).roadNetworkId === node.id;
+ 	}).length);
+ 	const visibilityOptions = [
+-		{ key: "lamp", label: "Roadside lamps" },
+-		{ key: "sign", label: "Roadside signs" },
++		{ key: "lamp", label: "路侧灯具" },
++		{ key: "sign", label: "路侧标志" },
+ 		...ROAD_AUTO_INFRASTRUCTURE_OPTIONS.map((option) => ({
+ 			key: option.kind,
+ 			label: option.label,
+@@ -732,21 +732,21 @@
+ 		});
+ 	};
+ 	return (
+-		<div aria-label="Roadside decorations" className="flex flex-col gap-2">
++		<div aria-label="路侧装饰" className="flex flex-col gap-2">
+ 			<button
+-				aria-label="Auto-fill roadside"
++				aria-label="自动填充路侧"
+ 				className="rounded-md border border-sidebar-border bg-sidebar-accent px-2.5 py-2 font-medium text-sidebar-foreground text-xs transition-colors hover:bg-sidebar-accent/70"
+ 				onClick={autoFill}
+ 				type="button"
+ 			>
+-				{generatedCount > 0 ? "Refresh auto-fill" : "Auto-fill roadside"}
++				{generatedCount > 0 ? "刷新自动填充" : "自动填充路侧"}
+ 			</button>
+ 			<span className="text-[10px] leading-snug text-sidebar-foreground/50">
+ 				{generatedCount > 0
+-					? `${generatedCount} generated items stay aligned with this road.`
+-					: "Generate roadside items and keep them aligned as the road changes."}
++					? `${generatedCount} 个生成物体将持续对齐此道路。`
++					: "生成路侧物体，并在道路变化时保持对齐。"}
+ 			</span>
+-			<div aria-label="Roadside item visibility" className="flex flex-col gap-1">
++			<div aria-label="路侧物体可见性" className="flex flex-col gap-1">
+ 				{visibilityOptions.map((option) => (
+ 					<ToggleControl
+ 						checked={itemVisibility[option.key] === true}
+@@ -767,16 +767,16 @@
+ 					/>
+ 				))}
+ 			</div>
+-			<div aria-label="Roadside lamp sides">
++			<div aria-label="路侧灯具侧别">
+ 				<ToggleControl
+ 					checked={node.roadsideLampsBothSides ?? false}
+-					label="Lamps on both sides"
++					label="两侧均设灯具"
+ 					onChange={(roadsideLampsBothSides) => onUpdate({ roadsideLampsBothSides })}
+ 				/>
+ 			</div>
+-			<div aria-label="Roadside decoration spacing">
++			<div aria-label="路侧装饰间距">
+ 				<SliderControl
+-					label="Spacing"
++					label="间距"
+ 					max={100}
+ 					min={10}
+ 					onChange={(roadsideDecorationSpacing) => onUpdate({ roadsideDecorationSpacing })}
+diff --git a/src/store.ts b/src/store.ts
+--- a/src/store.ts
++++ b/src/store.ts
+@@ -27,8 +27,8 @@
+ 	label: string;
+ 	value: RoadElevationMode;
+ }> = [
+-	{ label: "Ground", value: "ground" },
+-	{ label: "Bridge", value: "bridge" },
++	{ label: "地面", value: "ground" },
++	{ label: "桥梁", value: "bridge" },
+ ];
+ 
+ export function nextRoadElevationMode(
+diff --git a/src/street-infrastructure-config.ts b/src/street-infrastructure-config.ts
+--- a/src/street-infrastructure-config.ts
++++ b/src/street-infrastructure-config.ts
+@@ -94,104 +94,104 @@
+ export const STREET_INFRASTRUCTURE_VARIANTS: readonly StreetInfrastructureVariant[] = [
+   {
+     kind: 'streetscape:traffic-signal',
+-    label: 'Traffic signal',
+-    description: 'A field-detailed modular vehicle signal with multiple head layouts and mounting systems.',
++    label: "交通信号灯",
++    description: "模块化机动车信号灯，支持多种灯头布局与安装系统。",
+     family: 'Traffic control',
+     icon: 'lucide:traffic-cone',
+     schema: TrafficSignalNode,
+   },
+   {
+     kind: 'streetscape:drainage-inlet',
+-    label: 'Drainage grate',
+-    description: 'A framed road, curb, or sweeper inlet with bicycle-safe and decorative grate patterns.',
++    label: "排水篦子",
++    description: "带边框的道路、路缘或清扫式雨水口，支持自行车安全型与装饰篦纹。",
+     family: 'Drainage',
+     icon: 'lucide:rows-3',
+     schema: DrainageInletNode,
+   },
+   {
+     kind: 'streetscape:manhole-cover',
+-    label: 'Manhole cover',
+-    description: 'A flush cast-metal access cover with configurable utility markings.',
++    label: "井盖",
++    description: "齐平铸造金属井盖，市政设施标记可配置。",
+     family: 'Drainage',
+     icon: 'lucide:circle-dot',
+     schema: ManholeCoverNode,
+   },
+   {
+     kind: 'streetscape:fire-hydrant',
+-    label: 'Fire hydrant',
+-      description: 'A tall, proportioned dry- or wet-barrel hydrant with configurable outlet silhouettes.',
++    label: "消火栓",
++      description: "立式干式或湿式消火栓，出水口布局可配置。",
+     family: 'Fire safety',
+     icon: 'lucide:fire-extinguisher',
+     schema: FireHydrantNode,
+   },
+   {
+     kind: 'streetscape:traffic-bollard',
+-    label: 'Traffic bollard',
+-    description: 'A standalone reflective, steel, or flexible bollard for protected corners and road edges.',
++    label: "交通隔离柱",
++    description: "独立反光、钢制或柔性隔离柱，用于保护转角和道路边缘。",
+     family: 'Traffic safety',
+     icon: 'lucide:barrier',
+     schema: TrafficBollardNode,
+   },
+   {
+     kind: 'streetscape:road-barrier',
+-    label: 'Road barrier',
+-    description: 'A standalone jersey, guardrail, water-filled, or crowd-control barrier segment.',
++    label: "道路护栏",
++    description: "独立混凝土、波形梁、注水或人群隔离护栏段。",
+     family: 'Traffic safety',
+     icon: 'lucide:construction',
+     schema: RoadBarrierNode,
+   },
+   {
+     kind: 'streetscape:driveway',
+-    label: 'Driveway',
+-    description: 'A paved residential driveway or parking apron with a shallow finished edge.',
++    label: "车行入口",
++    description: "铺装住宅车行入口或停车前坪，带浅收边。",
+     family: 'Residential frontage',
+     icon: 'lucide:car-front',
+     schema: DrivewayNode,
+   },
+   {
+     kind: 'streetscape:mailbox',
+-    label: 'Mailbox',
+-    description: 'A curbside residential mailbox on a simple post.',
++    label: "信箱",
++    description: "简式立柱上的路侧住宅信箱。",
+     family: 'Residential frontage',
+     icon: 'lucide:mailbox',
+     schema: MailboxNode,
+   },
+   {
+     kind: 'streetscape:parcel-box',
+-    label: 'Parcel box',
+-    description: 'A larger lockable curbside parcel-delivery box.',
++    label: "包裹箱",
++    description: "大型可上锁路侧包裹投递箱。",
+     family: 'Residential frontage',
+     icon: 'lucide:package',
+     schema: ParcelBoxNode,
+   },
+   {
+     kind: 'streetscape:trash-bin',
+-    label: 'Trash bin',
+-    description: 'A wide reinforced four-caster commercial refuse container.',
++    label: "垃圾箱",
++    description: "宽体加强型四轮商业垃圾箱。",
+     family: 'Residential frontage',
+     icon: 'lucide:trash-2',
+     schema: TrashBinNode,
+   },
+   {
+     kind: 'streetscape:recycling-bin',
+-    label: 'Recycling bin',
+-    description: 'A tall green wheeled recycling bin with a moulded hinged lid.',
++    label: "回收箱",
++    description: "绿色立式带轮回收箱，配模制铰接箱盖。",
+     family: 'Residential frontage',
+     icon: 'lucide:recycle',
+     schema: RecyclingBinNode,
+   },
+   {
+     kind: 'streetscape:residential-gate',
+-    label: 'Driveway gate',
+-    description: 'A double-leaf timber driveway gate with arched framing, crossed braces, and dark metal hardware.',
++    label: "车道大门",
++    description: "双扇木制车道门，配拱形框架、交叉撑和深色金属五金。",
+     family: 'Residential frontage',
+     icon: 'lucide:door-open',
+     schema: ResidentialGateNode,
+   },
+   {
+     kind: 'streetscape:speed-hump',
+-    label: 'Speed hump',
+-    description: 'A narrow modular black-and-yellow rubber speed hump with reflective markings.',
++    label: "减速带",
++    description: "窄型模块化黑黄橡胶减速带，带反光标记。",
+     family: 'Traffic calming',
+     icon: 'lucide:triangle',
+     schema: SpeedHumpNode,
+diff --git a/src/street-infrastructure-definition.ts b/src/street-infrastructure-definition.ts
+--- a/src/street-infrastructure-definition.ts
++++ b/src/street-infrastructure-definition.ts
+@@ -72,7 +72,7 @@
+   placement: {
+     position: (node: StreetInfrastructureNode) => [0, modelHeight(node) + 0.3, 0],
+   },
+-  measureLabel: 'Elevation',
++  measureLabel: '标高',
+   shape: 'tracker',
+ }
+ 
+@@ -88,7 +88,7 @@
+   placement: {
+     position: (node) => [0, resolveResidentialRoadAssetLayout(node).height + 0.3, 0],
+   },
+-  measureLabel: 'Elevation',
++  measureLabel: '标高',
+   shape: 'tracker',
+ }
+ 
+@@ -170,7 +170,7 @@
+         return Math.atan2(tangent[0], tangent[1])
+       },
+     },
+-    measureLabel: 'Length',
++    measureLabel: '长度',
+   }
+ }
+ 
+@@ -210,7 +210,7 @@
+       ],
+       rotationY: () => side > 0 ? 0 : Math.PI,
+     },
+-    measureLabel: 'Width',
++    measureLabel: '宽度',
+   }
+ }
+ 
+@@ -339,9 +339,9 @@
+     preview: () => import('./street-infrastructure-preview'),
+     tool: () => import('./street-infrastructure-tool'),
+     toolHints: [
+-      { key: 'Left click', label: `Place ${variant.label.toLowerCase()}` },
+-      { key: 'R', label: 'Rotate 45°' },
+-      { key: 'Esc', label: 'Stop' },
++      { key: 'Left click', label: `放置${variant.label}` },
++      { key: 'R', label: "旋转 45°" },
++      { key: 'Esc', label: "停止" },
+     ],
+     presentation: {
+       label: variant.label,
+diff --git a/src/street-infrastructure-parametrics.ts b/src/street-infrastructure-parametrics.ts
+--- a/src/street-infrastructure-parametrics.ts
++++ b/src/street-infrastructure-parametrics.ts
+@@ -8,7 +8,7 @@
+ const trafficSignalParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Signal',
++      label: "信号灯",
+       fields: [
+         {
+           key: 'mount',
+@@ -61,7 +61,7 @@
+       ],
+     },
+     {
+-      label: 'Signal colors',
++      label: "信号颜色",
+       fields: [
+         { key: 'redColor', kind: 'color' },
+         { key: 'yellowColor', kind: 'color' },
+@@ -69,7 +69,7 @@
+       ],
+     },
+     {
+-      label: 'Support',
++      label: "支撑",
+       fields: [
+         { key: 'supportHeight', kind: 'number', unit: 'm', min: 2.4, max: 8, step: 0.1 },
+         {
+@@ -85,14 +85,14 @@
+         { key: 'housingColor', kind: 'color' },
+       ],
+     },
+-    { label: 'Position', fields: [{ key: 'position', kind: 'vec3' }] },
++    { label: "位置", fields: [{ key: 'position', kind: 'vec3' }] },
+   ],
+ }
+ 
+ const drainageInletParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Inlet',
++      label: "雨水口",
+       fields: [
+         {
+           key: 'inletType',
+@@ -120,40 +120,40 @@
+       ],
+     },
+     {
+-      label: 'Finish',
++      label: "表面",
+       fields: [
+         { key: 'metalColor', kind: 'color' },
+         { key: 'wetness', kind: 'number', min: 0, max: 1, step: 0.05 },
+       ],
+     },
+-    { label: 'Position', fields: [{ key: 'position', kind: 'vec3' }] },
++    { label: "位置", fields: [{ key: 'position', kind: 'vec3' }] },
+   ],
+ }
+ 
+ const manholeCoverParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Cover',
++      label: "盖板",
+       fields: [
+         { key: 'diameter', kind: 'number', unit: 'm', min: 0.45, max: 1.2, step: 0.05 },
+         { key: 'treadPattern', kind: 'enum', options: ['radial', 'grid', 'rings'], display: 'segmented' },
+       ],
+     },
+     {
+-      label: 'Finish',
++      label: "表面",
+       fields: [
+         { key: 'metalColor', kind: 'color' },
+         { key: 'wetness', kind: 'number', min: 0, max: 1, step: 0.05 },
+       ],
+     },
+-    { label: 'Position', fields: [{ key: 'position', kind: 'vec3' }] },
++    { label: "位置", fields: [{ key: 'position', kind: 'vec3' }] },
+   ],
+ }
+ 
+ const fireHydrantParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Hydrant',
++      label: "消火栓",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 0.65, max: 1.5, step: 0.05 },
+         {
+@@ -171,7 +171,7 @@
+       ],
+     },
+     {
+-      label: 'Finish',
++      label: "表面",
+       fields: [
+         { key: 'bodyColor', kind: 'color' },
+         { key: 'bonnetColor', kind: 'color' },
+@@ -179,14 +179,14 @@
+         { key: 'weathering', kind: 'number', min: 0, max: 1, step: 0.05 },
+       ],
+     },
+-    { label: 'Position', fields: [{ key: 'position', kind: 'vec3' }] },
++    { label: "位置", fields: [{ key: 'position', kind: 'vec3' }] },
+   ],
+ }
+ 
+ const trafficBollardParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Bollard',
++      label: "隔离柱",
+       fields: [
+         { key: 'style', kind: 'enum', options: ['steel', 'flexible', 'reflective'], display: 'segmented' },
+         { key: 'height', kind: 'number', unit: 'm', min: 0.45, max: 1.5, step: 0.05 },
+@@ -194,21 +194,21 @@
+       ],
+     },
+     {
+-      label: 'Finish',
++      label: "表面",
+       fields: [
+         { key: 'bodyColor', kind: 'color' },
+         { key: 'reflectiveColor', kind: 'color' },
+         { key: 'baseColor', kind: 'color' },
+       ],
+     },
+-    { label: 'Position', fields: [{ key: 'position', kind: 'vec3' }] },
++    { label: "位置", fields: [{ key: 'position', kind: 'vec3' }] },
+   ],
+ }
+ 
+ const roadBarrierParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Barrier',
++      label: "护栏",
+       fields: [
+         { key: 'barrierType', kind: 'enum', options: ['jersey', 'guardrail', 'water-filled', 'crowd-control'], display: 'select' },
+         { key: 'length', kind: 'number', unit: 'm', min: 0.5, max: 8, step: 0.1 },
+@@ -217,21 +217,21 @@
+       ],
+     },
+     {
+-      label: 'Finish',
++      label: "表面",
+       fields: [
+         { key: 'bodyColor', kind: 'color' },
+         { key: 'accentColor', kind: 'color' },
+         { key: 'metalColor', kind: 'color' },
+       ],
+     },
+-    { label: 'Position', fields: [{ key: 'position', kind: 'vec3' }] },
++    { label: "位置", fields: [{ key: 'position', kind: 'vec3' }] },
+   ],
+ }
+ 
+ const residentialRoadAssetParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Dimensions',
++      label: "尺寸",
+       fields: [
+         { key: 'width', kind: 'number', unit: 'm', min: 0.1, max: 20, step: 0.05 },
+         { key: 'length', kind: 'number', unit: 'm', min: 0.1, max: 20, step: 0.05 },
+@@ -240,20 +240,20 @@
+       ],
+     },
+     {
+-      label: 'Finish',
++      label: "表面",
+       fields: [
+         { key: 'bodyColor', kind: 'color' },
+         { key: 'accentColor', kind: 'color' },
+       ],
+     },
+-    { label: 'Position', fields: [{ key: 'position', kind: 'vec3' }] },
++    { label: "位置", fields: [{ key: 'position', kind: 'vec3' }] },
+   ],
+ }
+ 
+ const drivewayParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Shape',
++      label: "形状",
+       fields: [
+         {
+           key: 'drivewayShape',
+@@ -279,7 +279,7 @@
+ const parcelBoxParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Open Animation',
++      label: "开启动画",
+       fields: [
+         {
+           key: 'open',
+@@ -295,7 +295,7 @@
+ const mailboxParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Open Animation',
++      label: "开启动画",
+       fields: [
+         {
+           key: 'open',
+@@ -311,7 +311,7 @@
+ const drivewayGateParametrics: ParametricDescriptor<any> = {
+   groups: [
+     {
+-      label: 'Open Animation',
++      label: "开启动画",
+       fields: [
+         {
+           key: 'open',
+diff --git a/src/street-infrastructure.test.tsx b/src/street-infrastructure.test.tsx
+--- a/src/street-infrastructure.test.tsx
++++ b/src/street-infrastructure.test.tsx
+@@ -255,7 +255,7 @@
+     const panel = readFileSync(new URL('./presets-panel.tsx', import.meta.url), 'utf8')
+     expect(panel).toContain("panelCategory === 'utilities'")
+     expect(panel).toContain('STREET_INFRASTRUCTURE_VARIANTS.map')
+-    expect(panel).toContain('{variant.family}')
++    expect(panel).toContain("{FAMILY_LABELS[variant.family] ?? variant.family}")
+     expect(panel).not.toContain("value: 'infrastructure'")
+   })
+ 
+@@ -369,7 +369,7 @@
+     expect(markup).not.toContain('name="mailbox-post-crossbar"')
+ 
+     const descriptor = getStreetInfrastructureParametrics('streetscape:mailbox')
+-    expect(descriptor.groups[0]?.label).toBe('Open Animation')
++    expect(descriptor.groups[0]?.label).toBe("开启动画")
+     expect(descriptor.groups[0]?.fields[0]).toMatchObject({ key: 'open', kind: 'custom' })
+     const keyboardAction = mailboxDefinition.keyboardActions?.e
+     expect(keyboardAction?.appliesTo(node as never)).toBe(true)
+@@ -615,7 +615,7 @@
+ 
+   test('exposes one scrubbed parcel-box animation through the side menu and E key', () => {
+     const descriptor = getStreetInfrastructureParametrics('streetscape:parcel-box')
+-    expect(descriptor.groups[0]?.label).toBe('Open Animation')
++    expect(descriptor.groups[0]?.label).toBe("开启动画")
+     expect(descriptor.groups[0]?.fields[0]).toMatchObject({ key: 'open', kind: 'custom' })
+ 
+     const keyboardAction = parcelBoxDefinition.keyboardActions?.e
+@@ -690,7 +690,7 @@
+ 
+   test('animates both driveway-gate leaves through the inspector and E key', () => {
+     const descriptor = getStreetInfrastructureParametrics('streetscape:residential-gate')
+-    expect(descriptor.groups[0]?.label).toBe('Open Animation')
++    expect(descriptor.groups[0]?.label).toBe("开启动画")
+     expect(descriptor.groups[0]?.fields[0]).toMatchObject({ key: 'open', kind: 'custom' })
+ 
+     const keyboardAction = residentialGateDefinition.keyboardActions?.e
+diff --git a/src/street-light-definition.ts b/src/street-light-definition.ts
+--- a/src/street-light-definition.ts
++++ b/src/street-light-definition.ts
+@@ -101,14 +101,14 @@
+   preview: () => import('./street-light-preview'),
+   tool: () => import('./street-light-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place roadway light' },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置道路灯" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Roadway Light',
+-    description: 'A swept-arm roadway pole with a low-profile full-cutoff LED luminaire.',
++    label: "道路灯",
++    description: "后掠支臂道路灯杆，配低矮全截光 LED 灯具。",
+     icon: { kind: 'iconify', name: 'lucide:lightbulb' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -116,6 +116,6 @@
+ 
+   mcp: {
+     description:
+-      'A swept-arm roadway light with an integrated spigot, die-cast service housing, multi-cell full-cutoff optic, adjustable finish, intensity, orientation, and on/off state.',
++      "后掠支臂道路灯，配一体式插接头、压铸维护壳体和多单元全截光组件。表面、强度、朝向及开关可调。",
+   },
+ }
+diff --git a/src/street-light-parametrics.ts b/src/street-light-parametrics.ts
+--- a/src/street-light-parametrics.ts
++++ b/src/street-light-parametrics.ts
+@@ -4,7 +4,7 @@
+ export const streetLightParametrics: ParametricDescriptor<StreetLightNode> = {
+   groups: [
+     {
+-      label: 'Street light',
++      label: "路灯",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 0.5, max: 30, step: 0.25 },
+         { key: 'armLength', kind: 'number', unit: 'm', min: 0.3, max: 3, step: 0.1 },
+@@ -12,7 +12,7 @@
+       ],
+     },
+     {
+-      label: 'Lamp',
++      label: "灯具",
+       fields: [
+         { key: 'lightOn', kind: 'boolean' },
+         { key: 'lightColor', kind: 'color', visibleIf: (n) => n.lightOn },
+@@ -27,7 +27,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/truss-roadway-light-definition.ts b/src/truss-roadway-light-definition.ts
+--- a/src/truss-roadway-light-definition.ts
++++ b/src/truss-roadway-light-definition.ts
+@@ -104,14 +104,14 @@
+   preview: () => import('./truss-roadway-light-preview'),
+   tool: () => import('./truss-roadway-light-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place truss roadway light' },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置桁架道路灯" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Truss Roadway Light',
+-    description: 'A fitted pipe-truss roadway pole with a full-cutoff LED luminaire.',
++    label: "桁架道路灯",
++    description: "管桁架道路灯杆，配全截光 LED 灯具。",
+     icon: { kind: 'iconify', name: 'lucide:construction' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -119,6 +119,6 @@
+ 
+   mcp: {
+     description:
+-      'A fitted pipe-truss roadway light with separate pole brackets, rising upper arm, diagonal lower chord, vertical web, full-cutoff LED optics, and adjustable dimensions, finish, intensity, orientation, and on/off state.',
++      "管桁架道路灯，含独立灯杆支架、上升支臂、斜下弦杆、竖腹杆和全截光 LED 组件；尺寸、表面、強度、朝向及开关可调。",
+   },
+ }
+diff --git a/src/truss-roadway-light-parametrics.ts b/src/truss-roadway-light-parametrics.ts
+--- a/src/truss-roadway-light-parametrics.ts
++++ b/src/truss-roadway-light-parametrics.ts
+@@ -4,7 +4,7 @@
+ export const trussRoadwayLightParametrics: ParametricDescriptor<TrussRoadwayLightNode> = {
+   groups: [
+     {
+-      label: 'Truss roadway light',
++      label: "桁架道路灯",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 0.5, max: 30, step: 0.1 },
+         { key: 'armLength', kind: 'number', unit: 'm', min: 0.8, max: 3.5, step: 0.1 },
+@@ -13,7 +13,7 @@
+       ],
+     },
+     {
+-      label: 'Lamp',
++      label: "灯具",
+       fields: [
+         { key: 'lightOn', kind: 'boolean' },
+         { key: 'lightColor', kind: 'color', visibleIf: (n) => n.lightOn },
+@@ -28,7 +28,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/twin-arm-median-light-definition.ts b/src/twin-arm-median-light-definition.ts
+--- a/src/twin-arm-median-light-definition.ts
++++ b/src/twin-arm-median-light-definition.ts
+@@ -106,14 +106,14 @@
+   preview: () => import('./twin-arm-median-light-preview'),
+   tool: () => import('./twin-arm-median-light-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place twin-arm median light' },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置中央双臂灯" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Twin-arm median',
+-    description: 'A balanced wishbone median pole with opposing full-cutoff LED heads.',
++    label: "中央双臂灯",
++    description: "平衡叉形中央灯杆，配朝向两侧的全截光 LED 灯头。",
+     icon: { kind: 'iconify', name: 'lucide:git-branch' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -121,6 +121,6 @@
+ 
+   mcp: {
+     description:
+-      'A twin-arm median roadway light with a tapered mast, balanced wishbone crown, opposing full-cutoff LED heads, and adjustable height, arm length, finish, lamp color, intensity, orientation, and on/off state.',
++      "中央双臂道路灯，配渐缩灯杆、平衡叉形灯冠和相对的全截光 LED 灯头；高度、支臂长度、表面、灯光颜色、强度、朝向及开关可调。",
+   },
+ }
+diff --git a/src/twin-arm-median-light-parametrics.ts b/src/twin-arm-median-light-parametrics.ts
+--- a/src/twin-arm-median-light-parametrics.ts
++++ b/src/twin-arm-median-light-parametrics.ts
+@@ -4,7 +4,7 @@
+ export const twinArmMedianLightParametrics: ParametricDescriptor<TwinArmMedianLightNode> = {
+   groups: [
+     {
+-      label: 'Twin-arm median light',
++      label: "中央双臂灯",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 0.5, max: 30, step: 0.1 },
+         { key: 'armLength', kind: 'number', unit: 'm', min: 0.5, max: 3, step: 0.1 },
+@@ -12,7 +12,7 @@
+       ],
+     },
+     {
+-      label: 'Lamps',
++      label: "灯具",
+       fields: [
+         { key: 'lightOn', kind: 'boolean' },
+         { key: 'lightColor', kind: 'color', visibleIf: (n) => n.lightOn },
+@@ -27,7 +27,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/utility-pole-definition.ts b/src/utility-pole-definition.ts
+--- a/src/utility-pole-definition.ts
++++ b/src/utility-pole-definition.ts
+@@ -129,14 +129,14 @@
+   preview: () => import('./utility-pole-preview'),
+   tool: () => import('./utility-pole-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place utility pole' },
+-    { key: 'R', label: 'Rotate 45°' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "放置电线杆" },
++    { key: 'R', label: "旋转 45°" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Utility Pole',
+-    description: 'A configurable wood three-phase distribution pole with tangent, angle, junction, and dead-end assemblies.',
++    label: "电线杆",
++    description: "可配置木制三相配电杆，支持直线、转角、分支和终端杆型。",
+     icon: { kind: 'iconify', name: 'lucide:utility-pole' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -144,6 +144,6 @@
+ 
+   mcp: {
+     description:
+-      'A configurable wood three-phase distribution pole with tangent, small-angle, junction, or dead-end assembly roles, primary and neutral crossarms, pin insulators, braces, optional guying, and optional pole-mounted transformer.',
++      "可配置木制三相配电杆，支持直线、小转角、分支或终端杆型，包含相线与中性线横担、针式绝缘子、支撑，以及可选拉线和柱上变压器。",
+   },
+ }
+diff --git a/src/utility-pole-parametrics.ts b/src/utility-pole-parametrics.ts
+--- a/src/utility-pole-parametrics.ts
++++ b/src/utility-pole-parametrics.ts
+@@ -5,7 +5,7 @@
+ export const utilityPoleParametrics: ParametricDescriptor<UtilityPoleNode> = {
+   groups: [
+     {
+-      label: 'Utility pole',
++      label: "电线杆",
+       fields: [
+         { key: 'height', kind: 'number', unit: 'm', min: 7.62, max: 15.85, step: 0.01 },
+         {
+@@ -26,7 +26,7 @@
+       ],
+     },
+     {
+-      label: 'Equipment',
++      label: "设备",
+       fields: [
+         { key: 'transformerMounted', kind: 'boolean' },
+         {
+@@ -37,7 +37,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/utility-wire-definition.ts b/src/utility-wire-definition.ts
+--- a/src/utility-wire-definition.ts
++++ b/src/utility-wire-definition.ts
+@@ -33,8 +33,8 @@
+   renderer: { kind: 'parametric', module: () => import('./utility-wire-renderer') },
+ 
+   presentation: {
+-    label: 'Utility Wire Span',
+-    description: 'Three sagging primary conductors plus a lower neutral linked between two poles.',
++    label: "架空线档",
++    description: "连接两根电线杆的三根下垂相线和一根较低的中性线。",
+     icon: { kind: 'iconify', name: 'lucide:unplug' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -42,6 +42,6 @@
+ 
+   mcp: {
+     description:
+-      'An automatically generated three-phase primary span with a lower neutral between two utility poles.',
++      "在两根电线杆之间自动生成三相导线档与下方中性线。",
+   },
+ }

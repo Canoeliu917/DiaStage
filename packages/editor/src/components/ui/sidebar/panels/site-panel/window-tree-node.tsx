@@ -1,0 +1,84 @@
+'use client'
+
+import { type AnyNodeId, type WindowNode, useScene } from '@pascal-app/core'
+import { useViewer } from '@pascal-app/viewer'
+import Image from 'next/image'
+import { memo, useCallback, useState } from 'react'
+import { resolveNodeSnapTarget, SnapTargetIcon } from '../../../snap-target-badge'
+import useEditor from './../../../../../store/use-editor'
+import { InlineRenameInput } from './inline-rename-input'
+import { focusTreeNode, handleTreeSelection, TreeNodeWrapper } from './tree-node'
+import { TreeNodeActions } from './tree-node-actions'
+
+interface WindowTreeNodeProps {
+  nodeId: AnyNodeId
+  depth: number
+  isLast?: boolean
+}
+
+export const WindowTreeNode = memo(function WindowTreeNode({
+  nodeId,
+  depth,
+  isLast,
+}: WindowTreeNodeProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const isVisible = useScene((s) => s.nodes[nodeId as AnyNodeId]?.visible !== false)
+  const node = useScene((s) => s.nodes[nodeId] as WindowNode | undefined)
+  const isSelected = useViewer((state) => state.selection.selectedIds.includes(nodeId))
+  const isHovered = useViewer((state) => state.hoveredId === nodeId)
+  const setSelection = useViewer((state) => state.setSelection)
+  const setHoveredId = useViewer((state) => state.setHoveredId)
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      const handled = handleTreeSelection(
+        e,
+        nodeId,
+        useViewer.getState().selection.selectedIds,
+        setSelection,
+      )
+      if (!handled && useEditor.getState().phase === 'furnish') {
+        useEditor.getState().setPhase('structure')
+      }
+    },
+    [nodeId, setSelection],
+  )
+
+  const handleStartEditing = useCallback(() => setIsEditing(true), [])
+  const handleStopEditing = useCallback(() => setIsEditing(false), [])
+  const snapTarget = resolveNodeSnapTarget(node) ?? 'wall'
+
+  return (
+    <TreeNodeWrapper
+      actions={<TreeNodeActions nodeId={nodeId as AnyNodeId} />}
+      depth={depth}
+      expanded={false}
+      hasChildren={false}
+      icon={
+        <SnapTargetIcon target={snapTarget}>
+          <Image alt="" className="object-contain" height={14} src="/icons/window.webp" width={14} />
+        </SnapTargetIcon>
+      }
+      isHovered={isHovered}
+      isLast={isLast}
+      isSelected={isSelected}
+      isVisible={isVisible}
+      label={
+        <InlineRenameInput
+          defaultName="Window"
+          isEditing={isEditing}
+          nodeId={nodeId as AnyNodeId}
+          onStartEditing={handleStartEditing}
+          onStopEditing={handleStopEditing}
+        />
+      }
+      nodeId={nodeId}
+      onClick={handleClick}
+      onDoubleClick={() => focusTreeNode(nodeId as AnyNodeId)}
+      onMouseEnter={() => setHoveredId(nodeId)}
+      onMouseLeave={() => setHoveredId(null)}
+      onToggle={() => {}}
+    />
+  )
+})

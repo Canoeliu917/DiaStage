@@ -1,0 +1,440 @@
+'use client'
+
+import {
+  clearSceneHistory,
+  nodeRegistry,
+  resolveLevelId,
+  sceneRegistry,
+  useScene,
+} from '@pascal-app/core'
+import { useViewer } from '@pascal-app/viewer'
+import useEditor, {
+  hasCustomPersistedEditorUiState,
+  normalizePersistedEditorUiState,
+  type PersistedEditorUiState,
+} from '../store/use-editor'
+import { editorHostPanelRegistry } from './plugin-panels'
+
+export type SceneGraph = {
+  nodes: Record<string, unknown>
+  rootNodeIds: string[]
+  // Document-level scene state that travels with the graph. Optional so older
+  // payloads (and callers that only build nodes) stay valid.
+  collections?: Record<string, unknown>
+  materials?: Record<string, unknown>
+  installedPlugins?: string[]
+}
+
+type PersistedSelectionPath = {
+  buildingId: string | null
+  levelId: string | null
+  zoneId: string | null
+  selectedIds: string[]
+}
+
+const EMPTY_PERSISTED_SELECTION: PersistedSelectionPath = {
+  buildingId: null,
+  levelId: null,
+  zoneId: null,
+  selectedIds: [],
+}
+
+const SELECTION_STORAGE_KEY = 'pascal-editor-selection'
+
+function getSelectionStorageKey(): string {
+  const projectId = useViewer.getState().projectId
+  return projectId ? `${SELECTION_STORAGE_KEY}:${projectId}` : SELECTION_STORAGE_KEY
+}
+
+function getSelectionStorageReadKeys(): string[] {
+  const scopedKey = getSelectionStorageKey()
+  return scopedKey === SELECTION_STORAGE_KEY ? [scopedKey] : [scopedKey, SELECTION_STORAGE_KEY]
+}
+
+function getDefaultLevelIdForBuilding(
+  sceneNodes: Record<string, any>,
+  buildingId: string | null,
+): string | null {
+  if (!buildingId) {
+    return null
+  }
+
+  const buildingNode = sceneNodes[buildingId]
+  if (buildingNode?.type !== 'building' || !Array.isArray(buildingNode.children)) {
+    return null
+  }
+
+  let firstLevelId: string | null = null
+
+  for (const childId of buildingNode.children) {
+    const levelNode = sceneNodes[childId]
+    if (levelNode?.type !== 'level') {
+      continue
+    }
+
+    firstLevelId ??= levelNode.id
+
+    if (levelNode.level === 0) {
+      return levelNode.id
+    }
+  }
+
+  return firstLevelId
+}
+
+function normalizePersistedSelectionPath(
+  selection: Partial<PersistedSelectionPath> | null | undefined,
+): PersistedSelectionPath {
+  return {
+    buildingId: typeof selection?.buildingId === 'string' ? selection.buildingId : null,
+    levelId: typeof selection?.levelId === 'string' ? selection.levelId : null,
+    zoneId: typeof selection?.zoneId === 'string' ? selection.zoneId : null,
+    selectedIds: Array.isArray(selection?.selectedIds)
+      ? selection.selectedIds.filter((id): id is string => typeof id === 'string')
+      : [],
+  }
+}
+
+function hasPersistedSelectionValue(selection: PersistedSelectionPath): boolean {
+  return Boolean(
+    selection.buildingId ||
+      selection.levelId ||
+      selection.zoneId ||
+      selection.selectedIds.length > 0,
+  )
+}
+
+function readPersistedSelection(): PersistedSelectionPath | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  try {
+    for (const key of getSelectionStorageReadKeys()) {
+      const rawSelection = window.localStorage.getItem(key)
+      if (!rawSelection) {
+        continue
+      }
+
+      return normalizePersistedSelectionPath(
+        JSON.parse(rawSelection) as Partial<PersistedSelectionPath>,
+      )
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+export function writePersistedSelection(selection: {
+  buildingId: string | null
+  levelId: string | null
+  zoneId: string | null
+  selectedIds: string[]
+}) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    const sceneNodes = useScene.getState().nodes as Record<string, any>
+    const normalizedSelection = normalizePersistedSelectionPath(selection)
+    const validatedSelection =
+      getValidatedSelectionForScene(sceneNodes, normalizedSelection) ?? normalizedSelection
+
+    window.localStorage.setItem(getSelectionStorageKey(), JSON.stringify(validatedSelection))
+  } catch {
+    // Swallow storage quota errors
+  }
+}
+
+function getEditorUiStateForRestoredSelection(
+  sceneNodes: Record<string, any>,
+  selection: PersistedSelectionPath,
+  fallbackUiState: PersistedEditorUiState,
+): PersistedEditorUiState {
+  if (!selection.levelId) {
+    const mode = fallbackUiState.phase === 'site' ? fallbackUiState.mode : 'select'
+    return {
+      ...fallbackUiState,
+      phase: 'site',
+      toolMode:
+        mode === 'build'
+          ? { mode, tool: 'property-line' }
+          : mode === 'terrain-sculpt'
+            ? { mode }
+            : { mode: 'select' },
+      mode,
+      tool: mode === 'build' ? 'property-line' : null,
+      structureLayer: 'elements',
+      catalogCategory: null,
+    }
+  }
+
+  if (selection.zoneId) {
+    return {
+      ...fallbackUiState,
+      phase: 'structure',
+      toolMode: { mode: 'select' },
+      mode: 'select',
+      tool: null,
+      structureLayer: 'zones',
+      catalogCategory: null,
+    }
+  }
+
+  const selectedNodes = selection.selectedIds
+    .map((id) => sceneNodes[id])
+    .filter((node): node is Record<string, any> => Boolean(node))
+
+  const shouldRestoreFurnishPhase =
+    selectedNodes.length > 0 &&
+    selectedNodes.every(
+      (node) =>
+        node.type === 'item' &&
+        node.asset?.category !== 'door' &&
+        node.asset?.category !== 'window',
+    )
+
+  return {
+    ...fallbackUiState,
+    phase: shouldRestoreFurnishPhase ? 'furnish' : 'structure',
+    toolMode: { mode: 'select' },
+    mode: 'select',
+    tool: null,
+    structureLayer: 'elements',
+    catalogCategory: null,
+  }
+}
+
+function getValidatedSelectionForScene(
+  sceneNodes: Record<string, any>,
+  selection: PersistedSelectionPath,
+): PersistedSelectionPath | null {
+  const levelNode = selection.levelId ? sceneNodes[selection.levelId] : null
+  const hasValidLevel = levelNode?.type === 'level'
+  const buildingNodeFromLevel =
+    hasValidLevel && levelNode.parentId ? sceneNodes[levelNode.parentId] : null
+  const explicitBuildingNode = selection.buildingId ? sceneNodes[selection.buildingId] : null
+  const buildingId =
+    buildingNodeFromLevel?.type === 'building'
+      ? buildingNodeFromLevel.id
+      : explicitBuildingNode?.type === 'building'
+        ? explicitBuildingNode.id
+        : null
+
+  if (!buildingId) {
+    return null
+  }
+
+  const levelId = hasValidLevel
+    ? levelNode.id
+    : getDefaultLevelIdForBuilding(sceneNodes, buildingId)
+
+  if (levelId) {
+    const zoneNode = selection.zoneId ? sceneNodes[selection.zoneId] : null
+    const zoneId =
+      zoneNode?.type === 'zone' && resolveLevelId(zoneNode, sceneNodes) === levelId
+        ? zoneNode.id
+        : null
+
+    const selectedIds = selection.selectedIds.filter((id) => {
+      const node = sceneNodes[id]
+      if (!node) return false
+      if (resolveLevelId(node, sceneNodes) === levelId) return true
+
+      const def = nodeRegistry.get(node.type)
+      return def?.floorplanScope === 'building' && node.parentId === buildingId
+    })
+
+    return {
+      buildingId,
+      levelId,
+      zoneId,
+      selectedIds,
+    }
+  }
+
+  return {
+    ...EMPTY_PERSISTED_SELECTION,
+    buildingId,
+  }
+}
+
+function getRestoredSelectionForScene(
+  sceneNodes: Record<string, any>,
+): PersistedSelectionPath | null {
+  const persistedSelection = readPersistedSelection()
+  if (!(persistedSelection && hasPersistedSelectionValue(persistedSelection))) {
+    return null
+  }
+
+  return getValidatedSelectionForScene(sceneNodes, persistedSelection)
+}
+
+export function syncEditorSelectionFromCurrentScene() {
+  const sceneNodes = useScene.getState().nodes as Record<string, any>
+  const sceneRootIds = useScene.getState().rootNodeIds
+  const siteNode = sceneRootIds[0] ? sceneNodes[sceneRootIds[0]] : null
+  const resolve = (child: any) => (typeof child === 'string' ? sceneNodes[child] : child)
+  const firstBuilding = siteNode?.children?.map(resolve).find((n: any) => n?.type === 'building')
+  const firstLevel = firstBuilding?.children?.map(resolve).find((n: any) => n?.type === 'level')
+  const restoredEditorUiState = normalizePersistedEditorUiState(useEditor.getState())
+  const shouldRestoreEditorUiState = hasCustomPersistedEditorUiState(restoredEditorUiState)
+  const restoredSelection = getRestoredSelectionForScene(sceneNodes)
+  const selectionDrivenEditorUiState = restoredSelection
+    ? getEditorUiStateForRestoredSelection(sceneNodes, restoredSelection, restoredEditorUiState)
+    : null
+
+  if (firstBuilding && firstLevel) {
+    const isEmptyLevel = !firstLevel.children || firstLevel.children.length === 0
+
+    // For empty projects (new/blank), always start in structure/build/wall
+    // regardless of persisted state from a previous project
+    if (isEmptyLevel) {
+      useViewer.getState().setSelection({
+        buildingId: firstBuilding.id,
+        levelId: firstLevel.id,
+        selectedIds: [],
+        zoneId: null,
+      })
+      useEditor.getState().setPhase('structure')
+      useEditor.getState().setStructureLayer('elements')
+      useEditor.getState().setMode('build')
+      useEditor.getState().setTool('wall')
+      return
+    }
+
+    if (shouldRestoreEditorUiState) {
+      if (restoredSelection) {
+        // PersistedSelectionPath carries plain `string` ids (read from
+        // localStorage, no branded-template-literal guarantee). The viewer's
+        // SelectionPath expects branded ids. The runtime values match the
+        // brand; the cast bridges the static gap.
+        useViewer.getState().setSelection(restoredSelection as never)
+        restoreEditorUiState(
+          restoredEditorUiState.phase === 'site'
+            ? (selectionDrivenEditorUiState ?? restoredEditorUiState)
+            : restoredEditorUiState,
+        )
+      } else if (restoredEditorUiState.phase === 'site') {
+        useViewer.getState().resetSelection()
+        restoreEditorUiState(restoredEditorUiState)
+      } else {
+        useViewer.getState().setSelection({
+          buildingId: firstBuilding.id,
+          levelId: firstLevel.id,
+          selectedIds: [],
+          zoneId: null,
+        })
+        restoreEditorUiState(restoredEditorUiState)
+      }
+      return
+    }
+
+    if (restoredSelection) {
+      useViewer.getState().setSelection(restoredSelection as never)
+      if (selectionDrivenEditorUiState) {
+        restoreEditorUiState(selectionDrivenEditorUiState)
+      }
+      return
+    }
+
+    useViewer.getState().setSelection({
+      buildingId: firstBuilding.id,
+      levelId: firstLevel.id,
+      selectedIds: [],
+      zoneId: null,
+    })
+    useEditor.getState().setPhase('structure')
+    useEditor.getState().setStructureLayer('elements')
+  } else {
+    useEditor.getState().setPhase('site')
+    useViewer.getState().setSelection({
+      buildingId: null,
+      levelId: null,
+      selectedIds: [],
+      zoneId: null,
+    })
+  }
+}
+
+function restoreEditorUiState(state: PersistedEditorUiState) {
+  const { toolMode, mode: _mode, tool: _tool, ...rest } = state
+  useEditor.setState(rest)
+  useEditor.getState().armToolMode(toolMode)
+}
+
+function resetEditorInteractionState() {
+  useViewer.getState().setHoveredId(null)
+  useViewer.getState().resetSelection()
+  // Clear outliner arrays synchronously so stale Object3D refs from the old
+  // scene don't leak into the post-processing pipeline's outline passes.
+  const outliner = useViewer.getState().outliner
+  outliner.selectedObjects.length = 0
+  outliner.hoveredObjects.length = 0
+  sceneRegistry.clear()
+  useEditor.setState({
+    phase: 'site',
+    structureLayer: 'elements',
+    catalogCategory: null,
+    selectedItem: null,
+    selectedReferenceId: null,
+    spaces: {},
+    hoveredHole: null,
+    isPreviewMode: false,
+  })
+  useEditor.getState().armToolMode({ mode: 'select' })
+}
+
+function hasUsableSceneGraph(sceneGraph?: SceneGraph | null): sceneGraph is SceneGraph {
+  return (
+    !!sceneGraph &&
+    Object.keys(sceneGraph.nodes ?? {}).length > 0 &&
+    (sceneGraph.rootNodeIds?.length ?? 0) > 0
+  )
+}
+
+export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
+  const defaultInstalledPlugins = editorHostPanelRegistry.getDefaultInstalledPluginIds()
+  if (hasUsableSceneGraph(sceneGraph)) {
+    const { nodes, rootNodeIds, collections, materials, installedPlugins } = sceneGraph
+    useScene.getState().setScene(nodes as any, rootNodeIds as any, {
+      collections: collections as any,
+      materials: materials as any,
+      installedPlugins: installedPlugins ?? defaultInstalledPlugins,
+      hasExplicitPluginInstallState: installedPlugins !== undefined,
+    })
+  } else {
+    useScene.getState().clearScene()
+    useScene.getState().setInstalledPlugins(defaultInstalledPlugins, { explicit: false })
+  }
+
+  // The loaded scene is the undo floor. Loading records history entries of
+  // its own (`unloadScene` + `setScene`/`clearScene` are tracked writes), so
+  // without this reset a few Ctrl+Z presses could step past the load into the
+  // pre-load — often empty — state and wipe the whole project.
+  clearSceneHistory()
+
+  syncEditorSelectionFromCurrentScene()
+}
+
+const LOCAL_STORAGE_KEY = 'pascal-editor-scene'
+
+export function saveSceneToLocalStorage(scene: SceneGraph): void {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(scene))
+  } catch {
+    // Swallow storage quota errors
+  }
+}
+
+export function loadSceneFromLocalStorage(): SceneGraph | null {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as SceneGraph) : null
+  } catch {
+    return null
+  }
+}

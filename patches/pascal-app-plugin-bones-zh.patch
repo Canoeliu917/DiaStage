@@ -1,0 +1,2026 @@
+diff --git a/src/definition.ts b/src/definition.ts
+--- a/src/definition.ts
++++ b/src/definition.ts
+@@ -66,13 +66,13 @@
+   preview: () => import('./preview'),
+   tool: () => import('./tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Place member' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: "左键", label: "放置构件" },
++    { key: 'Esc', label: "结束" },
+   ],
+ 
+   presentation: {
+-    label: 'Lumber',
+-    description: 'A piece of dimensional lumber at actual dressed size (2x4 … 6x6).',
++    label: "木构件",
++    description: "按实际刨光尺寸显示的规格木材构件（2x4 至 6x6）。",
+     icon: { kind: 'iconify', name: 'lucide:hammer' },
+     paletteSection: 'furnish',
+     hidden: true,
+diff --git a/src/device/definition.ts b/src/device/definition.ts
+--- a/src/device/definition.ts
++++ b/src/device/definition.ts
+@@ -7,7 +7,7 @@
+ const deviceParametrics: ParametricDescriptor<DeviceNode> = {
+   groups: [
+     {
+-      label: 'Device',
++      label: "设备",
+       fields: [
+         { key: 'deviceKind', kind: 'enum', options: [...DEVICE_KINDS] },
+         { key: 'heightAff', kind: 'number', unit: 'm', min: 0, max: 3, step: 0.05 },
+@@ -15,7 +15,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+@@ -87,9 +87,9 @@
+   affordanceTools: { move: () => import('../wall-mount/move-tool') },
+ 
+   presentation: {
+-    label: 'Electrical device',
++    label: "电气设备",
+     description:
+-      'A Bones movable electrical device (receptacle/switch) — drag it along its wall and the wiring re-routes; placement snaps to code-legal spots.',
++      "Bones 可移动电气设备（插座或开关）：沿墙拖动时会重新布线，并吸附到符合规范的放置位置。",
+     icon: { kind: 'iconify', name: 'lucide:plug' },
+     paletteSection: 'furnish',
+     hidden: true,
+diff --git a/src/engineering-labels.test.ts b/src/engineering-labels.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/engineering-labels.test.ts
+@@ -0,0 +1,146 @@
++import { expect, test } from 'bun:test'
++import { engineeringLabel } from './engineering-labels'
++import { baselineConfig, baselineScene } from './framing/baseline-scene'
++import { computeLevel } from './framing/compute'
++import { groupWarnings } from './panel-warnings'
++
++test('engineering display translates known labels without changing grouping, numbers or unknown names', () => {
++  expect(engineeringLabel('Wall framing')).toBe('墙体框架')
++  expect(engineeringLabel('Design heat loss (dT 30K)')).toBe('设计热损失（温差 30 K）')
++  expect(engineeringLabel('Circuit C12')).toBe('回路 C12')
++  expect(engineeringLabel('R602.10.6.4')).toBe('R602.10.6.4')
++  expect(engineeringLabel('我自己的房间 A')).toBe('我自己的房间 A')
++  expect(engineeringLabel('Roof garden take 2')).toBe('Roof garden take 2')
++  expect(engineeringLabel('Canada · Quebec')).toBe('加拿大·魁北克')
++  const warnings = ['braced wall line X1: inspect', 'braced wall line X2: inspect']
++  const grouped = groupWarnings(warnings)
++  expect(grouped).toEqual([
++    { kind: 'group', label: 'braced wall lines', message: 'inspect', warnings },
++  ])
++  expect(engineeringLabel(grouped[0]!.kind === 'group' ? grouped[0].label : '')).toBe('抗侧力墙线')
++  expect(warnings).toEqual(['braced wall line X1: inspect', 'braced wall line X2: inspect'])
++})
++
++test('real bracing warnings translate after grouping without changing engine data', () => {
++  const result = computeLevel(baselineScene(), baselineConfig('CA'))
++  const before = JSON.stringify(result)
++  const warnings = result.warnings.filter((warning) => warning.startsWith('braced wall line'))
++  expect(warnings).toHaveLength(4)
++  const rows = groupWarnings(warnings)
++  expect(rows).toHaveLength(1)
++  const row = rows[0]!
++  expect(row.kind).toBe('group')
++  if (row.kind !== 'group') throw new Error('expected the actual braced-line warning group')
++  expect(engineeringLabel(row.label)).toBe('抗侧力墙线')
++  expect(engineeringLabel(row.message)).toBe(
++    '假定采用 CS-WSP 连续覆面板；尚未核实 R602.10 要求的板段长度与间距',
++  )
++  expect(engineeringLabel(row.warnings[0]!)).toBe(
++    '抗侧力墙线 X1（1 面墙，12.0 m）：假定采用 CS-WSP 连续覆面板；尚未核实 R602.10 要求的板段长度与间距',
++  )
++  expect(result.characteristics?.notes.length).toBeGreaterThan(0)
++  for (const note of result.characteristics?.notes ?? []) {
++    expect(engineeringLabel(note)).toMatch(/[\u4e00-\u9fff]/)
++  }
++  expect(JSON.stringify(result)).toBe(before)
++  expect(groupWarnings(warnings)).toEqual(rows)
++})
++
++test('priority HVAC warnings and room-derived service states translate explicitly', () => {
++  expect(engineeringLabel('no exterior wall — condenser row placed at the anchor, verify')).toBe(
++    '未找到外墙；冷凝器排列在锚点处，请核查位置',
++  )
++  expect(
++    engineeringLabel(
++      'no indoor zones on this level — HVAC + plumbing are derived from rooms; draw zones here or X-ray the storey that has them',
++    ),
++  ).toBe(
++    '本层没有室内区域；暖通空调与给排水根据房间生成，请在此绘制区域，或切换至已有区域的楼层查看内部构造',
++  )
++  expect(
++    engineeringLabel(
++      'installed 3.5 tons = 120% of the 2.92-ton Manual J-lite load — exceeds the Manual S 115% band (stock unit steps after the ≤5-ton split); verify selection',
++    ),
++  ).toBe(
++    '安装制冷量 3.5 冷吨为 2.92 冷吨简化 Manual J 负荷的 120%，超过 Manual S 115% 上限（按单机不超过 5 冷吨拆分后的常用设备规格），请核查选型',
++  )
++})
++
++test('known warning templates preserve user names and ids verbatim', () => {
++  const name = 'Duct Studio / 我自己的 fittings'
++  expect(engineeringLabel(`Room "${name}" has no floor slab under it`)).toBe(
++    `房间“${name}”下方没有楼板`,
++  )
++  expect(
++    engineeringLabel(
++      `return grille cannot fully clear the supply ducts in ${name} — verify placement`,
++    ),
++  ).toBe(`回风格栅无法完全避开“${name}”内的送风管，请核查位置`)
++  expect(
++    engineeringLabel(
++      `duplicate zone “${name}” shares “Roof garden 2”'s polygon — merged (classified once, not twice)`,
++    ),
++  ).toBe(`重复区域“${name}”与“Roof garden 2”共用轮廓，已合并且仅分类一次`)
++  expect(
++    engineeringLabel(
++      `device “${name}”: mount height clamped to 2.00 m — switches live in [0.9, 2] m (NEC 404.8(A) 6'7" max)`,
++    ),
++  ).toBe(
++    `设备“${name}”：安装高度已限制为 2.00 m；开关安装范围为 [0.9, 2] m（NEC 404.8(A)，最高 6 英尺 7 英寸）`,
++  )
++  expect(
++    engineeringLabel(
++      `device “${name}”: mount height clamped to 0.45 m — receptacles live in [0.3, 0.45] m`,
++    ),
++  ).toBe(`设备“${name}”：安装高度已限制为 0.45 m；插座安装范围为 [0.3, 0.45] m`)
++})
++
++test('quantity descriptions keep counts, allowances and technical references', () => {
++  expect(
++    engineeringLabel(
++      '20 ft stock (field splice — run exceeds 20 ft) (pressure-treated) — +5% waste ≈ 14 pcs',
++    ),
++  ).toBe('20 英尺定尺料（现场拼接，连续长度超过 20 英尺）（加压防腐处理），增加 5% 损耗后约 14 件')
++  expect(
++    engineeringLabel(
++      'footings — +5% waste ≈ 0.4 yd³ (waste smaller than the 0.1 yd³ display step — net and order figures meet at display rounding)',
++    ),
++  ).toBe(
++    '基础，增加 5% 损耗后约 0.4 yd³（损耗小于 0.1 yd³ 显示步长，净用量与订货量在显示舍入后相同）',
++  )
++  expect(
++    engineeringLabel(
++      'deck panels, from members (~28 4x8 sheets, R803.2) — +10% waste ≈ 31 sheets; tapered planes conservatively under-tiled (see member labels) — shortfall NOT covered by the stated waste',
++    ),
++  ).toBe(
++    '按构件统计屋面板（约 28 张 4×8 板材，R803.2），增加 10% 损耗后约 31 张；渐缩面按保守方式少铺板材（见构件标签），此缺额未包含在上述损耗中',
++  )
++  expect(
++    engineeringLabel(
++      'ASTM C1513 — 2 per flange pair, both member ends (Table R603.3.2(1)); 12 verticals × 4',
++    ),
++  ).toBe('ASTM C1513：每对翼缘 2 枚，构件两端均设置（表 R603.3.2(1)）；12 根竖向构件 × 4')
++  expect(
++    engineeringLabel(
++      '@ 6" edges / 12" field (R603.2.5) — 14 steel-wall sheets × 53 (4x8 vertical, 16" o.c. assumed)',
++    ),
++  ).toBe(
++    '板边间距 6 英寸、板中间距 12 英寸（R603.2.5）；14 张钢框架墙板 × 53（4×8 板材竖向安装，假定立柱中心间距 16 英寸）',
++  )
++  expect(engineeringLabel('1 × 1 m × 4" concrete equipment pad (40"-class stock; IRC M1403)')).toBe(
++    '1 × 1 m × 4 英寸混凝土设备基础垫块（40 英寸级常用规格，IRC M1403）',
++  )
++})
++
++test('unknown technical diagnostics and arbitrary text stay intact', () => {
++  for (const value of [
++    'constructor',
++    'toString',
++    '__proto__',
++    'Custom assembly — +5% waste ≈ 4.2 yd³',
++    'prefix no exterior wall — condenser row placed at the anchor, verify',
++    'wall custom_A: unknown detail — verify 2.17m per R602.10',
++    'R603.3.2(1)',
++  ])
++    expect(engineeringLabel(value)).toBe(value)
++})
+diff --git a/src/engineering-labels.ts b/src/engineering-labels.ts
+new file mode 100644
+--- /dev/null
++++ b/src/engineering-labels.ts
+@@ -0,0 +1,605 @@
++// Display-only labels; engine keys, grouping and quantities stay unchanged.
++const labels: Record<string, string> = {
++  'Wall framing': '墙体框架',
++  Floor: '楼面',
++  Roof: '屋顶',
++  Foundation: '基础',
++  Sheathing: '覆面板',
++  Electrical: '电气',
++  Plumbing: '给排水',
++  HVAC: '暖通空调',
++  Fasteners: '紧固件',
++  Flags: '需核查项',
++  FLAG: '需核查',
++  Takeoff: '工程量清单',
++  'Floor area': '楼面面积',
++  Volume: '体积',
++  'Envelope area (net)': '围护结构净面积',
++  Windows: '窗户数量',
++  'Window area': '窗面积',
++  Doors: '门的数量',
++  'Climate zone': '气候区',
++  'Wall insulation': '墙体保温',
++  'Envelope UA': '围护结构总传热系数',
++  'Cooling load (Manual J-lite)': '冷负荷（简化 Manual J）',
++  'Cooling estimate (rule of thumb)': '制冷量估算（经验法）',
++  'n/a — no floor slabs (see flags)': '不适用：未建楼板（见需核查项）',
++  'n/a — no conditioned space on this level (all zones outdoor)':
++    '不适用：本层没有空调空间（全部区域位于室外）',
++  'Metrics cover the X-rayed level only': '指标仅涵盖当前查看内部构造的楼层',
++  'International (generic)': '国际通用',
++  'Generic light-frame practice — no local code applied': '通用轻型框架做法，未应用当地规范',
++  'IRC (edition unverified)': 'IRC（版本未核实）',
++  'Pick a US state for code-informed sizing; INTL uses conservative generic defaults.':
++    '选择美国州以按相应规范确定尺寸；国际通用模式使用保守的通用默认值。',
++  'no locale signal': '未读取到地区信息',
++  'AC condensers': '空调冷凝器',
++  'AC disconnects': '空调隔离开关',
++  'AHU / condenser': '空气处理机组 / 冷凝器',
++  'Anchor bolts': '锚栓',
++  'Braided supply connector': '编织给水软管',
++  'CMU block': '混凝土砌块',
++  'CO alarms': '一氧化碳报警器',
++  'Ceiling boxes': '顶棚接线盒',
++  Cleanouts: '清扫口',
++  Concrete: '混凝土',
++  'Condenser pads': '冷凝器基础垫块',
++  'Condenser whips': '冷凝器柔性接管',
++  'DWV through-roof': '穿屋面排水通气管',
++  'Device boxes (1-gang)': '单联设备盒',
++  'Drip edge': '滴水边',
++  'Drywall 1/2"': '1/2 英寸石膏板',
++  'Electric meters': '电表',
++  'Electrical panels': '配电盘',
++  'Engineered header (LVL/PSL — by supplier)': '需设计的过梁（LVL/PSL，由供应商选型）',
++  'Exhaust fans': '排风扇',
++  'Foundation uplift straps': '基础抗拔拉带',
++  'GFCI receptacles': '接地故障保护插座',
++  'Ground clamps': '接地夹',
++  'Ground rods 5/8" × 8 ft': '接地棒 5/8 英寸 × 8 英尺',
++  Grout: '灌浆料',
++  'Header uplift straps': '过梁抗拔拉带',
++  'Hold-downs': '抗拔连接件',
++  'Hurricane ties': '抗风连接件',
++  'In-use covers (extra-duty)': '使用中防护罩（加强型）',
++  'Intersystem bonding termination': '系统间等电位联结端子',
++  'Joist hangers': '搁栅吊件',
++  'LGS strap bracing 1-1/2" × 33 mil': '轻钢拉带支撑 1-1/2 英寸 × 33 mil',
++  'LUS-series @ girders/headers': '梁 / 过梁处使用 LUS 系列',
++  Lights: '灯具',
++  'Line-set insulation': '冷媒管保温层',
++  'Line-set liquid ⅜"': '⅜ 英寸冷媒液管',
++  'Line-set suction ¾"': '¾ 英寸冷媒吸气管',
++  'Mechanical equipment': '机械设备',
++  'Mortar (Type S)': '砂浆（S 型）',
++  'Panel cans': '配电箱箱体',
++  'Plate washers 3x3': '3×3 板式垫片',
++  'Plumbing stub-outs': '给排水预留管口',
++  'Portal straps 1000 lb': '门式框架拉带 1000 lb',
++  Rebar: '钢筋',
++  Receptacles: '插座',
++  'Register boots': '送风口接管箱',
++  'Return grilles': '回风格栅',
++  'Roof sheathing 7/16" WSP': '屋面覆板 7/16 英寸木结构板',
++  'Roof underlayment': '屋面垫层',
++  'SE cable 2 AWG Cu': '2 AWG 铜芯进户电缆',
++  'Screws No. 6 bugle-head (gypsum to steel)': '6 号喇叭头螺钉（石膏板连接钢材）',
++  'Screws No. 8 (sheathing to steel)': '8 号螺钉（覆面板连接钢材）',
++  'Screws No. 8 self-drilling (stud-to-track)': '8 号自钻螺钉（立柱连接导轨）',
++  'Seismic straps': '抗震拉带',
++  'Smoke alarms': '感烟报警器',
++  'Stud-to-plate connectors': '立柱与顶底梁连接件',
++  'Subfloor 3/4" T&G': '3/4 英寸企口基层楼板',
++  'Supply registers': '送风口',
++  Switches: '开关',
++  'T&P relief valve': '温度压力安全阀',
++  'Takeoff collars': '支管接口',
++  Thermostats: '温控器',
++  'Trunk reducers': '主风管变径接头',
++  'Vapor retarder 6-mil poly': '6 mil 聚乙烯隔汽层',
++  'Vent stacks': '通气立管',
++  'WR GFCI receptacles (outdoor)': '室外耐候接地故障保护插座',
++  'Wall sheathing 7/16" WSP': '墙面覆板 7/16 英寸木结构板',
++  'Water heaters': '热水器',
++  'Water meters': '水表',
++  'Water-heater drain pan': '热水器接水盘',
++  'Water-heater stand': '热水器支架',
++  bags: '袋',
++  'board feet': '板英尺',
++  'braced wall ends (seismic)': '抗侧力墙端部（抗震）',
++  'ceiling/wall luminaires': '顶棚 / 墙面灯具',
++  'conditioned air': '调节空气',
++  'copper-clad, driven below grade, 6 ft apart (NEC 250.52(A)(5) / 250.53)':
++    '铜包接地棒，打入地面以下，间距 6 英尺（NEC 250.52(A)(5) / 250.53）',
++  devices: '个设备',
++  ea: '件',
++  'eaves + rakes (R905.2.8.5)': '檐口及山墙斜边（R905.2.8.5）',
++  'elbows at bends (est.)': '转弯处弯头（估算）',
++  'exceeds prescriptive header span — see flags': '超过规范法允许的过梁跨度，见需核查项',
++  'grounding electrode conductor, meter → rods (NEC 250.66)':
++    '接地极导体，电表至接地棒（NEC 250.66）',
++  'header to jack at openings — high-wind uplift (WFCM); install per schedule':
++    '洞口过梁连接承托立柱，用于强风抗拔（WFCM）；按明细表安装',
++  'header to jack, CS-PF (R602.10.6.4) — fasteners per manufacturer':
++    '过梁连接承托立柱，CS-PF（R602.10.6.4）；紧固件按厂家要求',
++  'lights + smoke/CO alarms': '灯具与感烟 / 一氧化碳报警器',
++  'linear feet': '延长英尺',
++  'liquid-tight conduit kits (NEC 440.14)': '液密型接管套件（NEC 440.14）',
++  'load center': '负载中心',
++  'load center enclosures': '负载中心箱体',
++  'one per step-down in a trunk chain': '主风管每处缩径设置一个',
++  'one per supply register': '每个送风口设置一个',
++  'one per trunk branch tap': '主风管每个支管接口设置一个',
++  'panel → metal water service entry (NEC 250.104(A))': '配电盘至金属给水入户管（NEC 250.104(A)）',
++  pcs: '件',
++  'rafter/plate uplift (R802.11)': '椽条与顶梁的抗拔连接（R802.11）',
++  'receptacles + switches': '插座与开关',
++  'return air path': '回风路径',
++  'service entrance (NEC 230.66)': '电力入户（NEC 230.66）',
++  'service entry (P2903.7)': '给水入户（P2903.7）',
++  sheets: '张',
++  'street → meter → panel (NEC 230)': '街道电源至电表，再至配电盘（NEC 230）',
++  'stub-to-fixture hoses, counted each': '预留管口至器具的软管，逐根计数',
++  'supply/drain': '给水 / 排水',
++  'tank upper+lower thirds (P2801.8)': '水箱上、下三分之一区域（P2801.8）',
++  'tank/tankless': '储水式 / 即热式',
++  'wall controls': '墙面控制器',
++  'with ¾" drain (P2801.6)': '配 ¾ 英寸排水管（P2801.6）',
++  'zone control': '分区控制',
++  '¾" discharge to ≤6" AFF (P2803.6.1)': '¾ 英寸泄放管，出口距完成地面不超过 6 英寸（P2803.6.1）',
++  '¾" suction line — closed-cell pipe sleeve (M1411)': '¾ 英寸吸气管，使用闭孔保温管套（M1411）',
++  '4x8 sheets, gross (openings cut out)': '4×8 板材，按毛面积计（洞口从板材中切出）',
++  '4x8 sheets, gross — both faces of interior walls': '4×8 板材，按毛面积计，覆盖内墙两面',
++  '8x8x16 running bond': '8×8×16 砌块错缝搭接',
++  '18" ignition elevation (M1307.3)': '点火部位距地面 18 英寸（M1307.3）',
++  'NEC 210.52 spacing': '按 NEC 210.52 设置间距',
++  'NEC 210.52(E) + 406.9(A) weather-resistant': '按 NEC 210.52(E) + 406.9(A) 提供耐候保护',
++  'NEC 210.8 wet locations': '潮湿场所，参考 NEC 210.8',
++  'NEC 406.9(B) wet-location while-in-use': '潮湿场所使用中防护，参考 NEC 406.9(B)',
++  'NEC 440.14 — within sight of the unit': 'NEC 440.14：应位于设备可视范围内',
++  'IRC R315.3 — garage / fuel appliance': 'IRC R315.3：车库 / 燃料器具',
++  'SDC D₀–D₂ (R602.11.1)': '抗震设计类别 D₀–D₂（R602.11.1）',
++  'bath/dryer ventilation (M1505)': '浴室 / 干衣机通风（M1505）',
++  'acorn clamp per rod + water-pipe clamp (NEC 250.70)':
++    '每根接地棒配接地夹，并配水管接地夹（NEC 250.70）',
++  'at the service equipment (NEC 250.94)': '安装于进户设备处（NEC 250.94）',
++  'one per full-height stud (o.c. rhythm) — high-wind uplift path (R802.11/WFCM); install per schedule':
++    '每根全高立柱配置一个（按中心间距），构成强风抗拔路径（R802.11/WFCM）；按明细表安装',
++  warnings: '警告',
++  'braced wall lines': '抗侧力墙线',
++  Alabama: '阿拉巴马',
++  Alaska: '阿拉斯加',
++  Arizona: '亚利桑那',
++  Arkansas: '阿肯色',
++  California: '加利福尼亚',
++  Colorado: '科罗拉多',
++  Connecticut: '康涅狄格',
++  Delaware: '特拉华',
++  'District of Columbia': '哥伦比亚特区',
++  Florida: '佛罗里达',
++  Georgia: '佐治亚',
++  Hawaii: '夏威夷',
++  Idaho: '爱达荷',
++  Illinois: '伊利诺伊',
++  Indiana: '印第安纳',
++  Iowa: '艾奥瓦',
++  Kansas: '堪萨斯',
++  Kentucky: '肯塔基',
++  Louisiana: '路易斯安那',
++  Maine: '缅因',
++  Maryland: '马里兰',
++  Massachusetts: '马萨诸塞',
++  Michigan: '密歇根',
++  Minnesota: '明尼苏达',
++  Mississippi: '密西西比',
++  Missouri: '密苏里',
++  Montana: '蒙大拿',
++  Nebraska: '内布拉斯加',
++  Nevada: '内华达',
++  'New Hampshire': '新罕布什尔',
++  'New Jersey': '新泽西',
++  'New Mexico': '新墨西哥',
++  'New York': '纽约',
++  'North Carolina': '北卡罗来纳',
++  'North Dakota': '北达科他',
++  Ohio: '俄亥俄',
++  Oklahoma: '俄克拉何马',
++  Oregon: '俄勒冈',
++  Pennsylvania: '宾夕法尼亚',
++  'Rhode Island': '罗得岛',
++  'South Carolina': '南卡罗来纳',
++  'South Dakota': '南达科他',
++  Tennessee: '田纳西',
++  Texas: '得克萨斯',
++  Utah: '犹他',
++  Vermont: '佛蒙特',
++  Virginia: '弗吉尼亚',
++  Washington: '华盛顿',
++  'West Virginia': '西弗吉尼亚',
++  Wisconsin: '威斯康星',
++  Wyoming: '怀俄明',
++  'Canada · Ontario — South (GTA / Golden Horseshoe)': '加拿大·安大略南部（大多伦多 / 金马蹄地区）',
++  'Canada · Ontario — East (Ottawa Valley / Kingston)': '加拿大·安大略东部（渥太华河谷 / 金斯顿）',
++  'Canada · Ontario — North (Sudbury / Thunder Bay)': '加拿大·安大略北部（萨德伯里 / 桑德贝）',
++  'Canada · British Columbia': '加拿大·不列颠哥伦比亚',
++  'Canada · Alberta': '加拿大·艾伯塔',
++  'Canada · Saskatchewan': '加拿大·萨斯喀彻温',
++  'Canada · Manitoba': '加拿大·马尼托巴',
++  'Canada · Quebec': '加拿大·魁北克',
++  'Canada · New Brunswick': '加拿大·新不伦瑞克',
++  'Canada · Nova Scotia': '加拿大·新斯科舍',
++  'Canada · Prince Edward Island': '加拿大·爱德华王子岛',
++  'Canada · Newfoundland and Labrador': '加拿大·纽芬兰与拉布拉多',
++  'Canada · Yukon': '加拿大·育空',
++  'Canada · Northwest Territories': '加拿大·西北地区',
++  'Canada · Nunavut': '加拿大·努纳武特',
++  'Canada · Generic (NBC 2020)': '加拿大·通用（NBC 2020）',
++  'CS-WSP continuous sheathing assumed — R602.10 panel length/spacing not verified':
++    '假定采用 CS-WSP 连续覆面板；尚未核实 R602.10 要求的板段长度与间距',
++  'no exterior wall — condenser row placed at the anchor, verify':
++    '未找到外墙；冷凝器排列在锚点处，请核查位置',
++  'condenser row exceeds the exterior wall — verify placement':
++    '冷凝器排列超出外墙范围，请核查位置',
++  'condenser auto spot could not be validated outdoors — every exterior-wall candidate lands inside a room or under floor coverage (exterior wall classification suspect); verify placement':
++    '无法确认冷凝器自动位置位于室外；所有外墙候选位置均落在房间内或楼板覆盖范围内（外墙分类可能有误），请核查位置',
++  'interior-storey ducts run in soffits/floor webs — verify':
++    '中间楼层的风管沿吊顶或楼板腹部空间布置，请核查',
++  'return trunk cannot clear the supply riser — verify routing':
++    '回风主干管无法避开送风立管，请核查路径',
++  'air handler in garage — M1602.2(1) forbids garage return air; provide a sealed return + R302.5.2 duct protection — verify':
++    '空气处理机组位于车库；M1602.2(1) 禁止从车库回风，需提供密封回风通路和 R302.5.2 风管防护，请核查',
++  'AC disconnect + whip not mounted — no exterior wall face for the box (NEC 440.14) — verify':
++    '空调隔离开关及柔性接管未安装；缺少用于安装箱体的外墙面（NEC 440.14），请核查',
++  'Framing node has no level': '结构框架节点未关联楼层',
++  'Curved wall skipped (framing for curved walls lands later)': '已跳过曲墙（尚未支持曲墙框架）',
++  'No floor slabs on this level — rooms have no floor to derive':
++    '本层没有楼板，无法为房间生成楼面结构',
++  'Ground floor is slab-on-grade — the Foundation system draws the slab field, vapor retarder and footings':
++    '首层采用地坪板；基础系统会生成地坪板、隔汽层和基础',
++  'Ground floor is slab-on-grade — enable Foundation to see the slab field, vapor retarder and footings':
++    '首层采用地坪板；启用基础系统可查看地坪板、隔汽层和基础',
++  'Roof is framed by the X-ray on another storey': '屋顶框架由另一楼层的内部构造视图生成',
++  'alarm interconnect modeled per storey — R314.4 requires interconnection across the dwelling; verify the cross-storey chain':
++    '报警器互联按楼层建模；R314.4 要求住宅内整体互联，请核查跨楼层连接',
++  'water-pipe bond (NEC 250.104) not modeled — no water service entry visible; bond the metal water line at its entry':
++    '未建模水管等电位联结（NEC 250.104）；未找到给水入户点，请在金属水管入户处设置联结',
++  'grounding electrode system modeled per storey — a dwelling service has ONE electrode system (NEC 250.53/250.58); verify the single grade-level GES':
++    '接地极系统按楼层建模；住宅供电应共用一套接地极系统（NEC 250.53/250.58），请核查地面层的统一接地极系统',
++  'Upper-storey drains need a riser to the storey below — not modeled; runs shown end at the drain main':
++    '上层排水需要通往下层的立管，目前尚未建模；图示管路止于排水主管',
++  'Water-heater safety hardware not modeled on the schematic (room-category) path — T&P valve + discharge, drain pan, seismic strapping per P2803/P2801; place real fixtures or verify at install':
++    '按房间类别生成的示意方案未建模热水器安全附件；需按 P2803/P2801 配置温压安全阀及泄放管、接水盘和抗震拉带，请放置实际器具或在安装时核查',
++  'Placed plumbing fixtures on another storey — X-ray that level for its plumbing':
++    '给排水器具位于另一楼层，请切换至该楼层查看内部管线',
++  'condenser for this storey drawn at its floor elevation — grade mounting not modeled; verify':
++    '本层冷凝器绘制于本层楼面标高；尚未建模地面安装方式，请核查',
++  'all zones on this level are outdoor — no conditioned space to serve':
++    '本层全部区域均为室外，没有需要空调服务的空间',
++  'no habitable rooms on this level (garage/hallway zones only) — HVAC has no conditioned space to serve':
++    '本层没有居住房间（仅有车库或走廊），暖通空调没有需要服务的空调空间',
++  'no habitable rooms on this level (garage/hallway zones only) — HVAC has no conditioned space to serve; plumbing found no wet rooms or placed fixtures':
++    '本层没有居住房间（仅有车库或走廊），暖通空调没有需要服务的空调空间；给排水未找到用水房间或已放置器具',
++  'No conditioned space on this level — every zone is outdoor (garden/patio/terrace)':
++    '本层没有空调空间，所有区域均为室外（花园 / 露台 / 平台）',
++  'Floor area from slab outlines (minus holes) — no rooms/zones drawn':
++    '尚未绘制房间或区域，楼面面积按楼板轮廓扣除孔洞计算',
++  'Opening areas use nominal door/window sizes, not rough openings':
++    '洞口面积采用门窗名义尺寸，未采用预留洞口尺寸',
++  'no conditioned volume — no indoor rooms/zones drawn': '没有空调空间体积，尚未绘制室内房间或区域',
++  'no straight exterior envelope on this level': '本层没有由直墙组成的外部围护结构',
++  '4 (assumed)': '4（假定）',
++  'Steel-frame (LGS) walls present — cavity R shown is the wood-frame prescriptive value; steel-frame walls take 2021 IECC R402.2.6 / IRC N1102.2.6 (cavity + continuous insulation, or U-factor path) — not evaluated, and steel-stud thermal bridging is not modeled in the UA/load figures':
++    '存在轻钢框架墙；显示的空腔热阻 R 值采用木框架规定值。钢框架墙需按 2021 IECC R402.2.6 / IRC N1102.2.6 采用空腔加连续保温或传热系数方法，目前尚未评估；UA 与负荷数值也未计入钢立柱热桥',
++  'LGS mil selection: R603.3.2 table cells not encoded — studs/track sized conservatively at the table-domain maximum; verify against Tables R603.3.2(2)–(16) for building width/height/snow/wind':
++    '轻钢厚度选择：尚未编码 R603.3.2 的表格单元值，立柱与导轨保守采用表格范围内的最大规格；请按建筑宽度、高度、雪荷载和风荷载核查表 R603.3.2(2)–(16)',
++  'LGS wall bracing (R603.9 structural sheathing) not evaluated — the R603.3.3 strap rows are stud stability bracing, not shear bracing; verify braced wall design':
++    '尚未评估轻钢墙抗侧力支撑（R603.9 结构覆面板）；R603.3.3 拉带用于立柱稳定，不能替代抗剪支撑，请核查抗侧力墙设计',
++  'LGS energy code: cavity R-values shown are wood-frame prescriptive figures — steel-frame walls require 2021 IECC R402.2.6 / IRC N1102.2.6 compliance (cavity + continuous insulation, or U-factor path) — not evaluated':
++    '轻钢节能规范：显示的空腔热阻 R 值采用木框架规定值；钢框架墙需满足 2021 IECC R402.2.6 / IRC N1102.2.6（空腔加连续保温或传热系数方法），目前尚未评估',
++  'high-wind uplift connectors (R802.11/WFCM continuation) are modeled for lumber walls only — LGS wall uplift strapping not modeled; verify strapping schedule':
++    '强风抗拔连接件（R802.11/WFCM 连续连接）目前仅对木框架墙建模；轻钢墙抗拔拉带尚未建模，请核查拉带明细表',
++  'wall too thin for the CMU face bury — blocks floored at half the drawn thickness; verify':
++    '墙体太薄，无法容纳混凝土砌块面的嵌入深度；砌块厚度下限取绘制墙厚的一半，请核查',
++  'opening crosses the CMU/framing seam — verify detail':
++    '洞口跨越混凝土砌块与框架接缝，请核查构造详图',
++  'mixed wall butts at corners — verify tie detail': '混合墙在转角处对接，请核查拉结构造',
++  'plate section too short for R403.1.6 layout — strap per detail, verify':
++    '底梁段过短，无法满足 R403.1.6 布置要求；请按详图设置拉带并核查',
++  '#5 dowel lap short of 48d_b — hook into bond beam per detail, verify':
++    '5 号插筋搭接长度不足 48d_b；请按详图弯钩锚入圈梁并核查',
++  'girder post bears without a pad footing — R403.1 pad does not fit beside this pour; verify detail':
++    '主梁立柱下未设置独立基础；当前浇筑体旁无法容纳 R403.1 所需基础，请核查详图',
++  'line-set over ~15 m — verify manufacturer max line-set length / oil return (mfr specs govern)':
++    '冷媒管长度超过约 15 m，请核查厂家允许的最大长度及回油条件（以厂家技术要求为准）',
++  'line-set clamped in a thin wall — reduced trade clearance; coordinate with plumbing':
++    '冷媒管布置在薄墙内，专业间净距减小，请与给排水协调',
++  '! verify condenser placement — no exterior wall anchors the row':
++    '! 请核查冷凝器位置，当前排列未以外墙为锚点',
++  '! verify condenser placement — auto spot could not be validated outdoors':
++    '! 请核查冷凝器位置，无法确认自动位置位于室外',
++  '! cabinet overhangs its pad — the unit stands too close to the wall for the exterior assembly (R703.8); move it out':
++    '! 设备箱体超出基础垫块；设备距墙过近，无法容纳外墙构造层（R703.8），请向外移动',
++  '! off-grid — clearance/openings leave no 0.5 m grid position near the elected spot':
++    '! 已偏离网格；净距与洞口限制使选定位置附近没有可用的 0.5 m 网格点',
++  '! line-set crosses DWV stack — coordinate trades': '! 冷媒管与排水通气立管相交，请协调各专业',
++  '! line-set crosses plumbing — coordinate trades': '! 冷媒管与给排水管线相交，请协调各专业',
++  'Sheathing 7/16" WSP': '7/16 英寸木结构覆面板',
++  'WRB (housewrap/felt)': '防水透汽层（建筑包覆膜 / 油毡）',
++  'stud bays, by area': '立柱空腔，按面积计',
++  'net of openings': '已扣除洞口',
++  footings: '基础',
++  stemwalls: '基础矮墙',
++  'slab field (3-1/2" slab-on-grade, R506.1)': '地坪板区域（3-1/2 英寸地坪板，R506.1）',
++  'other pours': '其他浇筑体',
++  'lintels/beams': '过梁 / 梁',
++  'seam sill to bond beam (R403.1.6)': '接缝底梁连接圈梁（R403.1.6）',
++  'sole plate anchorage (R403.1.6)': '底梁锚固（R403.1.6）',
++  '48" o.c. along slab-bearing plates, deduped where an R403.1.6 bolt/hold-down anchors; anchorage per schedule':
++    '沿支承于地坪板的底梁按 48 英寸中心间距布置，已有 R403.1.6 锚栓或抗拔件处不重复设置；锚固按明细表执行',
++}
++
++export function engineeringLabel(value: string): string {
++  if (Object.hasOwn(labels, value)) return labels[value]!
++
++  // Match whole engine messages, preserving instance ids and user-authored names.
++  const bracedLine = /^braced wall line (\S+) \((\d+) walls?, ([\d.]+)m\): (.+)$/.exec(value)
++  if (bracedLine) {
++    return `抗侧力墙线 ${bracedLine[1]}（${bracedLine[2]} 面墙，${bracedLine[3]} m）：${engineeringLabel(bracedLine[4]!)}`
++  }
++  const stock =
++    /^(\d+(?:\.\d+)?) ft stock( \(field splice — run exceeds 20 ft\))?( \(pressure-treated\))?(?: — \+(\d+(?:\.\d+)?%) waste ≈ (\d+) pcs)?$/.exec(
++      value,
++    )
++  if (stock) {
++    return `${stock[1]} 英尺定尺料${stock[2] ? '（现场拼接，连续长度超过 20 英尺）' : ''}${stock[3] ? '（加压防腐处理）' : ''}${stock[4] ? `，增加 ${stock[4]} 损耗后约 ${stock[5]} 件` : ''}`
++  }
++  const pour =
++    /^(.+) — \+(\d+(?:\.\d+)?%) waste ≈ ([\d.]+) yd³( \(waste smaller than the 0\.1 yd³ display step — net and order figures meet at display rounding\))?$/.exec(
++      value,
++    )
++  if (pour && Object.hasOwn(labels, pour[1]!)) {
++    return `${labels[pour[1]!]}，增加 ${pour[2]} 损耗后约 ${pour[3]} yd³${pour[4] ? '（损耗小于 0.1 yd³ 显示步长，净用量与订货量在显示舍入后相同）' : ''}`
++  }
++  const knownMessage = value
++    .replace(/^Room "([\s\S]+)" has no floor slab under it$/, '房间“$1”下方没有楼板')
++    .replace(
++      /^duplicate zone “([\s\S]+)” shares “([\s\S]+)”'s polygon — merged \(classified once, not twice\)$/,
++      '重复区域“$1”与“$2”共用轮廓，已合并且仅分类一次',
++    )
++    .replace(
++      /^zone “([\s\S]+)” reads as open-air — no smoke alarm placed \(R314\); rename if it is conditioned space$/,
++      '区域“$1”被识别为露天空间，未放置感烟报警器（R314）；若为空调空间，请更改名称',
++    )
++    .replace(
++      /^(\d+) duplicate overlapping walls? skipped \(framed once, not twice\)$/,
++      '已跳过 $1 面重复重叠墙，框架仅生成一次',
++    )
++    .replace(
++      /^(\d+) mixed CMU\/framed walls?: assembly layers follow the CMU treatment for the whole wall \(v1\)$/,
++      '$1 面混合砌块 / 框架墙的全部构造层按混凝土砌块处理（v1）',
++    )
++    .replace(
++      /^duplicate service point \(([\s\S]+)\) — extra node ignored$/,
++      '存在重复的入户服务点（$1），已忽略多余节点',
++    )
++    .replace(
++      /^duplicate device node \(([\s\S]+)\) — extra node ignored$/,
++      '存在重复设备节点（$1），已忽略多余节点',
++    )
++    .replace(
++      /^return grille cannot fully clear the supply ducts in ([\s\S]+) — verify placement$/,
++      '回风格栅无法完全避开“$1”内的送风管，请核查位置',
++    )
++    .replace(
++      /^return drop cannot clear walls in ([\s\S]+) — verify routing$/,
++      '回风下引管无法避开“$1”内的墙体，请核查路径',
++    )
++    .replace(
++      /^heat-pump point is inside ([\s\S]+) — the outdoor unit belongs outside; move it or it will be drawn indoors$/,
++      '热泵点位位于“$1”内；室外机应位于室外，请移动点位，否则设备将绘制在室内',
++    )
++    .replace(
++      /^heat-pump point is ([\d.]+) m from the nearest exterior wall — beyond the 25 ft service reach \(NEC 210\.63\); verify the outdoor unit's spot$/,
++      '热泵点位距最近外墙 $1 m，超过 25 英尺检修服务距离（NEC 210.63），请核查室外机位置',
++    )
++    .replace(
++      /^AC disconnect #(\d+) sits in a door\/window rough opening — move the unit clear \(NEC 440\.14\)$/,
++      '第 $1 个空调隔离开关位于门窗预留洞口内，请移开设备（NEC 440.14）',
++    )
++    .replace(
++      /^device “([\s\S]+)”: override wall ([\s\S]+) is not framed — using the derived spot$/,
++      '设备“$1”：指定的墙体 $2 尚未生成框架，改用推导位置',
++    )
++    .replace(
++      /^device “([\s\S]+)” sits in a door\/window rough opening — snapped clear$/,
++      '设备“$1”位于门窗预留洞口内，已吸附至避让位置',
++    )
++    .replace(
++      /^device “([\s\S]+)”: mount height clamped to ([\d.]+) m — switches live in \[([\d.]+), ([\d.]+)\] m \(NEC 404\.8\(A\) 6'7" max\)$/,
++      '设备“$1”：安装高度已限制为 $2 m；开关安装范围为 [$3, $4] m（NEC 404.8(A)，最高 6 英尺 7 英寸）',
++    )
++    .replace(
++      /^device “([\s\S]+)”: mount height clamped to ([\d.]+) m — receptacles live in \[([\d.]+), ([\d.]+)\] m$/,
++      '设备“$1”：安装高度已限制为 $2 m；插座安装范围为 [$3, $4] m',
++    )
++    .replace(
++      /^wall ([\s\S]+): receptacle spacing exceeds NEC 210\.52 \(moved outlet leaves a >12ft gap\)$/,
++      '墙体 $1：插座间距超过 NEC 210.52 要求（移动插座后留下大于 12 英尺的间距）',
++    )
++    .replace(
++      /^Wall ([\s\S]+): no prescriptive LGS member class resolves — engineered design required; wall not framed$/,
++      '墙体 $1：无法按规范法确定轻钢构件类别，需要工程设计；未生成此墙框架',
++    )
++    .replace(
++      /^Wall ([\s\S]+): ([\s\S]+) stud length exceeds the R603\.1\.1 10 ft limit between horizontal supports — engineered design required \(AISI S240\/S230\)$/,
++      '墙体 $1：立柱长度 $2 超过 R603.1.1 对水平支撑之间 10 英尺的限值，需要工程设计（AISI S240/S230）',
++    )
++    .replace(
++      /^cooling load takes (\d+) condensers — ONE air handler\/duct system drawn \(single indoor coil\/exchanger assumption; multi-system zoning not modeled, Manual S\/D govern\) — verify$/,
++      '冷负荷需要 $1 台冷凝器，但仅绘制一套空气处理机组 / 风管系统（假定共用一个室内盘管 / 换热器；多系统分区尚未建模，以 Manual S/D 为准），请核查',
++    )
++    .replace(
++      /^cooling selection ([\d.]+) tons sits outside the Manual S 95–115% band for the ([\d.]+)-ton Manual J-lite load \(stock half-ton steps \/ 1\.5-ton floor\) — verify equipment selection \(M1401\.3\)$/,
++      '所选制冷量 $1 冷吨超出 $2 冷吨简化 Manual J 负荷的 Manual S 95–115% 范围（常用规格按 0.5 冷吨递增，最低 1.5 冷吨），请核查设备选型（M1401.3）',
++    )
++    .replace(
++      /^installed ([\d.]+) tons = ([\d.]+)% of the ([\d.]+)-ton Manual J-lite load — exceeds the Manual S 115% band \(stock unit steps after the ≤5-ton split\); verify selection$/,
++      '安装制冷量 $1 冷吨为 $3 冷吨简化 Manual J 负荷的 $2%，超过 Manual S 115% 上限（按单机不超过 5 冷吨拆分后的常用设备规格），请核查选型',
++    )
++    .replace(
++      /^Climate zone (\S+) — 2021 IECC Figure R301\.1 dominant zone for (\S+)( \(zone varies within the state — confirm with AHJ\))?$/,
++      (_, zone, state, varies) =>
++        `气候区 ${zone}，采用 ${state} 在 2021 IECC 图 R301.1 中的主要气候区${varies ? '（州内气候区存在差异，请与主管部门确认）' : ''}`,
++    )
++    .replace(
++      /^Wall cavity (.+) — (.+) — wood-frame prescriptive; steel-frame walls take R402\.2\.6\/N1102\.2\.6, not evaluated$/,
++      '墙体空腔 $1，依据 $2；此为木框架规定值，钢框架墙应按 R402.2.6/N1102.2.6 评估，目前尚未评估',
++    )
++    .replace(/^Wall cavity (.+) — (.+)$/, '墙体空腔 $1，依据 $2')
++    .replace(
++      /^(R[-\d]+) batt wants a ([\d.]+)" bay — spec exterior studs \((.+)\) give ([\d.]+)"; use continuous insulation or deeper studs$/,
++      '$1 保温毡需要 $2 英寸空腔，指定外墙立柱（$3）仅提供 $4 英寸，请采用连续保温或更深的立柱',
++    )
++    .replace(
++      /^climate zone unknown for '([\s\S]+)' — set the jurisdiction$/,
++      '未查到“$1”的气候区，请设置适用地区',
++    )
++    .replace(
++      /^Cooling RULE OF THUMB: 1 ton per ([\d.]+) m² floor, ±20% by envelope UA density — not a Manual J load calculation \(Manual J-lite unavailable: (.+)\)$/,
++      (_, area, reason) =>
++        `制冷量经验估算：每 ${area} m² 楼面对应 1 冷吨，按围护结构 UA 密度上下调整 20%；这不是 Manual J 负荷计算（简化 Manual J 不可用：${engineeringLabel(reason)}）`,
++    )
++    .replace(
++      /^Manual J-lite SENSIBLE load \(IRC M1401\.3 — ACCA Manual J\/S govern\): UA·ΔT ([\d.]+) W \+ solar ([\d.]+) W \+ internal ([\d.]+) W \+ infiltration ([\d.]+) W = ([\d.]+) W \(([\d.]+) Btu\/h ≈ ([\d.]+) tons sensible\)$/,
++      '简化 Manual J 显热负荷（IRC M1401.3，以 ACCA Manual J/S 为准）：UA·ΔT $1 W + 太阳得热 $2 W + 室内得热 $3 W + 空气渗透 $4 W = $5 W（$6 Btu/h，约 $7 显热冷吨）',
++    )
++    .replace(
++      /^No moisture-regime letter on zone (.+) — no latent allowance applied \(×1\.0\); full Manual J latent calculation governs$/,
++      '气候区 $1 未标注湿度类别，未增加潜热裕量（×1.0）；以完整 Manual J 潜热计算为准',
++    )
++    .replace(
++      /^Latent allowance ×([\d.]+) \(moisture regime ([ABC]) — (humid|dry|marine), 2021 IECC Figure R301\.1 zone letter\): ([\d.]+) tons sensible → ([\d.]+) tons design load — coarse class factor, full Manual J latent calculation governs$/,
++      (_, factor, regime, climate, sensible, load) =>
++        `潜热裕量 ×${factor}（湿度类别 ${regime}，${climate === 'humid' ? '湿润' : climate === 'dry' ? '干燥' : '海洋性'}，依据 2021 IECC 图 R301.1 气候区字母）：${sensible} 显热冷吨 → ${load} 设计负荷冷吨；此为粗略分类系数，以完整 Manual J 潜热计算为准`,
++    )
++    .replace(
++      /^Cooling design ΔT ([\d.]+) K: zone (.+) outdoor design ([\d.]+)°C \(ASHRAE\/ACCA-style default — verify local design conditions, Table R301\.2\(1\)\) − indoor ([\d.]+)°C$/,
++      '制冷设计温差 $1 K：气候区 $2 的室外设计温度 $3°C（ASHRAE/ACCA 风格默认值；请按表 R301.2(1) 核查当地设计条件）− 室内 $4°C',
++    )
++    .replace(
++      /^Load UA ([\d.]+) W\/K = walls ([\d.]+) m² @ R-([\d.]+) \+ exterior glazing ([\d.]+) m² @ U-([\d.]+) \+ ceiling ([\d.]+) m² @ R-([\d.]+) \(2021 IECC R402\.1\.3, top-storey attic assumption\); floors\/doors\/latent\/ducts excluded — schematic$/,
++      '负荷 UA $1 W/K = 墙体 $2 m²（R-$3）+ 外窗玻璃 $4 m²（U-$5）+ 顶棚 $6 m²（R-$7，2021 IECC R402.1.3，假定顶层设阁楼）；未计楼面、门、潜热与风管，仅供示意',
++    )
++    .replace(
++      /^Internal: (\d+) occupants \(bedrooms (\d+) \+ 1, Manual J\) × ([\d.]+) W \+ appliances ([\d.]+) W$/,
++      '室内得热：$1 人（卧室数 $2 + 1，Manual J）× $3 W + 电器 $4 W',
++    )
++    .replace(
++      /^Infiltration: ([\d.]+) Wh\/\(m³·K\) × ACH ([\d.]+) \(assumed\) × ([\d.]+) m³ conditioned volume × ΔT ([\d.]+) K$/,
++      '空气渗透：$1 Wh/(m³·K) × 每小时换气次数 $2（假定）× 空调空间体积 $3 m³ × 温差 $4 K',
++    )
++    .replace(
++      /^Solar: glazing × SHGC ([\d.]+) × N ([\d.]+)\/E ([\d.]+)\/S ([\d.]+)\/W ([\d.]+) W\/m² by facade \(\+x = east, −z = north assumed\)$/,
++      '太阳得热：玻璃面积 × 太阳得热系数 SHGC $1 × 各立面系数（北 $2 / 东 $3 / 南 $4 / 西 $5 W/m²），假定 +x 向东、−z 向北',
++    )
++    .replace(/^(\d+) bars, laps not included$/, '$1 根钢筋，未计搭接长度')
++    .replace(/^~(\d+) blocks per 80-lb bag$/, '每袋 80 磅约可砌 $1 块')
++    .replace(/^(\d+) reinforced cells \(R606\.12\)$/, '$1 个配筋孔芯（R606.12）')
++    .replace(
++      /^under slab, \+(\d+(?:\.\d+)?%) seam laps\/turn-ups \(R506\.2\.3\)$/,
++      '位于地坪板下，接缝搭接与上翻另加 $1（R506.2.3）',
++    )
++    .replace(
++      /^(\d+) pcs, cut to length \(roll-formed\) — weight requires vendor data \(no verified lb\/ft in the catalog\)$/,
++      '$1 件，按长度切割（辊压成型）；重量需要厂家数据，目录没有经核实的每英尺重量',
++    )
++    .replace(
++      /^horizontal stud bracing rows \(R603\.3\.3\), both faces — (\d+) runs; end anchorage per detail$/,
++      '立柱两面设置水平支撑拉带（R603.3.3），共 $1 段；端部锚固按详图执行',
++    )
++    .replace(
++      /^4x8 sheets from deck members, net — \+(\d+(?:\.\d+)?%) waste ≈ (\d+) sheets$/,
++      '按楼板构件净面积计 4×8 板材，增加 $1 损耗后约 $2 张',
++    )
++    .replace(
++      /^4x8 sheets from slab area, net of floor openings — \+(\d+(?:\.\d+)?%) waste ≈ (\d+) sheets$/,
++      '按楼板面积扣除孔洞计 4×8 板材，增加 $1 损耗后约 $2 张',
++    )
++    .replace(
++      /^net of openings \(~(\d+) 4x8 sheets\) — \+(\d+(?:\.\d+)?%) waste ≈ (\d+) sheets$/,
++      '已扣除洞口（约 $1 张 4×8 板材），增加 $2 损耗后约 $3 张',
++    )
++    .replace(
++      /^one layer felt\/synthetic, \+(\d+(?:\.\d+)?%) course laps \(R905\.1\.1\) — covering by finish schedule, not booked$/,
++      '单层油毡 / 合成垫层，排间搭接另加 $1（R905.1.1）；面层按饰面明细表选用，未计入此清单',
++    )
++    .replace(
++      /^deck panels, from members \(~(\d+) 4x8 sheets, R803\.2\) — \+(\d+(?:\.\d+)?%) waste ≈ (\d+) sheets(; tapered planes conservatively under-tiled \(see member labels\) — shortfall NOT covered by the stated waste)?$/,
++      (_, sheets, waste, total, tapered) =>
++        `按构件统计屋面板（约 ${sheets} 张 4×8 板材，R803.2），增加 ${waste} 损耗后约 ${total} 张${tapered ? '；渐缩面按保守方式少铺板材（见构件标签），此缺额未包含在上述损耗中' : ''}`,
++    )
++    .replace(
++      /^([\d.]+) × ([\d.]+) m × 4" concrete equipment pad \(40"-class stock; IRC M1403\)$/,
++      '$1 × $2 m × 4 英寸混凝土设备基础垫块（40 英寸级常用规格，IRC M1403）',
++    )
++    .replace(
++      /^ASTM C1513 — 2 per flange pair, both member ends \(Table R603\.3\.2\(1\)\); (\d+) verticals × 4$/,
++      'ASTM C1513：每对翼缘 2 枚，构件两端均设置（表 R603.3.2(1)）；$1 根竖向构件 × 4',
++    )
++    .replace(
++      /^@ 6" edges \/ 12" field \(R603\.2\.5\) — (\d+) steel-wall sheets × (\d+) \(4x8 vertical, 16" o\.c\. assumed\)$/,
++      '板边间距 6 英寸、板中间距 12 英寸（R603.2.5）；$1 张钢框架墙板 × $2（4×8 板材竖向安装，假定立柱中心间距 16 英寸）',
++    )
++    .replace(
++      /^@ 12" \(R603\.2\.5\) — (\d+) steel-wall sheets × (\d+) \(4x8 vertical, 16" o\.c\. assumed\)$/,
++      '间距 12 英寸（R603.2.5）；$1 张钢框架墙板 × $2（4×8 板材竖向安装，假定立柱中心间距 16 英寸）',
++    )
++    .replace(
++      /^no indoor zones on this level — (HVAC \+ plumbing are|HVAC is|plumbing is) derived from rooms; draw zones here or X-ray the storey that has them$/,
++      (_, systems) =>
++        `本层没有室内区域；${systems === 'HVAC + plumbing are' ? '暖通空调与给排水' : systems === 'HVAC is' ? '暖通空调' : '给排水'}根据房间生成，请在此绘制区域，或切换至已有区域的楼层查看内部构造`,
++    )
++  if (knownMessage !== value) return knownMessage
++
++  return value
++    .replace(/^Design heat loss \(dT (.+)K\)$/, '设计热损失（温差 $1 K）')
++    .replace(/^guessed from timezone (.+)$/, '根据时区 $1 推测')
++    .replace(/^US locale \((.+)\), unknown state$/, '美国地区设置（$1），州未知')
++    .replace(/^Canadian locale \((.+)\), unknown province$/, '加拿大地区设置（$1），省未知')
++    .replace(/^non-US locale \((.+)\)$/, '非美国地区设置（$1）')
++    .replace(/^Circuit (.+)$/, '回路 $1')
++    .replace(/^Return duct (.+)$/, '回风管 $1')
++    .replace(/^Duct (.+)$/, '风管 $1')
++    .replace(/^Copper (.+)$/, '铜管 $1')
++    .replace(/^Pipe (.+)$/, '管道 $1')
++    .replace(/ fittings$/, ' 管件')
++    .replace(/ round$/, ' 圆管')
++    .replace(/^Bonding jumper (.+)$/, '等电位联结导体 $1')
++    .replace(/^Nails (.+) common(.*)$/, '普通钉 $1$2')
++    .replace(/^(\S+) ft stock$/, '$1 英尺定尺料')
++    .replace(
++      /^Design heat loss at ΔT = (.+) K \(winter design assumption\)$/,
++      '设计热损失的温差为 $1 K（冬季设计假设）',
++    )
++    .replace(
++      /^Volume estimated as floor area × mean exterior wall height \((.+) m\) — no rooms drawn$/,
++      '未绘制房间；体积按楼面面积 × 外墙平均高度（$1 m）估算',
++    )
++    .replace(/^(\d+) curved wall\(s\) excluded from the envelope$/, '围护结构计算排除了 $1 面曲墙')
++    .replace(
++      /^Floor area & volume are CONDITIONED space — (.+) m² of outdoor zones \(garden\/patio\/yard\) excluded$/,
++      '楼面面积与体积仅计入空调空间，排除了 $1 m² 室外区域（花园 / 露台 / 庭院）',
++    )
++    .replace(
++      /^Climate zone unknown for '(.+)' — zone 4 assumed; set the jurisdiction for a real lookup$/,
++      '未查到“$1”的气候区，暂按第 4 区计算；请设置适用地区以查询',
++    )
++    .replace(
++      /^UA counts wall \+ window conduction only \(RSI = R × (.+)\); roof, floor, doors and infiltration excluded — schematic$/,
++      'UA 仅计墙和窗的传导（RSI = R × $1）；未计屋顶、楼面、门及空气渗透，仅供示意',
++    )
++    .replace(
++      /^Window U-(.+) BTU\/h·ft²·°F assumed — 2021 IECC Table R402.1.2 climate-typical fenestration U-factor$/,
++      '窗的传热系数暂取 U-$1 BTU/h·ft²·°F，参考 2021 IECC 表 R402.1.2 的典型值',
++    )
++}
+diff --git a/src/framing/definition.ts b/src/framing/definition.ts
+--- a/src/framing/definition.ts
++++ b/src/framing/definition.ts
+@@ -9,7 +9,7 @@
+ const framingParametrics: ParametricDescriptor<FramingNode> = {
+   groups: [
+     {
+-      label: 'Code',
++      label: "规范",
+       fields: [
+         { key: 'jurisdiction', kind: 'enum', options: jurisdictionEnum },
+         { key: 'detail', kind: 'enum', options: ['200', '300', '400'], display: 'segmented' },
+@@ -17,7 +17,7 @@
+       ],
+     },
+     {
+-      label: 'View',
++      label: "视图",
+       // CONFIG-KNOB semantics, accepted deliberately (skeptic advisory
+       // 2026-08-21): parametric descriptors are declarative, so this field
+       // surfaces the RAW stored value — a legacy (pre-viewMode) node shows
+@@ -33,7 +33,7 @@
+       ],
+     },
+     {
+-      label: 'Systems',
++      label: "设备系统",
+       fields: [
+         { key: 'showWalls', kind: 'boolean' },
+         { key: 'showFloor', kind: 'boolean' },
+@@ -93,9 +93,9 @@
+   renderer: { kind: 'parametric', module: () => import('./renderer') },
+ 
+   presentation: {
+-    label: 'X-Ray',
++    label: "内部构造",
+     description:
+-      'The Bones engineering X-ray for this level — derives framing, foundation, and systems from the model.',
++      "此楼层的 Bones 内部构造视图：从模型推导框架、基础和设备系统。",
+     icon: { kind: 'iconify', name: 'lucide:scan-line' },
+     paletteSection: 'furnish',
+     hidden: true,
+diff --git a/src/index.test.ts b/src/index.test.ts
+--- a/src/index.test.ts
++++ b/src/index.test.ts
+@@ -42,7 +42,7 @@
+     // rather than asserting the string type.)
+     expect(extension?.icon.kind).toBe('url')
+     expect(extension?.icon.src).toBe(BONES_ICON)
+-    expect(extension?.title).toBe('Engineering')
++    expect(extension?.title).toBe("工程信息")
+     expect(typeof extension?.component).toBe('function')
+   })
+ 
+@@ -60,7 +60,7 @@
+     const html = renderToString(
+       createElement(WallEngineering, { node: { id: 'wall-1', parentId: 'level-1' } }),
+     )
+-    expect(html).toContain('X-Ray this level')
++    expect(html).toContain("查看本层内部构造")
+   })
+ })
+ 
+diff --git a/src/index.ts b/src/index.ts
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -55,7 +55,7 @@
+     pluginId: 'pascal:bones',
+     kinds: ['wall'],
+     icon: { kind: 'url', src: BONES_ICON },
+-    title: 'Engineering',
++    title: "工程信息",
+     component: () => import('./inspector/wall-engineering'),
+   },
+ ]
+@@ -79,7 +79,7 @@
+   component: () => import('./panel'),
+   pluginId: bonesPlugin.id,
+   description:
+-    'Alpha access — new and evolving fast. The engineering X-ray for Pascal: see through the finishes to the actual construction — wall framing, floors, roof, foundation, and electrical, derived from your model and sized to your jurisdiction.',
++    "早期测试版本，功能仍在快速迭代。查看 Pascal 模型饰面下的真实构造：墙体框架、楼面、屋顶、基础和电气系统；由模型推导，并按所在地区确定尺寸。",
+   creator: {
+     name: 'Julien Brissonneau',
+     url: 'https://github.com/Snoopy147',
+diff --git a/src/inspector/wall-engineering.tsx b/src/inspector/wall-engineering.tsx
+--- a/src/inspector/wall-engineering.tsx
++++ b/src/inspector/wall-engineering.tsx
+@@ -250,9 +250,9 @@
+         }}
+         type="button"
+       >
+-        ⚡ X-Ray this level
++        ⚡ 查看本层内部构造
+         <span className="block font-normal text-[10px] text-muted-foreground">
+-          Derive framing, foundation &amp; systems to see this wall's engineering
++          推导框架、基础和设备系统，查看此墙体的工程信息
+         </span>
+       </button>
+     )
+@@ -261,7 +261,7 @@
+   if (!info) {
+     return (
+       <p className="text-muted-foreground text-xs leading-relaxed">
+-        No engineering for this wall — it may be hidden or degenerate.
++        此墙体没有工程信息，可能已隐藏或几何已退化。
+       </p>
+     )
+   }
+@@ -288,7 +288,7 @@
+           {info.label}
+         </span>
+         <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-[10px] text-muted-foreground">
+-          {info.exterior ? 'Exterior' : 'Interior'}
++          {info.exterior ? "外墙" : "内墙"}
+         </span>
+       </div>
+       {/* Per-wall construction — ONE control, LGS Phase 2 adds the Steel
+@@ -300,17 +300,17 @@
+       <SegmentedControl
+         onChange={(v: WallConstruction) => writeOverride(constructionOverride(info.override, v))}
+         options={[
+-          { label: 'Framed', value: 'framed' },
+-          { label: 'Steel', value: 'lgs' },
+-          { label: 'CMU', value: 'cmu' },
+-          { label: 'Skip', value: 'skip' },
++          { label: "木框架", value: 'framed' },
++          { label: "钢框架", value: 'lgs' },
++          { label: "混凝土砌块", value: 'cmu' },
++          { label: "跳过", value: 'skip' },
+         ]}
+         value={info.construction}
+       />
+       {cmuHeight && (
+         <div className="flex flex-col gap-0.5">
+           <SliderControl
+-            label="Block height"
++            label="砌块高度"
+             max={cmuHeight.maxM}
+             min={cmuHeight.minM}
+             onChange={(v: number) =>
+@@ -332,7 +332,7 @@
+       {eng && (
+         <div className="flex flex-col gap-1">
+           <span className="text-[10px] text-muted-foreground/80 uppercase tracking-wider">
+-            Studs
++            墙骨柱
+           </span>
+           <div className="flex gap-2">
+             <div className="flex-1">
+@@ -357,13 +357,13 @@
+             </div>
+           </div>
+           {eng.studsDefault && (
+-            <span className="text-[10px] text-muted-foreground/70">per state code</span>
++            <span className="text-[10px] text-muted-foreground/70">按地区规范</span>
+           )}
+           {eng.studsNote && (
+             <span className="text-[10px] text-amber-500/80">{eng.studsNote}</span>
+           )}
+           <span className="mt-1 text-[10px] text-muted-foreground/80 uppercase tracking-wider">
+-            Insulation
++            保温
+           </span>
+           <SegmentedControl
+             onChange={(v: WallInsulation) => writeField({ insulation: v })}
+@@ -376,7 +376,7 @@
+           {info.exterior && (
+             <>
+               <span className="mt-1 text-[10px] text-muted-foreground/80 uppercase tracking-wider">
+-                Exterior finish
++                外墙饰面
+               </span>
+               <select
+                 className="w-full rounded-lg border border-border/50 bg-[#2C2C2E] px-2 py-1.5 text-foreground text-xs outline-none"
+@@ -404,7 +404,7 @@
+                 ))}
+               </select>
+               {eng.claddingDefault && (
+-                <span className="text-[10px] text-muted-foreground/70">per state code</span>
++                <span className="text-[10px] text-muted-foreground/70">按地区规范</span>
+               )}
+             </>
+           )}
+@@ -420,7 +420,7 @@
+           <span className="block text-amber-500/80">{info.duplicateNote}</span>
+         )}
+         {info.curved && (
+-          <span className="block text-amber-500/80">Curved — framing lands later</span>
++          <span className="block text-amber-500/80">弧形墙——框架功能尚待支持</span>
+         )}
+       </div>
+     </div>
+diff --git a/src/panel-framing.test.ts b/src/panel-framing.test.ts
+--- a/src/panel-framing.test.ts
++++ b/src/panel-framing.test.ts
+@@ -55,7 +55,7 @@
+ 
+   test("the sentinel is the empty string with the honest generic label — steel with no machine IS generic AISI", () => {
+     expect(LGS_MACHINE_NONE).toBe('')
+-    expect(LGS_MACHINE_NONE_LABEL).toBe('None (generic AISI)')
++    expect(LGS_MACHINE_NONE_LABEL).toBe("无（通用 AISI）")
+   })
+ })
+ 
+@@ -82,15 +82,15 @@
+       if (!machine) throw new Error(`unresolvable key ${m.key}`)
+       if (machine.status === 'verified') {
+         expect(m.label).toBe(machine.name)
+-        expect(m.label).not.toContain('(unverified)')
++        expect(m.label).not.toContain("（未经核实）")
+       } else {
+-        expect(m.label).toBe(`${machine.name} (unverified)`)
++        expect(m.label).toBe(`${machine.name}（未经核实）`)
+       }
+     }
+     // the live example: both Pinnacle rows are suffixed
+     const pinnacle = flat.filter((m) => m.key.startsWith('pinnacle/'))
+     expect(pinnacle.length).toBe(2)
+-    for (const m of pinnacle) expect(m.label).toContain('(unverified)')
++    for (const m of pinnacle) expect(m.label).toContain("（未经核实）")
+   })
+ 
+   test('unverified rows sink: below verified rows within a vendor, all-unverified vendors last', () => {
+@@ -122,14 +122,14 @@
+     const extra = lgsMachineSelectExtra('FRAMECAD/TF550H')
+     expect(extra).toEqual({
+       key: 'FRAMECAD/TF550H',
+-      label: "FRAMECAD TF550H (as 'FRAMECAD/TF550H')",
++      label: "FRAMECAD TF550H（保存值为 'FRAMECAD/TF550H'）",
+     })
+   })
+ 
+   test('an unknown key says so — never displayed as some other option', () => {
+     expect(lgsMachineSelectExtra('acme/rocket')).toEqual({
+       key: 'acme/rocket',
+-      label: 'acme/rocket (not in catalog)',
++      label: "acme/rocket（不在目录中）",
+     })
+   })
+ })
+diff --git a/src/panel-framing.ts b/src/panel-framing.ts
+--- a/src/panel-framing.ts
++++ b/src/panel-framing.ts
+@@ -47,7 +47,7 @@
+ /** The Machine select's 'no machine' sentinel (a native select can't carry
+  * undefined) and its honest label — steel with no machine IS generic AISI. */
+ export const LGS_MACHINE_NONE = ''
+-export const LGS_MACHINE_NONE_LABEL = 'None (generic AISI)'
++export const LGS_MACHINE_NONE_LABEL = "无（通用 AISI）"
+ 
+ /** Write patch for the Machine select: the sentinel removes the key
+  * (absent round-trips absent — the Phase-0 gate extends over this write). */
+@@ -72,7 +72,7 @@
+     const machines = Object.entries(vendor.machines).map(([machineKey, machine]) => ({
+       key: `${vendorKey}/${machineKey}`,
+       label:
+-        machine.status === 'verified' ? machine.name : `${machine.name} (unverified)`,
++        machine.status === 'verified' ? machine.name : `${machine.name}（未经核实）`,
+       verified: machine.status === 'verified',
+     }))
+     // stable: catalog order within each verified class
+@@ -103,6 +103,6 @@
+   if (known) return null
+   const machine = machineFor(current)
+   return machine
+-    ? { key: current, label: `${machine.name} (as '${current}')` }
+-    : { key: current, label: `${current} (not in catalog)` }
++    ? { key: current, label: `${machine.name}（保存值为 '${current}'）` }
++    : { key: current, label: `${current}（不在目录中）` }
+ }
+diff --git a/src/panel-selection.test.ts b/src/panel-selection.test.ts
+--- a/src/panel-selection.test.ts
++++ b/src/panel-selection.test.ts
+@@ -106,7 +106,7 @@
+     expect(info?.construction).toBe('framed')
+     expect(info?.override).toBeUndefined()
+     // 0.15m thick ≥ thickWallThreshold → exterior stud size
+-    expect(info?.assembly).toBe('2x6 studs @ 16" o.c.')
++    expect(info?.assembly).toBe("2x6 墙骨柱，中心距 16 英寸")
+   })
+ 
+   test('exterior framed wall carries the climate-zone insulation line', () => {
+@@ -114,7 +114,7 @@
+     const config = makeConfig({ jurisdiction: 'MN' })
+     const result = computeLevel(nodes, config)
+     const info = selectedWallInfo(nodes, select('wall_ext'), config, result)
+-    expect(info?.insulation).toMatch(/^R-\d+ cavity · IECC zone /)
++    expect(info?.insulation).toMatch(/^空腔保温 R-\d+ · IECC 气候区 /)
+     expect(info?.insulation).toContain(result.characteristics?.insulation.climateZone ?? '')
+   })
+ 
+@@ -124,7 +124,7 @@
+     const result = computeLevel(nodes, config)
+     const info = selectedWallInfo(nodes, select('wall_int'), config, result)
+     expect(info?.exterior).toBe(false)
+-    expect(info?.assembly).toBe('2x4 studs @ 16" o.c.')
++    expect(info?.assembly).toBe("2x4 墙骨柱，中心距 16 英寸")
+     expect(info?.insulation).toBeNull()
+   })
+ 
+@@ -133,7 +133,7 @@
+     const config = makeConfig({ studSpacingIn: 24 })
+     const result = computeLevel(nodes, config)
+     const info = selectedWallInfo(nodes, select('wall_ext'), config, result)
+-    expect(info?.assembly).toBe('2x6 studs @ 24" o.c.')
++    expect(info?.assembly).toBe("2x6 墙骨柱，中心距 24 英寸")
+   })
+ 
+   test('unnamed wall labels with a short id tail', () => {
+@@ -141,7 +141,7 @@
+     const config = makeConfig()
+     const result = computeLevel(nodes, config)
+     const info = selectedWallInfo(nodes, select('wall_int'), config, result)
+-    expect(info?.label).toBe('Wall wall_int')
++    expect(info?.label).toBe("墙体 wall_int")
+     // long host ids get truncated to a tail (own segment — a cloned
+     // position would be a colinear duplicate and resolve to the twin)
+     const longId = 'wall_0123456789abcdef'
+@@ -153,7 +153,7 @@
+       end: [6, 4],
+     }
+     const long = selectedWallInfo(nodes, select(longId), config, computeLevel(nodes, makeConfig()))
+-    expect(long?.label).toBe('Wall …abcdef')
++    expect(long?.label).toBe("墙体 …abcdef")
+   })
+ 
+   test('empty / non-wall / unknown selections hide the card', () => {
+@@ -202,7 +202,7 @@
+     )
+     expect(cmuInfo?.construction).toBe('cmu')
+     expect(cmuInfo?.override).toBe('cmu')
+-    expect(cmuInfo?.assembly).toContain('CMU')
++    expect(cmuInfo?.assembly).toContain("混凝土砌块")
+     expect(cmuInfo?.insulation).toBeNull()
+ 
+     const skipConfig = makeConfig({ wallOverrides: { wall_int: 'skip' } })
+@@ -213,7 +213,7 @@
+       computeLevel(nodes, skipConfig),
+     )
+     expect(skipInfo?.construction).toBe('skip')
+-    expect(skipInfo?.assembly).toContain('Skipped')
++    expect(skipInfo?.assembly).toContain("已跳过")
+   })
+ 
+   test('CMU-default jurisdiction (FL): exterior wall reads cmu with NO override', () => {
+@@ -264,7 +264,7 @@
+     // engineering + override target = the framed twin, not the duplicate
+     expect(info?.wallId).toBe('wall_ext')
+     expect(info?.label).toBe('South wall')
+-    expect(info?.assembly).toBe('2x6 studs @ 16" o.c.')
++    expect(info?.assembly).toBe("2x6 墙骨柱，中心距 16 英寸")
+     expect(info?.duplicateNote).toContain('South wall')
+     // the override write lands on the id the engines consume
+     const patch = wallOverridePatch(config, info?.wallId ?? '', 'cmu')
+@@ -348,19 +348,19 @@
+ 
+   test("readout prints 'height · courses · percent'; partial gates the seam note", () => {
+     const ctl = cmuHeightControl(2.4384, { construction: 'cmu', cmuHeightM: 1.0 }) // 8ft wall
+-    expect(ctl?.readout).toBe('1.02m · 5 courses · 42%')
++    expect(ctl?.readout).toBe("1.02 米 · 5 皮砌块 · 42%")
+     expect(ctl?.partial).toBe(true)
+     const full = cmuHeightControl(2.4384, 'cmu')
+-    expect(full?.readout).toBe('2.44m · 12 courses · 100%')
++    expect(full?.readout).toBe("2.44 米 · 12 皮砌块 · 100%")
+     expect(full?.partial).toBe(false)
+     // no stored override (jurisdiction-default CMU) also reads full height
+-    expect(cmuHeightControl(2.4384, undefined)?.readout).toBe('2.44m · 12 courses · 100%')
++    expect(cmuHeightControl(2.4384, undefined)?.readout).toBe("2.44 米 · 12 皮砌块 · 100%")
+     // singular course
+     expect(cmuHeightControl(0.25, { construction: 'cmu', cmuHeightM: 0.1 })?.readout).toBe(
+-      '0.20m · 1 course · 100%',
++      "0.20 米 · 1 皮砌块 · 100%",
+     )
+     // both surfaces share the exact seam wording (board spec verbatim)
+-    expect(CMU_SEAM_NOTE).toBe('PT sill + anchor bolts at the seam — R403.1.6')
++    expect(CMU_SEAM_NOTE).toBe("交接处设置防腐木底板和锚栓——R403.1.6")
+   })
+ 
+   test('slider bounds: 1 course → full wall height, one course per step', () => {
+@@ -405,7 +405,7 @@
+     expect(eng?.studsDefault).toBe(true)
+     expect(eng?.insulation).toBe('none')
+     expect(eng?.insulationR).toBe(13)
+-    expect(eng?.codeMinHint).toBe('code min R-13 (zone 2A)')
++    expect(eng?.codeMinHint).toBe("规范最低值 R-13（气候区 2A）")
+     expect(eng?.cladding).toBe('brickVeneer') // TX default
+     expect(eng?.claddingDefault).toBe(true)
+   })
+@@ -435,7 +435,7 @@
+     expect(eng?.cladding).toBe('stucco')
+     expect(eng?.claddingDefault).toBe(false)
+     // the printed recipe is the per-wall one the engines frame with
+-    expect(info?.assembly).toBe('2x4 studs @ 24" o.c.')
++    expect(info?.assembly).toBe("2x4 墙骨柱，中心距 24 英寸")
+     // 2x4 (0.089m) fits the 0.15m wall — no misfit note
+     expect(eng?.studsNote).toBeNull()
+   })
+@@ -448,7 +448,7 @@
+     })
+     const result = computeLevel(nodes, config)
+     const info = selectedWallInfo(nodes, select('wall_int'), config, result)
+-    expect(info?.engineering?.studsNote).toContain('2x6 studs exceed')
++    expect(info?.engineering?.studsNote).toContain("2x6 墙骨柱超出")
+     expect(result.warnings.some((w) => w.includes('2x6 studs') && w.includes('exceed'))).toBe(true)
+     // defaults never warn — the default-spec misfit is the queued redesign
+     const plain = computeLevel(nodes, makeConfig({ jurisdiction: 'TX' }))
+@@ -478,7 +478,7 @@
+     const result = computeLevel(nodes, config)
+     expect(selectedWallInfo(nodes, select('wall_ext'), config, result)?.engineering).toBeNull()
+     expect(selectedWallInfo(nodes, select('wall_int'), config, result)?.engineering).toBeNull()
+-    expect(CMU_INSULATION_NOTE).toContain('furring')
++    expect(CMU_INSULATION_NOTE).toContain("垫条")
+   })
+ 
+   test('dimensions readout: length · gross/net · openings (and the no-opening form)', () => {
+@@ -491,9 +491,9 @@
+     const result = computeLevel(nodes, config)
+     const info = selectedWallInfo(nodes, select('wall_ext'), config, result)
+     // 6m × 2.5m = 15.0 gross; − (0.9·2.1 + 1.2·1.2) = 15 − 3.33 = 11.7 net
+-    expect(info?.dimensions).toBe('6.00 m · 15.0 m² gross / 11.7 m² net · 2 openings')
++    expect(info?.dimensions).toBe("6.00 米 · 毛面积 15.0 平方米 / 净面积 11.7 平方米 · 2 个洞口")
+     const plain = selectedWallInfo(nodes, select('wall_int'), config, result)
+-    expect(plain?.dimensions).toBe('4.00 m · 10.0 m² · no openings')
++    expect(plain?.dimensions).toBe("4.00 米 · 10.0 平方米 · 无洞口")
+   })
+ 
+   test('garage-bounding wall carries the R302.6 separation note', () => {
+diff --git a/src/panel-selection.ts b/src/panel-selection.ts
+--- a/src/panel-selection.ts
++++ b/src/panel-selection.ts
+@@ -50,29 +50,29 @@
+ 
+ /** Cladding select entries — every exterior.claddings key, display-labeled. */
+ export const CLADDING_OPTIONS: { value: WallCladding; label: string }[] = [
+-  { value: 'vinyl', label: 'Vinyl siding' },
+-  { value: 'fiberCement', label: 'Fiber cement' },
+-  { value: 'stucco', label: 'Stucco' },
+-  { value: 'brickVeneer', label: 'Brick veneer' },
+-  { value: 'wood', label: 'Wood siding' },
+-  { value: 'eifs', label: 'EIFS' },
++  { value: 'vinyl', label: "乙烯基挂板" },
++  { value: 'fiberCement', label: "纤维水泥板" },
++  { value: 'stucco', label: "外墙抹灰" },
++  { value: 'brickVeneer', label: "饰面砖" },
++  { value: 'wood', label: "木挂板" },
++  { value: 'eifs', label: "外保温饰面系统" },
+ ]
+ 
+ /** Insulation type select entries (short labels fit both surfaces). */
+ export const INSULATION_OPTIONS: { value: WallInsulation; label: string }[] = [
+-  { value: 'none', label: 'None' },
+-  { value: 'batt', label: 'Batt' },
+-  { value: 'blown', label: 'Blown' },
+-  { value: 'spray-foam', label: 'Foam' },
++  { value: 'none', label: "无" },
++  { value: 'batt', label: "毡状" },
++  { value: 'blown', label: "吹填" },
++  { value: 'spray-foam', label: "泡沫" },
+ ]
+ 
+ /** Insulation line for CMU walls — v1 is a note, no batt geometry. */
+ export const CMU_INSULATION_NOTE =
+-  'CMU: insulate with rigid board on furring strips — note only (v1)'
++  "混凝土砌块：在垫条上铺设硬质保温板；当前仅作说明（第 1 版）。"
+ 
+ /** Both surfaces print this when the wall bounds a garage room (R302.6). */
+ export const GARAGE_SEPARATION_NOTE =
+-  'Bounds a garage — ½" gypsum on the garage side (dwelling/garage separation, IRC R302.6)'
++  "与车库相邻：车库侧设 ½ 英寸石膏板（住宅与车库防火分隔，IRC R302.6）。"
+ 
+ /**
+  * Resolved engineering the panel's framed-wall rows print/edit: every value
+@@ -201,7 +201,7 @@
+       ...(resolved.spacingIn !== undefined ? { spacingIn: resolved.spacingIn } : {}),
+     })
+     if (!isResolvedProfile(profiles.stud)) {
+-      return 'Steel (LGS) — engineered design required (no prescriptive member class)'
++      return "轻钢框架：需要工程设计，没有适用的规定式构件类别。"
+     }
+     const basis = profiles.basis ? ` — ${profiles.basis}` : ''
+     // The count spans every fallback CLASS drawn on THIS wall (round-1
+@@ -217,21 +217,21 @@
+       ...(hasBacking ? [profiles.backing] : []),
+     ].filter((r) => isResolvedProfile(r) && r.status !== 'verified').length
+     const machineNote = result.spec.lgsMachine
+-      ? ` · machine ${result.spec.lgsMachine}` +
++      ? ` · 成型设备 ${result.spec.lgsMachine}` +
+         (fallbacks > 0
+-          ? ` (${fallbacks} profile${fallbacks === 1 ? ' falls' : 's fall'} back)`
++          ? `（${fallbacks} 类型材采用回退规格）`
+           : '')
+       : ''
+-    return `Steel (LGS) — ${lgsLabelHead(profiles.stud)} @ ${spacingIn}" o.c.${basis}${machineNote}`
++    return `轻钢框架 — ${lgsLabelHead(profiles.stud)}，中心距 ${spacingIn} 英寸${basis}${machineNote}`
+   }
+   const assembly =
+     construction === 'framed'
+-      ? `${studSize} studs @ ${spacingIn}" o.c.`
++      ? `${studSize} 墙骨柱，中心距 ${spacingIn} 英寸`
+       : construction === 'lgs'
+         ? lgsAssembly()
+         : construction === 'cmu'
+-          ? '8" CMU block · running bond'
+-          : 'Skipped — excluded from every system'
++          ? "8 英寸混凝土砌块 · 错缝砌筑"
++          : "已跳过：所有系统均不包含此墙体"
+ 
+   const ins = result.characteristics?.insulation
+   // Steel-frame honesty (round-1 F2): the R figure is the WOOD-frame
+@@ -240,11 +240,11 @@
+   // insulation, or U-factor path) and nothing here evaluates it. The
+   // card line says so instead of letting the wood claim ride.
+   const steelInsNote =
+-    ' — wood-frame prescriptive value; steel framing takes IECC R402.2.6 ' +
+-    'continuous insulation / U-factor — not evaluated'
++    "——此值为木框架规定值；钢框架须按 IECC R402.2.6 核查" +
++    "连续保温或传热系数，当前未计算"
+   const insulation =
+     framedAssembly(construction) && wall.exterior && ins
+-      ? `R-${ins.wallR} cavity · IECC zone ${ins.climateZone}${construction === 'lgs' ? steelInsNote : ''}`
++      ? `空腔保温 R-${ins.wallR} · IECC 气候区 ${ins.climateZone}${construction === 'lgs' ? steelInsNote : ''}`
+       : null
+ 
+   const codeMinR = ins?.wallR ?? 13
+@@ -256,7 +256,7 @@
+           studsDefault: resolved.studSize === undefined && resolved.spacingIn === undefined,
+           insulation: resolved.insulation ?? 'none',
+           insulationR: resolved.insulationR ?? codeMinR,
+-          codeMinHint: `code min R-${codeMinR}${ins ? ` (zone ${ins.climateZone})` : ''}`,
++          codeMinHint: `规范最低值 R-${codeMinR}${ins ? `（气候区 ${ins.climateZone}）` : ''}`,
+           cladding:
+             resolved.cladding ??
+             ((CLADDING_DATA.defaultCladdingByState[result.jurisdiction] ??
+@@ -265,9 +265,9 @@
+           studsNote:
+             resolved.studSize !== undefined &&
+             LUMBER_CROSS_SECTIONS[resolved.studSize][1] > wall.thickness - METERS_PER_INCH + 0.002
+-              ? `${resolved.studSize} studs exceed this ${wall.thickness.toFixed(2)}m wall — ` +
+-                `framing is drawn compressed to ${formatIn(wall.thickness - METERS_PER_INCH)}; ` +
+-                `deepen the wall or drop to 2x4`
++              ? `${resolved.studSize} 墙骨柱超出此墙体的 ${wall.thickness.toFixed(2)} 米厚度；` +
++                `显示时将框架压缩至 ${formatIn(wall.thickness - METERS_PER_INCH)}；` +
++                "请增加墙厚或改用 2x4 规格"
+               : null,
+         }
+       : null
+@@ -280,8 +280,8 @@
+   const count = wall.openings.length
+   const dimensions =
+     count === 0
+-      ? `${wall.length.toFixed(2)} m · ${grossM2.toFixed(1)} m² · no openings`
+-      : `${wall.length.toFixed(2)} m · ${grossM2.toFixed(1)} m² gross / ${netM2.toFixed(1)} m² net · ${count} opening${count > 1 ? 's' : ''}`
++      ? `${wall.length.toFixed(2)} 米 · ${grossM2.toFixed(1)} 平方米 · 无洞口`
++      : `${wall.length.toFixed(2)} 米 · 毛面积 ${grossM2.toFixed(1)} 平方米 / 净面积 ${netM2.toFixed(1)} 平方米 · ${count} 个洞口`
+ 
+   // Garage fire separation (R302.6): the wall bounds a garage room — either
+   // under its kept id or the selected duplicate's own id.
+@@ -296,10 +296,10 @@
+   // the selection was a duplicate.
+   const keptNode = nodes[wall.id] ?? node
+   const name = typeof keptNode.name === 'string' ? keptNode.name.trim() : ''
+-  const label = name !== '' ? name : `Wall ${wall.id.length > 10 ? `…${wall.id.slice(-6)}` : wall.id}`
++  const label = name !== '' ? name : `墙体 ${wall.id.length > 10 ? `…${wall.id.slice(-6)}` : wall.id}`
+   const duplicateNote =
+     keptId !== id
+-      ? `Duplicate overlapping wall — showing the framed twin (${label}); edits apply to it`
++      ? `存在重叠的重复墙体；当前显示保留墙体（${label}）的框架，编辑也作用于该墙体`
+       : null
+ 
+   const paintIds = [
+@@ -326,7 +326,7 @@
+ }
+ 
+ /** Seam detail note shown under a PARTIAL-height CMU slider (both surfaces). */
+-export const CMU_SEAM_NOTE = 'PT sill + anchor bolts at the seam — R403.1.6'
++export const CMU_SEAM_NOTE = "交接处设置防腐木底板和锚栓——R403.1.6"
+ 
+ /**
+  * Everything a CMU height slider needs, derived from the wall height and the
+@@ -372,7 +372,7 @@
+     maxM: wallHeightM,
+     stepM: COURSE_HEIGHT,
+     partial,
+-    readout: `${valueM.toFixed(2)}m · ${courses} ${courses === 1 ? 'course' : 'courses'} · ${percent}%`,
++    readout: `${valueM.toFixed(2)} 米 · ${courses} 皮砌块 · ${percent}%`,
+   }
+ }
+ 
+diff --git a/src/panel.test.ts b/src/panel.test.ts
+--- a/src/panel.test.ts
++++ b/src/panel.test.ts
+@@ -13,7 +13,7 @@
+  *    the click-scoped activation module — no mount-time wall-mode magic.
+  */
+ 
+-const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8')
++const read = (rel: string) => readFileSync(new URL(rel, import.meta.url), 'utf8').replace(/label: "([^"]*)"/g, "label: '$1'")
+ 
+ describe('sidebar panel composition (source gates)', () => {
+   const panel = read('./panel.tsx')
+@@ -27,7 +27,7 @@
+   test('Change C: no per-wall engineering card in the sidebar', () => {
+     expect(panel).not.toContain('SelectedWallCard')
+     expect(panel).not.toContain('selectedWallInfo')
+-    expect(panel).not.toContain('Exterior finish')
++    expect(panel).not.toContain("外墙饰面")
+   })
+ 
+   test('Change A: create/remove ride the click-scoped activation module', () => {
+@@ -50,7 +50,7 @@
+   // INTENDED-CHANGE: the persisted schema value 'basement' does NOT migrate
+   // (the `value: 'basement'` pin above still holds).
+   test("day-9 rename: the third view-mode option reads 'Subfloor', value stays 'basement'", () => {
+-    expect(panel).toContain("{ label: 'Subfloor', value: 'basement' }")
++    expect(panel).toContain("{ label: '楼面下方构造', value: 'basement' }")
+     expect(panel).not.toContain("label: 'Basement'")
+   })
+ })
+@@ -70,7 +70,7 @@
+     // Source gate (the sanctioned grep-level form for this harness): the
+     // call site passes them and the component prints them.
+     expect(panel).toContain('notes={profile.notes}')
+-    expect(panel).toContain('{notes.join(' + "' \u00b7 '" + ')}')
++    expect(panel).toContain('{notes.map(engineeringLabel).join(' + "' \u00b7 '" + ')}')
+   })
+ })
+ 
+@@ -88,7 +88,7 @@
+   test('the warnings drawer is COLLAPSED by default (no open attribute anywhere static)', () => {
+     // the panel's only <details open…> is the takeoff's computed one — the
+     // warnings drawer (and every other section drawer) mounts closed
+-    expect(panel).toContain('Warnings')
++    expect(panel).toContain("警告")
+     expect(panel).not.toContain('<details open')
+     const opens = panel.match(/<details[^>]*\bopen=/g) ?? []
+     expect(opens).toHaveLength(1) // TakeoffSection's index-0 expression only
+@@ -100,7 +100,7 @@
+   })
+ 
+   test('the compact summary line stays always visible outside the drawer', () => {
+-    expect(panel).toContain('{result.members.length} members · {result.fixtures.length} devices')
++    expect(panel).toContain("{result.members.length} 个构件 · {result.fixtures.length} 个设备")
+   })
+ })
+ 
+@@ -113,14 +113,14 @@
+       expect(card).toContain(needle)
+     }
+     // CMU height slider
+-    expect(card).toContain('Block height')
++    expect(card).toContain("砌块高度")
+     // studs: size + spacing
+     for (const needle of ["value: '2x4'", "value: '2x6'", 'spacingIn']) {
+       expect(card).toContain(needle)
+     }
+     // insulation + exterior finish
+     expect(card).toContain('INSULATION_OPTIONS')
+-    expect(card).toContain('Exterior finish')
++    expect(card).toContain("外墙饰面")
+     expect(card).toContain('CLADDING_OPTIONS')
+     expect(card).toContain('paintWallExterior')
+   })
+@@ -136,7 +136,7 @@
+   // wall highlights its segment (the Phase-0 documented gap).
+   test("Phase 2: Steel is a 4th segment of the SAME construction control — no new rows", () => {
+     const options = card.match(
+-      /options=\{\[\s*\{ label: 'Framed', value: 'framed' \},\s*\{ label: 'Steel', value: 'lgs' \},\s*\{ label: 'CMU', value: 'cmu' \},\s*\{ label: 'Skip', value: 'skip' \},\s*\]\}/,
++      /options=\{\[\s*\{ label: '木框架', value: 'framed' \},\s*\{ label: '钢框架', value: 'lgs' \},\s*\{ label: '混凝土砌块', value: 'cmu' \},\s*\{ label: '跳过', value: 'skip' \},\s*\]\}/,
+     )
+     expect(options).not.toBeNull()
+     // exactly one construction control — Steel did not grow a second one
+@@ -153,17 +153,17 @@
+   test('slots between the JurisdictionPicker and the detail/spacing row (a code-basis peer of jurisdiction)', () => {
+     const jurisdiction = panel.indexOf('<JurisdictionPicker')
+     const framing = panel.indexOf('<FramingRow')
+-    const detail = panel.indexOf("{ label: 'Generic', value: '200' }")
++    const detail = panel.indexOf("{ label: '概略', value: '200' }")
+     expect(jurisdiction).toBeGreaterThan(-1)
+     expect(framing).toBeGreaterThan(jurisdiction)
+     expect(detail).toBeGreaterThan(framing)
+   })
+ 
+   test('ONE compact Lumber | Steel control riding the existing SegmentedControl idiom', () => {
+-    expect(panel).toContain("{ label: 'Lumber', value: 'lumber' }")
+-    expect(panel).toContain("{ label: 'Steel', value: 'lgs' }")
++    expect(panel).toContain("{ label: '木材', value: 'lumber' }")
++    expect(panel).toContain("{ label: '钢材', value: 'lgs' }")
+     // the row's label matches the JurisdictionPicker label idiom
+-    expect(panel).toContain('>Framing</span>')
++    expect(panel).toContain(">框架</span>")
+   })
+ 
+   test('PROGRESSIVE DISCLOSURE: the Machine select exists ONLY inside the Steel conditional — lumber users see zero change', () => {
+@@ -173,7 +173,7 @@
+     // AFTER the guard, exactly once (one Machine row in the whole file;
+     // LGS_MACHINE_NONE_LABEL also appears once in the import list)
+     for (const needle of [
+-      '>Machine</span>',
++      ">成型设备</span>",
+       '{LGS_MACHINE_NONE_LABEL}',
+       '<optgroup',
+     ]) {
+diff --git a/src/panel.tsx b/src/panel.tsx
+--- a/src/panel.tsx
++++ b/src/panel.tsx
+@@ -32,6 +32,7 @@
+ } from './panel-framing'
+ import { groupWarnings, warningCount } from './panel-warnings'
+ import { useBonesStore } from './store'
++import { engineeringLabel } from './engineering-labels'
+ 
+ const LUMBER_KIND: string = 'bones:lumber'
+ const FRAMING_KIND: string = 'bones:framing'
+@@ -73,12 +74,11 @@
+         <div className="flex items-center gap-2">
+           <h2 className="font-semibold text-base">Bones</h2>
+           <span className="rounded-full border border-sidebar-border/60 bg-sidebar-accent px-1.5 py-px font-semibold text-[9px] text-sidebar-foreground/70 uppercase tracking-widest">
+-            Alpha
++            早期测试
+           </span>
+         </div>
+         <p className="text-sidebar-foreground/50 text-xs leading-relaxed">
+-          The engineering X-ray — see the construction inside the model: framing, foundation,
+-          wiring. Computed from your walls, sized to your jurisdiction.
++          查看模型内部的构造：框架、基础和布线。根据墙体推导，并按所在地区确定尺寸。
+         </p>
+       </header>
+ 
+@@ -94,7 +94,7 @@
+       <LumberSection />
+ 
+       <footer className="-mx-4 -mb-4 sticky bottom-0 mt-1 flex flex-col gap-2 border-sidebar-border/50 border-t bg-sidebar px-4 py-3 text-[11px] text-sidebar-foreground/50 leading-relaxed">
+-        <span>Drafting aid, not engineering — verify with your local building department.</span>
++        <span>本工具辅助绘图，不替代工程设计；请向当地建筑管理部门核实。</span>
+         {framingNode && result && result.members.length > 0 && (
+           <ExportPlansButton
+             result={result}
+@@ -137,7 +137,7 @@
+   }
+ 
+   if (!activeLevelId) {
+-    return <p className="text-sidebar-foreground/50 text-xs">Select a level to X-ray.</p>
++    return <p className="text-sidebar-foreground/50 text-xs">请选择要查看内部构造的楼层。</p>
+   }
+ 
+   if (!framingNode) {
+@@ -156,9 +156,9 @@
+         }
+         type="button"
+       >
+-        ⚡ X-Ray this level
++        ⚡ 查看本层内部构造
+         <span className="block font-normal text-sidebar-foreground/50 text-xs">
+-          Derive framing, foundation &amp; systems from the model
++          从模型推导框架、基础与设备系统
+         </span>
+       </button>
+     )
+@@ -170,7 +170,7 @@
+   return (
+     <div className="flex flex-col gap-3">
+       <div className="flex items-center justify-between">
+-        <span className="font-medium text-sm">X-Ray</span>
++        <span className="font-medium text-sm">内部构造</span>
+         <button
+           className="rounded-md border border-sidebar-border/60 px-2 py-1 text-sidebar-foreground/70 text-xs transition-colors hover:bg-sidebar-accent"
+           onClick={() =>
+@@ -186,7 +186,7 @@
+           }
+           type="button"
+         >
+-          Remove
++          移除
+         </button>
+       </div>
+ 
+@@ -206,9 +206,9 @@
+           )
+         }
+         options={[
+-          { label: 'Normal', value: 'off' },
+-          { label: 'X-ray', value: 'xray' },
+-          { label: 'Subfloor', value: 'basement' },
++          { label: "正常", value: 'off' },
++          { label: "内部构造", value: 'xray' },
++          { label: "楼面下方构造", value: 'basement' },
+         ]}
+         value={effectiveViewMode(framingNode)}
+       />
+@@ -233,9 +233,9 @@
+                 .updateNode(framingNode.id as AnyNodeId, { detail: v } as Partial<AnyNode> as never)
+             }
+             options={[
+-              { label: 'Generic', value: '200' },
+-              { label: 'Code', value: '300' },
+-              { label: 'Fab', value: '400' },
++              { label: "概略", value: '200' },
++              { label: "规范", value: '300' },
++              { label: "加工", value: '400' },
+             ]}
+             value={framingNode.detail}
+           />
+@@ -250,8 +250,8 @@
+                 } as Partial<AnyNode> as never)
+             }
+             options={[
+-              { label: '16 in', value: '16' },
+-              { label: '24 in', value: '24' },
++              { label: "16 英寸", value: '16' },
++              { label: "24 英寸", value: '24' },
+             ]}
+             value={String(framingNode.studSpacingIn)}
+           />
+@@ -261,13 +261,13 @@
+       <div className="grid grid-cols-2 gap-1.5">
+         {(
+           [
+-            ['showWalls', 'Wall framing'],
+-            ['showFloor', 'Floor'],
+-            ['showRoof', 'Roof'],
+-            ['showFoundation', 'Foundation'],
+-            ['showElectrical', 'Electrical'],
+-            ['showPlumbing', 'Plumbing'],
+-            ['showHvac', 'HVAC'],
++            ['showWalls', "墙体框架"],
++            ['showFloor', "楼面"],
++            ['showRoof', "屋顶"],
++            ['showFoundation', "基础"],
++            ['showElectrical', "电气"],
++            ['showPlumbing', "给排水"],
++            ['showHvac', "暖通空调"],
+           ] as const
+         ).map(([key, label]) => (
+           <button
+@@ -291,12 +291,12 @@
+               text folds away (day-9: "we cannot have so much text on the
+               sidebar") */}
+           <span>
+-            {result.members.length} members · {result.fixtures.length} devices
++            {result.members.length} 个构件 · {result.fixtures.length} 个设备
+           </span>
+           {warningLines.length > 0 && (
+             <details className="group">
+               <summary className="flex cursor-pointer items-center justify-between text-[11px]">
+-                <span className="font-medium text-amber-500/90">Warnings</span>
++                <span className="font-medium text-amber-500/90">警告</span>
+                 <span className="text-[10px] text-sidebar-foreground/40">
+                   {warningCount(warningLines)}
+                 </span>
+@@ -305,17 +305,17 @@
+                 {warningLines.map((line) =>
+                   line.kind === 'single' ? (
+                     <span className="block text-amber-500/80" key={line.text}>
+-                      {line.text}
++                      {engineeringLabel(line.text)}
+                     </span>
+                   ) : (
+                     <details key={line.message}>
+                       <summary className="cursor-pointer text-amber-500/80">
+-                        {line.label} ({line.warnings.length}): {line.message}
++                        {engineeringLabel(line.label)} ({line.warnings.length}): {engineeringLabel(line.message)}
+                       </summary>
+                       <div className="mt-0.5 flex flex-col gap-0.5 pl-2">
+                         {line.warnings.map((warning) => (
+                           <span className="block text-amber-500/60" key={warning}>
+-                            {warning}
++                            {engineeringLabel(warning)}
+                           </span>
+                         ))}
+                       </div>
+@@ -356,24 +356,24 @@
+   return (
+     <div className="flex flex-col gap-1.5">
+       <div className="flex items-center justify-between">
+-        <span className="font-medium text-xs">Takeoff</span>
++        <span className="font-medium text-xs">工程量清单</span>
+         <div className="flex items-center gap-1">
+           <button
+             className="rounded-md border border-sidebar-border/60 px-2 py-0.5 text-[10px] text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent"
+             onClick={() => navigator.clipboard?.writeText(takeoffCsv(rows))}
+             type="button"
+           >
+-            Copy CSV
++            复制 CSV
+           </button>
+           <button
+             className="rounded-md border border-sidebar-border/60 px-2 py-0.5 text-[10px] text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent"
+             onClick={() =>
+               navigator.clipboard?.writeText(cutListCsv(cutList(result.members)))
+             }
+-            title="Every wood member: size × exact cut length × qty"
++            title="每根木构件：截面尺寸 × 精确下料长度 × 数量"
+             type="button"
+           >
+-            Copy cut list
++            复制下料清单
+           </button>
+         </div>
+       </div>
+@@ -384,7 +384,7 @@
+           <details className="group" key={section} open={index === 0 && section !== 'Flags'}>
+             <summary className="flex cursor-pointer items-center justify-between text-[11px] text-sidebar-foreground/80">
+               <span className={section === 'Flags' ? 'font-medium text-amber-500/90' : 'font-medium'}>
+-                {section}
++                {engineeringLabel(section)}
+               </span>
+               <span className="text-[10px] text-sidebar-foreground/40">{sectionRows.length}</span>
+             </summary>
+@@ -393,18 +393,18 @@
+                 <div
+                   className="flex items-baseline justify-between gap-2 text-[11px]"
+                   key={`${row.item}-${row.detail}`}
+-                  title={`${row.item} — ${row.detail}`}
++                  title={`${engineeringLabel(row.item)} — ${engineeringLabel(row.detail)}`}
+                 >
+                   <span
+                     className={`min-w-0 flex-1 text-sidebar-foreground/70 ${
+                       section === 'Flags' ? 'whitespace-normal break-words' : 'truncate'
+                     }`}
+                   >
+-                    {row.item}
+-                    <span className="text-sidebar-foreground/40"> {row.detail}</span>
++                    {engineeringLabel(row.item)}
++                    <span className="text-sidebar-foreground/40"> {engineeringLabel(row.detail)}</span>
+                   </span>
+                   <span className="shrink-0 tabular-nums text-sidebar-foreground/90">
+-                    {row.quantity} {row.unit}
++                    {row.quantity} {engineeringLabel(row.unit)}
+                   </span>
+                 </div>
+               ))}
+@@ -425,7 +425,7 @@
+   'ft2·F·h/BTU': '',
+   'W/K': 'W/K',
+   W: 'W',
+-  tons: 'ton',
++  tons: '冷吨',
+ }
+ 
+ /**
+@@ -444,7 +444,7 @@
+   return (
+     <details className="group">
+       <summary className="flex cursor-pointer items-center justify-between font-medium text-xs">
+-        Building characteristics
++        建筑特征
+         <button
+           className="rounded-md border border-sidebar-border/60 px-2 py-0.5 font-normal text-[10px] text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent"
+           onClick={(e) => {
+@@ -455,7 +455,7 @@
+           }}
+           type="button"
+         >
+-          Copy CSV
++          复制 CSV
+         </button>
+       </summary>
+       <div className="mt-1.5 flex flex-col gap-0.5">
+@@ -465,20 +465,20 @@
+             <div
+               className="flex items-baseline justify-between gap-2 text-[11px]"
+               key={row.metric}
+-              title={`${row.metric}: ${row.value} ${row.unit}`}
++              title={`${engineeringLabel(row.metric)}: ${engineeringLabel(row.value)} ${engineeringLabel(row.unit)}`}
+             >
+               <span className="min-w-0 flex-1 truncate text-sidebar-foreground/70">
+-                {row.metric}
++                {engineeringLabel(row.metric)}
+               </span>
+               <span className="shrink-0 tabular-nums text-sidebar-foreground/90">
+-                {row.value}
++                {engineeringLabel(row.value)}
+                 {unit ? ` ${unit}` : ''}
+               </span>
+             </div>
+           )
+         })}
+         <p className="mt-1 text-[10px] text-sidebar-foreground/40 leading-relaxed">
+-          {c.notes.join(' · ')}
++          {c.notes.map(engineeringLabel).join(' · ')}
+         </p>
+       </div>
+     </details>
+@@ -505,14 +505,14 @@
+   return (
+     <details className="group">
+       <summary className="flex cursor-pointer items-center justify-between font-medium text-xs">
+-        Loose lumber
++        独立木构件
+         <span className="rounded-full bg-sidebar-accent px-2 py-0.5 text-[10px] text-sidebar-foreground/60">
+           {count}
+         </span>
+       </summary>
+       <div className="mt-2 flex flex-col gap-2">
+         <p className="text-[11px] text-sidebar-foreground/50">
+-          {arming ? 'Click the ground to place. Esc to stop.' : 'Pick a size, click the ground.'}
++          {arming ? "单击地面放置，按 Esc 结束。" : "选择规格后单击地面放置。"}
+         </p>
+         <div className="grid grid-cols-4 gap-1.5">
+           {LUMBER_SIZES.map((s) => {
+@@ -527,7 +527,7 @@
+                 }`}
+                 key={s}
+                 onClick={() => activate(s)}
+-                title={`Actual ${inchesLabel(t)} × ${inchesLabel(w)}`}
++                title={`实际尺寸 ${inchesLabel(t)} × ${inchesLabel(w)}`}
+                 type="button"
+               >
+                 {s}
+@@ -538,14 +538,14 @@
+         <SegmentedControl
+           onChange={useBonesStore.getState().setOrientation}
+           options={[
+-            { label: 'Stud', value: 'stud' },
+-            { label: 'Flat', value: 'flat' },
+-            { label: 'Edge', value: 'edge' },
++            { label: "立放", value: 'stud' },
++            { label: "平放", value: 'flat' },
++            { label: "侧放", value: 'edge' },
+           ]}
+           value={orientation}
+         />
+         <SliderControl
+-          label="Length"
++          label="长度"
+           max={7.4}
+           min={0.1}
+           onChange={useBonesStore.getState().setLength}
+@@ -586,18 +586,18 @@
+   const extra = lgsMachineSelectExtra(framingNode.lgsMachine)
+   return (
+     <div className="flex flex-col gap-1 text-xs">
+-      <span className="text-sidebar-foreground/60">Framing</span>
++      <span className="text-sidebar-foreground/60">框架</span>
+       <SegmentedControl
+         onChange={(v: string) => write(framingSystemPatch(v as FramingSystemValue))}
+         options={[
+-          { label: 'Lumber', value: 'lumber' },
+-          { label: 'Steel', value: 'lgs' },
++          { label: "木材", value: 'lumber' },
++          { label: "钢材", value: 'lgs' },
+         ]}
+         value={system}
+       />
+       {system === 'lgs' && (
+         <>
+-          <span className="mt-1 text-sidebar-foreground/60">Machine</span>
++          <span className="mt-1 text-sidebar-foreground/60">成型设备</span>
+           <select
+             className="w-full rounded-md border border-sidebar-border/60 bg-sidebar-accent/40 px-2 py-1.5 text-sidebar-foreground text-xs outline-none"
+             onChange={(e) => write(lgsMachinePatch(e.target.value))}
+@@ -652,23 +652,23 @@
+   }
+   const q = query.trim().toLowerCase()
+   const filtered = q
+-    ? options.filter((o) => o.name.toLowerCase().includes(q) || o.code.toLowerCase().includes(q))
++    ? options.filter((o) => engineeringLabel(o.name).toLowerCase().includes(q) || o.name.toLowerCase().includes(q) || o.code.toLowerCase().includes(q))
+     : options
+   const current =
+     value === 'AUTO'
+       ? guess
+-        ? `Auto — ${guess.code}`
+-        : 'Auto'
++        ? `自动 — ${guess.code}`
++        : "自动"
+       : (options.find((o) => o.code === value)?.name ?? value)
+   return (
+     <div className="flex flex-col gap-1 text-xs">
+-      <span className="text-sidebar-foreground/60">Jurisdiction</span>
++      <span className="text-sidebar-foreground/60">适用地区</span>
+       <button
+         type="button"
+         className="flex items-center justify-between rounded-md border border-sidebar-border/60 bg-sidebar-accent/40 px-2 py-1.5 text-left text-sidebar-foreground text-xs"
+         onClick={() => setOpen((v) => !v)}
+       >
+-        <span className="truncate">{current}</span>
++        <span className="truncate">{engineeringLabel(current)}</span>
+         <span className="text-sidebar-foreground/40">{open ? '▴' : '▾'}</span>
+       </button>
+       {open && (
+@@ -677,7 +677,7 @@
+             autoFocus
+             className="border-sidebar-border/40 border-b bg-transparent px-2 py-1.5 text-xs outline-none placeholder:text-sidebar-foreground/30"
+             onChange={(e) => setQuery(e.target.value)}
+-            placeholder="Search states…"
++            placeholder="搜索地区…"
+             value={query}
+           />
+           <div className="overflow-y-auto">
+@@ -686,7 +686,7 @@
+               className="block w-full px-2 py-1.5 text-left text-xs hover:bg-sidebar-accent"
+               onClick={() => pick('AUTO')}
+             >
+-              {guess ? `Auto — ${guess.code} (${guess.reason})` : 'Auto'}
++              {guess ? `自动 — ${guess.code}（${engineeringLabel(guess.reason)}）` : "自动"}
+             </button>
+             {filtered.map((o) => (
+               <button
+@@ -695,11 +695,11 @@
+                 className={`block w-full px-2 py-1.5 text-left text-xs hover:bg-sidebar-accent ${o.code === value ? 'bg-sidebar-accent/60' : ''}`}
+                 onClick={() => pick(o.code)}
+               >
+-                {o.name}
++                {engineeringLabel(o.name)}
+               </button>
+             ))}
+             {filtered.length === 0 && (
+-              <div className="px-2 py-2 text-sidebar-foreground/40 text-xs">No match</div>
++              <div className="px-2 py-2 text-sidebar-foreground/40 text-xs">没有匹配项</div>
+             )}
+           </div>
+         </div>
+@@ -715,7 +715,7 @@
+         rel="noreferrer"
+         target="_blank"
+       >
+-        {codeName} ↗
++        {engineeringLabel(codeName)} ↗
+       </a>
+       {/* The profile's researched notes — amendment flavor + the per-row
+           frost/snow climate notes. This is the channel that carries the
+@@ -725,7 +725,7 @@
+           notes paragraph. */}
+       {notes.length > 0 && (
+         <p className="text-[10px] text-sidebar-foreground/40 leading-relaxed">
+-          {notes.join(' · ')}
++          {notes.map(engineeringLabel).join(' · ')}
+         </p>
+       )}
+     </div>
+@@ -750,7 +750,7 @@
+   codeName?: string
+ }) {
+   const levelName = useScene((s) =>
+-    activeLevelId ? ((s.nodes[activeLevelId] as { name?: string } | undefined)?.name ?? 'Level') : 'Level',
++    activeLevelId ? ((s.nodes[activeLevelId] as { name?: string } | undefined)?.name ?? "楼层") : "楼层",
+   )
+   return (
+     <button
+@@ -758,7 +758,7 @@
+       className="flex w-full flex-col items-center gap-0.5 rounded-lg bg-primary px-3 py-2.5 font-semibold text-primary-foreground text-sm shadow-sm transition-transform hover:scale-[1.02] active:scale-[0.99]"
+       onClick={() => {
+         const sheets = buildPlanSet(result.members, result.fixtures, {
+-          projectName: document.title.split('—')[0]?.trim() || 'Pascal project',
++          projectName: document.title.split('—')[0]?.trim() || "Pascal 项目",
+           levelName,
+           // resolved state code — raw 'AUTO' printed on sheets (quality C1)
+           jurisdiction: result.jurisdiction,
+@@ -801,7 +801,7 @@
+         setTimeout(() => URL.revokeObjectURL(url), 60_000)
+       }}
+     >
+-      <span>📐 Blueprints</span>
++      <span>📐 施工图</span>
+     </button>
+   )
+ }
+diff --git a/src/parametrics.ts b/src/parametrics.ts
+--- a/src/parametrics.ts
++++ b/src/parametrics.ts
+@@ -9,7 +9,7 @@
+ export const lumberParametrics: ParametricDescriptor<LumberNode> = {
+   groups: [
+     {
+-      label: 'Lumber',
++      label: "木构件",
+       fields: [
+         { key: 'size', kind: 'enum', options: [...LUMBER_SIZES] },
+         {
+@@ -22,7 +22,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/service/definition.ts b/src/service/definition.ts
+--- a/src/service/definition.ts
++++ b/src/service/definition.ts
+@@ -98,7 +98,7 @@
+ const serviceParametrics: ParametricDescriptor<ServiceNode> = {
+   groups: [
+     {
+-      label: 'Service point',
++      label: "设备接入点",
+       fields: [
+         { key: 'serviceType', kind: 'enum', options: [...SERVICE_TYPES] },
+         { key: 'heightAff', kind: 'number', unit: 'm', min: 0, max: 3, step: 0.05 },
+@@ -106,7 +106,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+@@ -186,9 +186,9 @@
+   affordanceTools: { move: () => import('../wall-mount/move-tool') },
+ 
+   presentation: {
+-    label: 'Service point',
++    label: "设备接入点",
+     description:
+-      'A Bones utility interface point (panel, water heater, water/sewer/power entry) — move it and the systems re-route to it.',
++      "Bones 设备接入点（配电箱、热水器或供水、排水、电力接入口）：移动后，系统管线会重新连接至该点。",
+     icon: { kind: 'iconify', name: 'lucide:plug-zap' },
+     paletteSection: 'furnish',
+     hidden: true,

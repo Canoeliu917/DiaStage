@@ -1,0 +1,956 @@
+'use client'
+
+import {
+  type AnyNodeId,
+  type BuildingNode,
+  type GuideNode,
+  type LevelNode,
+  type ScanNode,
+  useScene,
+} from '@pascal-app/core'
+import { useViewer } from '@pascal-app/viewer'
+import { Check, ChevronDown, Eye, EyeOff, Layers2, Plus, Trash2, Waypoints } from 'lucide-react'
+import { useCallback, useRef, useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+import { getLevelDisplayName } from '@pascal-app/core'
+import { createLocalGuideImage } from '../../../lib/local-guide-image'
+import { cn } from '../../../lib/utils'
+import useEditor from '../../../store/use-editor'
+import { useUploadStore } from '../../../store/use-upload'
+import { SliderControl } from '../controls/slider-control'
+import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover'
+import { ActionButton } from './action-button'
+
+const MAX_FILE_SIZE = 200 * 1024 * 1024 // 200MB
+const ACCEPTED_FILE_TYPES = '.glb,.gltf,image/jpeg,image/png,image/webp,image/gif'
+const REFERENCES_EMPTY_TEXT = '上传 GLB 网格作为扫描参考，或上传图纸作为参考图。'
+
+// ── Helper: get guide images for the current level ──────────────────────────
+
+function useLevelGuides(): GuideNode[] {
+  const levelId = useViewer((s) => s.selection.levelId)
+  return useScene(
+    useShallow((state) => {
+      if (!levelId) return [] as GuideNode[]
+      const level = state.nodes[levelId]
+      if (!level || level.type !== 'level') return [] as GuideNode[]
+      return (level as LevelNode).children
+        .map((id) => state.nodes[id])
+        .filter((node): node is GuideNode => node?.type === 'guide')
+    }),
+  )
+}
+
+// ── Helper: get scans for the current level ─────────────────────────────────
+
+function useLevelScans(): ScanNode[] {
+  const levelId = useViewer((s) => s.selection.levelId)
+  return useScene(
+    useShallow((state) => {
+      if (!levelId) return [] as ScanNode[]
+      const level = state.nodes[levelId]
+      if (!level || level.type !== 'level') return [] as ScanNode[]
+      return (level as LevelNode).children
+        .map((id) => state.nodes[id])
+        .filter((node): node is ScanNode => node?.type === 'scan')
+    }),
+  )
+}
+
+function useLowerReferenceLevels(): LevelNode[] {
+  const levelId = useViewer((s) => s.selection.levelId)
+  return useScene(
+    useShallow((state) => {
+      if (!levelId) return [] as LevelNode[]
+      const activeLevel = state.nodes[levelId]
+      if (!activeLevel || activeLevel.type !== 'level') return [] as LevelNode[]
+      const buildingId = activeLevel.parentId as BuildingNode['id'] | undefined
+      const building = buildingId ? state.nodes[buildingId] : null
+      if (!building || building.type !== 'building') return [] as LevelNode[]
+
+      return (building.children ?? [])
+        .map((id) => state.nodes[id])
+        .filter(
+          (node): node is LevelNode =>
+            node?.type === 'level' && node.id !== levelId && node.level < activeLevel.level,
+        )
+        .sort((a, b) => b.level - a.level)
+    }),
+  )
+}
+
+// ── Shared upload button for dropdowns ──────────────────────────────────────
+
+function UploadButton({ onError }: { onError: (message: string | null) => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const levelId = useViewer((s) => s.selection.levelId)
+  const setSelection = useViewer((s) => s.setSelection)
+  const setShowGuides = useViewer((s) => s.setShowGuides)
+  const createNode = useScene((s) => s.createNode)
+  const setSelectedReferenceId = useEditor((s) => s.setSelectedReferenceId)
+  const [isAddingGuide, setIsAddingGuide] = useState(false)
+
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!(file && levelId)) return
+      e.target.value = ''
+
+      onError(null)
+
+      if (file.size > MAX_FILE_SIZE) {
+        onError('文件过大，最大支持 200 MB。')
+        return
+      }
+
+      const isScan =
+        file.name.toLowerCase().endsWith('.glb') || file.name.toLowerCase().endsWith('.gltf')
+      const isImage = file.type.startsWith('image/')
+      if (!(isScan || isImage)) {
+        onError('Upload a .glb/.gltf scan or an image.')
+        return
+      }
+
+      if (isImage) {
+        setIsAddingGuide(true)
+        try {
+          const guide = await createLocalGuideImage({ createNode, file, levelId })
+          setShowGuides(true)
+          setSelectedReferenceId(guide.id)
+          setSelection({ selectedIds: [], zoneId: null })
+        } catch {
+          onError('无法添加该参考图。')
+        } finally {
+          setIsAddingGuide(false)
+        }
+        return
+      }
+
+      const { uploadHandler } = useUploadStore.getState()
+      if (!uploadHandler) {
+        onError('扫描上传不可用。')
+        return
+      }
+
+      const projectId = window.location.pathname.split('/editor/')[1]?.split('/')[0]
+      if (!projectId) {
+        onError('请先打开项目，再上传扫描。')
+        return
+      }
+
+      useUploadStore.getState().clearUpload(levelId)
+      uploadHandler(projectId, levelId, file, 'scan')
+    },
+    [createNode, levelId, onError, setSelectedReferenceId, setSelection, setShowGuides],
+  )
+
+  return (
+    <>
+      <button
+        aria-label="上传扫描或参考图"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/40 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+        disabled={isAddingGuide}
+        onClick={() => fileInputRef.current?.click()}
+        type="button"
+      >
+        <Plus className="h-3 w-3" />
+      </button>
+      <input
+        accept={ACCEPTED_FILE_TYPES}
+        className="hidden"
+        onChange={handleFileChange}
+        ref={fileInputRef}
+        type="file"
+      />
+    </>
+  )
+}
+
+// ── Guides toggle + dropdown ────────────────────────────────────────────────
+
+function GuidesControl() {
+  const showGuides = useViewer((state) => state.showGuides)
+  const setShowGuides = useViewer((state) => state.setShowGuides)
+  const setSelection = useViewer((state) => state.setSelection)
+  const updateNode = useScene((state) => state.updateNode)
+  const deleteNode = useScene((state) => state.deleteNode)
+  const selectedReferenceId = useEditor((state) => state.selectedReferenceId)
+  const setSelectedReferenceId = useEditor((state) => state.setSelectedReferenceId)
+  const [isOpen, setIsOpen] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const guides = useLevelGuides()
+  const hasGuides = guides.length > 0
+
+  const handleOpacityChange = useCallback(
+    (guideId: GuideNode['id'], opacity: number) => {
+      updateNode(guideId, { opacity: Math.round(Math.min(100, Math.max(0, opacity))) })
+    },
+    [updateNode],
+  )
+
+  const handleSelectGuide = useCallback(
+    (guideId: GuideNode['id']) => {
+      setShowGuides(true)
+      setSelectedReferenceId(guideId)
+      setSelection({ selectedIds: [], zoneId: null })
+    },
+    [setSelectedReferenceId, setSelection, setShowGuides],
+  )
+
+  return (
+    <Popover onOpenChange={setIsOpen} open={isOpen}>
+      <div className="flex items-center">
+        {/* Toggle button */}
+        <ActionButton
+          className={cn(
+            'rounded-r-none p-0',
+            showGuides
+              ? 'bg-white/15'
+              : 'opacity-60 grayscale hover:bg-white/5 hover:opacity-100 hover:grayscale-0',
+          )}
+          label={`参考图：${showGuides ? '显示' : '隐藏'}`}
+          onClick={() => setShowGuides(!showGuides)}
+          size="icon"
+          variant="ghost"
+        >
+          <div className="relative">
+            <img
+              alt="参考图"
+              className="h-[28px] w-[28px] object-contain"
+              src="/icons/floorplan.webp"
+            />
+            <span className="absolute -right-1.5 -bottom-1 min-w-[14px] rounded-full bg-white/20 px-[3px] text-center font-medium text-[9px] text-white/70 leading-[14px]">
+              {guides.length}
+            </span>
+          </div>
+        </ActionButton>
+
+        {/* Dropdown chevron */}
+        <PopoverTrigger asChild>
+          <button
+            aria-expanded={isOpen}
+            aria-label="参考图设置"
+            className={cn(
+              'flex h-11 w-6 items-center justify-center rounded-r-lg transition-colors',
+              showGuides
+                ? isOpen
+                  ? 'bg-white/10'
+                  : 'bg-white/5 hover:bg-white/8'
+                : isOpen
+                  ? 'bg-white/8'
+                  : 'opacity-60 hover:bg-white/5 hover:opacity-100',
+            )}
+            type="button"
+          >
+            <ChevronDown className={cn('h-3 w-3 transition-transform', isOpen && 'rotate-180')} />
+          </button>
+        </PopoverTrigger>
+      </div>
+
+      <PopoverContent
+        align="center"
+        className="w-72 rounded-xl border-border/45 bg-background/96 p-3 shadow-elevation-3 backdrop-blur-xl"
+        side="top"
+        sideOffset={14}
+      >
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-background/80">
+              <img alt="" className="h-4 w-4 object-contain" src="/icons/floorplan.webp" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-foreground text-sm">参考图</p>
+              {hasGuides && (
+                <p className="text-muted-foreground text-xs">当前楼层有 {guides.length} 张参考图</p>
+              )}
+            </div>
+            <UploadButton onError={setUploadError} />
+          </div>
+
+          {uploadError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-2 text-destructive text-xs">
+              {uploadError}
+            </div>
+          )}
+
+          {hasGuides ? (
+            <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+              {guides.map((guide, index) => (
+                <div
+                  className={cn(
+                    'group/item space-y-2 rounded-xl border bg-background/75 p-2.5 transition-colors',
+                    selectedReferenceId === guide.id
+                      ? 'border-foreground/35 bg-white/10'
+                      : 'border-border/45',
+                  )}
+                  key={guide.id}
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <button
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      onClick={() => handleSelectGuide(guide.id)}
+                      type="button"
+                    >
+                      <img
+                        alt=""
+                        className="h-3.5 w-3.5 shrink-0 object-contain opacity-70"
+                        src="/icons/floorplan.webp"
+                      />
+                      <p className="truncate font-medium text-foreground text-sm">
+                        {guide.name || `参考图 ${index + 1}`}
+                      </p>
+                      {selectedReferenceId === guide.id && (
+                        <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-foreground/80" />
+                      )}
+                    </button>
+                    <button
+                      aria-label="删除参考图"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover/item:opacity-100"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        deleteNode(guide.id)
+                        if (selectedReferenceId === guide.id) {
+                          setSelectedReferenceId(null)
+                        }
+                      }}
+                      type="button"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <SliderControl
+                    label="不透明度"
+                    max={100}
+                    min={0}
+                    onChange={(value) => handleOpacityChange(guide.id, value)}
+                    precision={0}
+                    step={1}
+                    unit="%"
+                    value={guide.opacity}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/45 border-dashed bg-background/60 px-3 py-4 text-muted-foreground text-sm">
+              {REFERENCES_EMPTY_TEXT}
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// ── Scans toggle + dropdown ─────────────────────────────────────────────────
+
+function ScansControl() {
+  const showScans = useViewer((state) => state.showScans)
+  const setShowScans = useViewer((state) => state.setShowScans)
+  const setSelection = useViewer((state) => state.setSelection)
+  const updateNode = useScene((state) => state.updateNode)
+  const deleteNode = useScene((state) => state.deleteNode)
+  const selectedReferenceId = useEditor((state) => state.selectedReferenceId)
+  const setSelectedReferenceId = useEditor((state) => state.setSelectedReferenceId)
+  const [isOpen, setIsOpen] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const scans = useLevelScans()
+  const hasScans = scans.length > 0
+
+  const handleOpacityChange = useCallback(
+    (scanId: ScanNode['id'], opacity: number) => {
+      updateNode(scanId, { opacity: Math.round(Math.min(100, Math.max(0, opacity))) })
+    },
+    [updateNode],
+  )
+
+  const handleSelectScan = useCallback(
+    (scanId: ScanNode['id']) => {
+      setShowScans(true)
+      setSelectedReferenceId(scanId)
+      setSelection({ selectedIds: [], zoneId: null })
+    },
+    [setSelectedReferenceId, setSelection, setShowScans],
+  )
+
+  return (
+    <Popover onOpenChange={setIsOpen} open={isOpen}>
+      <div className="flex items-center">
+        {/* Toggle button */}
+        <ActionButton
+          className={cn(
+            'rounded-r-none p-0',
+            showScans
+              ? 'bg-white/15'
+              : 'opacity-60 grayscale hover:bg-white/5 hover:opacity-100 hover:grayscale-0',
+          )}
+          label={`扫描：${showScans ? '显示' : '隐藏'}`}
+          onClick={() => setShowScans(!showScans)}
+          size="icon"
+          variant="ghost"
+        >
+          <div className="relative">
+            <img alt="扫描" className="h-[28px] w-[28px] object-contain" src="/icons/mesh.webp" />
+            <span className="absolute -right-1.5 -bottom-1 min-w-[14px] rounded-full bg-white/20 px-[3px] text-center font-medium text-[9px] text-white/70 leading-[14px]">
+              {scans.length}
+            </span>
+          </div>
+        </ActionButton>
+
+        {/* Dropdown chevron */}
+        <PopoverTrigger asChild>
+          <button
+            aria-expanded={isOpen}
+            aria-label="扫描设置"
+            className={cn(
+              'flex h-11 w-6 items-center justify-center rounded-r-lg transition-colors',
+              showScans
+                ? isOpen
+                  ? 'bg-white/10'
+                  : 'bg-white/5 hover:bg-white/8'
+                : isOpen
+                  ? 'bg-white/8'
+                  : 'opacity-60 hover:bg-white/5 hover:opacity-100',
+            )}
+            type="button"
+          >
+            <ChevronDown className={cn('h-3 w-3 transition-transform', isOpen && 'rotate-180')} />
+          </button>
+        </PopoverTrigger>
+      </div>
+
+      <PopoverContent
+        align="center"
+        className="w-72 rounded-xl border-border/45 bg-background/96 p-3 shadow-elevation-3 backdrop-blur-xl"
+        side="top"
+        sideOffset={14}
+      >
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-background/80">
+              <img alt="" className="h-4 w-4 object-contain" src="/icons/mesh.webp" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-foreground text-sm">扫描</p>
+              {hasScans && (
+                <p className="text-muted-foreground text-xs">当前楼层有 {scans.length} 个扫描</p>
+              )}
+            </div>
+            <UploadButton onError={setUploadError} />
+          </div>
+
+          {uploadError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-2 text-destructive text-xs">
+              {uploadError}
+            </div>
+          )}
+
+          {hasScans ? (
+            <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+              {scans.map((scan, index) => (
+                <div
+                  className={cn(
+                    'group/item space-y-2 rounded-xl border bg-background/75 p-2.5 transition-colors',
+                    selectedReferenceId === scan.id
+                      ? 'border-foreground/35 bg-white/10'
+                      : 'border-border/45',
+                  )}
+                  key={scan.id}
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <button
+                      className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      onClick={() => handleSelectScan(scan.id)}
+                      type="button"
+                    >
+                      <img
+                        alt=""
+                        className="h-3.5 w-3.5 shrink-0 object-contain opacity-70"
+                        src="/icons/mesh.webp"
+                      />
+                      <p className="truncate font-medium text-foreground text-sm">
+                        {scan.name || `扫描 ${index + 1}`}
+                      </p>
+                      {selectedReferenceId === scan.id && (
+                        <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-foreground/80" />
+                      )}
+                    </button>
+                    <button
+                      aria-label="删除扫描"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover/item:opacity-100"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        deleteNode(scan.id)
+                        if (selectedReferenceId === scan.id) {
+                          setSelectedReferenceId(null)
+                        }
+                      }}
+                      type="button"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <SliderControl
+                    label="不透明度"
+                    max={100}
+                    min={0}
+                    onChange={(value) => handleOpacityChange(scan.id, value)}
+                    precision={0}
+                    step={1}
+                    unit="%"
+                    value={scan.opacity}
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/45 border-dashed bg-background/60 px-3 py-4 text-muted-foreground text-sm">
+              {REFERENCES_EMPTY_TEXT}
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// ── References (merged scans + guides) ──────────────────────────────────────
+// Bottom-bar control that folds the separate Scans and Guides toggles into one
+// "References" split button + a popover holding both, each with its own
+// visibility toggle, upload, and per-item opacity/delete.
+
+function ReferenceListSection({
+  title,
+  iconSrc,
+  noun,
+  emptyText,
+  nodes,
+  show,
+  setShow,
+  onError,
+}: {
+  title: string
+  iconSrc: string
+  noun: string
+  emptyText: string
+  nodes: (GuideNode | ScanNode)[]
+  show: boolean
+  setShow: (show: boolean) => void
+  onError: (message: string | null) => void
+}) {
+  const setSelection = useViewer((state) => state.setSelection)
+  const updateNode = useScene((state) => state.updateNode)
+  const deleteNode = useScene((state) => state.deleteNode)
+  const selectedReferenceId = useEditor((state) => state.selectedReferenceId)
+  const setSelectedReferenceId = useEditor((state) => state.setSelectedReferenceId)
+  const hasItems = nodes.length > 0
+
+  const handleSelect = useCallback(
+    (id: AnyNodeId) => {
+      setShow(true)
+      setSelectedReferenceId(id)
+      setSelection({ selectedIds: [], zoneId: null })
+    },
+    [setShow, setSelectedReferenceId, setSelection],
+  )
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-background/80">
+          <img alt="" className="h-4 w-4 object-contain" src={iconSrc} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-foreground text-sm">{title}</p>
+          {hasItems && (
+            <p className="text-muted-foreground text-xs">
+              {nodes.length} {noun}
+              位于当前楼层
+            </p>
+          )}
+        </div>
+        <button
+          aria-label={show ? `隐藏${title}` : `显示${title}`}
+          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/40 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground"
+          onClick={() => setShow(!show)}
+          type="button"
+        >
+          {show ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+        </button>
+        <UploadButton onError={onError} />
+      </div>
+
+      {hasItems ? (
+        <div className="max-h-40 space-y-2 overflow-y-auto pr-1">
+          {nodes.map((node, index) => (
+            <div
+              className={cn(
+                'group/item space-y-2 rounded-xl border bg-background/75 p-2.5 transition-colors',
+                selectedReferenceId === node.id
+                  ? 'border-foreground/35 bg-white/10'
+                  : 'border-border/45',
+              )}
+              key={node.id}
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <button
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  onClick={() => handleSelect(node.id)}
+                  type="button"
+                >
+                  <img
+                    alt=""
+                    className="h-3.5 w-3.5 shrink-0 object-contain opacity-70"
+                    src={iconSrc}
+                  />
+                  <p className="truncate font-medium text-foreground text-sm">
+                    {node.name || `${noun.charAt(0).toUpperCase()}${noun.slice(1)} ${index + 1}`}
+                  </p>
+                  {selectedReferenceId === node.id && (
+                    <Check className="ml-auto h-3.5 w-3.5 shrink-0 text-foreground/80" />
+                  )}
+                </button>
+                <button
+                  aria-label={`删除${noun}`}
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-muted-foreground/50 opacity-0 transition-all hover:bg-destructive/10 hover:text-destructive group-hover/item:opacity-100"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    deleteNode(node.id)
+                    if (selectedReferenceId === node.id) {
+                      setSelectedReferenceId(null)
+                    }
+                  }}
+                  type="button"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+              <SliderControl
+                label="不透明度"
+                max={100}
+                min={0}
+                onChange={(value) =>
+                  updateNode(node.id, { opacity: Math.round(Math.min(100, Math.max(0, value))) })
+                }
+                precision={0}
+                step={1}
+                unit="%"
+                value={node.opacity}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-border/45 border-dashed bg-background/60 px-3 py-3 text-muted-foreground text-sm">
+          {emptyText}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReferencesControl() {
+  const showScans = useViewer((state) => state.showScans)
+  const setShowScans = useViewer((state) => state.setShowScans)
+  const showGuides = useViewer((state) => state.showGuides)
+  const setShowGuides = useViewer((state) => state.setShowGuides)
+  const [isOpen, setIsOpen] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+
+  const scans = useLevelScans()
+  const guides = useLevelGuides()
+  const total = scans.length + guides.length
+  const anyVisible = showScans || showGuides
+
+  const toggleAll = useCallback(() => {
+    const next = !anyVisible
+    setShowScans(next)
+    setShowGuides(next)
+  }, [anyVisible, setShowScans, setShowGuides])
+
+  return (
+    <Popover onOpenChange={setIsOpen} open={isOpen}>
+      <div className="flex items-center">
+        <ActionButton
+          className={cn(
+            'rounded-r-none p-0',
+            anyVisible
+              ? 'bg-white/15'
+              : 'opacity-60 grayscale hover:bg-white/5 hover:opacity-100 hover:grayscale-0',
+          )}
+          label={`参考资源：${anyVisible ? '显示' : '隐藏'}`}
+          onClick={toggleAll}
+          size="icon"
+          variant="ghost"
+        >
+          <div className="relative">
+            <img
+              alt="参考资源"
+              className="h-[28px] w-[28px] object-contain"
+              src="/icons/floorplan.webp"
+            />
+            <span className="absolute -right-1.5 -bottom-1 min-w-[14px] rounded-full bg-white/20 px-[3px] text-center font-medium text-[9px] text-white/70 leading-[14px]">
+              {total}
+            </span>
+          </div>
+        </ActionButton>
+
+        <PopoverTrigger asChild>
+          <button
+            aria-expanded={isOpen}
+            aria-label="参考资源设置"
+            className={cn(
+              'flex h-11 w-6 items-center justify-center rounded-r-lg transition-colors',
+              anyVisible
+                ? isOpen
+                  ? 'bg-white/10'
+                  : 'bg-white/5 hover:bg-white/8'
+                : isOpen
+                  ? 'bg-white/8'
+                  : 'opacity-60 hover:bg-white/5 hover:opacity-100',
+            )}
+            type="button"
+          >
+            <ChevronDown className={cn('h-3 w-3 transition-transform', isOpen && 'rotate-180')} />
+          </button>
+        </PopoverTrigger>
+      </div>
+
+      <PopoverContent
+        align="center"
+        className="w-72 rounded-xl border-border/45 bg-background/96 p-3 shadow-elevation-3 backdrop-blur-xl"
+        side="top"
+        sideOffset={14}
+      >
+        <div className="space-y-3">
+          {uploadError && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-2.5 py-2 text-destructive text-xs">
+              {uploadError}
+            </div>
+          )}
+          <ReferenceListSection
+            emptyText={REFERENCES_EMPTY_TEXT}
+            iconSrc="/icons/mesh.webp"
+            nodes={scans}
+            noun="扫描"
+            onError={setUploadError}
+            setShow={setShowScans}
+            show={showScans}
+            title="扫描"
+          />
+          <div className="h-px bg-border/45" />
+          <ReferenceListSection
+            emptyText={REFERENCES_EMPTY_TEXT}
+            iconSrc="/icons/floorplan.webp"
+            nodes={guides}
+            noun="参考图"
+            onError={setUploadError}
+            setShow={setShowGuides}
+            show={showGuides}
+            title="参考图"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// ── Reference floor control ────────────────────────────────────────────────────────────────────
+
+function ReferenceFloorControl() {
+  const showReferenceFloor = useEditor((state) => state.showReferenceFloor)
+  const toggleReferenceFloor = useEditor((state) => state.toggleReferenceFloor)
+  const referenceFloorOffset = useEditor((state) => state.referenceFloorOffset)
+  const setReferenceFloorOffset = useEditor((state) => state.setReferenceFloorOffset)
+  const referenceFloorOpacity = useEditor((state) => state.referenceFloorOpacity)
+  const setReferenceFloorOpacity = useEditor((state) => state.setReferenceFloorOpacity)
+  const [isOpen, setIsOpen] = useState(false)
+  const lowerLevels = useLowerReferenceLevels()
+  const hasLowerLevels = lowerLevels.length > 0
+  const selectedLevel = lowerLevels[referenceFloorOffset - 1] ?? lowerLevels[0] ?? null
+  const selectedLevelName = selectedLevel ? getLevelDisplayName(selectedLevel) : null
+
+  return (
+    <Popover onOpenChange={setIsOpen} open={isOpen}>
+      <div className="flex items-center">
+        <ActionButton
+          className={cn(
+            'rounded-r-none p-0',
+            showReferenceFloor && selectedLevel
+              ? 'bg-white/15'
+              : 'opacity-60 grayscale hover:bg-white/5 hover:opacity-100 hover:grayscale-0',
+          )}
+          disabled={!hasLowerLevels}
+          label={
+            selectedLevelName && showReferenceFloor ? `参考楼层：${selectedLevelName}` : '参考楼层'
+          }
+          onClick={() => {
+            if (hasLowerLevels) toggleReferenceFloor()
+          }}
+          size="icon"
+          variant="ghost"
+        >
+          <div className="relative">
+            <Layers2 className="h-4 w-4" />
+            <span className="absolute -right-1.5 -bottom-1 min-w-[14px] rounded-full bg-white/20 px-[3px] text-center font-medium text-[9px] text-white/70 leading-[14px]">
+              {lowerLevels.length}
+            </span>
+          </div>
+        </ActionButton>
+
+        <PopoverTrigger asChild>
+          <button
+            aria-expanded={isOpen}
+            aria-label="参考楼层设置"
+            className={cn(
+              'flex h-11 w-6 items-center justify-center rounded-r-lg transition-colors',
+              showReferenceFloor && selectedLevel
+                ? isOpen
+                  ? 'bg-white/10'
+                  : 'bg-white/5 hover:bg-white/8'
+                : isOpen
+                  ? 'bg-white/8'
+                  : 'opacity-60 hover:bg-white/5 hover:opacity-100',
+            )}
+            disabled={!hasLowerLevels}
+            type="button"
+          >
+            <ChevronDown className={cn('h-3 w-3 transition-transform', isOpen && 'rotate-180')} />
+          </button>
+        </PopoverTrigger>
+      </div>
+
+      <PopoverContent
+        align="center"
+        className="w-72 rounded-xl border-border/45 bg-background/96 p-3 shadow-[0_14px_28px_-18px_rgba(15,23,42,0.55),0_6px_16px_-10px_rgba(15,23,42,0.2)] backdrop-blur-xl"
+        side="top"
+        sideOffset={14}
+      >
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-background/80">
+              <Layers2 className="h-4 w-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-foreground text-sm">参考楼层</p>
+              {selectedLevelName && (
+                <p className="truncate text-muted-foreground text-xs">{selectedLevelName}</p>
+              )}
+            </div>
+            <button
+              aria-label={showReferenceFloor ? '隐藏参考楼层' : '显示参考楼层'}
+              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/40 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              disabled={!hasLowerLevels}
+              onClick={toggleReferenceFloor}
+              type="button"
+            >
+              {showReferenceFloor ? (
+                <Eye className="h-3.5 w-3.5" />
+              ) : (
+                <EyeOff className="h-3.5 w-3.5" />
+              )}
+            </button>
+          </div>
+
+          {hasLowerLevels ? (
+            <>
+              <div className="max-h-44 space-y-1 overflow-y-auto rounded-xl border border-border/45 bg-background/60 p-1.5">
+                {lowerLevels.map((level, index) => {
+                  const isSelected = referenceFloorOffset === index + 1
+                  const levelName = getLevelDisplayName(level)
+                  return (
+                    <button
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors hover:bg-white/8',
+                        isSelected && showReferenceFloor && 'bg-white/10 text-foreground',
+                      )}
+                      key={level.id}
+                      onClick={() => {
+                        setReferenceFloorOffset(index + 1)
+                        if (!showReferenceFloor) {
+                          toggleReferenceFloor()
+                        }
+                      }}
+                      type="button"
+                    >
+                      <span
+                        className={cn(
+                          'h-3.5 w-3.5 rounded-full border',
+                          isSelected && showReferenceFloor
+                            ? 'border-foreground bg-foreground'
+                            : 'border-muted-foreground/35',
+                        )}
+                      />
+                      <span className="min-w-0 flex-1 truncate">{levelName}</span>
+                      <span className="text-[10px] text-muted-foreground">{index + 1} 下方</span>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <SliderControl
+                label="不透明度"
+                max={0.8}
+                min={0.1}
+                onChange={setReferenceFloorOpacity}
+                precision={2}
+                step={0.05}
+                value={referenceFloorOpacity}
+              />
+            </>
+          ) : (
+            <div className="rounded-xl border border-border/45 border-dashed bg-background/60 px-3 py-4 text-muted-foreground text-sm">
+              没有更低楼层。
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+// ── Riser diagram control ────────────────────────────────────────────────────
+
+function RiserControl() {
+  const isRiserOpen = useEditor((state) => state.isRiserOpen)
+  const toggleRiserOpen = useEditor((state) => state.toggleRiserOpen)
+
+  return (
+    <ActionButton
+      className={cn(
+        isRiserOpen
+          ? 'bg-white/15'
+          : 'opacity-60 grayscale hover:bg-white/5 hover:opacity-100 hover:grayscale-0',
+      )}
+      label="立管图"
+      onClick={toggleRiserOpen}
+      size="icon"
+      variant="ghost"
+    >
+      <Waypoints className="h-4 w-4" />
+    </ActionButton>
+  )
+}
+
+// ── Exports ─────────────────────────────────────────────────────────────────
+
+export function SecondaryToggles() {
+  return (
+    <div className="flex items-center gap-1">
+      <ReferencesControl />
+    </div>
+  )
+}
+
+export function ViewToggles() {
+  return (
+    <div className="flex items-center gap-1">
+      <ScansControl />
+      <GuidesControl />
+      <ReferenceFloorControl />
+      <RiserControl />
+    </div>
+  )
+}

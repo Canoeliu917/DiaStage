@@ -1,0 +1,370 @@
+import { type AnyNode, type AnyNodeId, emitter, nodeRegistry, useScene } from '@pascal-app/core'
+import { useViewer } from '@pascal-app/viewer'
+import { ChevronRight } from 'lucide-react'
+import { AnimatePresence, motion } from 'motion/react'
+import { forwardRef, memo, useEffect, useRef } from 'react'
+import { resolveNodeSelectionTarget } from '../../../../../lib/selection-routing'
+import useEditor from '../../../../../store/use-editor'
+import { expandSessionSelectionForNode } from '../../../../../store/use-session-groups'
+
+export function handleTreeSelection(
+  e: React.MouseEvent,
+  nodeId: string,
+  selectedIds: string[],
+  setSelection: (s: any) => void,
+) {
+  if (e.metaKey || e.ctrlKey) {
+    if (selectedIds.includes(nodeId)) {
+      setSelection({ selectedIds: selectedIds.filter((id) => id !== nodeId) })
+    } else {
+      setSelection({ selectedIds: [...selectedIds, nodeId] })
+    }
+    return true
+  }
+
+  if (e.shiftKey && selectedIds.length > 0) {
+    const lastSelectedId = selectedIds[selectedIds.length - 1]
+    if (lastSelectedId) {
+      const nodes = Array.from(document.querySelectorAll('[data-treenode-id]'))
+      const nodeIds = nodes.map((n) => n.getAttribute('data-treenode-id') as string)
+
+      const startIndex = nodeIds.indexOf(lastSelectedId)
+      const endIndex = nodeIds.indexOf(nodeId)
+
+      if (startIndex !== -1 && endIndex !== -1) {
+        const start = Math.min(startIndex, endIndex)
+        const end = Math.max(startIndex, endIndex)
+        const range = nodeIds.slice(start, end + 1)
+
+        // We can keep the previous selections that were outside the range if we want,
+        // but standard file system shift-click replaces the selection with the range.
+        setSelection({ selectedIds: range })
+        return true
+      }
+    }
+    // Fallback: if range selection fails (e.g. node not visible in tree), just add to selection
+    if (!selectedIds.includes(nodeId)) {
+      setSelection({ selectedIds: [...selectedIds, nodeId] })
+      return true
+    }
+  }
+
+  if (e.altKey) {
+    setSelection({ selectedIds: [nodeId] })
+    return false
+  }
+
+  const expanded = expandSessionSelectionForNode(nodeId)
+  setSelection({ selectedIds: expanded && expanded.length > 1 ? expanded : [nodeId] })
+  return false
+}
+
+export function focusTreeNode(nodeId: AnyNodeId) {
+  emitter.emit('camera-controls:focus', { nodeId })
+}
+
+export function routeTreeSelectionToNode(node: AnyNode | null | undefined) {
+  const target = node ? resolveNodeSelectionTarget(node) : null
+  if (!target) return
+
+  const selectedIdsAfterClick = useViewer.getState().selection.selectedIds
+  const editor = useEditor.getState()
+  let didRoute = false
+
+  if (target.phase !== editor.phase) {
+    editor.setPhase(target.phase)
+    didRoute = true
+  }
+  if (
+    target.phase === 'structure' &&
+    target.structureLayer &&
+    target.structureLayer !== useEditor.getState().structureLayer
+  ) {
+    useEditor.getState().setStructureLayer(target.structureLayer)
+    didRoute = true
+  }
+  if (didRoute) {
+    useViewer.getState().setSelection({ selectedIds: selectedIdsAfterClick })
+  }
+}
+
+import { cn } from '../../../../../lib/utils'
+import { BuildingTreeNode } from './building-tree-node'
+import { CeilingTreeNode } from './ceiling-tree-node'
+import { ChimneyTreeNode } from './chimney-tree-node'
+import { ColumnTreeNode } from './column-tree-node'
+import { DoorTreeNode } from './door-tree-node'
+import { DormerTreeNode } from './dormer-tree-node'
+import { ElevatorTreeNode } from './elevator-tree-node'
+import { FenceTreeNode } from './fence-tree-node'
+import { GutterTreeNode } from './gutter-tree-node'
+import { ItemTreeNode } from './item-tree-node'
+import { LevelTreeNode } from './level-tree-node'
+import { RegistryTreeNode } from './registry-tree-node'
+import { RoofTreeNode } from './roof-tree-node'
+import { ShelfTreeNode } from './shelf-tree-node'
+import { SlabTreeNode } from './slab-tree-node'
+import { SolarPanelTreeNode } from './solar-panel-tree-node'
+import { SpawnTreeNode } from './spawn-tree-node'
+import { StairTreeNode } from './stair-tree-node'
+import { WallTreeNode } from './wall-tree-node'
+import { WindowTreeNode } from './window-tree-node'
+import { ZoneTreeNode } from './zone-tree-node'
+
+interface TreeNodeProps {
+  nodeId: AnyNodeId
+  depth?: number
+  isLast?: boolean
+}
+
+type TreeNodeComponent = React.ComponentType<{
+  depth: number
+  isLast?: boolean
+  nodeId: AnyNodeId
+}>
+
+// Per-kind tree-node components keyed by `node.type`. Lookup replaces
+// the legacy switch — adding a kind to this map is now the only edit
+// needed in this file (the switch's `case '<kind>':` clauses were
+// flagged by the Phase 6 grep gate as the last per-kind dispatch
+// outside the registry; future work moves these to a
+// `def.presentation`-driven generic tree-node and removes this map
+// entirely).
+const treeNodeByType: Record<string, TreeNodeComponent> = {
+  building: BuildingTreeNode as React.ComponentType<{
+    depth: number
+    isLast?: boolean
+    nodeId: AnyNodeId
+  }>,
+  cabinet: RegistryTreeNode,
+  'cabinet-module': RegistryTreeNode,
+  'box-vent': RegistryTreeNode,
+  'block': RegistryTreeNode,
+  ceiling: CeilingTreeNode,
+  chimney: ChimneyTreeNode,
+  dormer: DormerTreeNode,
+  downspout: RegistryTreeNode,
+  'solar-panel': SolarPanelTreeNode,
+  column: ColumnTreeNode,
+  elevator: ElevatorTreeNode,
+  level: LevelTreeNode as React.ComponentType<{
+    depth: number
+    isLast?: boolean
+    nodeId: AnyNodeId
+  }>,
+  shelf: ShelfTreeNode as React.ComponentType<{
+    depth: number
+    isLast?: boolean
+    nodeId: AnyNodeId
+  }>,
+  slab: SlabTreeNode,
+  spawn: SpawnTreeNode as React.ComponentType<{
+    depth: number
+    isLast?: boolean
+    nodeId: AnyNodeId
+  }>,
+  wall: WallTreeNode,
+  fence: FenceTreeNode,
+  gutter: GutterTreeNode,
+  measurement: RegistryTreeNode,
+  'ridge-vent': RegistryTreeNode,
+  'turbine-vent': RegistryTreeNode,
+  cupola: RegistryTreeNode,
+  'eyebrow-vent': RegistryTreeNode,
+  skylight: RegistryTreeNode,
+  roof: RoofTreeNode,
+  scan: RegistryTreeNode,
+  stair: StairTreeNode,
+  door: DoorTreeNode,
+  window: WindowTreeNode,
+  zone: ZoneTreeNode as React.ComponentType<{
+    depth: number
+    isLast?: boolean
+    nodeId: AnyNodeId
+  }>,
+  item: ItemTreeNode,
+}
+
+export function getTreeNodeComponent(nodeType: string): TreeNodeComponent {
+  return treeNodeByType[nodeType] ?? RegistryTreeNode
+}
+
+export const TreeNode = memo(function TreeNode({ nodeId, depth = 0, isLast }: TreeNodeProps) {
+  // Registry-driven row hiding (`def.tree.hidden`) — primitive boolean
+  // selector so unrelated scene updates don't re-render every row.
+  const shouldHide = useScene((state) => {
+    const node = state.nodes[nodeId]
+    if (!node) return false
+    return nodeRegistry.get(node.type)?.tree?.hidden?.(node, state.nodes) ?? false
+  })
+  const nodeType = useScene((state) => state.nodes[nodeId]?.type)
+  if (shouldHide) return null
+  if (!nodeType) return null
+  const Component = getTreeNodeComponent(nodeType)
+  return <Component depth={depth} isLast={isLast} nodeId={nodeId} />
+})
+
+interface TreeNodeWrapperProps {
+  nodeId?: string
+  icon: React.ReactNode
+  label: React.ReactNode
+  depth: number
+  hasChildren: boolean
+  expanded: boolean
+  onToggle: () => void
+  onClick: (e: React.MouseEvent) => void
+  onDoubleClick?: () => void
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
+  onPointerDown?: (e: React.PointerEvent) => void
+  actions?: React.ReactNode
+  children?: React.ReactNode
+  isSelected?: boolean
+  isHovered?: boolean
+  isVisible?: boolean
+  isLast?: boolean
+  isDraggable?: boolean
+  isDropTarget?: boolean
+}
+
+export const TreeNodeWrapper = forwardRef<HTMLDivElement, TreeNodeWrapperProps>(
+  function TreeNodeWrapper(
+    {
+      nodeId,
+      icon,
+      label,
+      depth,
+      hasChildren,
+      expanded,
+      onToggle,
+      onClick,
+      onDoubleClick,
+      onMouseEnter,
+      onMouseLeave,
+      onPointerDown,
+      actions,
+      children,
+      isSelected,
+      isHovered,
+      isVisible = true,
+      isLast,
+      isDraggable,
+      isDropTarget,
+    },
+    ref,
+  ) {
+    const rowRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+      if (isSelected && rowRef.current) {
+        rowRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }, [isSelected])
+
+    return (
+      <div data-treenode-id={nodeId} ref={ref}>
+        <div
+          className={cn(
+            'group/row relative flex h-8 cursor-pointer select-none items-center border-border/50 border-r border-r-transparent border-b text-sm transition-all duration-200',
+            isSelected
+              ? 'border-r-3 border-r-white bg-accent/50 text-foreground'
+              : isDropTarget
+                ? 'bg-blue-500/15 text-foreground ring-1 ring-blue-500/40 ring-inset'
+                : isHovered
+                  ? 'bg-accent/30 text-foreground'
+                  : 'text-muted-foreground hover:bg-accent/30 hover:text-foreground',
+            !isVisible && 'opacity-50',
+            isDraggable && 'cursor-grab active:cursor-grabbing',
+          )}
+          onClick={onClick}
+          onDoubleClick={onDoubleClick}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+          onPointerDown={onPointerDown}
+          ref={rowRef}
+          style={{ paddingLeft: depth * 12 + 12, paddingRight: 12 }}
+        >
+          {/* Vertical tree line */}
+          <div
+            className={cn(
+              'pointer-events-none absolute w-px bg-border/50',
+              isLast ? 'top-0 bottom-1/2' : 'top-0 bottom-0',
+            )}
+            style={{ left: (depth - 1) * 12 + 20 }}
+          />
+          {/* Horizontal branch line */}
+          <div
+            className="pointer-events-none absolute top-1/2 h-px bg-border/50"
+            style={{ left: (depth - 1) * 12 + 20, width: 4 }}
+          />
+          {/* Line down to children */}
+          {hasChildren && expanded && (
+            <div
+              className="pointer-events-none absolute top-1/2 bottom-0 w-px bg-border/50"
+              style={{ left: depth * 12 + 20 }}
+            />
+          )}
+
+          <button
+            className="z-10 flex h-4 w-4 shrink-0 items-center justify-center bg-inherit"
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggle()
+            }}
+          >
+            {hasChildren ? (
+              <motion.div
+                animate={{ rotate: expanded ? 90 : 0 }}
+                initial={false}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronRight className="h-3 w-3" />
+              </motion.div>
+            ) : null}
+          </button>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span
+              className={cn(
+                'flex h-5 w-5 shrink-0 items-center justify-center transition-all duration-200',
+                !isSelected && 'opacity-60 grayscale',
+              )}
+            >
+              {icon}
+            </span>
+            <div
+              className={cn(
+                'min-w-0 flex-1 truncate',
+                !isVisible && 'text-muted-foreground line-through',
+              )}
+            >
+              {label}
+            </div>
+          </div>
+          {actions && (
+            <div
+              className={cn(
+                'pr-1 opacity-0 transition-opacity duration-200 group-hover/row:opacity-100',
+                !isVisible && 'opacity-100',
+              )}
+            >
+              {actions}
+            </div>
+          )}
+        </div>
+        <AnimatePresence initial={false}>
+          {expanded && children && (
+            <motion.div
+              animate={{ height: 'auto', opacity: 1 }}
+              className="overflow-hidden"
+              exit={{ height: 0, opacity: 0 }}
+              initial={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
+            >
+              {children}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    )
+  },
+)

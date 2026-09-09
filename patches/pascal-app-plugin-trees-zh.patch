@@ -1,0 +1,447 @@
+diff --git a/src/definition.ts b/src/definition.ts
+--- a/src/definition.ts
++++ b/src/definition.ts
+@@ -127,13 +127,13 @@
+   preview: () => import('./preview'),
+   tool: () => import('./tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Plant tree' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "种植树木" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Tree',
+-    description: 'A procedural ez-tree. Oak, pine, aspen, ash, bush, or trellis.',
++    label: "树木",
++    description: "程序化树木：橡树、松树、白杨、白蜡树、灌木或藤架。",
+     icon: { kind: 'iconify', name: 'lucide:trees' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -141,6 +141,6 @@
+ 
+   mcp: {
+     description:
+-      'A procedural ez-tree (example plugin node). Species presets (oak/pine/aspen/ash/bush/trellis) × size, deciduous/evergreen type, adjustable height, foliage/trunk, leaf & branch tint, and a seed for variation.',
++      "程序化树木插件物体。支持树种、尺寸、落叶或常绿类型、高度、树冠与树干、叶片与枝条颜色以及随机种子。",
+   },
+ }
+diff --git a/src/flower-definition.ts b/src/flower-definition.ts
+--- a/src/flower-definition.ts
++++ b/src/flower-definition.ts
+@@ -68,13 +68,13 @@
+   preview: () => import('./flower-preview'),
+   tool: () => import('./flower-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Plant flower' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "种植花卉" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Flower',
+-    description: 'A procedural flower. Daisy, tulip, or lavender.',
++    label: "花卉",
++    description: "程序化花卉：雏菊、郁金香或薰衣草。",
+     icon: { kind: 'iconify', name: 'lucide:flower-2' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -82,6 +82,6 @@
+ 
+   mcp: {
+     description:
+-      'A procedural flower (example plugin node) — daisy, tulip, or lavender, instanced like the trees.',
++      "程序化花卉插件物体，支持雏菊、郁金香与薰衣草，采用实例化渲染。",
+   },
+ }
+diff --git a/src/flower-parametrics.ts b/src/flower-parametrics.ts
+--- a/src/flower-parametrics.ts
++++ b/src/flower-parametrics.ts
+@@ -6,7 +6,7 @@
+ export const flowerParametrics: ParametricDescriptor<FlowerNode> = {
+   groups: [
+     {
+-      label: 'Flower',
++      label: "花卉",
+       fields: [
+         { key: 'preset', kind: 'enum', options: ['daisy', 'tulip', 'lavender'] },
+         { key: 'height', kind: 'number', unit: 'm', min: 0.2, max: 2, step: 0.05 },
+@@ -15,7 +15,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/flower-presets.ts b/src/flower-presets.ts
+--- a/src/flower-presets.ts
++++ b/src/flower-presets.ts
+@@ -18,7 +18,7 @@
+ export const FLOWER_PRESETS: Record<FlowerPreset, FlowerPresetSpec> = {
+   daisy: {
+     id: 'daisy',
+-    label: 'Daisy',
++    label: "雏菊",
+     petalColor: '#fcfcf2',
+     centerColor: '#f4c430',
+     stemColor: '#4f7942',
+@@ -28,7 +28,7 @@
+   },
+   tulip: {
+     id: 'tulip',
+-    label: 'Tulip',
++    label: "郁金香",
+     petalColor: '#e0457b',
+     centerColor: '#c43160',
+     stemColor: '#3f7a3a',
+@@ -38,7 +38,7 @@
+   },
+   lavender: {
+     id: 'lavender',
+-    label: 'Lavender',
++    label: "薰衣草",
+     petalColor: '#9b6fd4',
+     centerColor: '#7d52b8',
+     stemColor: '#5a7a4a',
+diff --git a/src/grass-definition.ts b/src/grass-definition.ts
+--- a/src/grass-definition.ts
++++ b/src/grass-definition.ts
+@@ -68,13 +68,13 @@
+   preview: () => import('./grass-preview'),
+   tool: () => import('./grass-tool'),
+   toolHints: [
+-    { key: 'Left click', label: 'Plant grass' },
+-    { key: 'Esc', label: 'Stop' },
++    { key: 'Left click', label: "种植草丛" },
++    { key: 'Esc', label: "停止" },
+   ],
+ 
+   presentation: {
+-    label: 'Grass',
+-    description: 'A procedural grass tuft. Meadow, fescue, or reed.',
++    label: "草丛",
++    description: "程序化草丛：草甸、羊茅或芦苇。",
+     icon: { kind: 'iconify', name: 'lucide:wheat' },
+     paletteSection: 'furnish',
+     hidden: true,
+@@ -82,6 +82,6 @@
+ 
+   mcp: {
+     description:
+-      'A procedural grass tuft (example plugin node) — meadow, fescue, or reed, instanced like the trees.',
++      "程序化草丛插件物体，支持草甸、羊茅与芦苇，采用实例化渲染。",
+   },
+ }
+diff --git a/src/grass-parametrics.ts b/src/grass-parametrics.ts
+--- a/src/grass-parametrics.ts
++++ b/src/grass-parametrics.ts
+@@ -6,7 +6,7 @@
+ export const grassParametrics: ParametricDescriptor<GrassNode> = {
+   groups: [
+     {
+-      label: 'Grass',
++      label: "草丛",
+       fields: [
+         { key: 'preset', kind: 'enum', options: ['meadow', 'fescue', 'reed'] },
+         { key: 'height', kind: 'number', unit: 'm', min: 0.1, max: 2, step: 0.05 },
+@@ -15,7 +15,7 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+diff --git a/src/grass-presets.ts b/src/grass-presets.ts
+--- a/src/grass-presets.ts
++++ b/src/grass-presets.ts
+@@ -17,7 +17,7 @@
+ export const GRASS_PRESETS: Record<GrassPreset, GrassPresetSpec> = {
+   meadow: {
+     id: 'meadow',
+-    label: 'Meadow',
++    label: "草甸",
+     bladeColor: '#5a8f3c',
+     blades: 10,
+     defaultHeight: 0.4,
+@@ -26,7 +26,7 @@
+   },
+   fescue: {
+     id: 'fescue',
+-    label: 'Fescue',
++    label: "羊茅",
+     bladeColor: '#7fae55',
+     blades: 8,
+     defaultHeight: 0.7,
+@@ -35,7 +35,7 @@
+   },
+   reed: {
+     id: 'reed',
+-    label: 'Reed',
++    label: "芦苇",
+     bladeColor: '#4a7d63',
+     blades: 6,
+     defaultHeight: 1.1,
+diff --git a/src/index.ts b/src/index.ts
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -41,11 +41,11 @@
+ 
+ export const treesHostPanel: PluginHostPanel = {
+   id: 'pascal:trees:trees',
+-  label: 'Nature',
++  label: "自然",
+   icon: { kind: 'url', src: NATURE_ICON },
+   component: () => import('./presets-panel'),
+   pluginId: treesPlugin.id,
+-  description: 'Procedural trees, flowers, and grasses for outdoor scenes.',
++  description: "用于室外场景的程序化树木、花卉与草丛。",
+   creator: {
+     name: 'Pascal',
+     url: 'https://github.com/pascalorg',
+diff --git a/src/parametrics.ts b/src/parametrics.ts
+--- a/src/parametrics.ts
++++ b/src/parametrics.ts
+@@ -16,7 +16,7 @@
+ export const treeParametrics: ParametricDescriptor<TreeNode> = {
+   groups: [
+     {
+-      label: 'Tree',
++      label: "树木",
+       fields: [
+         {
+           key: 'preset',
+@@ -42,7 +42,7 @@
+       ],
+     },
+     {
+-      label: 'Foliage',
++      label: "枝叶",
+       fields: [
+         { key: 'leafless', kind: 'boolean' },
+         {
+@@ -58,13 +58,13 @@
+       ],
+     },
+     {
+-      label: 'Position',
++      label: "位置",
+       fields: [{ key: 'position', kind: 'vec3' }],
+     },
+   ],
+   actions: [
+     {
+-      label: 'Randomize',
++      label: "随机化",
+       // The action receives the live node; writing a new seed re-generates the
+       // tree. Pick from the bounded pool so the result stays an instancing
+       // variant shared with other trees, not a one-off mesh.
+@@ -77,7 +77,7 @@
+         ),
+     },
+     {
+-      label: 'Reset height',
++      label: "重置高度",
+       // Snap height back to the preset+size default (handy after changing size).
+       onClick: (n) =>
+         useScene
+diff --git a/src/presets-panel.tsx b/src/presets-panel.tsx
+--- a/src/presets-panel.tsx
++++ b/src/presets-panel.tsx
+@@ -15,7 +15,7 @@
+   flowers: 'trees:flower',
+   grass: 'trees:grass',
+ }
+-const NOUN: Record<Mode, string> = { trees: 'tree', flowers: 'flower', grass: 'grass' }
++const NOUN: Record<Mode, string> = { trees: '树木', flowers: '花卉', grass: '草丛' }
+ 
+ const setPluginTool = (tool: string) => {
+   const setTool = useEditor.getState().setTool as (value: string) => void
+@@ -46,24 +46,24 @@
+     <div className="flex flex-col gap-4 p-4 text-sidebar-foreground">
+       <header className="flex flex-col gap-3">
+         <div className="flex items-center justify-between">
+-          <h2 className="font-semibold text-base">Nature</h2>
++          <h2 className="font-semibold text-base">自然</h2>
+           <span className="rounded-full bg-sidebar-accent px-2 py-0.5 text-sidebar-foreground/70 text-xs">
+-            {count} planted
++            {count} 株已种植
+           </span>
+         </div>
+         <SegmentedControl
+           onChange={setMode}
+           options={[
+-            { label: 'Trees', value: 'trees' },
+-            { label: 'Flowers', value: 'flowers' },
+-            { label: 'Grass', value: 'grass' },
++            { label: "树木", value: 'trees' },
++            { label: "花卉", value: 'flowers' },
++            { label: "草丛", value: 'grass' },
+           ]}
+           value={mode}
+         />
+         <p className="text-sidebar-foreground/50 text-xs">
+           {arming
+-            ? 'Click the ground to plant. Press Esc to stop.'
+-            : `Pick ${mode === 'grass' ? 'a grass' : `a ${NOUN[mode]}`}, then click the ground.`}
++            ? "点击地面种植，按 Esc 停止。"
++            : `选择${NOUN[mode]}，然后点击地面。`}
+         </p>
+       </header>
+ 
+@@ -72,7 +72,7 @@
+       {mode === 'grass' && <GrassSection arming={arming} />}
+ 
+       <footer className="-mx-4 -mb-4 sticky bottom-0 mt-1 border-sidebar-border/50 border-t bg-sidebar px-4 py-3 text-[11px] text-sidebar-foreground/50 leading-relaxed">
+-        Trees generated with{' '}
++        树木生成工具：{' '}
+         <a
+           className="underline decoration-dotted underline-offset-2 hover:text-sidebar-foreground/70"
+           href="https://github.com/dgreenheck/ez-tree"
+@@ -81,7 +81,7 @@
+         >
+           ez-tree
+         </a>{' '}
+-        by{' '}
++        作者：{' '}
+         <a
+           className="underline decoration-dotted underline-offset-2 hover:text-sidebar-foreground/70"
+           href="https://x.com/dangreenheck"
+@@ -90,7 +90,7 @@
+         >
+           Daniel Greenheck
+         </a>{' '}
+-        (MIT).
++        （MIT 许可证）。
+       </footer>
+     </div>
+   )
+@@ -118,9 +118,9 @@
+           <SegmentedControl
+             onChange={useTreesStore.getState().setSize}
+             options={[
+-              { label: 'S', value: 'small' },
+-              { label: 'M', value: 'medium' },
+-              { label: 'L', value: 'large' },
++              { label: '小', value: 'small' },
++              { label: '中', value: 'medium' },
++              { label: '大', value: 'large' },
+             ]}
+             value={size}
+           />
+@@ -128,7 +128,7 @@
+       )}
+       <div className="flex flex-col gap-0.5">
+         <SliderControl
+-          label="Height"
++          label="高度"
+           max={15}
+           min={1}
+           onChange={useTreesStore.getState().setHeight}
+@@ -140,7 +140,7 @@
+         />
+         {!leafless && (
+           <SliderControl
+-            label="Foliage"
++            label="枝叶"
+             max={1.5}
+             min={0}
+             onChange={useTreesStore.getState().setFoliageDensity}
+@@ -151,7 +151,7 @@
+           />
+         )}
+         <SliderControl
+-          label="Trunk"
++          label="树干"
+           max={2.5}
+           min={0.3}
+           onChange={useTreesStore.getState().setTrunkThickness}
+@@ -162,7 +162,7 @@
+         />
+         <ToggleControl
+           checked={leafless}
+-          label="Bare (leafless)"
++          label="无叶"
+           onChange={useTreesStore.getState().setLeafless}
+         />
+       </div>
+@@ -188,7 +188,7 @@
+         selected={arming ? selected : null}
+       />
+       <SliderControl
+-        label="Height"
++        label="高度"
+         max={2}
+         min={0.2}
+         onChange={useTreesStore.getState().setFlowerHeight}
+@@ -216,7 +216,7 @@
+     <>
+       <PresetGrid items={GRASS_PRESET_LIST} onPick={activate} selected={arming ? selected : null} />
+       <SliderControl
+-        label="Height"
++        label="高度"
+         max={2}
+         min={0.1}
+         onChange={useTreesStore.getState().setGrassHeight}
+diff --git a/src/presets.ts b/src/presets.ts
+--- a/src/presets.ts
++++ b/src/presets.ts
+@@ -30,7 +30,7 @@
+ export const TREE_PRESETS: Record<TreePreset, TreePresetSpec> = {
+   oak: {
+     id: 'oak',
+-    label: 'Oak',
++    label: "橡树",
+     ez: ezSizes('Oak'),
+     height: { small: 5, medium: 7, large: 11 },
+     sized: true,
+@@ -39,7 +39,7 @@
+   },
+   pine: {
+     id: 'pine',
+-    label: 'Pine',
++    label: "松树",
+     ez: ezSizes('Pine'),
+     height: { small: 6, medium: 9, large: 14 },
+     sized: true,
+@@ -48,7 +48,7 @@
+   },
+   aspen: {
+     id: 'aspen',
+-    label: 'Aspen',
++    label: "白杨",
+     ez: ezSizes('Aspen'),
+     height: { small: 5, medium: 8, large: 12 },
+     sized: true,
+@@ -57,7 +57,7 @@
+   },
+   ash: {
+     id: 'ash',
+-    label: 'Ash',
++    label: "白蜡树",
+     ez: ezSizes('Ash'),
+     height: { small: 5, medium: 8, large: 12 },
+     sized: true,
+@@ -66,7 +66,7 @@
+   },
+   bush: {
+     id: 'bush',
+-    label: 'Bush',
++    label: "灌木",
+     ez: { small: 'Bush 1', medium: 'Bush 2', large: 'Bush 3' },
+     height: { small: 1.2, medium: 1.5, large: 1.8 },
+     sized: true,
+@@ -75,7 +75,7 @@
+   },
+   trellis: {
+     id: 'trellis',
+-    label: 'Trellis',
++    label: "藤架",
+     ez: { small: 'Trellis', medium: 'Trellis', large: 'Trellis' },
+     height: { small: 3, medium: 3, large: 3 },
+     sized: false,

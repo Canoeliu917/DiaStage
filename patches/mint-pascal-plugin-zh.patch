@@ -1,0 +1,879 @@
+diff --git a/src/index.ts b/src/index.ts
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -18,7 +18,7 @@
+   icon: MINT_PLUGIN_ICON,
+   component: () => import('./panel'),
+   pluginId: mintPlugin.id,
+-  description: 'Generate, browse and add Mint 3D assets.',
++  description: "生成、浏览并添加 Mint 三维资产。",
+   creator: { name: 'Mint', url: 'https://mint.gg' },
+   pluginUrl: 'https://github.com/mintdotgg/mint-pascal-plugin',
+   defaultInstalled: false,
+diff --git a/src/panel.tsx b/src/panel.tsx
+--- a/src/panel.tsx
++++ b/src/panel.tsx
+@@ -47,6 +47,7 @@
+   modelIsOptimized,
+   modelIsPlaceable,
+   modelThumbnailUrl,
++  operationErrorLabel,
+   operationErrorReport,
+   operationIsAwaitingReview,
+   placementGlbUrl,
+@@ -76,7 +77,7 @@
+ }
+ 
+ function messageFrom(error: unknown) {
+-  return error instanceof Error ? error.message : 'Mint could not complete that request.'
++  return error instanceof Error ? error.message : "Mint 未能完成此请求。"
+ }
+ 
+ function isUnauthorized(error: unknown) {
+@@ -95,7 +96,7 @@
+     if (url.protocol !== 'https:') throw new Error()
+     return url.toString()
+   } catch {
+-    throw new Error('Enter a valid public HTTPS image URL.')
++    throw new Error("请输入有效且可公开访问的 HTTPS 图片地址。")
+   }
+ }
+ 
+@@ -460,7 +461,7 @@
+   async function resolveBounds(model: MintPluginModel): Promise<GlbBounds> {
+     if (model.assets?.bounds) return model.assets.bounds
+     const url = placementGlbUrl(model)
+-    if (!url) throw new Error('This model does not have a placement-ready GLB.')
++    if (!url) throw new Error("此模型没有可供放置的 GLB 文件。")
+     const key = boundsCacheKey(model.id, model.updatedAt)
+     const cached = await readCachedBounds(key)
+     if (cached) return cached
+@@ -471,7 +472,7 @@
+ 
+   async function placeModel(model: MintPluginModel) {
+     if (placingModelId || operationBusy) return
+-    const modelName = model.name ?? 'Untitled model'
++    const modelName = model.name ?? "未命名模型"
+     let optimizationStarted = false
+     let modelToPlace = model
+     setPlacingModelId(model.id)
+@@ -488,7 +489,7 @@
+       }
+ 
+       if (!modelIsPlaceable(modelToPlace)) {
+-        throw new Error('This model does not have a placement-ready GLB.')
++        throw new Error("此模型没有可供放置的 GLB 文件。")
+       }
+ 
+       if (!modelIsOptimized(modelToPlace)) {
+@@ -523,12 +524,12 @@
+             return
+           }
+           if (completed.status !== 'succeeded' && completed.status !== 'partially_succeeded') {
+-            throw new Error(completed.error?.message ?? 'Mint could not optimize this model.')
++            throw new Error(completed.error?.message ?? "Mint 未能优化此模型。")
+           }
+ 
+           const refreshed = await getMintModel(model.id)
+           if (!modelIsOptimized(refreshed)) {
+-            throw new Error('Mint finished optimization without returning an optimized GLB.')
++            throw new Error("Mint 已完成优化，但未返回优化后的 GLB 文件。")
+           }
+           setModels((current) =>
+             current.map((currentModel) =>
+@@ -578,7 +579,7 @@
+       } else if (operation.resource?.type === 'model') {
+         next = await retryMintModel(operation.resource.id, newIdempotencyKey('retry'))
+       } else {
+-        throw new Error('Mint has not attached a model to this operation yet.')
++        throw new Error("Mint 尚未为此操作关联模型。")
+       }
+       const completed = await watchOperation(next)
+       if (operationType === 'model_generation') {
+@@ -658,18 +659,18 @@
+   }
+ 
+   if (connection === 'loading') {
+-    return <PanelMessage title="Connecting to Mint…" body="Checking your secure Mint session." />
++    return <PanelMessage title="正在连接 Mint…" body="正在验证 Mint 安全会话。" />
+   }
+   if (connection === 'disconnected' || connection === 'expired') {
+     return (
+       <PanelMessage
+         emphasizeBody
+         heroSrc={MINT_PLUGIN_HERO.src}
+-        title={connection === 'expired' ? 'Reconnect Mint' : 'Mint assets'}
++        title={connection === 'expired' ? "重新连接 Mint" : "Mint 资产"}
+         body={
+           connection === 'expired'
+-            ? 'Your Mint session ended. Sign in again to continue.'
+-            : 'Generate, browse and add Mint 3D assets.'
++            ? "Mint 会话已结束，请重新登录以继续。"
++            : "生成、浏览并添加 Mint 三维资产。"
+         }
+         action={
+           <div className="flex w-full max-w-56 flex-col gap-2">
+@@ -679,7 +680,7 @@
+               style={{ backgroundColor: '#bef93a', color: '#0a0a0a' }}
+               type="button"
+             >
+-              Sign In with Mint
++              使用 Mint 登录
+             </button>
+             <a
+               className="w-full rounded-xl border border-sidebar-foreground/20 px-4 py-2.5 text-sm font-medium text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+@@ -687,7 +688,7 @@
+               rel="noreferrer"
+               target="_blank"
+             >
+-              Learn more about Mint
++              了解 Mint
+             </a>
+           </div>
+         }
+@@ -695,7 +696,7 @@
+     )
+   }
+   if (connection === 'error') {
+-    return <PanelMessage title="Could not connect" body={error ?? 'Mint is temporarily unavailable.'} />
++    return <PanelMessage title="无法连接" body="Mint 暂时无法连接，请稍后重试。" />
+   }
+ 
+   return (
+@@ -705,24 +706,24 @@
+           <div className="flex items-baseline gap-2">
+             <h2 className="font-semibold text-sm">Mint</h2>
+             <span
+-              aria-label={`Mint Pascal Plugin version ${MINT_PASCAL_PLUGIN_VERSION}`}
++              aria-label={`Mint Pascal 插件版本 ${MINT_PASCAL_PLUGIN_VERSION}`}
+               className="text-[9px] font-medium tabular-nums text-sidebar-foreground/35"
+             >
+               v{MINT_PASCAL_PLUGIN_VERSION}
+             </span>
+           </div>
+           <button
+-            aria-label="Log out of Mint"
++            aria-label="退出 Mint 登录"
+             className="flex size-8 items-center justify-center rounded-lg text-sidebar-foreground/55 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+             onClick={() => setShowLogoutDialog(true)}
+-            title="Log out"
++            title="退出登录"
+             type="button"
+           >
+             <LogoutIcon />
+           </button>
+         </div>
+         <div
+-          aria-label="Mint panel sections"
++          aria-label="Mint 面板分组"
+           className="mt-3 grid grid-cols-2 gap-1 rounded-xl border border-sidebar-border bg-sidebar-accent p-1"
+           role="tablist"
+         >
+@@ -741,7 +742,7 @@
+               role="tab"
+               type="button"
+             >
+-              {value === 'create' ? 'Create' : 'Assets'}
++              {value === 'create' ? "创建" : "资产"}
+             </button>
+           ))}
+         </div>
+@@ -835,10 +836,10 @@
+   placementProgress: PlacementProgress | null
+ }) {
+   if (props.loading && props.models.length === 0) {
+-    return <PanelMessage title="Loading models…" body="Loading your newest succeeded 3D models." />
++    return <PanelMessage title="正在加载模型…" body="正在加载最近生成成功的三维模型。" />
+   }
+   if (props.models.length === 0) {
+-    return <PanelMessage title="No succeeded models yet" body="Use Create to generate a model without leaving Pascal." />
++    return <PanelMessage title="暂无生成成功的模型" body="在“创建”中生成模型，无需离开 Pascal。" />
+   }
+   return (
+     <>
+@@ -851,11 +852,11 @@
+             <article className="overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent/30" key={model.id}>
+               <div className="relative">
+                 <button
+-                  aria-label={`Add ${model.name ?? 'Untitled model'} to the scene`}
++                  aria-label={`将 ${model.name ?? "未命名模型"} 添加到场景`}
+                   className="block w-full disabled:opacity-50"
+                   disabled={props.busy}
+                   onClick={() => props.onPlace(model)}
+-                  title="Add to scene"
++                  title="添加到场景"
+                   type="button"
+                 >
+                   <img
+@@ -867,27 +868,27 @@
+                 </button>
+                 {progress && <AssetPlacementProgress progress={progress} />}
+                 <button
+-                  aria-label={`View details for ${model.name ?? 'Untitled model'}`}
++                  aria-label={`查看 ${model.name ?? "未命名模型"} 的详情`}
+                   className="absolute z-10 flex size-6 items-center justify-center rounded-full border border-transparent text-white drop-shadow-sm transition-colors hover:border-white/25 hover:bg-black/70 focus-visible:border-white/25 focus-visible:bg-black/70"
+                   onClick={(event) => {
+                     event.stopPropagation()
+                     props.onOpen(model)
+                   }}
+                   style={{ right: '0.5rem', top: '0.5rem' }}
+-                  title="View details"
++                  title="查看详情"
+                   type="button"
+                 >
+                   <InfoIcon />
+                 </button>
+               </div>
+               <button
+-                aria-label={`View details for ${model.name ?? 'Untitled model'}`}
++                aria-label={`查看 ${model.name ?? "未命名模型"} 的详情`}
+                 className="block w-full truncate px-2 py-2 text-left text-xs font-medium hover:bg-sidebar-accent/60"
+                 onClick={() => props.onOpen(model)}
+-                title="View details"
++                title="查看详情"
+                 type="button"
+               >
+-                {model.name ?? 'Untitled model'}
++                {model.name ?? "未命名模型"}
+               </button>
+             </article>
+           )
+@@ -895,7 +896,7 @@
+       </div>
+       {props.nextCursor && (
+         <button className="mt-3 w-full rounded-lg bg-sidebar-accent px-3 py-2 text-xs" disabled={props.loading} onClick={props.onLoadMore} type="button">
+-          {props.loading ? 'Loading…' : 'Load more'}
++          {props.loading ? "正在加载…" : "加载更多"}
+         </button>
+       )}
+     </>
+@@ -946,12 +947,12 @@
+         onClick={props.onBack}
+         type="button"
+       >
+-        ← Assets
++        ← 资产
+       </button>
+ 
+       <div className="relative overflow-hidden rounded-xl border border-sidebar-border">
+         <img
+-          alt={props.model.name ?? 'Mint model'}
++          alt={props.model.name ?? "Mint 模型"}
+           className="aspect-square w-full bg-black/5 object-contain"
+           src={modelThumbnailUrl(props.model) ?? MINT_THUMBNAIL_FALLBACK}
+         />
+@@ -966,16 +967,16 @@
+       >
+         {props.placing
+           ? props.progress?.phase === 'optimizing'
+-            ? 'Optimizing…'
+-            : 'Preparing…'
+-          : 'Add to scene'}
++            ? "正在优化…"
++            : "正在准备…"
++          : "添加到场景"}
+       </button>
+ 
+-      <h2 className="text-base font-semibold leading-6">{props.model.name ?? 'Untitled model'}</h2>
++      <h2 className="text-base font-semibold leading-6">{props.model.name ?? "未命名模型"}</h2>
+ 
+       <section className="overflow-hidden rounded-xl border border-sidebar-border">
+         <div className="flex items-center justify-between gap-3 border-b border-sidebar-border px-3.5 py-2.5">
+-          <h3 className="text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/45">Prompt</h3>
++          <h3 className="text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/45">提示词</h3>
+           <button
+             className="rounded-md px-2 py-1 text-[11px] font-medium text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground disabled:opacity-40"
+             disabled={!props.model.prompt}
+@@ -987,31 +988,31 @@
+             }}
+             type="button"
+           >
+-            {copiedPrompt === props.model.prompt ? 'Copied' : 'Copy'}
++            {copiedPrompt === props.model.prompt ? "已复制" : "复制"}
+           </button>
+         </div>
+         <p className="whitespace-pre-wrap px-3.5 py-3.5 text-[13px] leading-5 text-sidebar-foreground/70">
+-          {props.model.prompt ?? 'No prompt is available for this model.'}
++          {props.model.prompt ?? "此模型没有可用的提示词。"}
+         </p>
+       </section>
+ 
+       <section className="space-y-2.5">
+-        <h3 className="px-1 text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/45">Info</h3>
++        <h3 className="px-1 text-[10px] font-medium uppercase tracking-[0.18em] text-sidebar-foreground/45">信息</h3>
+         <dl className="divide-y divide-sidebar-border overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent/25">
+           <ModelMetric
+-            label="Faces"
++            label="面数"
+             value={metrics ? displayCount(metrics.faces) : pendingValue}
+           />
+           <ModelMetric
+-            label="Vertices"
++            label="顶点数"
+             value={metrics ? displayCount(metrics.vertices) : pendingValue}
+           />
+           <ModelMetric
+-            label="File size"
++            label="文件大小"
+             value={displayFileSize(metrics?.fileSizeBytes ?? knownFileSize) ?? pendingValue}
+           />
+           <div className="flex min-h-11 items-center justify-between gap-4 px-3.5 py-2.5 text-xs">
+-            <dt className="text-sidebar-foreground/55">Mint link</dt>
++            <dt className="text-sidebar-foreground/55">Mint 链接</dt>
+             <dd>
+               <a
+                 className="rounded-md px-2 py-1 text-[11px] font-medium text-sidebar-foreground/60 hover:bg-sidebar hover:text-sidebar-foreground"
+@@ -1019,7 +1020,7 @@
+                 rel="noreferrer"
+                 target="_blank"
+               >
+-                Open in Mint
++                在 Mint 中打开
+               </a>
+             </dd>
+           </div>
+@@ -1103,7 +1104,7 @@
+         newIdempotencyKey('reference-url'),
+       )
+       const url = referenceUrl(imported)
+-      if (!url) throw new Error('Mint imported a reference image without returning its durable URL.')
++      if (!url) throw new Error("Mint 已导入参考图，但未返回可长期使用的图片地址。")
+       setImportedReferenceImage({ sourceUrl, url })
+       setReferenceImageUrl('')
+     } catch (requestError) {
+@@ -1125,7 +1126,7 @@
+     props.onError(null)
+     try {
+       if (files.length + (importedReferenceImage ? 1 : 0) > 8) {
+-        throw new Error('Use up to 8 reference images per generation.')
++        throw new Error("每次生成最多使用 8 张参考图。")
+       }
+       const urls: string[] = []
+       for (const [index, file] of files.entries()) {
+@@ -1138,7 +1139,7 @@
+           newIdempotencyKey(`reference-${index}`),
+         )
+         const url = referenceUrl(uploaded)
+-        if (!url) throw new Error('Mint uploaded a reference image without returning its durable URL.')
++        if (!url) throw new Error("Mint 已上传参考图，但未返回可长期使用的图片地址。")
+         urls.push(url)
+       }
+       if (importedReferenceImage) urls.push(importedReferenceImage.url)
+@@ -1169,23 +1170,23 @@
+   return (
+     <form className="space-y-6" onSubmit={(event) => void submit(event)}>
+       <h2 className="text-base font-semibold leading-6">
+-        What would you like to create?
++        你想创建什么？
+       </h2>
+ 
+       <label className="flex flex-col text-xs" style={{ gap: '0.5rem' }}>
+-        <span className="font-medium">Describe the 3D model</span>
++        <span className="font-medium">描述三维模型</span>
+         <textarea
+           className="w-full rounded-xl border border-sidebar-border bg-sidebar p-3.5 leading-5 outline-none focus:ring-1"
+           maxLength={8000}
+           onChange={(event) => setPrompt(event.target.value)}
+-          placeholder="A warm Scandinavian lounge chair with rounded oak arms, cream bouclé cushions, and softly tapered legs"
++          placeholder="一把温暖的北欧休闲椅，配有圆润的橡木扶手、奶油色圈绒坐垫和逐渐收细的椅腿"
+           style={{ minHeight: '6.5rem' }}
+           value={prompt}
+         />
+       </label>
+ 
+       <div className="flex flex-col text-xs" style={{ gap: '0.5rem' }}>
+-        <span className="font-medium">Or upload a reference image</span>
++        <span className="font-medium">或上传参考图</span>
+         {(files.length > 0 || importedReferenceImage) && (
+           <div className={files.length + (importedReferenceImage ? 1 : 0) === 1 ? 'grid grid-cols-1' : 'grid grid-cols-2 gap-2'}>
+             {files.map((file, index) => (
+@@ -1213,7 +1214,7 @@
+           <label
+             className={`flex min-h-11 items-center rounded-xl border border-sidebar-border bg-sidebar px-3.5 py-2.5 font-medium ${canAddFile ? 'cursor-pointer hover:bg-sidebar-accent/40' : 'cursor-not-allowed opacity-50'}`}
+           >
+-            <span className="truncate">Upload image</span>
++            <span className="truncate">上传图片</span>
+             <input
+               accept="image/*"
+               className="hidden"
+@@ -1230,7 +1231,7 @@
+             />
+           </label>
+           <input
+-            aria-label="Reference image URL"
++            aria-label="参考图地址"
+             className="min-w-0 rounded-xl border border-sidebar-border bg-sidebar px-3.5 py-2.5 outline-none placeholder:text-sidebar-foreground/40 focus:ring-1 disabled:opacity-50"
+             disabled={importingReferenceImage || !canImportReferenceImage}
+             inputMode="url"
+@@ -1248,7 +1249,7 @@
+               setReferenceImageUrl(pasted)
+               void importReferenceImage(pasted)
+             }}
+-            placeholder={importingReferenceImage ? 'Processing image…' : 'Paste image URL'}
++            placeholder={importingReferenceImage ? "正在处理图片…" : "粘贴图片地址"}
+             type="url"
+             value={importingReferenceImage ? '' : referenceImageUrl}
+           />
+@@ -1257,16 +1258,16 @@
+ 
+       <details className="rounded-xl border border-sidebar-border">
+         <summary className="cursor-pointer px-3.5 py-3 text-xs font-medium hover:bg-sidebar-accent/30">
+-          Advanced
++          高级设置
+         </summary>
+         <div className="space-y-4 border-t border-sidebar-border p-3.5">
+           <div className="space-y-2 text-xs">
+             <FieldLabel
+-              description="Sets the name shown for this model in Mint and Pascal. Leave it blank to let Mint choose one."
+-              label="Name"
++              description="设置此模型在 Mint 与 Pascal 中显示的名称。留空时由 Mint 命名。"
++              label="名称"
+             />
+             <input
+-              aria-label="Name"
++              aria-label="名称"
+               className="w-full rounded-lg border border-sidebar-border bg-sidebar p-2.5"
+               maxLength={120}
+               onChange={(event) => setName(event.target.value)}
+@@ -1274,14 +1275,14 @@
+             />
+           </div>
+           <div className="grid grid-cols-2 gap-3">
+-            <Select description="Controls speed and detail. Fast is quickest, Standard is balanced, and Production prioritizes quality." label="Preset" onChange={(value) => setPreset(value as MintGenerationPreset)} value={preset} options={[['fast', 'Fast'], ['standard', 'Standard'], ['production', 'Production']]} />
+-            <Select description="Auto continues to the final model. Review pauses at the preview for approval or revision." label="Workflow" onChange={(value) => setMode(value as MintGenerationMode)} value={mode} options={[['auto', 'Auto'], ['review', 'Review preview']]} />
++            <Select description="控制速度与细节。“快速”用时最短，“标准”兼顾两者，“制作”优先考虑质量。" label="预设" onChange={(value) => setPreset(value as MintGenerationPreset)} value={preset} options={[['fast', "快速"], ['standard', "标准"], ['production', "制作"]]} />
++            <Select description="“自动”会继续生成最终模型；“预览审核”会暂停，等待确认或修改。" label="工作流程" onChange={(value) => setMode(value as MintGenerationMode)} value={mode} options={[['auto', "自动"], ['review', "预览审核"]]} />
+           </div>
+-          <Select description="Guides eligible characters into a neutral T-pose or A-pose for easier rigging." label="Character pose" onChange={(value) => setRigging(value as 'none' | MintRiggingPose)} value={rigging} options={[['none', 'None'], ['t_pose', 'T-pose'], ['a_pose', 'A-pose']]} />
++          <Select description="引导适用角色采用中立的 T 形或 A 形姿态，便于骨骼绑定。" label="角色姿态" onChange={(value) => setRigging(value as 'none' | MintRiggingPose)} value={rigging} options={[['none', "无"], ['t_pose', "T 形姿态"], ['a_pose', "A 形姿态"]]} />
+           <div className="space-y-2 text-xs">
+             <FieldLabel
+-              description="Runs optimization after generation so the model is ready to use efficiently in Pascal."
+-              label="Auto Optimize"
++              description="生成后执行优化，使模型能在 Pascal 中高效使用。"
++              label="自动优化"
+             />
+             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-sidebar-border bg-sidebar-accent/25 p-3.5">
+               <input
+@@ -1291,7 +1292,7 @@
+                 type="checkbox"
+               />
+               <span className="leading-4 text-sidebar-foreground/55">
+-                Optimized automatically after generation for Pascal.
++                生成后自动优化，以供 Pascal 使用。
+               </span>
+             </label>
+           </div>
+@@ -1299,7 +1300,7 @@
+       </details>
+ 
+       <button className="w-full rounded-xl border border-sidebar-primary-foreground/25 bg-sidebar-primary px-4 py-3 text-sm font-medium text-sidebar-primary-foreground shadow-sm disabled:opacity-50" disabled={submitting || importingReferenceImage || hasPendingReferenceImageUrl || !hasGenerationInput} type="submit">
+-        {submitting ? 'Starting…' : 'Generate 3D model'}
++        {submitting ? "正在启动…" : "生成三维模型"}
+       </button>
+ 
+       {props.currentTasks.length > 0 && (
+@@ -1307,7 +1308,7 @@
+           className="space-y-3 border-t border-sidebar-border/70"
+           style={{ paddingTop: '1.25rem' }}
+         >
+-          <h3 className="text-sm font-semibold">Currently creating</h3>
++          <h3 className="text-sm font-semibold">正在创建</h3>
+           <div className="space-y-2">
+             {props.currentTasks.map((task) => (
+               <CurrentWork
+@@ -1348,14 +1349,14 @@
+     !operationIsAwaitingReview(props.operation)
+         ? 'running'
+         : props.operation.status
+-  const modelName = props.model?.name ?? '3D model'
++  const modelName = props.model?.name ?? "三维模型"
+   const title = succeeded
+     ? optimizing
+-      ? `${modelName} optimized`
+-      : `${modelName} created`
++      ? `${modelName} 已优化`
++      : `${modelName} 已创建`
+     : optimizing
+-      ? `Optimizing ${modelName}`
+-      : 'Generating 3D model'
++      ? `正在优化 ${modelName}`
++      : "正在生成三维模型"
+ 
+   const content = (
+     <>
+@@ -1382,7 +1383,7 @@
+       <div className="min-w-0 flex-1 space-y-1">
+         <h3 className="truncate text-xs font-medium">{title}</h3>
+         <p className="text-[11px] capitalize text-sidebar-foreground/50">
+-          {displayStatus}
++          {operationStatusLabel(displayStatus)}
+         </p>
+       </div>
+       {thumbnail && (
+@@ -1399,7 +1400,7 @@
+   if (props.onOpen) {
+     return (
+       <button
+-        aria-label={`Open ${modelName} in Assets`}
++        aria-label={`在资产中打开 ${modelName}`}
+         className="flex w-full items-center gap-3 rounded-xl border border-sidebar-border bg-sidebar-accent/25 p-3 text-left transition-colors hover:bg-sidebar-accent/45 focus-visible:outline-none focus-visible:ring-1"
+         onClick={props.onOpen}
+         type="button"
+@@ -1419,7 +1420,7 @@
+ function SuccessCheck() {
+   return (
+     <svg
+-      aria-label="Succeeded"
++      aria-label="已完成"
+       className="size-4 shrink-0"
+       fill="none"
+       role="img"
+@@ -1451,7 +1452,7 @@
+         />
+       )}
+       <button
+-        aria-label={`Remove ${props.file.name}`}
++        aria-label={`移除 ${props.file.name}`}
+         className="absolute z-10 flex size-6 items-center justify-center rounded-full border border-white/20 bg-black/70 text-base leading-none text-white shadow-sm hover:bg-black/85"
+         onClick={props.onRemove}
+         style={{
+@@ -1480,12 +1481,12 @@
+   return (
+     <div className="relative overflow-hidden rounded-xl border border-sidebar-border bg-sidebar-accent/25" style={{ height: '5.5rem' }}>
+       <img
+-        alt="Imported reference"
++        alt="已导入的参考图"
+         className="size-full object-contain"
+         src={props.image.url}
+       />
+       <button
+-        aria-label="Remove imported reference image"
++        aria-label="移除已导入的参考图"
+         className="absolute z-10 flex size-6 items-center justify-center rounded-full border border-white/20 bg-black/70 text-base leading-none text-white shadow-sm hover:bg-black/85"
+         onClick={props.onRemove}
+         style={{
+@@ -1547,12 +1548,12 @@
+     props.progress.phase === 'preparing'
+   const label =
+     props.progress.phase === 'optimizing'
+-      ? 'Optimizing model…'
++      ? "正在优化模型…"
+       : props.progress.phase === 'preparing'
+-        ? 'Adding to scene…'
++        ? "正在添加到场景…"
+         : props.progress.phase === 'no_credits'
+-          ? 'No credits available'
+-          : 'Optimization failed'
++          ? "没有可用积分"
++          : "优化失败"
+ 
+   return (
+     <div
+@@ -1560,7 +1561,7 @@
+       aria-label={`${label}: ${props.progress.modelName}`}
+       role={running ? 'status' : 'alert'}
+       style={{ backgroundColor: 'rgba(0, 0, 0, 0.72)', zIndex: 5 }}
+-      title={props.progress.message}
++      title={props.progress.message ? '操作未能完成，请重试。' : undefined}
+     >
+       {running ? (
+         <svg aria-hidden="true" className="size-4 shrink-0 animate-spin" fill="none" viewBox="0 0 24 24">
+@@ -1617,7 +1618,7 @@
+           {operationResultMessage(operation)}
+         </p>
+         <button
+-          aria-label="Dismiss operation notice"
++          aria-label="关闭操作提示"
+           className="flex size-6 shrink-0 items-center justify-center rounded-md text-base leading-none text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+           onClick={props.onDismiss}
+           type="button"
+@@ -1638,7 +1639,7 @@
+       <div className="flex items-center justify-between gap-2">
+         <strong>
+           {operationTypeLabel(operation)}
+-          {operation.status === 'failed' ? ' failed' : ''}
++          {operation.status === 'failed' ? "失败" : ''}
+         </strong>
+         {operation.status === 'failed' && errorReport ? (
+           <button
+@@ -1650,34 +1651,34 @@
+             }}
+             type="button"
+           >
+-            {copiedError ? 'Copied' : 'Copy error'}
++            {copiedError ? "已复制" : "复制错误详情"}
+           </button>
+         ) : operation.status !== 'failed' ? (
+-          <span className="rounded-full bg-sidebar-accent px-2 py-1 capitalize">{displayStatus.replaceAll('_', ' ')}</span>
++          <span className="rounded-full bg-sidebar-accent px-2 py-1 capitalize">{operationStatusLabel(displayStatus)}</span>
+         ) : null}
+       </div>
+-      {(displayStatus === 'queued' || displayStatus === 'running') && <p className="text-sidebar-foreground/60">Mint is working. This panel will update automatically.</p>}
++      {(displayStatus === 'queued' || displayStatus === 'running') && <p className="text-sidebar-foreground/60">Mint 正在处理，面板将自动更新。</p>}
+       {awaitingReview && (
+         <div className="space-y-2">
+-          {operation.assets?.previewImageUrl && <img alt="Mint model preview" className="max-h-44 w-full rounded-lg object-contain" src={operation.assets.previewImageUrl} />}
++          {operation.assets?.previewImageUrl && <img alt="Mint 模型预览" className="max-h-44 w-full rounded-lg object-contain" src={operation.assets.previewImageUrl} />}
+           <div className="grid grid-cols-2 gap-2">
+-            <button className="rounded-md bg-sidebar-primary px-2 py-1.5 text-sidebar-primary-foreground disabled:opacity-50" disabled={props.busy} onClick={props.onApprove} type="button">Approve</button>
+-            <input className="rounded-md border border-sidebar-border bg-sidebar px-2" maxLength={2000} onChange={(event) => setFeedback(event.target.value)} placeholder="Revision feedback" value={feedback} />
++            <button className="rounded-md bg-sidebar-primary px-2 py-1.5 text-sidebar-primary-foreground disabled:opacity-50" disabled={props.busy} onClick={props.onApprove} type="button">确认</button>
++            <input className="rounded-md border border-sidebar-border bg-sidebar px-2" maxLength={2000} onChange={(event) => setFeedback(event.target.value)} placeholder="修改意见" value={feedback} />
+           </div>
+-          <button className="w-full rounded-md bg-sidebar-accent px-2 py-1.5 disabled:opacity-50" disabled={props.busy || !feedback.trim()} onClick={() => props.onRevise(feedback.trim())} type="button">Revise preview</button>
++          <button className="w-full rounded-md bg-sidebar-accent px-2 py-1.5 disabled:opacity-50" disabled={props.busy || !feedback.trim()} onClick={() => props.onRevise(feedback.trim())} type="button">修改预览</button>
+         </div>
+       )}
+       {operation.status === 'billing_required' && (
+         <div className="space-y-2">
+-          <p>{operation.billing?.requiredCredits ?? 'More'} Credits required.</p>
+-          {operation.billing?.actionUrl && <a className="block rounded-md bg-sidebar-primary px-2 py-1.5 text-center text-sidebar-primary-foreground" href={operation.billing.actionUrl} rel="noreferrer" target="_blank">Manage Mint Credits</a>}
+-          <button className="w-full rounded-md bg-sidebar-accent px-2 py-1.5 disabled:opacity-50" disabled={props.busy} onClick={props.onResume} type="button">Resume after payment</button>
++          <p>需要 {operation.billing?.requiredCredits ?? "更多"} 积分。</p>
++          {operation.billing?.actionUrl && <a className="block rounded-md bg-sidebar-primary px-2 py-1.5 text-center text-sidebar-primary-foreground" href={operation.billing.actionUrl} rel="noreferrer" target="_blank">管理 Mint 积分</a>}
++          <button className="w-full rounded-md bg-sidebar-accent px-2 py-1.5 disabled:opacity-50" disabled={props.busy} onClick={props.onResume} type="button">付款后继续</button>
+         </div>
+       )}
+       {operation.status === 'failed' && (
+         <div className="space-y-2">
+           {showErrorMessage && (
+-            <p className="leading-5 text-sidebar-foreground/65">{errorMessage}</p>
++            <p className="leading-5 text-sidebar-foreground/65">{operationErrorLabel(operation) ?? '操作未能完成，请重试或复制错误详情。'}</p>
+           )}
+           <div className="grid grid-cols-2 gap-2">
+             <button
+@@ -1685,9 +1686,9 @@
+               onClick={props.onDismiss}
+               type="button"
+             >
+-              Cancel
++              取消
+             </button>
+-            <button className="rounded-md bg-sidebar-accent px-2 py-1.5 disabled:opacity-50" disabled={props.busy || operation.resource?.type !== 'model'} onClick={props.onRetry} type="button">Retry model</button>
++            <button className="rounded-md bg-sidebar-accent px-2 py-1.5 disabled:opacity-50" disabled={props.busy || operation.resource?.type !== 'model'} onClick={props.onRetry} type="button">重新生成模型</button>
+           </div>
+         </div>
+       )}
+@@ -1696,13 +1697,17 @@
+ }
+ 
+ function operationResultMessage(operation: MintOperation) {
+-  return `${operationTypeLabel(operation)} ${operation.status.replaceAll('_', ' ')}`
++  return `${operationTypeLabel(operation)}${operationStatusLabel(operation.status)}`
++}
++
++function operationStatusLabel(status: string) {
++  const labels: Record<string, string> = { queued: '等待中', running: '处理中', preview_ready: '预览已就绪', billing_required: '需要支付积分', succeeded: '已完成', partially_succeeded: '部分完成', failed: '失败', canceled: '已取消' }
++  return labels[status] ?? '等待更新'
+ }
+ 
+ function operationTypeLabel(operation: MintOperation) {
+-  return operation.type
+-    .replaceAll('_', ' ')
+-    .replace(/^./, (character) => character.toUpperCase())
++  const labels: Record<string, string> = { model_generation: '模型生成', model_optimization: '模型优化' }
++  return labels[operation.type] ?? '模型操作'
+ }
+ 
+ function LogoutIcon() {
+@@ -1748,9 +1753,9 @@
+         role="dialog"
+       >
+         <div className="space-y-1">
+-          <h3 className="text-sm font-semibold" id="mint-logout-title">Log out {props.accountName}?</h3>
++          <h3 className="text-sm font-semibold" id="mint-logout-title">退出 {props.accountName} 的登录？</h3>
+           <p className="text-xs leading-relaxed text-sidebar-foreground/55">
+-            You’ll need to connect Mint again to create or place assets.
++            创建或放置资产时，需要重新连接 Mint。
+           </p>
+         </div>
+         <div className="grid grid-cols-2 gap-2">
+@@ -1761,7 +1766,7 @@
+             onClick={props.onCancel}
+             type="button"
+           >
+-            Cancel
++            取消
+           </button>
+           <button
+             className="rounded-lg bg-red-600 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
+@@ -1769,7 +1774,7 @@
+             onClick={props.onConfirm}
+             type="button"
+           >
+-            {props.busy ? 'Logging out…' : 'Log out'}
++            {props.busy ? "正在退出…" : "退出登录"}
+           </button>
+         </div>
+       </section>
+@@ -1782,7 +1787,7 @@
+     <div className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center text-sidebar-foreground">
+       {props.heroSrc ? (
+         <img
+-          alt="Mint 3D asset showcase"
++          alt="Mint 三维资产展示"
+           className="w-full rounded-xl border border-sidebar-border object-cover shadow-sm"
+           src={props.heroSrc}
+           style={{ aspectRatio: '3 / 2', maxWidth: '18rem' }}
+@@ -1810,16 +1815,16 @@
+       className="flex items-center gap-2 rounded-lg border border-red-500/50 bg-sidebar px-3 py-2 shadow-sm"
+       role="alert"
+     >
+-      <p className="min-w-0 flex-1 text-xs font-medium">An error occurred</p>
++      <p className="min-w-0 flex-1 text-xs font-medium">发生错误</p>
+       <button
+         className="shrink-0 rounded-md px-2 py-1 text-[11px] font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+         onClick={() => void navigator.clipboard.writeText(props.detail).catch(() => undefined)}
+         type="button"
+       >
+-        Copy error
++        复制错误详情
+       </button>
+       <button
+-        aria-label="Dismiss error"
++        aria-label="关闭错误提示"
+         className="flex size-6 shrink-0 items-center justify-center rounded-md text-base leading-none text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+         onClick={props.onDismiss}
+         type="button"
+diff --git a/src/server/index.test.ts b/src/server/index.test.ts
+--- a/src/server/index.test.ts
++++ b/src/server/index.test.ts
+@@ -23,7 +23,7 @@
+     expect(response.status).toBe(502)
+     expect(await response.json()).toEqual({
+       error: 'mint_unavailable',
+-      detail: 'Mint is temporarily unavailable.',
++      detail: 'Mint 暂时不可用。',
+     })
+   })
+ 
+@@ -165,7 +165,7 @@
+     expect(response.status).toBe(502)
+     expect(await response.json()).toEqual({
+       error: 'mint_unavailable',
+-      detail: 'Mint could not verify the current session.',
++      detail: 'Mint 无法验证当前会话。',
+     })
+     expect(setCookies(response)).toEqual([])
+   })
+diff --git a/src/server/index.ts b/src/server/index.ts
+--- a/src/server/index.ts
++++ b/src/server/index.ts
+@@ -254,7 +254,7 @@
+     !code
+   ) {
+     return json(
+-      { error: 'invalid_oauth_callback', detail: 'Mint sign-in could not be verified.' },
++      { error: 'invalid_oauth_callback', detail: "无法验证 Mint 登录。" },
+       400,
+       clearCookies(options, temporaryNames),
+     )
+@@ -269,7 +269,7 @@
+     ])
+   } catch {
+     return json(
+-      { error: 'oauth_exchange_failed', detail: 'Mint sign-in could not be completed.' },
++      { error: 'oauth_exchange_failed', detail: "无法完成 Mint 登录。" },
+       502,
+       clearCookies(options, [...temporaryNames, ACCESS_COOKIE, REFRESH_COOKIE]),
+     )
+@@ -323,10 +323,10 @@
+ 
+ async function proxyApi(request: Request, options: ResolvedOptions, path: string) {
+   if (!allowedApiPath(request.method, path)) {
+-    return json({ error: 'not_found', detail: 'This Mint plugin API route is not available.' }, 404)
++    return json({ error: 'not_found', detail: "此 Mint 插件接口不可用。" }, 404)
+   }
+   if (request.method === 'POST' && !sameOrigin(request, options)) {
+-    return json({ error: 'origin_mismatch', detail: 'The request origin was not accepted.' }, 403)
++    return json({ error: 'origin_mismatch', detail: "此请求的来源不被接受。" }, 403)
+   }
+ 
+   const requestUrl = new URL(request.url)
+@@ -344,7 +344,7 @@
+     ...(body ? { body } : {}),
+   })
+   if (!upstream.response) {
+-    return json({ error: 'session_expired', detail: 'Reconnect Mint to continue.' }, 401, upstream.cookies)
++    return json({ error: 'session_expired', detail: "请重新连接 Mint 以继续。" }, 401, upstream.cookies)
+   }
+ 
+   const responseHeaders = new Headers()
+@@ -373,7 +373,7 @@
+       return json({ connected: false }, 200, clearCookies(options))
+     }
+     return json(
+-      { error: 'mint_unavailable', detail: 'Mint could not verify the current session.' },
++      { error: 'mint_unavailable', detail: "Mint 无法验证当前会话。" },
+       502,
+       upstream.cookies,
+     )
+@@ -396,7 +396,7 @@
+ 
+ async function logout(request: Request, options: ResolvedOptions) {
+   if (!sameOrigin(request, options)) {
+-    return json({ error: 'origin_mismatch', detail: 'The request origin was not accepted.' }, 403)
++    return json({ error: 'origin_mismatch', detail: "此请求的来源不被接受。" }, 403)
+   }
+   const refreshToken = parseCookies(request).get(REFRESH_COOKIE)
+   if (refreshToken) {
+@@ -437,9 +437,9 @@
+     if (request.method === 'GET' && path === 'session') return await session(request, options)
+     if (request.method === 'POST' && path === 'logout') return await logout(request, options)
+     if (path.startsWith('api/')) return await proxyApi(request, options, path.slice(4))
+-    return json({ error: 'not_found', detail: 'Mint plugin route not found.' }, 404)
++    return json({ error: 'not_found', detail: "未找到 Mint 插件接口。" }, 404)
+   } catch {
+-    return json({ error: 'mint_unavailable', detail: 'Mint is temporarily unavailable.' }, 502)
++    return json({ error: 'mint_unavailable', detail: "Mint 暂时不可用。" }, 502)
+   }
+ }
+ 
+diff --git a/src/types.test.ts b/src/types.test.ts
+--- a/src/types.test.ts
++++ b/src/types.test.ts
+@@ -81,7 +81,7 @@
+   }
+ 
+   test('presents a user-friendly label and copyable support details', () => {
+-    expect(operationErrorLabel(failedOperation)).toBe('Temporary service issue')
++    expect(operationErrorLabel(failedOperation)).toBe("服务暂时异常")
+     expect(operationErrorReport(failedOperation)).toBe(
+       [
+         'Mint error: transient_generation_failure',
+diff --git a/src/types.ts b/src/types.ts
+--- a/src/types.ts
++++ b/src/types.ts
+@@ -108,21 +108,21 @@
+ const OPERATION_ERROR_CODE_PATTERN = /^[a-z][a-z0-9_]{1,79}$/
+ 
+ const OPERATION_ERROR_LABELS: Readonly<Record<string, string>> = {
+-  generation_interrupted: 'Generation interrupted',
+-  transient_generation_failure: 'Temporary service issue',
+-  moderation_blocked: 'Safety policy',
+-  quota_blocked: 'Credits unavailable',
+-  invalid_generation_input: 'Invalid input',
+-  generation_failed: 'Generation failed',
+-  start_failed: 'Start failed',
+-  optimization_not_started: 'Optimization unavailable',
+-  optimization_failed: 'Optimization failed',
++  generation_interrupted: "生成已中断",
++  transient_generation_failure: "服务暂时异常",
++  moderation_blocked: "安全政策限制",
++  quota_blocked: "积分不可用",
++  invalid_generation_input: "输入无效",
++  generation_failed: "生成失败",
++  start_failed: "启动失败",
++  optimization_not_started: "优化不可用",
++  optimization_failed: "优化失败",
+ }
+ 
+ export function operationErrorLabel(operation: MintOperation) {
+   const code = operation.error?.code
+   if (!code || !OPERATION_ERROR_CODE_PATTERN.test(code)) return null
+-  return OPERATION_ERROR_LABELS[code] ?? 'Generation error'
++  return OPERATION_ERROR_LABELS[code] ?? "生成错误"
+ }
+ 
+ export function operationErrorReport(operation: MintOperation) {

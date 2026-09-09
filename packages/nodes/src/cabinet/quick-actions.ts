@@ -1,0 +1,251 @@
+import type {
+  AnyNode,
+  AnyNodeId,
+  CabinetModuleNode,
+  CabinetNode,
+  IconRef,
+  NodeQuickAction,
+} from '@pascal-app/core'
+import { moduleSideOpen } from './run-layout'
+import {
+  addCabinetModuleSide,
+  addCornerRun,
+  addWallChildAbove,
+  CABINET_EDGE_EPSILON,
+  cabinetModulesForRun,
+  planCabinetModuleSideAddition,
+  previewCornerAdditionLayout,
+  resolveCabinetType,
+  switchCabinetToBase,
+  switchCabinetToTall,
+  wallChildAdditionOverlaps,
+  wallChildOf,
+} from './run-ops'
+
+type CabinetContext = {
+  run: CabinetNode
+  module: CabinetModuleNode | null
+}
+
+function resolveRunEndModule(
+  runModules: CabinetModuleNode[],
+  run: CabinetNode,
+  side: 'left' | 'right',
+): CabinetModuleNode | null {
+  const standardBaseModules = runModules.filter(
+    (module) => module.moduleKind === 'standard' && resolveCabinetType(module, run) === 'base',
+  )
+  if (standardBaseModules.length === 0) return null
+  return side === 'left' ? (standardBaseModules[0] ?? null) : (standardBaseModules.at(-1) ?? null)
+}
+
+// Lazy component IconRefs — the menus mount these behind Suspense, so the
+// glyph module loads only when a cabinet quick action is actually shown.
+const cabinetWallIcon: IconRef = {
+  kind: 'component',
+  module: () => import('./quick-action-icons').then((m) => ({ default: m.CabinetWallGlyph })),
+}
+const cabinetTallIcon: IconRef = {
+  kind: 'component',
+  module: () => import('./quick-action-icons').then((m) => ({ default: m.CabinetTallGlyph })),
+}
+const cabinetBaseIcon: IconRef = {
+  kind: 'component',
+  module: () => import('./quick-action-icons').then((m) => ({ default: m.CabinetBaseGlyph })),
+}
+const cornerTurnLeftIcon: IconRef = {
+  kind: 'component',
+  module: () => import('./quick-action-icons').then((m) => ({ default: m.CornerTurnLeftGlyph })),
+}
+const cornerTurnRightIcon: IconRef = {
+  kind: 'component',
+  module: () => import('./quick-action-icons').then((m) => ({ default: m.CornerTurnRightGlyph })),
+}
+function resolveCabinetContext(
+  node: AnyNode,
+  nodes: Readonly<Partial<Record<AnyNodeId, AnyNode>>>,
+): CabinetContext | null {
+  if (node.type === 'cabinet') return { run: node, module: null }
+  if (node.type !== 'cabinet-module' || !node.parentId) return null
+  const parent = nodes[node.parentId as AnyNodeId]
+  if (parent?.type === 'cabinet') return { run: parent, module: node }
+  return null
+}
+
+export function cabinetQuickActions({
+  node,
+  nodes,
+}: {
+  node: CabinetNode | CabinetModuleNode
+  nodes: Readonly<Partial<Record<AnyNodeId, AnyNode>>>
+}): NodeQuickAction[] {
+  const context = resolveCabinetContext(node, nodes)
+  if (!context) return []
+
+  const selectedCabinetType = context.module
+    ? resolveCabinetType(context.module, context.run)
+    : null
+  const standardModule = context.module == null || context.module.moduleKind === 'standard'
+  const hasWallCabinet =
+    context.module && standardModule && selectedCabinetType === 'base'
+      ? Boolean(wallChildOf(context.module, nodes))
+      : false
+  const wallAdditionBlocked =
+    context.module && standardModule && selectedCabinetType === 'base'
+      ? wallChildAdditionOverlaps(context.module, context.run, nodes)
+      : false
+  const runModules = cabinetModulesForRun(context.run, nodes)
+  const leftCornerModule =
+    context.module && standardModule && selectedCabinetType === 'base'
+      ? context.module
+      : resolveRunEndModule(runModules, context.run, 'left')
+  const rightCornerModule =
+    context.module && standardModule && selectedCabinetType === 'base'
+      ? context.module
+      : resolveRunEndModule(runModules, context.run, 'right')
+  const leftAvailable =
+    planCabinetModuleSideAddition({
+      anchorModule: context.module,
+      nodes,
+      run: context.run,
+      side: 'left',
+    }) != null
+  const rightAvailable =
+    planCabinetModuleSideAddition({
+      anchorModule: context.module,
+      nodes,
+      run: context.run,
+      side: 'right',
+    }) != null
+  const canAddCornerLeft =
+    leftCornerModule != null &&
+    context.run.runTier === 'base' &&
+    moduleSideOpen(runModules, leftCornerModule.id, 'left', CABINET_EDGE_EPSILON) &&
+    previewCornerAdditionLayout({
+      module: leftCornerModule,
+      run: context.run,
+      nodes,
+      side: 'left',
+    }) != null
+  const canAddCornerRight =
+    rightCornerModule != null &&
+    context.run.runTier === 'base' &&
+    moduleSideOpen(runModules, rightCornerModule.id, 'right', CABINET_EDGE_EPSILON) &&
+    previewCornerAdditionLayout({
+      module: rightCornerModule,
+      run: context.run,
+      nodes,
+      side: 'right',
+    }) != null
+
+  const actions: NodeQuickAction[] = []
+  const pushSideAction = (side: 'left' | 'right', disabled: boolean) => {
+    actions.push({
+      id: `cabinet:add-${side}`,
+      label: side === 'left' ? '左' : '右',
+      title: side === 'left' ? '向左添加橱柜' : '向右添加橱柜',
+      icon: side === 'left' ? 'add-left' : 'add-right',
+      disabled,
+      history: 'single',
+      run: ({ sceneApi }) => {
+        if (disabled) return undefined
+        const id = addCabinetModuleSide({
+          anchorModule: context.module,
+          run: context.run,
+          sceneApi,
+          side,
+        })
+        return id ? { selectedIds: [id] } : undefined
+      },
+    })
+  }
+  const pushCornerAction = (
+    module: CabinetModuleNode | null,
+    endSide: 'left' | 'right',
+    disabled: boolean,
+  ) => {
+    actions.push({
+      id: `cabinet:add-corner-${endSide}`,
+      label: endSide === 'left' ? '左转 L 形' : '右转 L 形',
+      title: endSide === 'left' ? '向左形成 L 形转角' : '向右形成 L 形转角',
+      icon: endSide === 'left' ? cornerTurnLeftIcon : cornerTurnRightIcon,
+      disabled,
+      history: 'single',
+      run: ({ sceneApi }) => {
+        if (disabled || !module) return undefined
+        const id = addCornerRun({
+          module,
+          run: context.run,
+          sceneApi,
+          side: endSide,
+        })
+        return id ? { selectedIds: [id] } : undefined
+      },
+    })
+  }
+
+  pushSideAction('left', !leftAvailable)
+
+  pushCornerAction(leftCornerModule, 'left', !canAddCornerLeft)
+
+  if (context.module) {
+    if (standardModule && selectedCabinetType === 'base') {
+      actions.push({
+        id: 'cabinet:add-wall',
+        label: '吊柜',
+        title: hasWallCabinet
+          ? '此柜上方已有吊柜'
+          : wallAdditionBlocked
+            ? '上方空间不足，会与现有吊柜重叠'
+            : '在上方添加吊柜',
+        icon: cabinetWallIcon,
+        disabled: hasWallCabinet || wallAdditionBlocked,
+        blockedFeedback: !hasWallCabinet && wallAdditionBlocked ? true : undefined,
+        run: ({ sceneApi }) => {
+          const id = addWallChildAbove({
+            kind: 'cabinet',
+            module: context.module!,
+            run: context.run,
+            sceneApi,
+          })
+          return id ? { selectedIds: [id] } : undefined
+        },
+      })
+      actions.push({
+        id: 'cabinet:to-tall',
+        label: '高柜',
+        title: '切换为高柜',
+        icon: cabinetTallIcon,
+        run: ({ sceneApi }) =>
+          switchCabinetToTall({
+            module: context.module!,
+            run: context.run,
+            sceneApi,
+          })
+            ? { selectedIds: [context.module!.id] }
+            : undefined,
+      })
+    } else if (standardModule) {
+      actions.push({
+        id: 'cabinet:to-base',
+        label: '底座',
+        title: '切换为地柜',
+        icon: cabinetBaseIcon,
+        run: ({ sceneApi }) =>
+          switchCabinetToBase({
+            module: context.module!,
+            run: context.run,
+            sceneApi,
+          })
+            ? { selectedIds: [context.module!.id] }
+            : undefined,
+      })
+    }
+  }
+
+  pushCornerAction(rightCornerModule, 'right', !canAddCornerRight)
+
+  pushSideAction('right', !rightAvailable)
+
+  return actions
+}
