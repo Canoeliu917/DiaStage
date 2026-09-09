@@ -27,7 +27,7 @@ Pascal-derived code is present in these areas:
 
 Each distributed Pascal package keeps its own `LICENSE` file. Original
 DiaStage additions within these directories are covered by
-[`COPYRIGHT.md`](COPYRIGHT.md) unless a file states otherwise.
+[`DIASTAGE_COPYRIGHT.md`](DIASTAGE_COPYRIGHT.md) unless a file states otherwise.
 
 ## Other third-party components
 
