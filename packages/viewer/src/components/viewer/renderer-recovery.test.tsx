@@ -71,6 +71,7 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
 
   mock.module('react', () => ({
     ...React,
+    useContext: () => false,
     forwardRef: (render: (props: Record<string, unknown>, ref: unknown) => unknown) => render,
     useState: <T,>(initial: T | (() => T)) => {
       const index = cursor++

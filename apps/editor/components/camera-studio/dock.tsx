@@ -63,6 +63,7 @@ export function CameraStudioDock({ sceneId }: { sceneId: string }) {
   const [starting, setStarting] = useState(false)
   const [encoding, setEncoding] = useState(false)
   const [resolution, setResolution] = useState('1280x720')
+  const [advanced, setAdvanced] = useState(false)
   const [lastVideo, setLastVideo] = useState<{ url: string; name: string } | null>(null)
   const [showVideo, setShowVideo] = useState(false)
   const recorder = useRef<ReturnType<typeof startCanvasRecording> | null>(null)
@@ -190,7 +191,7 @@ export function CameraStudioDock({ sceneId }: { sceneId: string }) {
       recorder.current = startCanvasRecording(current.canvas, {
         width,
         height,
-        fps: 30,
+        fps: 24,
         onError: (message) => {
           recorder.current = null
           setRecording(false)
@@ -310,10 +311,21 @@ export function CameraStudioDock({ sceneId }: { sceneId: string }) {
                   onChange={(e) => setResolution(e.target.value)}
                 >
                   <option value="1280x720">720p · 横屏</option>
-                  <option value="1920x1080">1080p · 横屏</option>
-                  <option value="1080x1920">1080p · 竖屏</option>
-                  <option value="1080x1080">1080p · 方形</option>
+                  <option value="720x1280">720p · 竖屏</option>
+                  {advanced && <option value="1920x1080">1080p · 横屏</option>}
+                  {advanced && <option value="1080x1920">1080p · 竖屏</option>}
                 </select>
+                <button
+                  type="button"
+                  aria-pressed={advanced}
+                  disabled={starting || recording || encoding}
+                  onClick={() => {
+                    setAdvanced(!advanced)
+                    if (advanced) setResolution('1280x720')
+                  }}
+                >
+                  高级设置
+                </button>
                 <button
                   className={`cs-record ${recording ? 'is-recording' : ''}`}
                   disabled={starting || encoding || !state.runtimeReady}

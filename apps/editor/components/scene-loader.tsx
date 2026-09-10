@@ -11,24 +11,37 @@ import {
   type SceneGraph,
   useEditor,
 } from '@pascal-app/editor'
-import { NeutralRenderEnvironment } from '@pascal-app/viewer'
+import { NeutralRenderEnvironment, StableRenderMode, ViewerErrorBoundary } from '@pascal-app/viewer'
 import dynamic from 'next/dynamic'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
+import { SceneJournal } from '@/lib/scene-journal'
 import { type PersistedSceneGraph, sceneGraphSignature } from '@/lib/scene-signature'
 import { THEATRE_METADATA_KEY } from '@/lib/theatre/scene-adapter'
 import { migrateStageDocument } from '@/lib/theatre/simulation'
 import { cn } from '@/lib/utils'
-import { CameraPersistence } from './camera-studio/persistence'
 import { validateCameraProject } from './camera-studio/model'
+import { CameraPersistence } from './camera-studio/persistence'
 import { StageCommandRuntime } from './stage-entry/runtime'
 
-const StagePlacementSystem = dynamic(() => import('./stage-entry/placement-system').then(m => m.StagePlacementSystem), { ssr: false })
-const StagePlacementFloorplan = dynamic(() => import('./stage-entry/placement-system').then(m => m.StagePlacementFloorplan), { ssr: false })
-const StagePlanPreviewSystem = dynamic(() => import('./stage-entry/plan-preview-system').then(m => m.StagePlanPreviewSystem), { ssr: false })
-const StageSelectionPanel = dynamic(() => import('./stage-entry/stage-selection-panel').then(m => m.StageSelectionPanel), { ssr: false })
+const StagePlacementSystem = dynamic(
+  () => import('./stage-entry/placement-system').then((m) => m.StagePlacementSystem),
+  { ssr: false },
+)
+const StagePlacementFloorplan = dynamic(
+  () => import('./stage-entry/placement-system').then((m) => m.StagePlacementFloorplan),
+  { ssr: false },
+)
+const StagePlanPreviewSystem = dynamic(
+  () => import('./stage-entry/plan-preview-system').then((m) => m.StagePlanPreviewSystem),
+  { ssr: false },
+)
+const StageSelectionPanel = dynamic(
+  () => import('./stage-entry/stage-selection-panel').then((m) => m.StageSelectionPanel),
+  { ssr: false },
+)
 
 const CameraRehearsalSystem = dynamic(
   () => import('./camera-rehearsal-system').then((m) => m.CameraRehearsalSystem),
@@ -105,13 +118,23 @@ function isLightPreviewQuery(searchParams: URLSearchParams): boolean {
 }
 
 export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
+  const [stableMode, setStableMode] = useState(true)
+  useEffect(() => {
+    try {
+      setStableMode(localStorage.getItem('diastage:stable-mode') !== 'false')
+    } catch {
+      /* Default remains stable. */
+    }
+  }, [])
+  const journal = useMemo(() => new SceneJournal(meta.id), [meta.id])
+  const needsRecoverySync = useRef(false)
+  const syncConflict = useRef(false)
   const { group, onGroupChange, sidebarTabs } = useStudioSidebar(meta.id)
   const { document } = useTheatreDocument()
   const activePanel = useEditor((state) => state.activeSidebarPanel)
   const cameraEnabled = ['stage-cameras', 'observe', 'record', 'display'].includes(activePanel)
   const recordingEnabled =
     group === 'rehearse' && ['observe', 'record', 'camera-rehearsal'].includes(activePanel)
-  const router = useRouter()
   const searchParams = useSearchParams()
   const initialWorkspace = useRef(searchParams.get('workspace'))
   useEffect(() => {
@@ -136,8 +159,24 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [stageReady, setStageReady] = useState(false)
   const handleLoaderChange = useCallback((visible: boolean) => setStageReady(!visible), [])
+  const exportBackup = useCallback(() => {
+    const url = URL.createObjectURL(
+      new Blob([sceneGraphSignature(useScene.getState())], { type: 'application/json' }),
+    )
+    const link = window.document.createElement('a')
+    link.href = url
+    link.download = `DiaStage-${meta.id}-本机备份.json`
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }, [meta.id])
+  useEffect(() => {
+    if (stageReady && needsRecoverySync.current) {
+      needsRecoverySync.current = false
+      window.dispatchEvent(new Event('scene:retry-save'))
+    }
+  }, [stageReady])
 
-  const lightPreview = isLightPreviewQuery(searchParams)
+  const lightPreview = stableMode || isLightPreviewQuery(searchParams)
   const sceneLoadKey = `${meta.id}:${meta.version}`
 
   useEffect(() => {
@@ -156,7 +195,9 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
 
   const handleLoad = useCallback(async () => {
     const graph = structuredClone(archiveLegacyLighting(initialScene))
-    const site = graph.rootNodeIds.map(id => SiteNode.safeParse(graph.nodes[id])).find(result => result.success)?.data
+    const site = graph.rootNodeIds
+      .map((id) => SiteNode.safeParse(graph.nodes[id]))
+      .find((result) => result.success)?.data
     if (site && site.metadata.diastageCameraStudio === undefined) {
       try {
         const saved = localStorage.getItem(`camera-studio:v1:${meta.id}`)
@@ -164,13 +205,39 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
           site.metadata.diastageCameraStudio = validateCameraProject(JSON.parse(saved))
           graph.nodes[site.id] = site
         }
-      } catch { /* Keep unreadable legacy camera cache intact. */ }
+      } catch {
+        /* Keep unreadable legacy camera cache intact. */
+      }
     }
-    return graph
-  }, [initialScene, meta.id])
+    const recovered = await journal.recover(graph, meta.version)
+    localDirtyRef.current = recovered.pending
+    needsRecoverySync.current = recovered.pending
+    syncConflict.current = recovered.conflict
+    setConflict(recovered.conflict)
+    if (recovered.pending) setSaveStatus('local-saved')
+    return recovered.graph
+  }, [initialScene, meta.id, meta.version, journal])
+
+  const handleLocalSave = useCallback(
+    async (graph: SceneGraph) => {
+      try {
+        await journal.append(graph)
+      } catch (error) {
+        setSaveError(
+          error instanceof DOMException && error.name === 'QuotaExceededError'
+            ? '本机空间不足，最新操作尚未写入；已保存事务仍保留。请先导出备份，再释放空间并重试。'
+            : `本机保存失败：${error instanceof Error ? error.message : '无法写入事务日志'}。请保留页面并导出备份。`,
+        )
+        throw error
+      }
+    },
+    [journal],
+  )
 
   const handleSave = useCallback(
-    async (graph: SceneGraph, options?: { keepalive?: boolean }) => {
+    async (graph: SceneGraph) => {
+      if (syncConflict.current) throw new Error('版本冲突；本机事务已保留')
+      const journalGraph = graph
       const liveGraphJson = sceneGraphSignature(graph)
       let browserLighting: string | null = null
       try {
@@ -182,6 +249,9 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
       const graphJson = sceneGraphSignature(graph)
       if (lastRemoteGraphJsonRef.current === liveGraphJson) {
         lastRemoteGraphJsonRef.current = null
+        await journal.acknowledge(journalGraph, versionRef.current)
+        if (sceneGraphSignature(useScene.getState()) === liveGraphJson)
+          localDirtyRef.current = false
         return
       }
       // Only suppress the autosave generated by the remote apply itself.
@@ -222,14 +292,32 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
             'If-Match': String(versionRef.current),
           },
           body: JSON.stringify({ name, graph }),
-          // `keepalive` lets the request outlive a page unload (the autosave
-          // flush on refresh/close). Browsers cap keepalive bodies at 64KB, so
-          // only the unload flush opts in — normal debounced saves omit it and
-          // can carry arbitrarily large scenes.
-          keepalive: options?.keepalive,
+          signal: AbortSignal.timeout(20_000),
         })
 
         if (response.status === 409) {
+          // A response can be lost after a successful write. Full snapshots
+          // are idempotent: acknowledge an identical server result, never apply twice.
+          const remote = await fetch(`/api/scenes/${meta.id}`, {
+            cache: 'no-store',
+            signal: AbortSignal.timeout(10_000),
+          })
+          if (remote.ok) {
+            const stored = (await remote.json()) as {
+              graph: SceneGraph
+              version: number
+              nodeCount: number
+            }
+            if (sceneGraphSignature(stored.graph) === graphJson) {
+              versionRef.current = stored.version
+              serverNodeCountRef.current = stored.nodeCount
+              await journal.acknowledge(journalGraph, stored.version)
+              if (sceneGraphSignature(useScene.getState()) === liveGraphJson)
+                localDirtyRef.current = false
+              setSaveError(null)
+              return
+            }
+          }
           const body = (await response.json().catch(() => null)) as { error?: string } | null
           if (body?.error === 'empty_graph_rejected') {
             // Server-side wipe guard (defense in depth behind the client-side
@@ -240,6 +328,7 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
             throw new Error('已阻止空场景覆盖，请重新加载后重试')
           }
           setConflict(true)
+          syncConflict.current = true
           throw new Error('剧目已被其他窗口更新，请先处理版本冲突')
         }
 
@@ -250,6 +339,7 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
         const next = (await response.json()) as SceneMeta
         versionRef.current = Math.max(versionRef.current, next.version)
         serverNodeCountRef.current = next.nodeCount
+        await journal.acknowledge(journalGraph, next.version)
         if (sceneGraphSignature(useScene.getState()) === liveGraphJson)
           localDirtyRef.current = false
         setSaveError(null)
@@ -260,7 +350,7 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
         throw error
       }
     },
-    [meta.id, meta.name],
+    [meta.id, meta.name, journal],
   )
 
   useEffect(() => {
@@ -284,6 +374,7 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
       }
       if (localDirtyRef.current) {
         setConflict(true)
+        syncConflict.current = true
         return
       }
 
@@ -311,145 +402,188 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
 
   return (
     <NeutralRenderEnvironment.Provider value={true}>
-      <div className="studio-workspace" data-studio-group={group}>
-        <CameraPersistence sceneId={meta.id} />
-        <VersionViewSync />
-        <StageCommandRuntime sceneId={meta.id} rootId={initialScene.rootNodeIds[0]} applyPlan={stageReady && searchParams.get('applyPlan') === '1'} />
-        {conflict && (
-          <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-border bg-background p-4 shadow-xl">
-            <h2 className="font-semibold text-sm">此场景已在其他窗口更新</h2>
-            <p className="mt-1 text-muted-foreground text-xs">
-              当前修改尚未保存。重新加载以获取最新版本。
-            </p>
-            <div className="mt-3 flex items-center gap-2">
+      <StableRenderMode.Provider value={stableMode}>
+        <div className="studio-workspace" data-studio-group={group}>
+          <CameraPersistence sceneId={meta.id} />
+          <VersionViewSync />
+          <StageCommandRuntime
+            sceneId={meta.id}
+            rootId={initialScene.rootNodeIds[0]}
+            applyPlan={stageReady && searchParams.get('applyPlan') === '1'}
+          />
+          {conflict && (
+            <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-border bg-background p-4 shadow-xl">
+              <h2 className="font-semibold text-sm">此场景已在其他窗口更新</h2>
+              <p className="mt-1 text-muted-foreground text-xs">
+                本机事务已保留，同步已暂停。请导出本机版本备份后处理差异；重新打开仍会恢复本机事务。
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  className="rounded-md border border-border bg-accent px-3 py-1.5 font-medium text-xs hover:bg-accent/80"
+                  onClick={exportBackup}
+                  type="button"
+                >
+                  导出本机版本
+                </button>
+                <button
+                  className="rounded-md border border-border bg-background px-3 py-1.5 font-medium text-xs hover:bg-accent/40"
+                  onClick={() => setConflict(false)}
+                  type="button"
+                >
+                  关闭提示
+                </button>
+              </div>
+            </div>
+          )}
+          {saveError && !conflict && (
+            <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-destructive/50 bg-background p-3 shadow-xl">
+              <p className="font-medium text-destructive text-xs">{saveError}</p>
               <button
-                className="rounded-md border border-border bg-accent px-3 py-1.5 font-medium text-xs hover:bg-accent/80"
-                onClick={() => router.refresh()}
                 type="button"
+                className="mt-2 border px-3 py-1 text-xs"
+                onClick={() => {
+                  window.dispatchEvent(new Event('scene:retry-save'))
+                }}
               >
-                重新加载
+                重试保存
               </button>
               <button
-                className="rounded-md border border-border bg-background px-3 py-1.5 font-medium text-xs hover:bg-accent/40"
-                onClick={() => setConflict(false)}
                 type="button"
+                className="mt-2 ml-2 border px-3 py-1 text-xs"
+                onClick={exportBackup}
               >
-                关闭提示
+                导出备份
               </button>
             </div>
-          </div>
-        )}
-        {saveError && !conflict && (
-          <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-destructive/50 bg-background p-3 shadow-xl">
-            <p className="font-medium text-destructive text-xs">{saveError}</p>
-            <button
-              type="button"
-              className="mt-2 border px-3 py-1 text-xs"
-              onClick={() => {
-                const { nodes, rootNodeIds, collections, materials, installedPlugins } =
-                  useScene.getState()
-                setSaveStatus('saving')
-                void handleSave({ nodes, rootNodeIds, collections, materials, installedPlugins })
-                  .then(() => setSaveStatus('saved'))
-                  .catch(() => setSaveStatus('error'))
-              }}
-            >
-              重试保存
-            </button>
-          </div>
-        )}
-        <div className="relative min-h-0 flex-1">
-          <Editor
-            navbarSlot={
-              <StudioNavigation
-                sceneName={document?.production.name ?? meta.name}
-                group={group}
-                onGroupChange={onGroupChange}
-                actions={
-                  <>
-                    <span className="studio-save-status" role="status">
-                      {
-                        {
-                          idle: '自动保存',
-                          pending: '待保存',
-                          saving: '保存中…',
-                          saved: '已保存',
-                          paused: '保存已暂停',
-                          error: '保存失败',
-                        }[saveStatus]
-                      }
-                    </span>
-                    <button
-                      aria-pressed={lightPreview}
-                      className={cn(
-                        'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
-                        lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
-                      )}
-                      onClick={() =>
-                        router.push(
-                          lightPreview ? `/scene/${meta.id}` : `/scene/${meta.id}?disable=postFx`,
-                        )
-                      }
-                      title="关闭后期处理以降低显卡负担；环境光遮蔽和选择轮廓将停用"
-                      type="button"
-                    >
-                      轻量显示
-                    </button>
-                  </>
-                }
-              />
-            }
-            disablePostFx={lightPreview}
-            layoutVersion="v2"
-            selectionPanelSlot={<StageSelectionPanel />}
-            onLoad={handleLoad}
-            onLoaderChange={handleLoaderChange}
-            sceneLoadKey={sceneLoadKey}
-            onSave={handleSave}
-            onDirty={() => {
-              if (!applyingRemoteRef.current) localDirtyRef.current = true
-            }}
-            onSaveStatusChange={setSaveStatus}
-            projectId={meta.projectId ?? 'default'}
-            viewerRuntimeSlot={
-              <>
-                {recordingEnabled && <CameraStudioRuntime />}
-                <TheatreRuntime enabled={group !== 'remount'} />
-              </>
-            }
-            viewerSceneSlot={
-              <>
-                {group === 'remount' && <RemountPreviewSystem sceneId={meta.id} />}
-                {cameraEnabled && <CameraStageSystem enabled />}
-                <StagePlacementSystem enabled={group === 'set'} />
-                <StagePlanPreviewSystem enabled={group === 'set'} />
-              </>
-            }
-            studioSceneSlot={recordingEnabled ? <CameraRehearsalSystem sceneId={meta.id} /> : null}
-            floorplanSceneSlot={
-              <>
-                <TheatreFloorplan enabled={group !== 'remount'} />
-                {cameraEnabled && <CameraStageFloorplan enabled />}
-                <StagePlacementFloorplan enabled={group === 'set'} />
-              </>
-            }
-            sidebarTabs={sidebarTabs}
-            sidebarTopSlot={<StageOverviewPanel key={meta.id} sceneId={meta.id} />}
-            showPluginPanels={false}
-            showLevelSelector={false}
-            viewerToolbarLeft={<CommunityViewerToolbarLeft />}
-            viewerToolbarRight={<CommunityViewerToolbarRight />}
-          />
-          {cameraEnabled && (
-            <CameraMonitor
-              enabled={cameraEnabled}
-              className="absolute right-4 bottom-4 z-30 max-w-[calc(100%-400px)]"
-            />
           )}
+          <div className="relative min-h-0 flex-1">
+            <Editor
+              navbarSlot={
+                <StudioNavigation
+                  sceneName={document?.production.name ?? meta.name}
+                  group={group}
+                  onGroupChange={onGroupChange}
+                  actions={
+                    <>
+                      <span className="studio-save-status" role="status">
+                        {
+                          {
+                            idle: '自动保存',
+                            pending: '待保存',
+                            'local-saved': '本机已保存',
+                            saving: '保存中…',
+                            saved: '本机已保存 · 已同步',
+                            paused: '保存已暂停',
+                            error: '保存失败',
+                          }[saveStatus]
+                        }
+                      </span>
+                      <button
+                        aria-pressed={stableMode}
+                        className={cn(
+                          'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
+                          lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
+                        )}
+                        onClick={() => {
+                          setStableMode(!stableMode)
+                          try {
+                            localStorage.setItem('diastage:stable-mode', String(!stableMode))
+                          } catch {
+                            /* Session choice still applies. */
+                          }
+                        }}
+                        title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据与复台计算"
+                        type="button"
+                      >
+                        稳定模式
+                      </button>
+                    </>
+                  }
+                />
+              }
+              disablePostFx={lightPreview}
+              layoutVersion="v2"
+              selectionPanelSlot={<StageSelectionPanel />}
+              onLoad={handleLoad}
+              onLoaderChange={handleLoaderChange}
+              sceneLoadKey={sceneLoadKey}
+              onSave={handleSave}
+              onLocalSave={handleLocalSave}
+              onDirty={() => {
+                if (!applyingRemoteRef.current) localDirtyRef.current = true
+              }}
+              onSaveStatusChange={setSaveStatus}
+              projectId={meta.projectId ?? 'default'}
+              viewerRuntimeSlot={
+                <>
+                  {recordingEnabled && (
+                    <ViewerErrorBoundary fallback={null} scope="recording-runtime">
+                      <CameraStudioRuntime />
+                    </ViewerErrorBoundary>
+                  )}
+                  <TheatreRuntime enabled={group !== 'remount'} />
+                </>
+              }
+              viewerSceneSlot={
+                <>
+                  {group === 'remount' && (
+                    <ViewerErrorBoundary fallback={null} scope="remount-preview">
+                      <RemountPreviewSystem sceneId={meta.id} />
+                    </ViewerErrorBoundary>
+                  )}
+                  {cameraEnabled && (
+                    <ViewerErrorBoundary fallback={null} scope="camera-stage">
+                      <CameraStageSystem enabled />
+                    </ViewerErrorBoundary>
+                  )}
+                  <StagePlacementSystem enabled={group === 'set'} />
+                  <StagePlanPreviewSystem enabled={group === 'set'} />
+                </>
+              }
+              studioSceneSlot={
+                recordingEnabled ? (
+                  <ViewerErrorBoundary fallback={null} scope="sequence-recording">
+                    <CameraRehearsalSystem sceneId={meta.id} />
+                  </ViewerErrorBoundary>
+                ) : null
+              }
+              floorplanSceneSlot={
+                <>
+                  <TheatreFloorplan enabled={group !== 'remount'} />
+                  {cameraEnabled && <CameraStageFloorplan enabled />}
+                  <StagePlacementFloorplan enabled={group === 'set'} />
+                </>
+              }
+              sidebarTabs={sidebarTabs}
+              sidebarTopSlot={<StageOverviewPanel key={meta.id} sceneId={meta.id} />}
+              showPluginPanels={false}
+              showLevelSelector={false}
+              viewerToolbarLeft={<CommunityViewerToolbarLeft />}
+              viewerToolbarRight={<CommunityViewerToolbarRight />}
+            />
+            {cameraEnabled && (
+              <ViewerErrorBoundary
+                fallback={<p role="alert">监看已暂停，场景仍可编辑。</p>}
+                scope="camera-monitor"
+              >
+                <CameraMonitor
+                  enabled={cameraEnabled}
+                  className="absolute right-4 bottom-4 z-30 max-w-[calc(100%-400px)]"
+                />
+              </ViewerErrorBoundary>
+            )}
+          </div>
+          {recordingEnabled && (
+            <ViewerErrorBoundary
+              fallback={<p role="alert">录像已暂停，场景仍可编辑。</p>}
+              scope="recording"
+            >
+              <CameraStudioDock sceneId={meta.id} />
+            </ViewerErrorBoundary>
+          )}
+          <RehearsalTransport enabled={group === 'rehearse'} sceneId={meta.id} />
         </div>
-        {recordingEnabled && <CameraStudioDock sceneId={meta.id} />}
-        <RehearsalTransport enabled={group === 'rehearse'} sceneId={meta.id} />
-      </div>
+      </StableRenderMode.Provider>
     </NeutralRenderEnvironment.Provider>
   )
 }

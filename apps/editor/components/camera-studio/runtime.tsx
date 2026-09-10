@@ -11,9 +11,9 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { useEditor } from '@pascal-app/editor'
-import { useViewer } from '@pascal-app/viewer'
+import { useIsolatedFrame as useFrame, useViewer } from '@pascal-app/viewer'
 import type { CameraControlsImpl } from '@react-three/drei'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import { type Object3D, PerspectiveCamera, Vector3 } from 'three'
 import { type CameraKeyframe, type Shot, sampleMotion, sampleShot, type Vec3 } from './model'

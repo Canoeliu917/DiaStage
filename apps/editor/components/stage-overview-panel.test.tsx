@@ -50,9 +50,13 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   })
   mock.module('react', () => ({
     ...React,
+    memo: <T,>(component: T) => component,
+    useRef: <T,>(current: T) => ({ current }),
+    useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
     useMemo: <T,>(factory: () => T) => factory(),
     useState: <T,>(initial: T) => [initial, () => {}],
   }))
+  mock.module('zustand/react/shallow', () => ({ useShallow: <T,>(selector: T) => selector }))
   mock.module('@pascal-app/core', () => ({
     ...core,
     useScene: Object.assign(

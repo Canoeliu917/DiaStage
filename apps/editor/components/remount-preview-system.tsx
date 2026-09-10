@@ -9,9 +9,9 @@ import {
   type VenueProfile,
 } from '@pascal-app/core/remount'
 import { useEditor, useInteractionScope } from '@pascal-app/editor'
-import { OVERLAY_LAYER, useViewer } from '@pascal-app/viewer'
+import { OVERLAY_LAYER, useIsolatedFrame as useFrame, useViewer } from '@pascal-app/viewer'
 import type { CameraControlsImpl } from '@react-three/drei'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import {
   Box3,
@@ -118,6 +118,11 @@ function ScanReference({ nodeId }: { nodeId: string }) {
       meshes: new Map<Mesh, Mesh>(),
       current: new Set<Mesh>(),
       inverseParent: new Matrix4(),
+      nodes: undefined as unknown,
+      revision: -1,
+      source: undefined as Object3D | undefined,
+      children: -1,
+      visible: false,
     }
   }, [])
 
@@ -127,6 +132,20 @@ function ScanReference({ nodeId }: { nodeId: string }) {
     for (let ancestor: Object3D | null | undefined = source; ancestor; ancestor = ancestor.parent) {
       if (!ancestor.visible) visible = false
     }
+    const nodes = useScene.getState().nodes
+    if (
+      preview.nodes === nodes &&
+      preview.revision === sceneRegistry.revision &&
+      preview.source === source &&
+      preview.children === (source?.children.length ?? 0) &&
+      preview.visible === visible
+    )
+      return
+    preview.nodes = nodes
+    preview.revision = sceneRegistry.revision
+    preview.source = source
+    preview.children = source?.children.length ?? 0
+    preview.visible = visible
     preview.current.clear()
     preview.group.updateWorldMatrix(true, false)
     preview.inverseParent.copy(preview.group.matrixWorld).invert()

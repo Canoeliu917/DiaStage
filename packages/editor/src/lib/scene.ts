@@ -446,11 +446,7 @@ export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
 const LOCAL_STORAGE_KEY = 'pascal-editor-scene'
 
 export function saveSceneToLocalStorage(scene: SceneGraph): void {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(scene))
-  } catch {
-    // Swallow storage quota errors
-  }
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(scene))
 }
 
 export function loadSceneFromLocalStorage(): SceneGraph | null {

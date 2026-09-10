@@ -6,6 +6,7 @@ import useViewer from '../../store/use-viewer'
 type FrameLimiterProps = {
   fps?: number
   paused?: boolean
+  onError?: (error: unknown) => void
 }
 
 export type FrameClock = {
@@ -58,7 +59,9 @@ const DRAW_DISABLED =
       .map((s) => s.trim()),
   ).has('draw')
 
-const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false }) => {
+const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false, onError }) => {
+  const errorHandler = useRef(onError)
+  errorHandler.current = onError
   const { advance, set, frameloop: initFrameloop } = useThree()
   const nextFrameTimeRef = useRef(0)
   const renderer = useThree((state) => state.gl)
@@ -73,6 +76,17 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false })
     let raf: number | null = null
     let timer: ReturnType<typeof setInterval> | null = null
     let sizeSynced = false
+    let failed = false
+    const draw = (time: number) => {
+      if (failed) return
+      try {
+        syncSize()
+        timeSpan('frame-cpu', () => advance(time))
+      } catch (error) {
+        failed = true
+        errorHandler.current?.(error)
+      }
+    }
     const effectiveFps = Number.isFinite(fps) && fps > 0 ? fps : 50
     const interval = 1000 / effectiveFps
     function syncSize() {
@@ -83,17 +97,15 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false })
     }
     function tick(t: DOMHighResTimeStamp) {
       raf = requestAnimationFrame(tick)
-      syncSize()
       const frameTime = clock.sample(t, interval)
       if (frameTime === null) return
       nextFrameTimeRef.current = frameTime
-      timeSpan('frame-cpu', () => advance(frameTime))
+      draw(frameTime)
     }
     function kick() {
-      syncSize()
       const frameTime = clock.step(1 / 1000)
       nextFrameTimeRef.current = frameTime
-      timeSpan('frame-cpu', () => advance(frameTime))
+      draw(frameTime)
     }
     function onVisibilityChange() {
       if (document.visibilityState === 'visible') kick()
@@ -104,7 +116,7 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false })
       timer = setInterval(() => {
         const frameTime = clock.step(interval / 1000)
         nextFrameTimeRef.current = frameTime
-        timeSpan('frame-cpu', () => advance(frameTime))
+        draw(frameTime)
       }, interval)
     } else {
       // Kick off custom render loop

@@ -153,11 +153,11 @@ export const DEFAULT_CAMERA_DIRECTOR_STATE: CameraDirectorState = {
     keys: [],
   },
   output: {
-    preset: 'vertical',
-    width: OUTPUT_PRESETS.vertical.width,
-    height: OUTPUT_PRESETS.vertical.height,
-    fps: 30,
-    bitrateMbps: 12,
+    preset: 'landscape',
+    width: 1280,
+    height: 720,
+    fps: 24,
+    bitrateMbps: 4,
     safeFrame: false,
   },
   transport: {

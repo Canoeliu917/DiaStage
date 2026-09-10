@@ -42,6 +42,11 @@ import { PerfPanel } from './perf-panel'
 import { PointerRaycastLayers } from './pointer-raycast-layers'
 import PostProcessing, { DEFAULT_HOVER_STYLES, type HoverStyles } from './post-processing'
 import { RegisteredSystems } from './registered-systems'
+import {
+  stableRenderBudget,
+  useNeutralRenderEnvironment,
+  useStableRenderMode,
+} from './render-environment'
 import { SceneBvh } from './scene-bvh'
 import { SelectionManager } from './selection-manager'
 import { UnsupportedGpuViewerFallback } from './unsupported-gpu-fallback'
@@ -308,6 +313,13 @@ function SceneReadyTracker({
   return null
 }
 
+function PresentStairOpeningSystem() {
+  const hasStairs = useScene((state) =>
+    Object.values(state.nodes).some((node) => node.type === 'stair'),
+  )
+  return hasStairs ? <StairOpeningSystem /> : null
+}
+
 interface ViewerProps {
   children?: React.ReactNode
   hoverStyles?: HoverStyles
@@ -401,6 +413,10 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
   },
   ref,
 ) {
+  const stable = useStableRenderMode()
+  const neutral = useNeutralRenderEnvironment()
+  const coarse = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+  const budget = stableRenderBudget(coarse)
   useEffect(() => {
     if (nodeRegistry.size === 0) {
       console.warn(
@@ -527,8 +543,7 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
   // Coarse-pointer devices (phones/tablets) get a tighter DPR ceiling to keep
   // fragment-shader cost down — saves another ~30% over 1.5x on high-DPI mobile.
   // Desktops (fine pointer) keep the original 1.5 cap.
-  const maxDpr =
-    typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches ? 1.25 : 1.5
+  const maxDpr = stable ? budget.dpr : coarse ? 1.25 : 1.5
   const showGpuFallback = rendererInitFailed || deviceLost
   // When we can't mount the GPU canvas, the SceneReadyTracker never mounts and
   // the host editor would otherwise wait on its scene-readiness timeout. Signal
@@ -653,10 +668,14 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
         }}
         shadows={{
           type: THREE.PCFShadowMap,
-          enabled: shadowsEnabled,
+          enabled: shadowsEnabled && !stable && !neutral,
         }}
       >
-        <FrameLimiter fps={maxFps} paused={renderPaused} />
+        <FrameLimiter
+          fps={stable ? Math.min(maxFps, budget.fps) : maxFps}
+          paused={renderPaused}
+          onError={() => setDeviceLost(true)}
+        />
         <ViewerCamera />
         <PointerRaycastLayers />
         <GPUDeviceWatcher />
@@ -691,12 +710,12 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
           <GeometrySystem />
           {/* Automated stair opening sync — updates slab/ceiling cutouts
             whenever stairs, slabs, or levels change. */}
-          <StairOpeningSystem />
+          <PresentStairOpeningSystem />
           {/* Mounts systems contributed by registry-backed kinds. Each
             kind's `def.system` is loaded via lazy() and rendered here,
             ordered by `system.priority`. */}
           <RegisteredSystems />
-          <PostProcessing disablePostFx={disablePostFx} hoverStyles={hoverStyles} />
+          <PostProcessing disablePostFx={disablePostFx || stable} hoverStyles={hoverStyles} />
           {selectionManager === 'default' && <SelectionManager />}
           {(perf || PERF_OVERLAY_ENABLED) && <PerfMonitor />}
           {/* Feeds the action-cost ledger the frame's settle state (dirty

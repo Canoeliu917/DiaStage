@@ -4,7 +4,7 @@
 // into viewer's internal paths.
 
 export type { SurfaceRole } from '@pascal-app/core'
-export { ErrorBoundary } from './components/error-boundary'
+export { ErrorBoundary, ErrorBoundary as ViewerErrorBoundary } from './components/error-boundary'
 // Stage A wrap-exports for the rest of the kinds — `@pascal-app/nodes`
 // registers each via `def.renderer` (and `def.system` when present)
 // Generic dispatch component used by recursive renderers (e.g. level →
@@ -52,10 +52,11 @@ export {
   DEFAULT_HOVER_STYLES,
   SSGI_PARAMS,
 } from './components/viewer/post-processing'
-export { NeutralRenderEnvironment } from './components/viewer/render-environment'
+export { NeutralRenderEnvironment, StableRenderMode } from './components/viewer/render-environment'
 export { SceneEnvironment } from './components/viewer/scene-environment'
 export { useAssetUrl } from './hooks/use-asset-url'
 export { useGLTFKTX2 } from './hooks/use-gltf-ktx2'
+export { useIsolatedFrame } from './hooks/use-isolated-frame'
 export { useLibraryMaterialsVersion } from './hooks/use-library-materials-version'
 export { useNodeEvents } from './hooks/use-node-events'
 export { ASSETS_CDN_URL, resolveAssetUrl, resolveCdnUrl } from './lib/asset-url'

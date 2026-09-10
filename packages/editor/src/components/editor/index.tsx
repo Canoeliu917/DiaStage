@@ -21,10 +21,12 @@ import {
   Viewer,
 } from '@pascal-app/viewer'
 import {
+  lazy,
   memo,
   Profiler,
   type ProfilerOnRenderCallback,
   type ReactNode,
+  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -46,11 +48,7 @@ import { type CameraHintAction, useCameraHintFocus } from '../../store/use-camer
 import useEditor from '../../store/use-editor'
 import useFloorplanMode from '../../store/use-floorplan-mode'
 import useSessionGroups from '../../store/use-session-groups'
-import { CeilingSelectionAffordanceSystem } from '../systems/ceiling/ceiling-selection-affordance-system'
-import { CeilingSystem } from '../systems/ceiling/ceiling-system'
-import { RoofEditSystem } from '../systems/roof/roof-edit-system'
 import { SelectionAffordanceManager } from '../systems/selection-affordance-manager'
-import { StairEditSystem } from '../systems/stair/stair-edit-system'
 import { ZoneLabelEditorSystem } from '../systems/zone/zone-label-editor-system'
 import { ZoneSystem } from '../systems/zone/zone-system'
 import { BoxSelectTool } from '../tools/select/box-select-tool'
@@ -127,6 +125,45 @@ const EDITOR_HOVER_STYLES: HoverStyles = {
   },
 }
 const EDITOR_DEFAULT_RENDER = { shading: 'solid' } as const
+const CeilingSystem = lazy(() =>
+  import('../systems/ceiling/ceiling-system').then((m) => ({ default: m.CeilingSystem })),
+)
+const CeilingSelectionAffordanceSystem = lazy(() =>
+  import('../systems/ceiling/ceiling-selection-affordance-system').then((m) => ({
+    default: m.CeilingSelectionAffordanceSystem,
+  })),
+)
+const RoofEditSystem = lazy(() =>
+  import('../systems/roof/roof-edit-system').then((m) => ({ default: m.RoofEditSystem })),
+)
+const StairEditSystem = lazy(() =>
+  import('../systems/stair/stair-edit-system').then((m) => ({ default: m.StairEditSystem })),
+)
+function LegacyEditingSystems() {
+  const hasCeiling = useScene((s) => Object.values(s.nodes).some((n) => n.type === 'ceiling'))
+  const hasRoof = useScene((s) => Object.values(s.nodes).some((n) => n.type === 'roof'))
+  const hasStair = useScene((s) => Object.values(s.nodes).some((n) => n.type === 'stair'))
+  return (
+    <>
+      {hasCeiling && (
+        <Suspense fallback={null}>
+          <CeilingSystem />
+          <CeilingSelectionAffordanceSystem />
+        </Suspense>
+      )}
+      {hasRoof && (
+        <Suspense fallback={null}>
+          <RoofEditSystem />
+        </Suspense>
+      )}
+      {hasStair && (
+        <Suspense fallback={null}>
+          <StairEditSystem />
+        </Suspense>
+      )}
+    </>
+  )
+}
 
 /**
  * Wire up module-level singletons (spatial grid, space detection, SFX) for
@@ -207,6 +244,7 @@ export interface EditorProps {
   /** Stable persisted source identity; prevents UI refreshes from reloading an older snapshot. */
   sceneLoadKey?: string
   onSave?: (scene: SceneGraph, options?: { keepalive?: boolean }) => Promise<void>
+  onLocalSave?: (scene: SceneGraph) => Promise<void>
   onDirty?: () => void
   onSaveStatusChange?: (status: SaveStatus) => void
 
@@ -818,11 +856,8 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!isFirstPersonMode && <WallMeasurementLabel />}
       <ExportManager />
       {isFirstPersonMode ? <ViewerZoneSystem /> : <ZoneSystem />}
-      <CeilingSystem />
-      <CeilingSelectionAffordanceSystem />
+      <LegacyEditingSystems />
       {!noEditing && <SelectionAffordanceManager />}
-      <RoofEditSystem />
-      <StairEditSystem />
       {!(isLoading || isFirstPersonMode) && <SnapAwareGrid />}
       {!(isLoading || noEditing) && <ToolManager />}
       {isFirstPersonMode && <FirstPersonControls />}
@@ -1260,6 +1295,7 @@ function EditorContent({
   onLoad,
   sceneLoadKey,
   onSave,
+  onLocalSave,
   onDirty,
   onSaveStatusChange,
   previewScene,
@@ -1285,6 +1321,7 @@ function EditorContent({
 
   const { isLoadingSceneRef } = useAutoSave({
     onSave,
+    onLocalSave,
     onDirty,
     onSaveStatusChange,
     isVersionPreviewMode,
@@ -1340,7 +1377,8 @@ function EditorContent({
       sceneLoadKey !== undefined &&
       loadedSourceRef.current?.key === sceneLoadKey &&
       loadedSourceRef.current.attempt === sceneLoadAttempt
-    ) return
+    )
+      return
     let cancelled = false
 
     async function load() {
@@ -1359,9 +1397,8 @@ function EditorContent({
         const sceneGraph = onLoad ? await onLoad() : loadSceneFromLocalStorage()
         if (!cancelled) {
           applySceneGraphToEditor(sceneGraph)
-          loadedSourceRef.current = sceneLoadKey === undefined
-            ? null
-            : { key: sceneLoadKey, attempt: sceneLoadAttempt }
+          loadedSourceRef.current =
+            sceneLoadKey === undefined ? null : { key: sceneLoadKey, attempt: sceneLoadAttempt }
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
@@ -1504,9 +1541,7 @@ function EditorContent({
     >
       <ExportManager />
       <ViewerZoneSystem />
-      <CeilingSystem />
-      <RoofEditSystem />
-      <StairEditSystem />
+      <LegacyEditingSystems />
       {isFirstPersonMode && <FirstPersonControls />}
       <CustomCameraControls />
       <ThumbnailGenerator onThumbnailCapture={onThumbnailCapture} />
@@ -1627,7 +1662,9 @@ function EditorContent({
                           inspectorFooter={inspectorFooter}
                           multiSelectionFooter={multiSelectionFooter}
                         />
-                      ) : selectionPanelSlot}
+                      ) : (
+                        selectionPanelSlot
+                      )}
                     </div>
                   )}
                   {!isCaptureMode && (

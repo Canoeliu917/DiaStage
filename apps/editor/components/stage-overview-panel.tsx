@@ -4,20 +4,36 @@ import { type AnyNodeId, emitter, useScene } from '@pascal-app/core'
 import { routeTreeSelectionToNode, useEditor, useInteractionScope } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Crosshair, Eye, EyeOff, Search, Settings2 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState, useSyncExternalStore } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { editStageDocument } from '@/lib/theatre/simulation-store'
 import { useCameraStudio } from './camera-studio/store'
 import { buildStageRows, getStageNodeSelection } from './stage-overview-data'
 import { openStudioPanel } from './studio-navigation'
 import { useSimulationSelection, useStageDocument } from './theatre/simulation-panel'
 import './stage-overview.css'
-import { getCameraDirectorState, useCameraDirectorState } from '@/lib/camera-director'
+import { getCameraDirectorState, subscribeCameraDirector } from '@/lib/camera-director'
 
-export function StageOverviewPanel({ sceneId }: { sceneId: string }) {
+export const StageOverviewPanel = memo(function StageOverviewPanel({
+  sceneId,
+}: {
+  sceneId: string
+}) {
   const nodes = useScene((s) => s.nodes)
   const readOnly = useScene((s) => s.readOnly)
   const selection = useViewer((s) => s.selection)
-  const camera = useCameraStudio()
+  const camera = useCameraStudio(
+    useShallow((s) => ({
+      project: s.project,
+      showStageCameras: s.showStageCameras,
+      recording: s.recording,
+      playing: s.playing,
+      previewing: s.previewing,
+      selectShot: s.selectShot,
+      focusStageCamera: s.focusStageCamera,
+      setShowStageCameras: s.setShowStageCameras,
+    })),
+  )
   const { document } = useStageDocument()
   const exclusive = useEditor((s) => s.isCaptureMode || s.isFirstPersonMode)
   const interactionBusy = useInteractionScope((s) => s.scope.kind !== 'idle')
@@ -25,9 +41,13 @@ export function StageOverviewPanel({ sceneId }: { sceneId: string }) {
   const [filter, setFilter] = useState('all')
   const [notice, setNotice] = useState('')
   const rows = useMemo(() => buildStageRows(nodes), [nodes])
-  const director = useCameraDirectorState(sceneId)
+  const directorBusy = useSyncExternalStore(
+    (listener) => subscribeCameraDirector(sceneId, listener),
+    () => getCameraDirectorState(sceneId).transport.status !== 'idle',
+    () => false,
+  )
   const busy =
-    director.transport.status !== 'idle' ||
+    directorBusy ||
     exclusive ||
     interactionBusy ||
     camera.recording ||
@@ -216,4 +236,4 @@ export function StageOverviewPanel({ sceneId }: { sceneId: string }) {
       </footer>
     </section>
   )
-}
+})
