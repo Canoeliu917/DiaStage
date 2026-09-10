@@ -1,6 +1,5 @@
 import {
   type SceneContextSummary,
-  type StageCommand,
   StageCommandSchema,
   type StagePlan,
   validateStagePlan,
@@ -19,7 +18,7 @@ export interface CreationLease {
 export function creationDecision(
   lease: CreationLease | null,
   projectId: string,
-  commands: StageCommand[],
+  commands: unknown,
   now = Date.now(),
   maxNodes = 20,
 ): 'confirm' | 'execute' | 'draft' {

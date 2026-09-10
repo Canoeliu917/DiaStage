@@ -45,7 +45,7 @@ export function PhoneVoiceLink({
   const [localOnly, setLocalOnly] = useState(false)
   const [insecureAddress, setInsecureAddress] = useState(false)
   const details = useRef<HTMLDetailsElement>(null)
-  const completedSequence = useRef(0)
+  const completed = useRef<HandledCommand | null>(null)
   const disconnectCallback = useRef(onDisconnect)
   disconnectCallback.current = onDisconnect
   const ownerStorageKey = `diastage:remote-voice-owner:${storageKey}`
@@ -150,6 +150,7 @@ export function PhoneVoiceLink({
         '无法建立手机连接，请检查网络后重试。',
       )
       setSession(result.session)
+      completed.current = null
       sessionStorage.setItem(ownerStorageKey, JSON.stringify(result.session))
       setPaired(false)
       setIncoming(null)
@@ -167,13 +168,13 @@ export function PhoneVoiceLink({
     setError('')
     try {
       const summary =
-        handled?.sequence === command.sequence
-          ? handled.summary
+        completed.current?.sequence === command.sequence
+          ? completed.current.summary
           : disposition === 'loaded'
             ? await onTranscript(command.transcript)
             : '已忽略，没有修改舞台'
       setHandled({ sequence: command.sequence, disposition, summary })
-      completedSequence.current = command.sequence
+      completed.current = { sequence: command.sequence, disposition, summary }
       const response = await fetch(`/api/remote-voice/sessions/${session.id}/commands`, {
         method: 'PATCH',
         headers: {
@@ -205,7 +206,7 @@ export function PhoneVoiceLink({
   useEffect(() => {
     if (
       incoming &&
-      incoming.sequence > completedSequence.current &&
+      incoming.sequence > (completed.current?.sequence ?? 0) &&
       canLoad &&
       mode !== 'suggest' &&
       state === 'idle' &&

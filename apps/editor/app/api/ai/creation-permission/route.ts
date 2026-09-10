@@ -1,4 +1,4 @@
-import { aiPreflight, handleAiRequest, readJsonBody } from '@/lib/ai/api'
+import { AiError, aiPreflight, handleAiRequest, readJsonBody } from '@/lib/ai/api'
 import { CreationRequestSchema, handleCreationPermission } from '@/lib/ai/creation-permission'
 
 export const runtime = 'nodejs'
@@ -7,8 +7,9 @@ export function POST(request: Request) {
   let cookie: string | undefined
   let status = 200
   return handleAiRequest(request, async ({ signal }) => {
-    const input = CreationRequestSchema.parse(await readJsonBody(request, signal))
-    const result = handleCreationPermission(request, input)
+    const input = CreationRequestSchema.safeParse(await readJsonBody(request, signal))
+    if (!input.success) throw new AiError('PLAN_INVALID', '授权请求格式无效，请重新选择模式。', 422)
+    const result = handleCreationPermission(request, input.data)
     cookie = result.cookie
     status = result.status
     return result.body

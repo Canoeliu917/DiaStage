@@ -47,6 +47,8 @@ test('delete, venue changes, 21 objects and non-whitelist requests always requir
     Array.from({ length: 21 }, (_, n) => ({ ...commands[0]!, nodeId: `object-${n}` })),
   ]
   for (const batch of risky) expect(creationDecision(lease, 'project', batch, 0)).toBe('confirm')
+  for (const type of ['ClearScene', 'Remount', 'ExecuteCode', 'ImportAsset'])
+    expect(creationDecision(lease, 'project', [{ type, meta }], 0)).toBe('confirm')
 })
 test('draft accumulates changes without mutating original and compiles one final transaction', () => {
   const first = mergeDraftPlan(null, plan, context)
