@@ -12,56 +12,59 @@ import {
   readRemoteVoiceResponse,
 } from '@/lib/remote-voice/client'
 import { localControl } from '@/lib/stage/ai-controls'
+import { ScanTransfer } from './scan-transfer'
 
-type HandledCommand = {
-  sequence: number
-  disposition: RemoteVoiceDisposition
-  summary: string
-}
+export type RemoteVoiceReport = (
+  disposition: RemoteVoiceDisposition,
+  summary: string,
+) => Promise<void>
+const receiptSchema = z.strictObject({
+  sequence: z.number().int().positive(),
+  disposition: z.enum([
+    'received',
+    'processing',
+    'waiting-confirmation',
+    'applied',
+    'rejected',
+    'failed',
+  ]),
+  summary: z.string().max(300),
+})
+type Receipt = z.infer<typeof receiptSchema>
+const terminal = (value: RemoteVoiceDisposition) =>
+  ['applied', 'rejected', 'failed'].includes(value)
 
 export function PhoneVoiceLink({
+  sceneId,
   sceneLabel,
   storageKey,
   canLoad,
   onTranscript,
   onDisconnect,
-  mode = 'suggest',
 }: {
+  sceneId?: string
   sceneLabel: string
   storageKey: string
   canLoad: boolean
-  onTranscript: (transcript: string) => Promise<string>
+  onTranscript: (
+    command: RemoteVoiceCommand,
+    report: RemoteVoiceReport,
+    sessionId: string,
+  ) => Promise<void>
   onDisconnect?: () => void
-  mode?: 'suggest' | 'create' | 'draft'
 }) {
   const [session, setSession] = useState<CreatedRemoteVoiceSession | null>(null)
-  const [paired, setPaired] = useState(false)
+  const [connection, setConnection] = useState('等待配对')
   const [incoming, setIncoming] = useState<RemoteVoiceCommand | null>(null)
-  const [handled, setHandled] = useState<HandledCommand | null>(null)
-  const [state, setState] = useState<'idle' | 'creating' | 'acknowledging'>('idle')
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [copied, setCopied] = useState(false)
-  const [remoteAddress, setRemoteAddress] = useState('')
+  const [address, setAddress] = useState('')
   const [localOnly, setLocalOnly] = useState(false)
-  const [insecureAddress, setInsecureAddress] = useState(false)
-  const details = useRef<HTMLDetailsElement>(null)
-  const completed = useRef<HandledCommand | null>(null)
-  const disconnectCallback = useRef(onDisconnect)
-  disconnectCallback.current = onDisconnect
-  const ownerStorageKey = `diastage:remote-voice-owner:${storageKey}`
-  useEffect(() => {
-    if (!session) return
-    void fetch(`/api/remote-voice/sessions/${session.id}`, {
-      method: 'PATCH',
-      headers: { 'content-type': 'application/json', 'x-diastage-owner-token': session.ownerToken },
-      body: JSON.stringify({ mode }),
-    })
-      .then((response) => {
-        if (!response.ok) disconnectCallback.current?.()
-      })
-      .catch(() => disconnectCallback.current?.())
-  }, [session, mode])
-
+  const [handled, setHandled] = useState<Receipt | null>(null)
+  const completed = useRef<Receipt | null>(null)
+  const callback = useRef(onDisconnect)
+  callback.current = onDisconnect
+  const key = `diastage:remote-voice-owner:${storageKey}`
   useEffect(() => {
     const configured = process.env.NEXT_PUBLIC_DIASTAGE_REMOTE_URL?.trim()
     let url: URL
@@ -70,257 +73,258 @@ export function PhoneVoiceLink({
     } catch {
       url = new URL('/remote-voice', window.location.origin)
     }
-    setRemoteAddress(url.href)
-    setLocalOnly(['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname))
-    setInsecureAddress(url.protocol !== 'https:')
-  }, [])
-
-  useEffect(() => {
-    const saved = sessionStorage.getItem(ownerStorageKey)
-    if (!saved) return
+    setAddress(url.href)
+    setLocalOnly(
+      url.protocol !== 'https:' ||
+        ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname),
+    )
     try {
-      const parsed = CreatedRemoteVoiceSessionSchema.safeParse(JSON.parse(saved))
-      if (!parsed.success || Date.parse(parsed.data.expiresAt) <= Date.now()) {
-        sessionStorage.removeItem(ownerStorageKey)
-        return
+      const saved = CreatedRemoteVoiceSessionSchema.safeParse(
+        JSON.parse(sessionStorage.getItem(key) || 'null'),
+      )
+      if (
+        saved.success &&
+        Date.parse(saved.data.expiresAt) > Date.now() &&
+        saved.data.sceneId === (sceneId ?? null)
+      ) {
+        setSession(saved.data)
+        const receipt = receiptSchema.safeParse(
+          JSON.parse(sessionStorage.getItem(`${key}:receipt`) || 'null'),
+        )
+        if (receipt.success) {
+          completed.current = receipt.data
+          setHandled(receipt.data)
+        }
       }
-      setSession(parsed.data)
     } catch {
-      sessionStorage.removeItem(ownerStorageKey)
+      sessionStorage.removeItem(key)
     }
-  }, [ownerStorageKey])
-
-  useEffect(() => {
-    if (session && details.current) details.current.open = true
-  }, [session])
+  }, [key, sceneId])
 
   useEffect(() => {
     if (!session) return
-    let stopped = false
-    let timer: ReturnType<typeof setTimeout> | undefined
-    let controller: AbortController | undefined
+    let stopped = false,
+      timer: ReturnType<typeof setTimeout> | undefined
+    let request: AbortController | undefined
     const poll = async () => {
-      controller = new AbortController()
+      const activeRequest = new AbortController()
+      request = activeRequest
       try {
         const response = await fetch(`/api/remote-voice/sessions/${session.id}`, {
           cache: 'no-store',
-          signal: controller.signal,
+          signal: AbortSignal.any([activeRequest.signal, AbortSignal.timeout(10_000)]),
           headers: { 'x-diastage-owner-token': session.ownerToken },
         })
+        if (stopped || activeRequest.signal.aborted) return
+        if (response.status === 410) {
+          setConnection('已过期')
+          stopped = true
+          callback.current?.()
+          return
+        }
         const result = await readRemoteVoiceResponse(
           response,
           OwnerRemoteVoiceResponseSchema,
-          '无法读取手机连接状态，请重新连接。',
+          '连接检查失败，请重试。',
         )
-        if (stopped) return
-        if (!result.status.paired && result.status.connectedAt) disconnectCallback.current?.()
-        setPaired(result.status.paired)
+        if (stopped || activeRequest.signal.aborted) return
+        setConnection(
+          result.status.paired ? '已连接' : result.status.connectedAt ? '暂时断开' : '等待配对',
+        )
         setIncoming(result.status.pendingCommand)
-        if (!result.status.pendingCommand) setHandled(null)
-      } catch (failure) {
-        if (stopped || controller.signal.aborted) return
-        disconnectCallback.current?.()
-        setError(failure instanceof Error ? failure.message : '手机连接已中断，请重新连接。')
+      } catch {
+        if (!stopped && !activeRequest.signal.aborted) setConnection('暂时断开')
       } finally {
-        if (!stopped) timer = setTimeout(poll, 1500)
+        if (!stopped && request === activeRequest)
+          timer = setTimeout(poll, document.hidden ? 30_000 : 3000)
+      }
+    }
+    const resume = () => {
+      if (!document.hidden && !stopped) {
+        clearTimeout(timer)
+        request?.abort()
+        void poll()
       }
     }
     void poll()
+    document.addEventListener('visibilitychange', resume)
     return () => {
       stopped = true
-      if (timer) clearTimeout(timer)
-      controller?.abort()
+      clearTimeout(timer)
+      request?.abort()
+      document.removeEventListener('visibilitychange', resume)
     }
   }, [session])
 
-  const createSession = async () => {
-    if (state !== 'idle') return
-    setState('creating')
+  const reportFor =
+    (command: RemoteVoiceCommand): RemoteVoiceReport =>
+    async (disposition, summary) => {
+      if (!session) return
+      const receipt = { sequence: command.sequence, disposition, summary: summary.slice(0, 300) }
+      completed.current = receipt
+      setHandled(receipt)
+      sessionStorage.setItem(`${key}:receipt`, JSON.stringify(receipt))
+      try {
+        const response = await fetch(`/api/remote-voice/sessions/${session.id}/commands`, {
+          method: 'PATCH',
+          signal: AbortSignal.timeout(10_000),
+          headers: {
+            'content-type': 'application/json',
+            'x-diastage-owner-token': session.ownerToken,
+          },
+          body: JSON.stringify(receipt),
+        })
+        if (!response.ok) throw new Error()
+        if (terminal(disposition)) setIncoming(null)
+        setError('')
+      } catch {
+        setError('处理结果已保留，但回执未送达。请重试回执。')
+      }
+    }
+
+  const load = async (command: RemoteVoiceCommand) => {
+    if (busy) return
+    setBusy(true)
     setError('')
-    setCopied(false)
+    const report = reportFor(command)
     try {
-      const response = await fetch('/api/remote-voice/sessions', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ label: sceneLabel }),
-      })
-      const result = await readRemoteVoiceResponse(
-        response,
-        CreatedRemoteVoiceResponseSchema,
-        '无法建立手机连接，请检查网络后重试。',
-      )
-      setSession(result.session)
-      completed.current = null
-      sessionStorage.setItem(ownerStorageKey, JSON.stringify(result.session))
-      setPaired(false)
-      setIncoming(null)
-      setHandled(null)
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : '无法建立手机连接。')
+      const previous = completed.current
+      if (previous?.sequence === command.sequence && terminal(previous.disposition))
+        await report(previous.disposition, previous.summary)
+      else if (session) {
+        await report('processing', '正在生成待确认方案')
+        await onTranscript(command, report, session.id)
+      }
+    } catch (error) {
+      await report('failed', error instanceof Error ? error.message : '处理失败，未应用')
     } finally {
-      setState('idle')
+      setBusy(false)
     }
   }
-
-  const acknowledge = async (command: RemoteVoiceCommand, disposition: RemoteVoiceDisposition) => {
-    if (!session || state !== 'idle') return
-    setState('acknowledging')
-    setError('')
-    try {
-      const summary =
-        completed.current?.sequence === command.sequence
-          ? completed.current.summary
-          : disposition === 'loaded'
-            ? await onTranscript(command.transcript)
-            : '已忽略，没有修改舞台'
-      setHandled({ sequence: command.sequence, disposition, summary })
-      completed.current = { sequence: command.sequence, disposition, summary }
-      const response = await fetch(`/api/remote-voice/sessions/${session.id}/commands`, {
-        method: 'PATCH',
-        headers: {
-          'content-type': 'application/json',
-          'x-diastage-owner-token': session.ownerToken,
-        },
-        body: JSON.stringify({
-          sequence: command.sequence,
-          disposition,
-          summary: summary.slice(0, 300),
-        }),
-      })
-      await readRemoteVoiceResponse(
-        response,
-        zAcknowledgement,
-        '口令已处理，但回执失败。请点击重试回执。',
-      )
-      setIncoming(null)
-      setHandled(null)
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : '回执失败，请重试。')
-    } finally {
-      setState('idle')
-    }
-  }
-
-  const acknowledgeRef = useRef(acknowledge)
-  acknowledgeRef.current = acknowledge
-  useEffect(() => {
-    if (
-      incoming &&
-      incoming.sequence > (completed.current?.sequence ?? 0) &&
-      canLoad &&
-      mode !== 'suggest' &&
-      state === 'idle' &&
-      !handled
-    )
-      void acknowledgeRef.current(incoming, 'loaded')
-  }, [incoming, canLoad, mode, state, handled])
 
   const disconnect = async () => {
-    disconnectCallback.current?.()
-    const current = session
-    setSession(null)
-    setPaired(false)
-    setIncoming(null)
-    setHandled(null)
-    setError('')
-    sessionStorage.removeItem(ownerStorageKey)
-    if (!current) return
-    await fetch(`/api/remote-voice/sessions/${current.id}`, {
-      method: 'DELETE',
-      keepalive: true,
-      headers: { 'x-diastage-owner-token': current.ownerToken },
-    }).catch(() => {})
+    if (!session) return
+    setBusy(true)
+    callback.current?.()
+    try {
+      const response = await fetch(`/api/remote-voice/sessions/${session.id}`, {
+        method: 'DELETE',
+        headers: { 'x-diastage-owner-token': session.ownerToken },
+        signal: AbortSignal.timeout(10_000),
+      })
+      if (!response.ok && response.status !== 410) throw new Error()
+      setSession(null)
+      setIncoming(null)
+      completed.current = null
+      setHandled(null)
+      sessionStorage.removeItem(key)
+      sessionStorage.removeItem(`${key}:receipt`)
+    } catch {
+      setError('断开请求未送达，请重试；未确认撤销连接。')
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
-    <details ref={details} className="phone-voice-link">
-      <summary>用 iPhone 说口令</summary>
-      {!session ? (
-        <div className="phone-voice-link__body">
-          <p>
-            手机负责录音和校对。建议模式逐次预览；桌面授权连续制景后，安全口令自动处理并返回结果。
-          </p>
-          <button type="button" disabled={state !== 'idle'} onClick={() => void createSession()}>
-            {state === 'creating' ? '正在生成配对码…' : '连接 iPhone'}
-          </button>
-        </div>
-      ) : (
-        <div className="phone-voice-link__body">
-          <p role="status" aria-live="polite">
-            {paired ? 'iPhone 已连接' : '等待 iPhone 输入配对码'}
-          </p>
-          <p className="phone-voice-link__code">
-            <span className="sr-only">配对码：</span>
-            {session.pairingCode}
-          </p>
-          <label>
-            手机打开此地址
-            <input
-              readOnly
-              value={remoteAddress}
-              onFocus={(event) => event.currentTarget.select()}
-            />
-          </label>
-          <div className="stage-entry-actions">
+    <details className="phone-voice-link" open={!!session}>
+      <summary>连接手机舞台助手</summary>
+      <div className="phone-voice-link__body">
+        {!session ? (
+          <>
+            <p>手机录音、校对文字或上传扫描。舞台方案和扫描均在电脑端确认后落位。</p>
+            {!sceneId && <p>请先建立并保存舞台，再连接手机。</p>}
             <button
               type="button"
+              disabled={busy || !sceneId}
               onClick={async () => {
+                setBusy(true)
+                setError('')
                 try {
-                  await navigator.clipboard.writeText(remoteAddress)
-                  setCopied(true)
-                } catch {
-                  setError('无法自动复制，请长按上方地址复制。')
+                  const response = await fetch('/api/remote-voice/sessions', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ label: sceneLabel, sceneId }),
+                    signal: AbortSignal.timeout(10_000),
+                  })
+                  const result = await readRemoteVoiceResponse(
+                    response,
+                    CreatedRemoteVoiceResponseSchema,
+                    '无法生成配对码。',
+                  )
+                  sessionStorage.setItem(key, JSON.stringify(result.session))
+                  sessionStorage.removeItem(`${key}:receipt`)
+                  setSession(result.session)
+                  completed.current = null
+                  setHandled(null)
+                  setConnection('等待配对')
+                } catch (error) {
+                  setError(error instanceof Error ? error.message : '连接失败')
+                } finally {
+                  setBusy(false)
                 }
               }}
             >
-              {copied ? '地址已复制' : '复制手机地址'}
+              {busy ? '正在连接…' : '生成配对码'}
             </button>
-            <button type="button" onClick={() => void disconnect()}>
+          </>
+        ) : (
+          <>
+            <p role="status">手机 · {connection}</p>
+            <p className="phone-voice-link__code">{session.pairingCode}</p>
+            <label>
+              手机打开此地址
+              <input readOnly value={address} onFocus={(e) => e.currentTarget.select()} />
+            </label>
+            {localOnly && (
+              <p className="stage-entry-warning">
+                手机需使用可访问的 HTTPS 地址。当前地址尚未满足手机录音条件。
+              </p>
+            )}
+            <button type="button" disabled={busy} onClick={() => void disconnect()}>
               断开连接
             </button>
-          </div>
-          {localOnly ? (
-            <p className="stage-entry-warning" role="note">
-              当前是仅本机地址，iPhone 无法打开。请用手机可访问的 HTTPS 地址部署或启动咫台；HTTP
-              局域网地址也无法获得 iPhone 麦克风权限。
-            </p>
-          ) : insecureAddress ? (
-            <p className="stage-entry-warning" role="note">
-              此地址可以用于手机文字口令，但 iPhone 只会在 HTTPS 页面开放麦克风。请为手机地址配置
-              HTTPS 后再测试录音。
-            </p>
-          ) : null}
-          {incoming && (
-            <section className="phone-voice-link__incoming" aria-label="手机传来的口令">
-              <h3>手机传来一条口令</h3>
-              <blockquote>{incoming.transcript}</blockquote>
-              {!canLoad && <p>请先结束当前方案处理，再载入这条口令。</p>}
-              <div className="stage-entry-actions">
-                <button
-                  type="button"
-                  disabled={(!canLoad && !localControl(incoming.transcript)) || state !== 'idle'}
-                  onClick={() => void acknowledge(incoming, handled?.disposition ?? 'loaded')}
-                >
-                  {handled?.sequence === incoming.sequence ? '重试回执' : '载入口令'}
-                </button>
-                <button
-                  type="button"
-                  disabled={state !== 'idle' || handled?.sequence === incoming.sequence}
-                  onClick={() => void acknowledge(incoming, 'dismissed')}
-                >
-                  忽略
-                </button>
-              </div>
-            </section>
-          )}
-        </div>
-      )}
-      {error && <p role="alert">{error}</p>}
+            {incoming && (
+              <section className="phone-voice-link__incoming" aria-label="手机传来的口令">
+                <h3>手机口令</h3>
+                <blockquote>{incoming.transcript}</blockquote>
+                {handled?.sequence === incoming.sequence && <p>{handled.summary}</p>}
+                <div className="stage-entry-actions">
+                  <button
+                    type="button"
+                    disabled={
+                      busy ||
+                      (!canLoad &&
+                        !localControl(incoming.transcript) &&
+                        !(handled?.sequence === incoming.sequence && terminal(handled.disposition)))
+                    }
+                    onClick={() => void load(incoming)}
+                  >
+                    {handled?.sequence === incoming.sequence && terminal(handled.disposition)
+                      ? '重试回执'
+                      : '生成待确认方案'}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={
+                      busy ||
+                      (handled?.sequence === incoming.sequence && terminal(handled.disposition))
+                    }
+                    onClick={() => {
+                      callback.current?.()
+                      void reportFor(incoming)('rejected', '已拒绝，没有修改舞台')
+                    }}
+                  >
+                    拒绝口令
+                  </button>
+                </div>
+              </section>
+            )}
+            <ScanTransfer session={session} />
+          </>
+        )}
+        {error && <p role="alert">{error}</p>}
+      </div>
     </details>
   )
 }
-
-const zAcknowledgement = z.strictObject({
-  acknowledged: z.number().int().positive(),
-  disposition: z.enum(['loaded', 'dismissed']),
-})

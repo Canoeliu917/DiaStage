@@ -27,7 +27,7 @@ export function VoiceStageEntry() {
       {open && (
         <dialog ref={dialog} className="stage-entry-dialog" onCancel={() => setOpen(false)}>
           <header>
-            <h1>语音开台</h1>
+            <h1>语音构台</h1>
             <button type="button" aria-label="关闭舞台口令" onClick={() => setOpen(false)}>
               关闭
             </button>

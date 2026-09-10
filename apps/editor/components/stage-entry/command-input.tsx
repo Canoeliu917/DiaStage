@@ -1,5 +1,6 @@
 'use client'
 
+import { useScene } from '@pascal-app/core'
 import {
   compileStagePlan,
   parseStageText,
@@ -13,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import { formatCostCny } from '@/lib/ai/model-pricing'
+import { waitForLocalScene } from '@/lib/scene-journal'
 import {
   aiCommandContext,
   deleteRecentlyAdded,
@@ -32,7 +34,7 @@ import {
 import type { ScriptImport } from '@/lib/stage/import-metadata'
 import { createManualStageGraph } from '@/lib/stage/initial-stage'
 import { CreationModeControl, requestCreationPermission } from './creation-mode'
-import { PhoneVoiceLink } from './phone-voice-link'
+import { PhoneVoiceLink, type RemoteVoiceReport } from './phone-voice-link'
 import { EMPTY_STAGE_CONTEXT, StagePlanReview, useStagePlanPreview } from './plan-review'
 import { VoiceRecorder } from './voice-recorder'
 import './stage-entry.css'
@@ -117,6 +119,11 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
   const requestId = useRef(''),
     abort = useRef<AbortController | null>(null)
   const mounted = useRef(true)
+  const remoteCommand = useRef<{ id: string; report: RemoteVoiceReport } | null>(null)
+  const rejectRemote = () => {
+    void remoteCommand.current?.report('rejected', '已取消，没有应用待确认方案')
+    remoteCommand.current = null
+  }
   const stopCreation = useCallback(() => {
     abort.current?.abort()
     setLease(null)
@@ -158,6 +165,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
     const control = localControl(input)
     if (!control) return false
     if (control === 'stop') stopCreation()
+    rejectRemote()
     abort.current?.abort()
     setPlan(null)
     setDeletion(null)
@@ -186,11 +194,12 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
     abort.current = controller
     setState('planning')
     setError('')
+    const remote = remoteCommand.current
     try {
       if (sceneId) {
         const commands = deleteRecentlyAdded(input) ?? localSceneryOperation(input)
         if (commands) {
-          if (lease) {
+          if (lease && !remote) {
             let currentLease: CreationLease | null = null
             try {
               currentLease = await requestCreationPermission(sceneId, 'check')
@@ -212,8 +221,16 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
               return `已完成：${input.slice(0, 200)}，可撤销`
             }
           }
-          setDeletion(commands)
+          setDeletion(
+            remote
+              ? commands.map((command) => ({
+                  ...command,
+                  meta: { ...command.meta, transactionId: remote.id, source: 'voice' },
+                }))
+              : commands,
+          )
           setState('review')
+          await remote?.report('waiting-confirmation', '布景操作等待电脑确认，尚未写入')
           return '布景操作等待桌面确认，尚未写入'
         }
       }
@@ -221,7 +238,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
       if (draft.current && draft.current.context.documentVersion !== full.documentVersion)
         throw new Error('正式舞台已改变，请先取消草台并重新生成。')
       const current =
-        lease?.mode === 'draft' && draft.current
+        !remote && lease?.mode === 'draft' && draft.current
           ? draftContext(draft.current.context, draft.current.plan)
           : full
       const local = parseStageText(input, current, priorAnswers, inputSource)
@@ -246,9 +263,9 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
         throw new Error(result.error?.message || '方案生成失败，请稍后重试')
       const next = StagePlanSchema.parse(result.plan)
       if (controller.signal.aborted || !mounted.current) return '已取消，没有执行'
-      requestId.current = result.requestId
+      requestId.current = remote?.id ?? result.requestId
       setContext(current)
-      if (sceneId && lease && !next.questions.length && !request?.budgetApproved) {
+      if (!remote && sceneId && lease && !next.questions.length && !request?.budgetApproved) {
         const compiled = compileStagePlan(next, current, {
           transactionId: result.requestId,
           issuedAt: new Date().toISOString(),
@@ -294,8 +311,16 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
       }
       setPlan(next)
       setState(next.questions.length ? 'needs-clarification' : 'review')
+      await remote?.report(
+        'waiting-confirmation',
+        next.questions.length ? '需要在电脑补充信息，尚未写入' : '方案已生成，等待电脑确认',
+      )
       return next.questions.length ? '需要在桌面补充信息，尚未写入' : '方案已生成，等待桌面确认'
     } catch (failure) {
+      await remote?.report(
+        controller.signal.aborted ? 'rejected' : 'failed',
+        controller.signal.aborted ? '已取消，没有执行' : '方案生成失败，没有写入',
+      )
       if (!controller.signal.aborted && mounted.current) {
         setError(failure instanceof Error ? failure.message : '网络连接失败，请保留口令后重试')
         setState('error')
@@ -320,6 +345,12 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
         sceneId,
         controller.signal,
       )
+      if (remoteCommand.current && sceneId) {
+        const nodes = useScene.getState().nodes
+        await waitForLocalScene(sceneId, (saved) => saved === nodes, controller.signal)
+        await remoteCommand.current.report('applied', '方案已应用，本机已保存，可一步撤销')
+        remoteCommand.current = null
+      }
       if (controller.signal.aborted || !mounted.current) return
       useStagePlanPreview.setState({ plan: null })
       setPlan(null)
@@ -328,6 +359,10 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
       setAnswers([])
       if (path) router.push(path)
     } catch (failure) {
+      await remoteCommand.current?.report(
+        'failed',
+        failure instanceof Error ? failure.message : '应用未完成，请查看电脑端状态',
+      )
       if (!controller.signal.aborted && mounted.current) {
         setError(failure instanceof Error ? failure.message : '未能搭台，请重试')
         setState('error')
@@ -374,21 +409,41 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
         />
       )}
       <PhoneVoiceLink
-        mode={lease?.mode ?? 'suggest'}
+        sceneId={sceneId}
         onDisconnect={() => {
-          if (lease) stopCreation()
+          stopCreation()
+          rejectRemote()
+          setPlan(null)
+          setDeletion(null)
+          useStagePlanPreview.setState({ plan: null })
         }}
         sceneLabel={sceneId ? '当前剧目 · 舞台口令' : '新舞台 · 语音开台'}
         storageKey={sceneId ?? 'new-stage'}
-        canLoad={!busy && !plan}
-        onTranscript={async (transcript) => {
-          if (handleControl(transcript)) return '已处理本地停止、取消或撤销指令；请查看桌面结果'
+        canLoad={!busy && !plan && !deletion}
+        onTranscript={async (command, report, sessionId) => {
+          const transcript = command.transcript
+          const control = localControl(transcript)
+          if (control) {
+            rejectRemote()
+            try {
+              if (control === 'undo') undoLastAiTransaction()
+              else handleControl(transcript)
+              await report(
+                'applied',
+                control === 'undo' ? '已撤销上一次 AI 操作' : '已停止或取消处理',
+              )
+            } catch (failure) {
+              await report('failed', failure instanceof Error ? failure.message : '本地操作失败')
+            }
+            return
+          }
+          remoteCommand.current = { id: `remote:${sessionId}:${command.sequence}`, report }
           setText(transcript)
           setSource('voice')
           setAnswers([])
           setError('')
           setState('idle')
-          return lease ? generate([], transcript, 'voice') : '文字已载入，等待桌面生成和确认方案'
+          await generate([], transcript, 'voice')
         }}
       />
       {!plan && (
@@ -464,6 +519,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
             context={context}
             onChange={setPlan}
             onBack={() => {
+              rejectRemote()
               draft.current = null
               setPlan(null)
               setState('idle')
@@ -493,11 +549,12 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
           )}
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
               const before = currentStageContext()
               const result = executeStageCommands(deletion)
               if (!result.ok) {
                 setError(result.error ?? '操作失败')
+                await remoteCommand.current?.report('failed', result.error ?? '操作失败，没有写入')
                 return
               }
               rememberAiTransaction(
@@ -505,6 +562,21 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
                 before.objects.map((object) => object.id),
                 '布景操作已完成，可撤销',
               )
+              if (remoteCommand.current && sceneId) {
+                try {
+                  const nodes = useScene.getState().nodes
+                  await waitForLocalScene(
+                    sceneId,
+                    (saved) => saved === nodes,
+                    AbortSignal.timeout(20_000),
+                  )
+                  await remoteCommand.current.report('applied', '操作已完成，本机已保存，可撤销')
+                  remoteCommand.current = null
+                } catch (failure) {
+                  setError(failure instanceof Error ? failure.message : '本机保存未完成')
+                  return
+                }
+              }
               setDeletion(null)
               setState('complete')
             }}
@@ -514,6 +586,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
           <button
             type="button"
             onClick={() => {
+              rejectRemote()
               setDeletion(null)
               setState('idle')
             }}
@@ -526,6 +599,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
         <button
           type="button"
           onClick={() => {
+            rejectRemote()
             abort.current?.abort()
             setState(plan ? 'review' : 'idle')
           }}

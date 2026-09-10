@@ -41,8 +41,9 @@ function getScaleStatus(guide: GuideNode, scaleReferenceVisible: boolean) {
   return `${scaleReferenceVisible ? '已校准比例' : '已校准比例（隐藏）'} · ${reference.label}`
 }
 
-export function ReferencePanel() {
-  const selectedReferenceId = useEditor((s) => s.selectedReferenceId)
+export function ReferencePanel({ nodeId, onClose }: { nodeId?: ScanNode['id']; onClose?: () => void } = {}) {
+  const referenceSelection = useEditor((s) => s.selectedReferenceId)
+  const selectedReferenceId = nodeId ?? referenceSelection
   const setSelectedReferenceId = useEditor((s) => s.setSelectedReferenceId)
   const guideUi = useEditor((s) =>
     selectedReferenceId ? s.guideUi[selectedReferenceId] : undefined,
@@ -76,7 +77,8 @@ export function ReferencePanel() {
 
   const handleClose = useCallback(() => {
     setSelectedReferenceId(null)
-  }, [setSelectedReferenceId])
+    onClose?.()
+  }, [setSelectedReferenceId, onClose])
 
   const handleReplaceFile = useCallback(
     async (file: File) => {
@@ -148,8 +150,8 @@ export function ReferencePanel() {
   const handleMoveScan = useCallback(() => {
     if (node?.type !== 'scan') return
     useEditor.getState().setMovingNode(node as never)
-    setSelectedReferenceId(null)
-  }, [node, setSelectedReferenceId])
+    handleClose()
+  }, [node, handleClose])
 
   useEffect(() => {
     if (node?.type !== 'guide' || !node.url.startsWith('asset://')) {
@@ -179,7 +181,7 @@ export function ReferencePanel() {
   return (
     <PanelWrapper
       onClose={handleClose}
-      title={node.name || (isScan ? '截图' : '参考图')}
+      title={node.name || (isScan ? '场地扫描' : '参考图')}
       width={300}
     >
       {!isScan && (
@@ -335,13 +337,18 @@ export function ReferencePanel() {
       )}
 
       {isScan && (
-        <PanelSection title="截图">
+        <PanelSection title="场地扫描">
           <ActionGroup>
             <ActionButton
               icon={<Move className="h-3.5 w-3.5" />}
               label="移动"
               onClick={handleMoveScan}
             />
+            <ActionButton icon={<Trash2 className="h-3.5 w-3.5" />} label="删除" onClick={() => {
+              if (!window.confirm('删除这个扫描参考？可以撤销恢复。')) return
+              deleteNode(node.id)
+              handleClose()
+            }} />
             <ActionButton
               icon={
                 node.visible === false ? (

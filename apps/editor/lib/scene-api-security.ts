@@ -5,7 +5,7 @@ const DEFAULT_RATE_LIMIT_PER_MINUTE = 120
 const WINDOW_MS = 60_000
 const ALLOWED_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
 const ALLOWED_HEADERS =
-  'authorization, content-type, if-match, last-event-id, x-pascal-scene-token, x-diastage-owner-token, x-diastage-remote-token, x-diastage-budget-consent'
+  'authorization, content-type, if-match, last-event-id, x-pascal-scene-token, x-diastage-owner-token, x-diastage-remote-token, x-diastage-budget-consent, x-scan-id, x-scan-name, x-scan-bytes, x-scan-sha256'
 
 type RateBucket = {
   resetAt: number
@@ -52,6 +52,7 @@ export function withSceneApiHeaders<T extends Response>(request: Request, respon
   }
   response.headers.set('Access-Control-Allow-Methods', ALLOWED_METHODS)
   response.headers.set('Access-Control-Allow-Headers', ALLOWED_HEADERS)
+  response.headers.set('Access-Control-Expose-Headers', 'Content-Length, X-Scan-Sha256')
   response.headers.set('Cache-Control', response.headers.get('Cache-Control') ?? 'no-store')
   response.headers.set('X-Content-Type-Options', 'nosniff')
   return response

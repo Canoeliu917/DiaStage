@@ -252,6 +252,7 @@ export { CollectionsPopover } from './components/ui/panels/collections/collectio
 // a kind-owned panel and need PanelWrapper for the chrome.
 export { PanelWrapper } from './components/ui/panels/panel-wrapper'
 export { ParametricInspector as Inspector } from './components/ui/panels/parametric-inspector'
+export { ReferencePanel } from './components/ui/panels/reference-panel'
 export { PALETTE_COLORS } from './components/ui/primitives/color-dot'
 export {
   DropdownMenu,

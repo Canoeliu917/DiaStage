@@ -8,6 +8,7 @@ import {
   ItemNode,
   installSceneMutationHandler,
   type NodeChanges,
+  runAsSingleSceneHistoryStep,
   type StairNode,
   useScene,
 } from '@pascal-app/core'
@@ -33,6 +34,7 @@ import {
 } from '@pascal-app/core/stage'
 import { authorizeSceneNodeDrop } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
+import { z } from 'zod'
 import { create } from 'zustand'
 import { validateCameraProject } from '@/components/camera-studio/model'
 import { objectSnapshot, worldPose } from '../remount-scene'
@@ -62,6 +64,15 @@ export type StageExecutionResult = {
 }
 let executing = false
 const applied = new Map<string, StageExecutionResult>()
+const remoteReceiptsSchema = z
+  .array(
+    z.strictObject({
+      sessionId: z.string().uuid(),
+      sequence: z.number().int().positive(),
+      nodeIds: z.array(z.string()).max(1000),
+    }),
+  )
+  .max(128)
 export function commandMeta(source: InputSource = 'manual'): CommandMeta {
   return {
     commandId: crypto.randomUUID(),
@@ -158,6 +169,25 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       state = useScene.getState(),
       site = stageSite()
     const cacheKey = `${site.id}:${meta.transactionId}`
+    const remote = /^remote:([a-f0-9-]{36}):(\d+)$/.exec(meta.transactionId)
+    const receipts = remoteReceiptsSchema.parse(site.metadata.remoteCommandReceipts ?? [])
+    const receipt = remote && receipts.find((r) => r.sessionId === remote[1])
+    if (receipt && receipt.sequence >= Number(remote![2]))
+      return {
+        ok: true,
+        nodeIds: receipt.nodeIds,
+        transactionId: meta.transactionId,
+        alreadyApplied: true,
+      }
+    const receiptMetadata = (ids: string[]) =>
+      remote
+        ? {
+            remoteCommandReceipts: [
+              ...receipts.filter((r) => r.sessionId !== remote[1]),
+              { sessionId: remote[1]!, sequence: Number(remote[2]), nodeIds: [...new Set(ids)] },
+            ].slice(-128),
+          }
+        : {}
     const previousResult = applied.get(cacheKey)
     if (previousResult) return { ...previousResult, alreadyApplied: true }
     if (state.readOnly) throw new Error('当前舞台只读，无法修改')
@@ -182,7 +212,11 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       const ids = [...new Set(group.nodeIds)]
       if (ids.length !== group.nodeIds.length) throw new Error('组合对象编号不能重复')
       for (const id of ids) positioned(state.nodes, id)
-      state.createCollection(group.name, ids as AnyNodeId[])
+      runAsSingleSceneHistoryStep(useScene, () => {
+        state.createCollection(group.name, ids as AnyNodeId[])
+        if (remote)
+          state.updateNode(site.id, { metadata: { ...site.metadata, ...receiptMetadata(ids) } })
+      })
       const result = { ok: true, nodeIds: ids, transactionId: meta.transactionId }
       applied.set(cacheKey, result)
       if (applied.size > 500) applied.delete(applied.keys().next().value!)
@@ -594,6 +628,7 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       data: {
         metadata: {
           ...site.metadata,
+          ...receiptMetadata(resultIds),
           stageDoorClearanceMeters: clearanceMeters,
           ...(heightMeasured ? { stageHeightMeasured: true } : {}),
           [THEATRE_METADATA_KEY]: data,

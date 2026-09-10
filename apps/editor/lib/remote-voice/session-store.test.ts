@@ -44,17 +44,17 @@ test('only one reviewed transcript can be pending and acknowledgement is idempot
     409,
   )
 
-  store.acknowledgeCommand(owner.id, owner.ownerToken, command.sequence, 'loaded')
-  store.acknowledgeCommand(owner.id, owner.ownerToken, command.sequence, 'loaded')
+  store.acknowledgeCommand(owner.id, owner.ownerToken, command.sequence, 'applied')
+  store.acknowledgeCommand(owner.id, owner.ownerToken, command.sequence, 'applied')
   const remoteStatus = store.remoteStatus(owner.id, remote.remoteToken)
   expect(remoteStatus.pendingSequence).toBeNull()
   expect(remoteStatus.lastAcknowledgedSequence).toBe(command.sequence)
-  expect(remoteStatus.lastAcknowledgedDisposition).toBe('loaded')
+  expect(remoteStatus.lastAcknowledgedDisposition).toBe('applied')
 
   const next = store.sendCommand(owner.id, remote.remoteToken, '门景片向台后移20厘米')
   expect(next.sequence).toBe(command.sequence + 1)
   expectSessionError(
-    () => store.acknowledgeCommand(owner.id, owner.ownerToken, command.sequence + 2, 'dismissed'),
+    () => store.acknowledgeCommand(owner.id, owner.ownerToken, command.sequence + 2, 'rejected'),
     'COMMAND_STALE',
     409,
   )
@@ -94,14 +94,14 @@ test('heartbeat, mode and execution receipt remain owner controlled and phone ca
     owner.id,
     owner.ownerToken,
     command.sequence,
-    'loaded',
+    'applied',
     '安全操作已完成，可撤销',
   )
   expect(store.remoteStatus(owner.id, phone.remoteToken)).toMatchObject({
     mode: 'create',
     summary: '安全操作已完成，可撤销',
   })
-  now += 6001
+  now += 90001
   expect(store.ownerStatus(owner.id, owner.ownerToken).paired).toBe(false)
   store.remoteStatus(owner.id, phone.remoteToken)
   expect(store.ownerStatus(owner.id, owner.ownerToken).paired).toBe(true)

@@ -14,6 +14,7 @@ const EDITABLE_TYPES = new Set([
   'slab',
   'zone',
   'spawn',
+  'scan',
 ])
 
 export function isTheatreEditableType(type: string | null): boolean {

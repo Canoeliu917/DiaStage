@@ -3,8 +3,8 @@ import { RemoteVoiceController } from '@/components/stage-entry/remote-voice-con
 import { StudioWordmark } from '@/components/studio-wordmark'
 
 export const metadata: Metadata = {
-  title: 'iPhone 舞台口令 · 咫台 DiaStage',
-  description: '将 iPhone 作为咫台的第二屏语音输入器。',
+  title: '舞台助手 · 咫台 DiaStage',
+  description: '手机语音构台、手动置景、剧本搭台、复台与扫描上传。',
 }
 
 export default function RemoteVoicePage() {
@@ -13,7 +13,7 @@ export default function RemoteVoicePage() {
       <StudioWordmark />
       <RemoteVoiceController />
       <p className="remote-voice-page__privacy">
-        手机只发送经你校对的文字。原始录音仅用于本次转写，不写入舞台项目。
+        原始录音仅用于本次转写。扫描临时文件会在导入、放弃或到期后清理；电脑确认的扫描保存在该浏览器本机。
       </p>
     </main>
   )

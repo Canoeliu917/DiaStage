@@ -64,5 +64,22 @@
 .remote-voice-card .stage-voice-recorder { display:flex;flex-direction:column;gap:10px; }
 .remote-voice-receipt { display:flex;flex-direction:column;gap:14px;border-top:1px solid #888;padding-top:18px; }
 .remote-voice-page__privacy { width:min(100%,600px);color:#bdbdbd;font-size:11px;line-height:1.7; }
+.assistant-entries { display:flex;flex-direction:column;border-block:1px solid #888; }
+.assistant-entries :is(a,button) { display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:64px;padding:14px 0;border:0;border-bottom:1px solid #b8b8b8;text-align:left;text-decoration:none;color:inherit; }
+.assistant-entries :is(a,button):last-child { border-bottom:0; }
+.assistant-entries strong { font-size:18px;font-weight:600; }
+.assistant-entries span { color:#505050;font-size:14px;line-height:1.65; }
+.assistant-entries button[aria-pressed=true] strong { text-decoration:underline;text-underline-offset:6px; }
+.scan-transfer { display:flex;flex-direction:column;gap:14px;min-width:0;border-top:1px solid #888;padding-top:20px; }
+.scan-transfer h2 { font-size:20px; }
+.scan-transfer summary { min-height:44px;cursor:pointer;padding-block:10px; }
+.scan-transfer :is(input,progress) { width:100%;min-width:0; }
+.scan-transfer input::file-selector-button { min-height:44px;max-width:100%;padding:8px 10px;font:inherit; }
+.scan-transfer__file { overflow-wrap:anywhere;border-block:1px solid #999;padding-block:12px; }
+.remote-voice-card :is(button,a,input,textarea) { touch-action:manipulation; }
+.remote-voice-card :is(button,a):hover { background:#e2e2df; }
+.remote-voice-card :is(button,a):focus-visible { outline:2px solid currentColor;outline-offset:3px; }
+.remote-voice-card ::selection { background:#202020;color:#fff; }
+@media(pointer:coarse) { .remote-voice-card p,.remote-voice-card label { font-size:16px; } .stage-input summary { min-height:44px;padding-block:10px; } }
 @media(max-width:850px) { .stage-script-groups { grid-template-columns:1fr; } .stage-script-groups > section { max-height:none;overflow:visible; } .stage-script-groups h3 { position:static; } }
 @media(max-width:600px) { .stage-input input,.stage-input textarea,.stage-plan-review input,.stage-entry-form input,.stage-entry-form select { font-size:16px; } .stage-entry-dialog { width:calc(100% - 16px);max-height:calc(100dvh - 16px); } .stage-entry-metrics { gap:6px; } .remote-voice-card > header { flex-direction:column; } .remote-voice-card > header button { width:100%; } }

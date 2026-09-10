@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 import {
   JoinedRemoteVoiceResponseSchema,
@@ -12,30 +12,49 @@ import {
   SentRemoteVoiceResponseSchema,
 } from '@/lib/remote-voice/client'
 import type { VoiceState } from './command-input'
-import './stage-entry.css'
+import { ScanTransfer } from './scan-transfer'
 import { VoiceRecorder } from './voice-recorder'
+import './stage-entry.css'
 
 const STORAGE_KEY = 'diastage:remote-voice-controller'
-const StoredControllerSchema = z.strictObject({
+const pendingSchema = z.strictObject({
+  requestId: z.string().uuid(),
+  sequence: z.number().int().positive(),
+  transcript: z.string().max(10_000),
+})
+const storedSchema = z.strictObject({
   session: JoinedRemoteVoiceSessionSchema,
   draft: z.string().max(10_000),
-  sentSequence: z.number().int().positive().nullable(),
+  pending: pendingSchema.nullable(),
 })
+const labels: Record<RemoteVoiceDisposition, string> = {
+  received: '已接收',
+  processing: '处理中',
+  'waiting-confirmation': '等待电脑确认',
+  applied: '已应用',
+  rejected: '已拒绝',
+  failed: '处理失败',
+}
+const isFinal = (status: RemoteVoiceDisposition | null) =>
+  status && ['applied', 'rejected', 'failed'].includes(status)
 
 export function RemoteVoiceController() {
   const [pairingCode, setPairingCode] = useState('')
   const [session, setSession] = useState<JoinedRemoteVoiceSession | null>(null)
   const [draft, setDraft] = useState('')
-  const [sentSequence, setSentSequence] = useState<number | null>(null)
+  const [pending, setPending] = useState<z.infer<typeof pendingSchema> | null>(null)
+  const [acknowledged, setAcknowledged] = useState(0)
   const [receipt, setReceipt] = useState<RemoteVoiceDisposition | null>(null)
   const [summary, setSummary] = useState<string | null>(null)
-  const [mode, setMode] = useState<'suggest' | 'create' | 'draft'>('suggest')
   const [voiceState, setVoiceState] = useState<VoiceState>('idle')
-  const [joining, setJoining] = useState(false)
+  const [connection, setConnection] = useState<
+    'connecting' | 'connected' | 'disconnected' | 'expired'
+  >('disconnected')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [secureContext, setSecureContext] = useState(true)
-
+  const [tab, setTab] = useState<'voice' | 'scan'>('voice')
+  const request = useRef<AbortController | null>(null)
   const transcribeHeaders = useMemo(
     () => (session ? { 'x-diastage-remote-token': session.remoteToken } : undefined),
     [session],
@@ -43,267 +62,338 @@ export function RemoteVoiceController() {
 
   useEffect(() => {
     setSecureContext(globalThis.isSecureContext)
-    const stored = sessionStorage.getItem(STORAGE_KEY)
-    if (!stored) return
     try {
-      const parsed = StoredControllerSchema.safeParse(JSON.parse(stored))
-      if (!parsed.success || Date.parse(parsed.data.session.expiresAt) <= Date.now()) {
-        sessionStorage.removeItem(STORAGE_KEY)
-        return
+      const result = storedSchema.safeParse(
+        JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null'),
+      )
+      if (result.success) {
+        setSession(result.data.session)
+        setDraft(result.data.draft)
+        setPending(result.data.pending)
+        setConnection(
+          Date.parse(result.data.session.expiresAt) <= Date.now() ? 'expired' : 'connecting',
+        )
       }
-      setSession(parsed.data.session)
-      setDraft(parsed.data.draft)
-      setSentSequence(parsed.data.sentSequence)
     } catch {
       sessionStorage.removeItem(STORAGE_KEY)
     }
+    return () => request.current?.abort()
   }, [])
+  useEffect(() => {
+    if (session) sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ session, draft, pending }))
+  }, [session, draft, pending])
 
   useEffect(() => {
     if (!session) return
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ session, draft, sentSequence }))
-  }, [session, draft, sentSequence])
-  useEffect(() => {
-    if (!session) return
-    const revoke = () => {
-      void fetch(`/api/remote-voice/sessions/${session.id}`, {
-        method: 'DELETE',
-        keepalive: true,
-        headers: { 'x-diastage-remote-token': session.remoteToken },
-      }).catch(() => {})
-    }
-    window.addEventListener('pagehide', revoke)
-    return () => {
-      window.removeEventListener('pagehide', revoke)
-    }
-  }, [session])
-
-  useEffect(() => {
-    if (!session) return
-    let stopped = false
-    let timer: ReturnType<typeof setTimeout> | undefined
+    let stopped = false,
+      timer: ReturnType<typeof setTimeout> | undefined
     let controller: AbortController | undefined
     const poll = async () => {
-      controller = new AbortController()
+      const activeRequest = new AbortController()
+      controller = activeRequest
       try {
         const response = await fetch(`/api/remote-voice/sessions/${session.id}`, {
           cache: 'no-store',
-          signal: controller.signal,
+          signal: AbortSignal.any([activeRequest.signal, AbortSignal.timeout(10_000)]),
           headers: { 'x-diastage-remote-token': session.remoteToken },
         })
+        if (stopped || activeRequest.signal.aborted) return
+        if (response.status === 410) {
+          setConnection('expired')
+          stopped = true
+          return
+        }
         const result = await readRemoteVoiceResponse(
           response,
           RemoteRemoteVoiceResponseSchema,
-          '无法读取舞台端状态，请重新配对。',
+          '无法读取电脑状态。',
         )
-        if (stopped) return
-        setMode(result.status.mode)
-        if (
-          sentSequence !== null &&
-          result.status.lastAcknowledgedSequence >= sentSequence &&
-          result.status.lastAcknowledgedDisposition
-        ) {
-          setReceipt(result.status.lastAcknowledgedDisposition)
-          setSummary(result.status.summary)
+        if (stopped || activeRequest.signal.aborted) return
+        setConnection('connected')
+        setAcknowledged(result.status.lastAcknowledgedSequence)
+        if (pending) {
+          if (result.status.lastAcknowledgedSequence >= pending.sequence) {
+            setReceipt(result.status.lastAcknowledgedDisposition)
+            setSummary(result.status.summary)
+          } else if (result.status.pendingSequence === pending.sequence) {
+            setReceipt(result.status.progress ?? 'received')
+            setSummary(result.status.summary)
+          }
         }
-      } catch (failure) {
-        if (stopped || controller.signal.aborted) return
-        setError(failure instanceof Error ? failure.message : '手机连接已失效，请重新配对。')
+      } catch {
+        if (!stopped && !activeRequest.signal.aborted) setConnection('disconnected')
       } finally {
-        if (!stopped) timer = setTimeout(poll, 1500)
+        if (!stopped && controller === activeRequest)
+          timer = setTimeout(poll, document.hidden ? 30_000 : 3000)
+      }
+    }
+    const resume = () => {
+      if (!document.hidden && !stopped) {
+        clearTimeout(timer)
+        controller?.abort()
+        void poll()
       }
     }
     void poll()
+    document.addEventListener('visibilitychange', resume)
     return () => {
       stopped = true
-      if (timer) clearTimeout(timer)
+      clearTimeout(timer)
       controller?.abort()
+      document.removeEventListener('visibilitychange', resume)
     }
-  }, [session, sentSequence])
+  }, [session, pending])
 
   const join = async () => {
-    if (joining || !pairingCode.trim()) return
-    setJoining(true)
+    setConnection('connecting')
     setError('')
+    const controller = new AbortController()
+    request.current = controller
     try {
       const response = await fetch('/api/remote-voice/sessions/join', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ code: pairingCode }),
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]),
       })
       const result = await readRemoteVoiceResponse(
         response,
         JoinedRemoteVoiceResponseSchema,
-        '无法连接舞台端，请检查配对码。',
+        '配对失败，请检查配对码。',
       )
       setSession(result.session)
       setPairingCode('')
       setDraft('')
-      setSentSequence(null)
+      setPending(null)
       setReceipt(null)
-      setVoiceState('idle')
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : '无法连接舞台端。')
-    } finally {
-      setJoining(false)
+      setAcknowledged(0)
+      setConnection('connected')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '连接失败')
+      setConnection('disconnected')
     }
   }
-
   const send = async () => {
-    if (!session || sending || sentSequence !== null || !draft.trim()) return
+    if (!session || sending || isFinal(receipt)) return
+    const command = pending ?? {
+      requestId: crypto.randomUUID(),
+      sequence: acknowledged + 1,
+      transcript: draft.trim(),
+    }
+    if (!command.transcript) return
     setSending(true)
     setError('')
+    const controller = new AbortController()
+    request.current = controller
     try {
+      // Persist the exact request before sending; a lost response must retry the same ID and sequence.
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ session, draft, pending: command }))
+      setPending(command)
       const response = await fetch(`/api/remote-voice/sessions/${session.id}/commands`, {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
           'x-diastage-remote-token': session.remoteToken,
         },
-        body: JSON.stringify({ transcript: draft }),
+        body: JSON.stringify(command),
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]),
       })
-      const result = await readRemoteVoiceResponse(
+      await readRemoteVoiceResponse(
         response,
         SentRemoteVoiceResponseSchema,
-        '口令未能发送，请检查连接后重试。',
+        '发送未确认，请重试同一口令。',
       )
-      setSentSequence(result.command.sequence)
+      setReceipt('received')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '发送未确认，请重试。')
+    } finally {
+      setSending(false)
+    }
+  }
+  const disconnect = async () => {
+    if (!session) return
+    request.current?.abort()
+    setSending(true)
+    try {
+      const response = await fetch(`/api/remote-voice/sessions/${session.id}`, {
+        method: 'DELETE',
+        headers: { 'x-diastage-remote-token': session.remoteToken },
+        signal: AbortSignal.timeout(10_000),
+      })
+      if (!response.ok && response.status !== 410)
+        throw new Error('断开未获确认，请恢复网络后重试。')
+      sessionStorage.removeItem(STORAGE_KEY)
+      setSession(null)
+      setDraft('')
+      setPending(null)
       setReceipt(null)
-      setVoiceState('planning')
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : '口令未能发送。')
+      setVoiceState('idle')
+      setConnection('disconnected')
+      setError('')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '断开失败')
     } finally {
       setSending(false)
     }
   }
 
-  const disconnect = () => {
-    if (session)
-      void fetch(`/api/remote-voice/sessions/${session.id}`, {
-        method: 'DELETE',
-        keepalive: true,
-        headers: { 'x-diastage-remote-token': session.remoteToken },
-      }).catch(() => {})
-    sessionStorage.removeItem(STORAGE_KEY)
-    setSession(null)
-    setDraft('')
-    setSentSequence(null)
-    setReceipt(null)
-    setVoiceState('idle')
-    setError('')
-  }
-
-  if (!session) {
-    return (
-      <section className="remote-voice-card" aria-busy={joining}>
-        <h1>iPhone 舞台口令</h1>
-        <p>在电脑或 iPad 的“语音开台 / 舞台口令”中选择“连接 iPhone”，再输入配对码。</p>
-        <label>
-          8 位配对码
-          <input
-            inputMode="text"
-            autoCapitalize="characters"
-            autoComplete="one-time-code"
-            maxLength={9}
-            placeholder="ABCD-EFGH"
-            value={pairingCode}
-            onChange={(event) =>
-              setPairingCode(
-                event.target.value
-                  .toUpperCase()
-                  .replace(/[^0-9A-Z-]/g, '')
-                  .slice(0, 9),
-              )
-            }
-          />
-        </label>
-        <button
-          type="button"
-          disabled={joining || pairingCode.replace(/-/g, '').length !== 8}
-          onClick={() => void join()}
-        >
-          {joining ? '正在连接…' : '连接舞台端'}
-        </button>
-        {error && <p role="alert">{error}</p>}
-      </section>
-    )
-  }
-
   return (
-    <section className="remote-voice-card" aria-busy={sending}>
+    <section className="remote-voice-card">
       <header>
         <div>
-          <h1>iPhone 舞台口令</h1>
-          <p>{session.label || '咫台舞台'} · 已安全配对</p>
+          <h1>舞台助手</h1>
+          <p>{session?.label || '把排练现场的想法带回舞台。'}</p>
         </div>
-        <button type="button" onClick={disconnect}>
-          断开
-        </button>
+        {session && (
+          <button type="button" disabled={sending} onClick={() => void disconnect()}>
+            断开连接
+          </button>
+        )}
       </header>
-      <p role="status">
-        当前模式：
-        {
-          {
-            suggest: '建议模式 · 桌面确认后落位',
-            create: '连续制景 · 安全口令自动落位',
-            draft: '方案草台 · 暂不写入正式舞台',
-          }[mode]
-        }
-      </p>
-      {!secureContext && (
-        <p className="stage-entry-warning" role="note">
-          当前不是 HTTPS，iPhone 浏览器不会开放麦克风；你仍可输入文字发送。
-        </p>
-      )}
-      {sentSequence === null ? (
+      <nav className="assistant-entries" aria-label="舞台助手功能">
+        <button type="button" aria-pressed={tab === 'voice'} onClick={() => setTab('voice')}>
+          <strong>语音构台</strong>
+          <span>从一句话开始，搭出你的舞台。</span>
+        </button>
+        <a
+          href={
+            session?.sceneId
+              ? `/scene/${encodeURIComponent(session.sceneId)}?workspace=set`
+              : '/?entry=manual'
+          }
+        >
+          <strong>手动置景</strong>
+          <span>用方块和木板，完成舞台。</span>
+        </a>
+        <a href="/?entry=script">
+          <strong>剧本搭台</strong>
+          <span>上传剧本，把文字变成场景。</span>
+        </a>
+        <a
+          href={
+            session?.sceneId
+              ? `/scene/${encodeURIComponent(session.sceneId)}?workspace=remount&versions=1`
+              : '/scenes'
+          }
+        >
+          <strong>复台</strong>
+          <span>找回并继续之前的舞台版本。</span>
+        </a>
+        <button type="button" aria-pressed={tab === 'scan'} onClick={() => setTab('scan')}>
+          <strong>扫描上传</strong>
+          <span>导入扫描应用导出的场地 GLB。</span>
+        </button>
+      </nav>
+      {!session ? (
         <>
-          <VoiceRecorder
-            state={voiceState}
-            setState={setVoiceState}
-            onError={setError}
-            onTranscript={(transcript) => {
-              setDraft(transcript)
-              setError('')
-            }}
-            transcribeEndpoint={`/api/remote-voice/sessions/${session.id}/transcribe`}
-            requestHeaders={transcribeHeaders}
-          />
+          <h2>{tab === 'scan' ? '连接后上传扫描' : '连接电脑舞台'}</h2>
+          <p>在电脑已保存的场景中，打开“舞台口令 → 连接手机舞台助手”，获取配对码。</p>
           <label>
-            我听到的内容 · 发送前请校对
-            <textarea
-              maxLength={10_000}
-              value={draft}
-              placeholder="例如：建立一个宽8米、深6米的镜框式舞台，中区放一个双人沙发。"
-              onChange={(event) => setDraft(event.target.value)}
+            8 位配对码
+            <input
+              autoCapitalize="characters"
+              autoComplete="one-time-code"
+              maxLength={9}
+              value={pairingCode}
+              placeholder="ABCD-EFGH"
+              onChange={(e) =>
+                setPairingCode(
+                  e.target.value
+                    .toUpperCase()
+                    .replace(/[^0-9A-Z-]/g, '')
+                    .slice(0, 9),
+                )
+              }
             />
           </label>
-          <button type="button" disabled={sending || !draft.trim()} onClick={() => void send()}>
-            {sending ? '正在发送…' : '发送到舞台端'}
-          </button>
-        </>
-      ) : receipt ? (
-        <div className="remote-voice-receipt" role="status">
-          <h2>{receipt === 'loaded' ? '舞台端已载入口令' : '舞台端已忽略这条口令'}</h2>
-          <blockquote>{draft}</blockquote>
-          {summary && <p>{summary}</p>}
           <button
             type="button"
-            onClick={() => {
-              setDraft('')
-              setSentSequence(null)
-              setReceipt(null)
-              setVoiceState('idle')
-            }}
+            disabled={connection === 'connecting' || pairingCode.replace(/-/g, '').length !== 8}
+            onClick={() => void join()}
           >
-            说下一条
+            {connection === 'connecting' ? '正在连接…' : '连接舞台'}
           </button>
-        </div>
+        </>
       ) : (
-        <div className="remote-voice-receipt" role="status">
-          <h2>已发送，等待舞台端载入</h2>
-          <blockquote>{draft}</blockquote>
-          <p>电脑端按当前授权处理：建议模式先预览，已授权连续制景只执行通过校验的安全操作。</p>
-        </div>
+        <>
+          <p role="status">
+            {
+              {
+                connecting: '正在连接',
+                connected: '已连接',
+                disconnected: '已断开 · 正在重新检查',
+                expired: '已过期 · 请断开后重新配对',
+              }[connection]
+            }
+          </p>
+          {tab === 'scan' ? (
+            <ScanTransfer session={session} />
+          ) : (
+            <>
+              <h2>语音构台</h2>
+              <p>台左、台右以演员面向观众为准。发送后先在电脑预览，再确认落位。</p>
+              {!secureContext && (
+                <p role="note">当前不是 HTTPS，麦克风不可用；可以输入文字口令。</p>
+              )}
+              {!pending ? (
+                <>
+                  <VoiceRecorder
+                    state={voiceState}
+                    setState={setVoiceState}
+                    onError={setError}
+                    onTranscript={setDraft}
+                    transcribeEndpoint={`/api/remote-voice/sessions/${session.id}/transcribe`}
+                    requestHeaders={transcribeHeaders}
+                  />
+                  <label>
+                    我听到的内容 · 发送前请校对
+                    <textarea
+                      maxLength={10_000}
+                      value={draft}
+                      placeholder="例如：把选中的布景向台右移动30厘米。"
+                      onChange={(e) => setDraft(e.target.value)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    disabled={sending || connection !== 'connected' || !draft.trim()}
+                    onClick={() => void send()}
+                  >
+                    发送口令
+                  </button>
+                </>
+              ) : (
+                <div className="remote-voice-receipt" role="status">
+                  <h3>{receipt ? labels[receipt] : '正在确认是否送达'}</h3>
+                  <blockquote>{pending.transcript}</blockquote>
+                  {summary && <p>{summary}</p>}
+                  {isFinal(receipt) ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPending(null)
+                        setDraft('')
+                        setReceipt(null)
+                        setSummary(null)
+                        setVoiceState('idle')
+                      }}
+                    >
+                      说下一条
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={sending || connection === 'expired'}
+                      onClick={() => void send()}
+                    >
+                      {sending ? '正在重试…' : '重试发送（不会重复应用）'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </>
       )}
       {error && <p role="alert">{error}</p>}
     </section>

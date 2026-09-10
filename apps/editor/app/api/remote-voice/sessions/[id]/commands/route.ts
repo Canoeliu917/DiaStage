@@ -15,11 +15,20 @@ export const OPTIONS = remoteVoicePreflight
 type RouteParams = { params: Promise<{ id: string }> }
 
 const commandSchema = z.strictObject({
+  requestId: z.string().uuid(),
+  sequence: z.number().int().positive(),
   transcript: z.string().trim().min(1).max(10_000),
 })
 const acknowledgementSchema = z.strictObject({
   sequence: z.number().int().positive(),
-  disposition: z.enum(['loaded', 'dismissed']),
+  disposition: z.enum([
+    'received',
+    'processing',
+    'waiting-confirmation',
+    'applied',
+    'rejected',
+    'failed',
+  ]),
   summary: z.string().max(300).optional(),
 })
 
@@ -27,7 +36,13 @@ export function POST(request: Request, { params }: RouteParams): Promise<Respons
   return handleRemoteVoiceRequest(request, async () => {
     const { id } = await params
     const input = await readRemoteJson(request, commandSchema)
-    const command = remoteVoiceSessions.sendCommand(id, remoteToken(request), input.transcript)
+    const command = remoteVoiceSessions.sendCommand(
+      id,
+      remoteToken(request),
+      input.transcript,
+      input.requestId,
+      input.sequence,
+    )
     return { status: 202, body: { command } }
   })
 }

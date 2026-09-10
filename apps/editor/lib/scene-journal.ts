@@ -9,6 +9,46 @@ type Patch = {
 type Head = { id: string; version: number; sequence: number; acknowledged: number }
 type Entry = { id: string; sequence: number; patch: Patch }
 
+let durable: { id: string; nodes: SceneGraph['nodes'] } | undefined
+const persistedListeners = new Set<() => void>()
+function publishLocalCommit(id: string, graph: SceneGraph) {
+  durable = { id, nodes: graph.nodes }
+  for (const listener of persistedListeners) listener()
+}
+
+/** An imported asset is not acknowledged to the phone until its node is durable. */
+export function waitForLocalScene(
+  sceneId: string,
+  matches: (nodes: SceneGraph['nodes']) => boolean,
+  signal: AbortSignal,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      clearTimeout(timer)
+      persistedListeners.delete(check)
+      signal.removeEventListener('abort', abort)
+    }
+    const check = () => {
+      if (durable?.id === sceneId && matches(durable.nodes)) {
+        cleanup()
+        resolve()
+      }
+    }
+    const abort = () => {
+      cleanup()
+      reject(new Error('等待本机保存已取消，场景修改仍保留。'))
+    }
+    const timer = setTimeout(() => {
+      cleanup()
+      reject(new Error('尚未完成本机保存，请检查存储空间后重试确认。'))
+    }, 20_000)
+    persistedListeners.add(check)
+    signal.addEventListener('abort', abort, { once: true })
+    if (signal.aborted) abort()
+    else check()
+  })
+}
+
 export function scenePatch(before: SceneGraph, after: SceneGraph): Patch {
   const put: Record<string, unknown> = {}
   for (const [id, node] of Object.entries(after.nodes)) {
@@ -71,6 +111,7 @@ export class SceneJournal {
   constructor(readonly id: string) {}
 
   async recover(server: SceneGraph, version: number) {
+    server = { nodes: server.nodes, ...scenePatch(server, server).document }
     this.db ??= await openJournal()
     const tx = this.db.transaction(['heads', 'checkpoints', 'transactions'], 'readwrite', {
       durability: 'strict',
@@ -109,6 +150,7 @@ export class SceneJournal {
     await done
     this.graph = graph
     this.revisions.set(graph, this.head!.sequence)
+    publishLocalCommit(this.id, graph)
     return { graph, pending, conflict }
   }
 
@@ -140,6 +182,7 @@ export class SceneJournal {
     this.head = head
     this.graph = graph
     this.revisions.set(graph, head.sequence)
+    publishLocalCommit(this.id, graph)
   }
 
   async acknowledge(graph: SceneGraph, version: number) {

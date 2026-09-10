@@ -1,5 +1,10 @@
 import type { z } from 'zod'
-import { guardSceneApiRequest, sceneApiJson, sceneApiPreflight } from '@/lib/scene-api-security'
+import {
+  guardSceneApiRequest,
+  sceneApiJson,
+  sceneApiPreflight,
+  withSceneApiHeaders,
+} from '@/lib/scene-api-security'
 import { RemoteVoiceSessionError } from './session-store'
 
 const MAX_JSON_BYTES = 32 * 1024
@@ -7,7 +12,7 @@ const JOIN_ATTEMPTS_PER_MINUTE = 8
 const MAX_JOIN_BUCKETS = 1_000
 const joinBuckets = new Map<string, { count: number; resetAt: number }>()
 
-class RemoteVoiceApiError extends Error {
+export class RemoteVoiceApiError extends Error {
   constructor(
     readonly code: string,
     message: string,
@@ -97,7 +102,10 @@ export async function readRemoteJson<T>(request: Request, schema: z.ZodType<T>):
 
 export async function handleRemoteVoiceRequest(
   request: Request,
-  operation: () => Promise<{ body: unknown; status?: number }> | { body: unknown; status?: number },
+  operation: () =>
+    | Promise<{ body: unknown; status?: number } | Response>
+    | { body: unknown; status?: number }
+    | Response,
   options: { requireSceneAuth?: boolean } = {},
 ): Promise<Response> {
   const guard = guardSceneApiRequest(request, { skipAuth: !options.requireSceneAuth })
@@ -118,6 +126,7 @@ export async function handleRemoteVoiceRequest(
   }
   try {
     const result = await operation()
+    if (result instanceof Response) return withSceneApiHeaders(request, result)
     return sceneApiJson(request, result.body, { status: result.status ?? 200 })
   } catch (error) {
     if (error instanceof RemoteVoiceSessionError || error instanceof RemoteVoiceApiError) {
@@ -142,7 +151,7 @@ export async function handleRemoteVoiceRequest(
   }
 }
 
-function withAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+export function withAbort<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const abort = () => {
       signal.removeEventListener('abort', abort)

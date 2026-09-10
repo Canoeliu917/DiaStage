@@ -1,4 +1,4 @@
-import { get, set } from 'idb-keyval'
+import { del, get, set } from 'idb-keyval'
 import { customAlphabet } from 'nanoid'
 
 export const ASSET_PREFIX = 'asset_data:'
@@ -16,6 +16,22 @@ export async function saveAsset(file: File): Promise<string> {
   const id = nanoAssetId()
   await set(`${ASSET_PREFIX}${id}`, file)
   return `asset://${id}`
+}
+
+/** Only remove uncommitted imports; committed assets may still be referenced by undo. */
+export async function deleteAsset(url: string): Promise<void> {
+  if (!url.startsWith('asset://')) return
+  const id = url.slice('asset://'.length)
+  await del(`${ASSET_PREFIX}${id}`)
+  releaseAssetUrl(url)
+}
+
+export function releaseAssetUrl(url: string): void {
+  if (!url.startsWith('asset://')) return
+  const id = url.slice('asset://'.length)
+  const cached = urlCache.get(id)
+  if (cached) URL.revokeObjectURL(cached)
+  urlCache.delete(id)
 }
 
 /**

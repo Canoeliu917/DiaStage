@@ -156,7 +156,7 @@ test('version restore and one undo recover scenery, simulation, camera and displ
   useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
   useCameraStudio.getState().setProject({ version: 1, shots: [newShot()] })
   useViewer.getState().setShowGrid(true)
-  saveRehearsalVersion('首版')
+  saveRehearsalVersion('首版', '首次合成排演')
   const rootId = graph.rootNodeIds[0]!
   const versions = useScene.getState().nodes[rootId]!.metadata.diastageRehearsalVersions as {
     id: string
@@ -172,6 +172,11 @@ test('version restore and one undo recover scenery, simulation, camera and displ
   clearSceneHistory()
   try {
     restoreRehearsalVersion(versions[0]!.id)
+    const restoredVersions = useScene.getState().nodes[rootId]!.metadata
+      .diastageRehearsalVersions as { id: string; restoredFrom?: string; note: string }[]
+    expect(restoredVersions).toHaveLength(2)
+    expect(restoredVersions[1]!.restoredFrom).toBe(versions[0]!.id)
+    expect(restoredVersions[0]!.note).toBe('首次合成排演')
     expect(readStageDocument()!.venue.width).toBe(8)
     expect(useCameraStudio.getState().project.shots).toHaveLength(1)
     expect(useViewer.getState().showGrid).toBe(true)
@@ -181,9 +186,30 @@ test('version restore and one undo recover scenery, simulation, camera and displ
     expect(useCameraStudio.getState().project.shots).toHaveLength(0)
     expect(useViewer.getState().showGrid).toBe(false)
     expect(useEditor.getState().viewMode).toBe('3d')
+    expect(useScene.getState().nodes[rootId]!.metadata.diastageRehearsalVersions).toHaveLength(1)
   } finally {
     stopSync()
   }
+})
+test('damaged version recovery does not mutate current scene, undo or stored versions', () => {
+  const graph = createTheatreSceneGraph()
+  useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
+  saveRehearsalVersion('合成损坏测试')
+  const rootId = graph.rootNodeIds[0]!
+  const root = useScene.getState().nodes[rootId]!
+  const versions = structuredClone(root.metadata.diastageRehearsalVersions) as {
+    id: string
+    stageGraph: { rootNodeIds: string[] }
+  }[]
+  versions[0]!.stageGraph.rootNodeIds = ['site_missing']
+  useScene
+    .getState()
+    .updateNode(rootId, { metadata: { ...root.metadata, diastageRehearsalVersions: versions } })
+  const before = useScene.getState().nodes,
+    history = useScene.temporal.getState().pastStates
+  expect(() => restoreRehearsalVersion(versions[0]!.id)).toThrow()
+  expect(useScene.getState().nodes).toBe(before)
+  expect(useScene.temporal.getState().pastStates).toBe(history)
 })
 test('camera persistence loads in SET and never overwrites unreadable legacy caches', () => {
   const data = new Map([

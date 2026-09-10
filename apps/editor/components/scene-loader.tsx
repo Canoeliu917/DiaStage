@@ -412,7 +412,10 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
             applyPlan={stageReady && searchParams.get('applyPlan') === '1'}
           />
           {conflict && (
-            <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-border bg-background p-4 shadow-xl">
+            <div
+              role="alert"
+              className="studio-save-notice shrink-0 border-b border-border bg-background p-3"
+            >
               <h2 className="font-semibold text-sm">此场景已在其他窗口更新</h2>
               <p className="mt-1 text-muted-foreground text-xs">
                 本机事务已保留，同步已暂停。请导出本机版本备份后处理差异；重新打开仍会恢复本机事务。
@@ -436,7 +439,10 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
             </div>
           )}
           {saveError && !conflict && (
-            <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-destructive/50 bg-background p-3 shadow-xl">
+            <div
+              role="alert"
+              className="studio-save-notice shrink-0 border-b border-destructive/50 bg-background p-3"
+            >
               <p className="font-medium text-destructive text-xs">{saveError}</p>
               <button
                 type="button"

@@ -179,7 +179,7 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   for (const [label, group, panel] of [
     ['置景', 'set', 'items'],
     ['排演', 'rehearse', 'simulation'],
-    ['复台', 'remount', 'remount'],
+    ['复台', 'remount', 'versions'],
   ]) {
     collapsed = true
     editor.isPreviewMode = true
@@ -213,8 +213,8 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   assert.equal(renderNavigation().length, 3, 'three peer workspace options')
   for (const [label, expected, group] of [
     ['置景', ['theatre-venue', 'build', 'items', 'stage-cameras', 'stage-command'], 'set'],
-    ['排演', ['simulation', 'display', 'observe', 'record', 'versions'], 'rehearse'],
-    ['复台', ['remount'], 'remount'],
+    ['排演', ['simulation', 'display', 'observe', 'record'], 'rehearse'],
+    ['复台', ['versions', 'remount'], 'remount'],
   ] as const) {
     button(label).onClick()
     assert.deepEqual(
@@ -249,7 +249,10 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     assert.equal(editor.activeSidebarPanel, expected)
     assert.equal(renderSidebar('navigation-test').group, expectedGroup)
     if (expectedGroup === 'rehearse')
-      assert.equal(renderSidebar('navigation-test').sidebarTabs.at(-1)?.id, 'versions')
+      assert.equal(
+        renderSidebar('navigation-test').sidebarTabs.at(-1)?.id,
+        expected === 'camera-rehearsal' ? expected : 'record',
+      )
     button('排演').onClick()
     assert.equal(editor.activeSidebarPanel, 'simulation')
   }

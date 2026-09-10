@@ -49,11 +49,9 @@ export function useStudioSidebar(sceneId: string) {
   const [selectedGroup, setSelectedGroup] = useState<StudioGroup>('set')
   const panel = migrateStudioPanel(activePanel)
   const group: StudioGroup =
-    panel === 'remount'
+    panel === 'remount' || panel === 'versions'
       ? 'remount'
-      : ['simulation', 'display', 'observe', 'record', 'versions', 'camera-rehearsal'].includes(
-            panel,
-          )
+      : ['simulation', 'display', 'observe', 'record', 'camera-rehearsal'].includes(panel)
         ? 'rehearse'
         : ['theatre-venue', 'build', 'items', 'stage-cameras', 'stage-command'].includes(panel)
           ? 'set'
@@ -108,9 +106,9 @@ export function useStudioSidebar(sceneId: string) {
                     : RecordPanel,
                 icon: Video,
               },
-              { id: 'versions', label: '排演版本', component: VersionsPanel, icon: History },
             ]
           : [
+              { id: 'versions', label: '排演版本', component: VersionsPanel, icon: History },
               {
                 id: 'remount',
                 label: '场地映射',
@@ -142,7 +140,7 @@ export function useStudioSidebar(sceneId: string) {
     sidebarTabs,
     onGroupChange: (input: StudioGroup) => {
       const next = migrateStudioGroup(input)
-      if (openStudioPanel({ set: 'items', rehearse: 'simulation', remount: 'remount' }[next]))
+      if (openStudioPanel({ set: 'items', rehearse: 'simulation', remount: 'versions' }[next]))
         setSelectedGroup(next)
     },
   }

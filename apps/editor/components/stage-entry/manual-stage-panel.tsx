@@ -567,7 +567,13 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
           <button type="button" onClick={() => startStagePlacement(entry, object, true)}>
             复制后落位
           </button>
-          <button type="button" onClick={() => run({ type: 'RemoveObject' })}>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm(`删除「${object.name}」？删除后可以撤销。`))
+                run({ type: 'RemoveObject' })
+            }}
+          >
             删除
           </button>
         </div>

@@ -56,7 +56,7 @@ export function theatreParametrics(
   if (!type || !source || !isTheatreEditableType(type)) return undefined
   if (type === 'block' || type === 'item')
     return { ...source, actions: undefined, trailingSection: undefined }
-  if (type === 'stair' || type === 'stair-segment')
+  if (type === 'stair' || type === 'stair-segment' || type === 'scan')
     return {
       ...source,
       customPanel: source.customPanel,

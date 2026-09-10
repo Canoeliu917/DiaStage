@@ -72,13 +72,13 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false, o
 
   useLayoutEffect(() => {
     if (renderPaused || paused) return
-    const clock = createFrameClock(nextFrameTimeRef.current)
+    let clock = createFrameClock(nextFrameTimeRef.current)
     let raf: number | null = null
     let timer: ReturnType<typeof setInterval> | null = null
     let sizeSynced = false
     let failed = false
     const draw = (time: number) => {
-      if (failed) return
+      if (failed || document.hidden) return
       try {
         syncSize()
         timeSpan('frame-cpu', () => advance(time))
@@ -97,23 +97,29 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false, o
     }
     function tick(t: DOMHighResTimeStamp) {
       raf = requestAnimationFrame(tick)
+      if (document.hidden) return
       const frameTime = clock.sample(t, interval)
       if (frameTime === null) return
       nextFrameTimeRef.current = frameTime
       draw(frameTime)
     }
     function kick() {
+      if (document.hidden) return
       const frameTime = clock.step(1 / 1000)
       nextFrameTimeRef.current = frameTime
       draw(frameTime)
     }
     function onVisibilityChange() {
-      if (document.visibilityState === 'visible') kick()
+      if (!document.hidden) {
+        clock = createFrameClock(nextFrameTimeRef.current)
+        kick()
+      }
     }
     // Set frameloop to never, it will shut down the default render loop
     set({ frameloop: 'never' })
     if (DRAW_DISABLED) {
       timer = setInterval(() => {
+        if (document.hidden) return
         const frameTime = clock.step(interval / 1000)
         nextFrameTimeRef.current = frameTime
         draw(frameTime)
@@ -123,10 +129,10 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false, o
       raf = requestAnimationFrame(tick)
       // rAF can stall while a tab is hidden, unfocused, or occluded. With the
       // default loop disabled, force one current frame as soon as it resumes.
-      document.addEventListener('visibilitychange', onVisibilityChange)
       window.addEventListener('focus', kick)
       window.addEventListener('pageshow', kick)
     }
+    document.addEventListener('visibilitychange', onVisibilityChange)
     // Restore initial setting
     return () => {
       if (raf) {

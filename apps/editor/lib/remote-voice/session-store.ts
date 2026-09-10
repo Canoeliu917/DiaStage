@@ -9,12 +9,14 @@ export const REMOTE_VOICE_LIMITS = {
 const PAIRING_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
 
 export type RemoteVoiceCommand = {
+  requestId: string
   sequence: number
   transcript: string
   createdAt: string
 }
 
-export type RemoteVoiceDisposition = 'loaded' | 'dismissed'
+export type RemoteVoiceDisposition = 'applied' | 'rejected' | 'failed'
+export type RemoteVoiceProgress = 'received' | 'processing' | 'waiting-confirmation'
 
 type RemoteVoiceSession = {
   id: string
@@ -22,6 +24,7 @@ type RemoteVoiceSession = {
   ownerToken: string
   remoteToken: string | null
   label: string | null
+  sceneId: string | null
   createdAt: number
   expiresAt: number
   connectedAt: number | null
@@ -32,9 +35,12 @@ type RemoteVoiceSession = {
   lastAcknowledgedSequence: number
   lastAcknowledgedDisposition: RemoteVoiceDisposition | null
   pendingCommand: RemoteVoiceCommand | null
+  lastCommand: RemoteVoiceCommand | null
+  progress: RemoteVoiceProgress | null
 }
 
 export type CreatedRemoteVoiceSession = {
+  sceneId: string | null
   id: string
   pairingCode: string
   ownerToken: string
@@ -42,6 +48,7 @@ export type CreatedRemoteVoiceSession = {
 }
 
 export type JoinedRemoteVoiceSession = {
+  sceneId: string | null
   id: string
   remoteToken: string
   label: string | null
@@ -49,6 +56,7 @@ export type JoinedRemoteVoiceSession = {
 }
 
 export type OwnerRemoteVoiceStatus = {
+  progress: RemoteVoiceProgress | null
   paired: boolean
   connectedAt: string | null
   expiresAt: string
@@ -58,6 +66,7 @@ export type OwnerRemoteVoiceStatus = {
 }
 
 export type RemoteRemoteVoiceStatus = {
+  progress: RemoteVoiceProgress | null
   mode: 'suggest' | 'create' | 'draft'
   summary: string | null
   expiresAt: string
@@ -90,10 +99,11 @@ export class RemoteVoiceSessionError extends Error {
 export class RemoteVoiceSessionStore {
   private readonly sessions = new Map<string, RemoteVoiceSession>()
   private readonly sessionsByPairingCode = new Map<string, string>()
+  private readonly revokeListeners = new Set<(id: string) => void>()
 
   constructor(private readonly now: () => number = Date.now) {}
 
-  create(label?: string | null): CreatedRemoteVoiceSession {
+  create(label?: string | null, sceneId: string | null = null): CreatedRemoteVoiceSession {
     this.removeExpired()
     if (this.sessions.size >= REMOTE_VOICE_LIMITS.maxSessions) {
       throw new RemoteVoiceSessionError(
@@ -111,6 +121,7 @@ export class RemoteVoiceSessionStore {
       ownerToken: token(),
       remoteToken: null,
       label: label?.trim().slice(0, 100) || null,
+      sceneId,
       createdAt,
       expiresAt: createdAt + REMOTE_VOICE_LIMITS.sessionTtlMs,
       connectedAt: null,
@@ -121,10 +132,13 @@ export class RemoteVoiceSessionStore {
       lastAcknowledgedSequence: 0,
       lastAcknowledgedDisposition: null,
       pendingCommand: null,
+      lastCommand: null,
+      progress: null,
     }
     this.sessions.set(id, session)
     this.sessionsByPairingCode.set(pairingCode, id)
     return {
+      sceneId,
       id,
       pairingCode: displayPairingCode(pairingCode),
       ownerToken: session.ownerToken,
@@ -157,6 +171,7 @@ export class RemoteVoiceSessionStore {
     this.sessionsByPairingCode.delete(normalized)
     session.pairingCode = null
     return {
+      sceneId: session.sceneId,
       id: session.id,
       remoteToken: session.remoteToken,
       label: session.label,
@@ -167,10 +182,11 @@ export class RemoteVoiceSessionStore {
   ownerStatus(id: string, suppliedToken: string | null): OwnerRemoteVoiceStatus {
     const session = this.authorizeOwner(id, suppliedToken)
     return {
+      progress: session.progress,
       paired:
         session.remoteToken !== null &&
         session.lastSeenAt !== null &&
-        this.now() - session.lastSeenAt <= 6000,
+        this.now() - session.lastSeenAt <= 90_000,
       connectedAt: session.connectedAt === null ? null : iso(session.connectedAt),
       expiresAt: iso(session.expiresAt),
       pendingCommand: session.pendingCommand ? { ...session.pendingCommand } : null,
@@ -183,6 +199,7 @@ export class RemoteVoiceSessionStore {
     const session = this.authorizeRemote(id, suppliedToken)
     session.lastSeenAt = this.now()
     return {
+      progress: session.progress,
       mode: session.mode,
       summary: session.summary,
       expiresAt: iso(session.expiresAt),
@@ -192,8 +209,31 @@ export class RemoteVoiceSessionStore {
     }
   }
 
-  sendCommand(id: string, suppliedToken: string | null, transcript: string): RemoteVoiceCommand {
+  sendCommand(
+    id: string,
+    suppliedToken: string | null,
+    transcript: string,
+    requestId = crypto.randomUUID(),
+    sequence?: number,
+  ): RemoteVoiceCommand {
     const session = this.authorizeRemote(id, suppliedToken)
+    const previous = session.pendingCommand ?? session.lastCommand
+    if (previous?.requestId === requestId) {
+      if (
+        previous.transcript !== transcript.trim() ||
+        (sequence !== undefined && sequence !== previous.sequence)
+      ) {
+        throw new RemoteVoiceSessionError('COMMAND_STALE', '同一请求不能更换口令。', 409)
+      }
+      return { ...previous }
+    }
+    if (sequence !== undefined && sequence !== session.nextSequence) {
+      throw new RemoteVoiceSessionError(
+        'COMMAND_STALE',
+        '口令顺序已变化，请等待回执后再发送。',
+        409,
+      )
+    }
     if (session.pendingCommand) {
       throw new RemoteVoiceSessionError(
         'COMMAND_PENDING',
@@ -206,11 +246,13 @@ export class RemoteVoiceSessionStore {
       throw new RemoteVoiceSessionError('COMMAND_STALE', '口令为空或过长，请缩短后重新发送。', 400)
     }
     const command = {
+      requestId,
       sequence: session.nextSequence++,
       transcript: clean,
       createdAt: iso(this.now()),
     }
     session.pendingCommand = command
+    session.progress = 'received'
     return { ...command }
   }
 
@@ -218,7 +260,7 @@ export class RemoteVoiceSessionStore {
     id: string,
     suppliedToken: string | null,
     sequence: number,
-    disposition: RemoteVoiceDisposition,
+    disposition: RemoteVoiceDisposition | RemoteVoiceProgress,
     summary?: string,
   ): void {
     const session = this.authorizeOwner(id, suppliedToken)
@@ -230,7 +272,19 @@ export class RemoteVoiceSessionStore {
         409,
       )
     }
+    if (
+      disposition === 'received' ||
+      disposition === 'processing' ||
+      disposition === 'waiting-confirmation'
+    ) {
+      const rank = { received: 0, processing: 1, 'waiting-confirmation': 2 }
+      if (rank[disposition] >= rank[session.progress ?? 'received']) session.progress = disposition
+      session.summary = summary?.slice(0, 300) ?? null
+      return
+    }
+    session.lastCommand = session.pendingCommand
     session.pendingCommand = null
+    session.progress = null
     session.lastAcknowledgedSequence = sequence
     session.lastAcknowledgedDisposition = disposition
     session.summary = summary?.slice(0, 300) ?? null
@@ -250,6 +304,23 @@ export class RemoteVoiceSessionStore {
 
   authorizeRemoteRequest(id: string, suppliedToken: string | null): void {
     this.authorizeRemote(id, suppliedToken)
+  }
+
+  sceneForRequest(
+    id: string,
+    suppliedToken: string | null,
+    role: 'owner' | 'remote',
+  ): string | null {
+    return (
+      role === 'owner'
+        ? this.authorizeOwner(id, suppliedToken)
+        : this.authorizeRemote(id, suppliedToken)
+    ).sceneId
+  }
+
+  onRevoke(listener: (id: string) => void): () => void {
+    this.revokeListeners.add(listener)
+    return () => this.revokeListeners.delete(listener)
   }
 
   private authorizeOwner(id: string, suppliedToken: string | null): RemoteVoiceSession {
@@ -297,7 +368,7 @@ export class RemoteVoiceSessionStore {
     )
   }
 
-  private removeExpired(): void {
+  removeExpired(): void {
     const now = this.now()
     for (const session of this.sessions.values()) {
       if (session.expiresAt <= now) this.deleteSession(session)
@@ -307,6 +378,7 @@ export class RemoteVoiceSessionStore {
   private deleteSession(session: RemoteVoiceSession): void {
     this.sessions.delete(session.id)
     if (session.pairingCode) this.sessionsByPairingCode.delete(session.pairingCode)
+    for (const listener of this.revokeListeners) listener(session.id)
   }
 }
 

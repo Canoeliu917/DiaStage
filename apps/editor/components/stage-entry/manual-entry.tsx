@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import './stage-entry.css'
 
-export function ManualStageEntry() {
+export function ManualStageEntry({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
   const router = useRouter(),
-    [open, setOpen] = useState(false),
+    [open, setOpen] = useState(initiallyOpen),
     [busy, setBusy] = useState(false),
     [ready, setReady] = useState(false),
     [error, setError] = useState('')

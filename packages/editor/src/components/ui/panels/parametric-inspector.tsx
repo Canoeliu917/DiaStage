@@ -121,6 +121,8 @@ export function ParametricInspector({
           ? [selectedId, ...collectZoneContentIds(scene.nodes, node as ZoneNode)]
           : [selectedId]
 
+      if (!window.confirm(`删除${ids.length > 1 ? `这 ${ids.length} 个物件` : '这个物件'}？可以撤销恢复。`)) return
+
       sfxEmitter.emit('sfx:structure-delete')
       scene.deleteNodes(Array.from(new Set(ids)))
       clearSelection()

@@ -3,7 +3,7 @@ import { useThree } from '@react-three/fiber'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { configureKtx2Support } from '../lib/ktx2-loader'
 
-const useGLTFKTX2 = (path: string): ReturnType<typeof useGLTF> => {
+const useGLTFKTX2 = (path: string): ReturnType<typeof useGLTF<string>> => {
   const gl = useThree((state) => state.gl)
 
   return useGLTF(path, true, true, (loader) => {
