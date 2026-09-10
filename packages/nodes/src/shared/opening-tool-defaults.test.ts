@@ -1,6 +1,6 @@
+import { test } from 'bun:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 if (!process.env.OPENING_PRESET_RUNTIME_TEST) {
@@ -11,7 +11,7 @@ if (!process.env.OPENING_PRESET_RUNTIME_TEST) {
       timeout: 30_000,
     })
     assert.equal(child.status, 0, child.error?.message ?? `${child.stdout}\n${child.stderr}`)
-  })
+  }, 40_000)
 } else {
   const { mock } = await import('bun:test')
   const React = await import('react')

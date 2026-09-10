@@ -35,7 +35,7 @@ bun run stage-runtime
 bun run smoke-runtime
 ```
 
-PowerShell 中先设置 `$env:PASCAL_PORTABLE_BUILD='1'`，再运行构建。Editor 测试命令现为 `bun test lib components`，把原本漏跑的组件回归纳入 CI。
+PowerShell 中先设置 `$env:PASCAL_PORTABLE_BUILD='1'`，再运行构建。Editor 测试命令现为 `bun test lib components`，把原本漏跑的组件回归纳入 CI。Linux CI 暴露两项隔离测试的外层默认 5 秒超时短于子进程的 20–30 秒；现为外层分别设置 30/40 秒，保持子进程上限和全部断言。
 
 | 检查 | 本轮结果 |
 | --- | --- |
@@ -114,6 +114,7 @@ packages/editor/src/lib/theatre-parametrics.ts
 packages/editor/src/lib/theatre-presentation.test.ts
 packages/editor/src/lib/theatre-presentation.ts
 packages/mcp/src/index.test.ts
+packages/nodes/src/shared/opening-tool-defaults.test.ts
 packages/viewer/src/components/viewer/frame-limiter.tsx
 packages/viewer/src/components/viewer/index.tsx
 packages/viewer/src/components/viewer/registered-systems.tsx

@@ -1,6 +1,6 @@
+import { test } from 'bun:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
@@ -11,7 +11,7 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
       timeout: 20_000,
     })
     assert.equal(child.status, 0, child.error?.message ?? `${child.stdout}\n${child.stderr}`)
-  })
+  }, 30_000)
 } else {
   globalThis.requestAnimationFrame = () => 1
   globalThis.cancelAnimationFrame = () => {}
