@@ -37,6 +37,8 @@ bun run smoke-runtime
 
 PowerShell 中先设置 `$env:PASCAL_PORTABLE_BUILD='1'`，再运行构建。Editor 测试命令现为 `bun test lib components`，把原本漏跑的组件回归纳入 CI。Linux CI 暴露两项隔离测试的外层默认 5 秒超时短于子进程的 20–30 秒；现为外层分别设置 30/40 秒，保持子进程上限和全部断言。
 
+CI 的测试任务按 package 串行运行（`bun run test --concurrency=1`），避免新增组件测试和旧几何回归同时争抢 runner CPU；保留旧几何测试的 15 秒上限及所有组合。
+
 | 检查 | 本轮结果 |
 | --- | --- |
 | 根 Biome | 0 错误；1 条原有的 effect 依赖信息提示，保留项目切换时清理录像的行为 |
@@ -67,6 +69,7 @@ PowerShell 中先设置 `$env:PASCAL_PORTABLE_BUILD='1'`，再运行构建。Edi
 下面清单相对于本轮开始的 `2e988a3`；包括 CI 必需格式修正。
 
 ~~~text
+.github/workflows/ci.yml
 apps/editor/components/build-tab.tsx
 apps/editor/components/camera-rehearsal-panel.tsx
 apps/editor/components/camera-rehearsal-system.test.ts
