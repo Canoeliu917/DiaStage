@@ -1,7 +1,10 @@
 import { describe, expect, test } from 'bun:test'
 import { LevelNode, WallNode } from '@pascal-app/core'
 import { CATALOG_ITEMS } from '../components/ui/item-catalog/catalog-items'
-import { THEATRE_CATALOG_ITEMS, theatreCatalogItems } from '../components/ui/item-catalog/theatre-catalog'
+import {
+  THEATRE_CATALOG_ITEMS,
+  theatreCatalogItems,
+} from '../components/ui/item-catalog/theatre-catalog'
 import { CONTINUATION_PROFILES } from './continuation'
 import { getTheatreNodeLabel, getTheatreNodeName } from './theatre-presentation'
 
@@ -17,11 +20,19 @@ describe('theatre presentation boundary', () => {
   })
 
   test('all default asset categories and search candidates are theatrical', () => {
-    expect(new Set(THEATRE_CATALOG_ITEMS.map((item) => item.category))).toEqual(new Set(['furniture', 'props', 'scenery']))
-    expect(THEATRE_CATALOG_ITEMS.some((item) => item.id === 'wine-bottle' && item.category === 'props')).toBe(true)
-    expect(THEATRE_CATALOG_ITEMS.some((item) => item.id === 'books' && item.category === 'props')).toBe(true)
+    expect(new Set(THEATRE_CATALOG_ITEMS.map((item) => item.category))).toEqual(
+      new Set(['furniture', 'props', 'scenery']),
+    )
+    expect(
+      THEATRE_CATALOG_ITEMS.some((item) => item.id === 'wine-bottle' && item.category === 'props'),
+    ).toBe(true)
+    expect(
+      THEATRE_CATALOG_ITEMS.some((item) => item.id === 'books' && item.category === 'props'),
+    ).toBe(true)
     expect(THEATRE_CATALOG_ITEMS.some((item) => item.id === 'dishwasher-movn72ls')).toBe(false)
-    expect(theatreCatalogItems(CATALOG_ITEMS.filter((item) => item.id === 'dishwasher-movn72ls'))).toEqual([])
+    expect(
+      theatreCatalogItems(CATALOG_ITEMS.filter((item) => item.id === 'dishwasher-movn72ls')),
+    ).toEqual([])
     expect(THEATRE_CATALOG_ITEMS.every((item) => !item.tool || item.tool === 'item')).toBe(true)
   })
 

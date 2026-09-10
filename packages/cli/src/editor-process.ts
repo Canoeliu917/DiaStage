@@ -189,7 +189,8 @@ async function startEditorUnlocked(options: StartEditorOptions): Promise<StartEd
     version: runtime.version,
     port,
     host: '127.0.0.1',
-    url: `http://pascal.localhost:${port}`,
+    // Numeric loopback also works in Node/Bun when the OS does not resolve *.localhost.
+    url: `http://127.0.0.1:${port}`,
     instanceId,
     runtimeDirectory: runtime.directory,
     startedAt: new Date().toISOString(),

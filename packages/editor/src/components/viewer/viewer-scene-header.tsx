@@ -13,8 +13,8 @@ import { ArrowLeft, ChevronRight, Layers } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useShallow } from 'zustand/react/shallow'
-import { cn } from '../../lib/utils'
 import { getTheatreNodeName } from '../../lib/theatre-presentation'
+import { cn } from '../../lib/utils'
 
 const getNodeName = getTheatreNodeName
 

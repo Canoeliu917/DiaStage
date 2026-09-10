@@ -87,6 +87,8 @@ export class UsageLedger {
 }
 let ledger: UsageLedger | undefined
 export function usageLedger() {
-  ledger ??= new UsageLedger(resolve(process.env.DIASTAGE_AI_LEDGER_PATH ?? 'data/ai-usage.db'))
+  ledger ??= new UsageLedger(
+    resolve(/* turbopackIgnore: true */ process.env.DIASTAGE_AI_LEDGER_PATH ?? 'data/ai-usage.db'),
+  )
   return ledger
 }

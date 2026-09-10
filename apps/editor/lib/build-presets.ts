@@ -343,6 +343,15 @@ const LIBRARY_LABELS: Record<string, string> = {
 }
 
 export function buildPresetLabel(preset: BuildPreset): string {
-  const label = preset.source === 'library' ? (LIBRARY_LABELS[preset.name] ?? preset.name) : preset.name
-  return label.replaceAll('楼梯', '台阶').replaceAll('墙体', '景片').replaceAll('厚墙', '厚景片').replaceAll('弧形墙', '弧形景片').replaceAll('矮墙', '矮景片').replaceAll('围栏', '栏杆').replaceAll('体块', '台块').replaceAll('搁板', '置物架')
+  const label =
+    preset.source === 'library' ? (LIBRARY_LABELS[preset.name] ?? preset.name) : preset.name
+  return label
+    .replaceAll('楼梯', '台阶')
+    .replaceAll('墙体', '景片')
+    .replaceAll('厚墙', '厚景片')
+    .replaceAll('弧形墙', '弧形景片')
+    .replaceAll('矮墙', '矮景片')
+    .replaceAll('围栏', '栏杆')
+    .replaceAll('体块', '台块')
+    .replaceAll('搁板', '置物架')
 }
