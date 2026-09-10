@@ -42,5 +42,27 @@
 .stage-script-dropzone input::file-selector-button { min-height:44px;margin-right:12px;padding:8px 12px;cursor:pointer;font:inherit; }
 .stage-script-filename,.stage-plan-review blockquote { overflow-wrap:anywhere; }
 .stage-question-answer { display:flex;flex-direction:column;gap:8px;margin:12px 0 20px; }
+.phone-voice-link { border-block:1px solid #999;padding:4px 0; }
+.phone-voice-link > summary { min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600; }
+.phone-voice-link__body { display:flex;flex-direction:column;gap:12px;padding:8px 0 16px; }
+.phone-voice-link__code { font-size:clamp(24px,6vw,36px);font-weight:700;letter-spacing:.14em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere; }
+.phone-voice-link__incoming { display:flex;flex-direction:column;gap:10px;border:1px solid #777;padding:14px; }
+.phone-voice-link__incoming blockquote,.remote-voice-receipt blockquote { border-left:2px solid currentColor;padding-left:12px;overflow-wrap:anywhere;white-space:pre-wrap; }
+.remote-voice-page { min-height:100dvh;display:flex;flex-direction:column;align-items:center;gap:28px;background:#111;color:#f5f5f5;padding:max(24px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left)); }
+.remote-voice-page > .studio-wordmark { align-self:flex-start;display:flex;align-items:center;gap:0;font-size:21px; }
+.remote-voice-card { width:min(100%,600px);display:flex;flex-direction:column;gap:18px;background:#f2f2ed;color:#202020;padding:clamp(20px,6vw,42px);border-radius:6px; }
+.remote-voice-card > header { display:flex;align-items:flex-start;justify-content:space-between;gap:16px; }
+.remote-voice-card h1 { font-size:clamp(24px,7vw,34px);line-height:1.25; }
+.remote-voice-card h2 { font-size:19px;line-height:1.4; }
+.remote-voice-card p { font-size:13px;line-height:1.7; }
+.remote-voice-card label { display:flex;flex-direction:column;gap:8px;font-size:13px; }
+.remote-voice-card :is(input,textarea) { width:100%;min-height:48px;border:1px solid #777;background:#fff;color:#181818;padding:10px 12px;font:inherit;font-size:16px; }
+.remote-voice-card textarea { min-height:160px;resize:vertical; }
+.remote-voice-card button { min-height:48px;border:1px solid currentColor;padding:10px 16px;font:inherit;cursor:pointer; }
+.remote-voice-card button:disabled { opacity:.45;cursor:not-allowed; }
+.remote-voice-card :focus-visible { outline:3px solid #111;outline-offset:3px; }
+.remote-voice-card .stage-voice-recorder { display:flex;flex-direction:column;gap:10px; }
+.remote-voice-receipt { display:flex;flex-direction:column;gap:14px;border-top:1px solid #888;padding-top:18px; }
+.remote-voice-page__privacy { width:min(100%,600px);color:#bdbdbd;font-size:11px;line-height:1.7; }
 @media(max-width:850px) { .stage-script-groups { grid-template-columns:1fr; } .stage-script-groups > section { max-height:none;overflow:visible; } .stage-script-groups h3 { position:static; } }
-@media(max-width:600px) { .stage-input input,.stage-input textarea,.stage-plan-review input,.stage-entry-form input,.stage-entry-form select { font-size:16px; } .stage-entry-dialog { width:calc(100% - 16px);max-height:calc(100dvh - 16px); } .stage-entry-metrics { gap:6px; } }
+@media(max-width:600px) { .stage-input input,.stage-input textarea,.stage-plan-review input,.stage-entry-form input,.stage-entry-form select { font-size:16px; } .stage-entry-dialog { width:calc(100% - 16px);max-height:calc(100dvh - 16px); } .stage-entry-metrics { gap:6px; } .remote-voice-card > header { flex-direction:column; } .remote-voice-card > header button { width:100%; } }

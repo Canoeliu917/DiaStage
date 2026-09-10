@@ -149,9 +149,13 @@ export async function handleAiRequest(
     requestId: string
     signal: AbortSignal
   }) => Promise<Record<string, unknown>>,
+  options: { skipSceneAuth?: boolean } = {},
 ): Promise<Response> {
   const requestId = crypto.randomUUID()
-  const guard = guardSceneApiRequest(request, { skipRateLimit: true })
+  const guard = guardSceneApiRequest(request, {
+    skipRateLimit: true,
+    skipAuth: options.skipSceneAuth,
+  })
   if (guard) return errorResponse(request, requestId, accessError(guard.status))
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||

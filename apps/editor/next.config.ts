@@ -20,9 +20,6 @@ const nextConfig: NextConfig = {
   logging: {
     browserToTerminal: true,
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   // MCP / package metadata returns `/editor/<id>` (hosted route). This open-source
   // app serves saved scenes at `/scene/<id>` — redirect so links and bookmarks work.
   async redirects() {
@@ -40,11 +37,6 @@ const nextConfig: NextConfig = {
     '@pascal-app/core',
     '@pascal-app/editor',
     '@pascal-app/mcp',
-    '@pascal-app/plugin-streetscape',
-    '@pascal-app/plugin-trees',
-    '@mint/pascal-plugin',
-    '@pascal-app/plugin-bones',
-    '@dgreenheck/ez-tree',
   ],
   turbopack: {
     resolveAlias: {

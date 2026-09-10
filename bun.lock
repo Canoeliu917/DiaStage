@@ -28,15 +28,11 @@
       "version": "0.1.0",
       "dependencies": {
         "@iconify/react": "^6.0.2",
-        "@mint/pascal-plugin": "github:mintdotgg/mint-pascal-plugin#902c546dbaece6b31455c0dc394afe6b9cd136fe",
         "@number-flow/react": "^0.6.0",
         "@pascal-app/core": "*",
         "@pascal-app/editor": "*",
         "@pascal-app/mcp": "*",
         "@pascal-app/nodes": "*",
-        "@pascal-app/plugin-bones": "github:pascalorg/plugin-bones#5679260261ee1c733656ff6dfb99e30bb24b58a7",
-        "@pascal-app/plugin-streetscape": "github:sudhir9297/streetscape-pascal-plugin#1c04ec9ccb3fa8124ec56dfc1026567cbbc51aef",
-        "@pascal-app/plugin-trees": "github:pascalorg/plugin-trees#56d978cd9b409b716207b3f3d269455d3cd6f067",
         "@pascal-app/viewer": "*",
         "@radix-ui/react-tooltip": "^1.2.8",
         "@react-three/drei": "^10.7.7",
@@ -382,11 +378,7 @@
     },
   },
   "patchedDependencies": {
-    "@pascal-app/plugin-trees@github:pascalorg/plugin-trees#56d978c": "patches/pascal-app-plugin-trees-zh.patch",
-    "@mint/pascal-plugin@github:mintdotgg/mint-pascal-plugin#902c546": "patches/mint-pascal-plugin-zh.patch",
     "three@0.185.1": "patches/three@0.185.1.patch",
-    "@pascal-app/plugin-bones@github:pascalorg/plugin-bones#5679260": "patches/pascal-app-plugin-bones-zh.patch",
-    "@pascal-app/plugin-streetscape@github:sudhir9297/streetscape-pascal-plugin#1c04ec9": "patches/pascal-app-plugin-streetscape-zh.patch",
   },
   "overrides": {
     "@types/react": "19.2.17",

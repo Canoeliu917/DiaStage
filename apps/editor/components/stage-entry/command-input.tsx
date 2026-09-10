@@ -13,6 +13,7 @@ import { executeStageCommands } from '@/lib/stage/command-executor'
 import { currentStageContext } from '@/lib/stage/context'
 import type { ScriptImport } from '@/lib/stage/import-metadata'
 import { createManualStageGraph } from '@/lib/stage/initial-stage'
+import { PhoneVoiceLink } from './phone-voice-link'
 import { EMPTY_STAGE_CONTEXT, StagePlanReview, useStagePlanPreview } from './plan-review'
 import { VoiceRecorder } from './voice-recorder'
 import './stage-entry.css'
@@ -173,6 +174,18 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
   }
   return (
     <div className="stage-input" aria-busy={busy}>
+      <PhoneVoiceLink
+        sceneLabel={sceneId ? '当前剧目 · 舞台口令' : '新舞台 · 语音开台'}
+        storageKey={sceneId ?? 'new-stage'}
+        canLoad={!busy && !plan}
+        onTranscript={(transcript) => {
+          setText(transcript)
+          setSource('voice')
+          setAnswers([])
+          setError('')
+          setState('idle')
+        }}
+      />
       {!plan && (
         <>
           <VoiceRecorder

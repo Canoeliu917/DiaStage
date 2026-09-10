@@ -111,6 +111,19 @@ const surfaceRoleMaterialCache = new Map<string, THREE.Material>()
 const textureCache = new Map<string, THREE.Texture>()
 const textureLoadPromises = new Map<string, Promise<THREE.Texture | null>>()
 const textureLoader = new THREE.TextureLoader()
+let materialTextureVersion = 0
+
+/**
+ * Monotonic revision for async texture assignments.
+ *
+ * Material instances are cached and populated after their texture requests
+ * finish. Consumers that clone those materials (notably wall selection and
+ * hover variants) can poll this revision to replace a clone that captured an
+ * earlier, texture-less state.
+ */
+export function getMaterialTextureVersion(): number {
+  return materialTextureVersion
+}
 
 // `.ktx2` finish maps transcode through the shared KTX2 loader (support is
 // detected once at viewer init); everything else loads as a normal image.
@@ -417,6 +430,7 @@ function queueTextureAssignment(
     if (!texture) return
     textureMaterial[slot] = createAssignedTexture(texture, props, slot)
     material.needsUpdate = true
+    materialTextureVersion += 1
   })
 }
 
@@ -799,4 +813,5 @@ export function clearMaterialCache(): void {
   }
   textureCache.clear()
   textureLoadPromises.clear()
+  materialTextureVersion += 1
 }
