@@ -159,4 +159,3 @@ STABILITY_IMPLEMENTATION.md
 STAGE_STEPS_IMPLEMENTATION.md
 docs/verification/stage-steps/*
 ~~~
-
