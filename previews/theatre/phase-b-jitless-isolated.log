@@ -1,0 +1,19 @@
+bun test v1.3.14 (0d9b296a)
+
+packages\core\src\schema\compiled-node-parsers.test.ts:
+289 | 
+290 |     const proc = Bun.spawnSync(['bun', '-e', source], { cwd: dir })
+291 |     const stdout = proc.stdout.toString().trim()
+292 |     expect(proc.exitCode, proc.stderr.toString()).toBe(0)
+293 | 
+294 |     const result = JSON.parse(stdout.slice(stdout.lastIndexOf('{')))
+                              ^
+SyntaxError: JSON Parse error: Unexpected identifier "d"
+      at <anonymous> (D:\Codex\2026-09-08\new-chat-2\outputs\camera-studio\packages\core\src\schema\compiled-node-parsers.test.ts:294:25)
+(fail) compiled node parsers — jitless (CSP) profile > declines to compile and keeps parsing correctly [105.37ms]
+
+ 0 pass
+ 250 filtered out
+ 1 fail
+ 1 expect() calls
+Ran 1 test across 1 file. [418.00ms]

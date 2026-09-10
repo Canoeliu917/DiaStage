@@ -86,7 +86,9 @@ export const ParametricNodeRenderer = ({ node }: { node: AnyNode }) => {
       position={position}
       ref={ref}
       rotation={rotation}
-      visible={n.visible !== false}
+      visible={
+        typeof liveOverride?.visible === 'boolean' ? liveOverride.visible : n.visible !== false
+      }
       {...handlers}
     >
       {Array.isArray(n.children) &&

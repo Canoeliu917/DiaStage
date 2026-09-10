@@ -3,38 +3,10 @@ import { headers } from 'next/headers'
 import Image from 'next/image'
 import Link from 'next/link'
 import { CreateSceneButton } from '@/components/save-button'
-import type { SceneMeta } from '@/components/scene-loader'
 import { StudioWordmark } from '@/components/studio-wordmark'
+import { getScenePageOperations } from '@/lib/scene-store-server'
 
 export const dynamic = 'force-dynamic'
-
-async function resolveBaseUrl(): Promise<string> {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL
-  }
-  const h = await headers()
-  const host = h.get('x-forwarded-host') ?? h.get('host')
-  const proto = h.get('x-forwarded-proto') ?? 'http'
-  if (!host) {
-    return 'http://localhost:3000'
-  }
-  return `${proto}://${host}`
-}
-
-async function fetchScenes(): Promise<SceneMeta[]> {
-  const base = await resolveBaseUrl()
-  const response = await fetch(`${base}/api/scenes?limit=50`, {
-    cache: 'no-store',
-  })
-  if (!response.ok) {
-    return []
-  }
-  const payload = (await response.json()) as { scenes?: SceneMeta[] } | SceneMeta[]
-  if (Array.isArray(payload)) {
-    return payload
-  }
-  return payload.scenes ?? []
-}
 
 function formatDate(iso: string): string {
   try {
@@ -44,8 +16,14 @@ function formatDate(iso: string): string {
   }
 }
 
-export default async function ScenesPage() {
-  const scenes = await fetchScenes()
+export default async function ScenesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ workspace?: string }>
+}) {
+  const operations = await getScenePageOperations(await headers())
+  const scenes = await operations.listScenes({ limit: 50 })
+  const remount = (await searchParams).workspace === 'remount'
 
   return (
     <div className="ds-library">
@@ -54,7 +32,7 @@ export default async function ScenesPage() {
           <Image alt="" src="/diastage-mark.svg" width={36} height={36} />
           <div>
             <StudioWordmark />
-            <span className="studio-slogan">AI Dramaturgy &amp; Spatial Previs</span>
+            <span className="studio-slogan">Theatre Rehearsal &amp; Stage Previs</span>
           </div>
         </Link>
         <div className="ds-library-actions">
@@ -67,28 +45,31 @@ export default async function ScenesPage() {
       <main className="ds-library-main">
         <div className="ds-library-heading">
           <div>
-            <h1>我的场景</h1>
-            <p>从空间到画面，让每一个行动有迹可循。</p>
+            <h1>我的剧目</h1>
+            <p>建立空间，模拟人物移动，观察画面，再带到另一座舞台。</p>
           </div>
           <CreateSceneButton />
         </div>
         <div className="ds-library-count">
-          <span>场景档案</span>
-          <span>{scenes.length} 个场景</span>
+          <span>剧目档案</span>
+          <span>{scenes.length} 个剧目</span>
         </div>
 
         {scenes.length === 0 ? (
           <div className="ds-library-empty">
             <ScanLine size={40} strokeWidth={1} />
-            <h2>第一幕，从一个空间开始。</h2>
-            <p>新建场景，在搭台中放置物件，再到看台安排机位与编排。</p>
+            <h2>从一座空舞台开始。</h2>
+            <p>新建剧目，设置舞台尺寸、放置布景，再添加人物与路线。</p>
             <CreateSceneButton />
           </div>
         ) : (
           <ul className="ds-scene-list">
             {scenes.map((scene) => (
               <li key={scene.id}>
-                <Link className="ds-scene-entry" href={`/scene/${scene.id}`}>
+                <Link
+                  className="ds-scene-entry"
+                  href={`/scene/${scene.id}${remount ? '?workspace=remount' : ''}`}
+                >
                   <div className="ds-scene-image">
                     {scene.thumbnailUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -104,12 +85,12 @@ export default async function ScenesPage() {
                   <div className="ds-scene-info">
                     <h2>{scene.name}</h2>
                     <div className="ds-scene-meta">
-                      <span>{scene.nodeCount} 个物件与结构节点</span>
+                      <span>{scene.nodeCount} 个舞台对象</span>
                       <time dateTime={scene.updatedAt}>更新于 {formatDate(scene.updatedAt)}</time>
                     </div>
                   </div>
                   <span className="ds-scene-open">
-                    打开场景 <ArrowRight size={18} />
+                    打开剧目 <ArrowRight size={18} />
                   </span>
                 </Link>
               </li>
@@ -118,7 +99,7 @@ export default async function ScenesPage() {
         )}
         <footer className="ds-library-footer">
           <StudioWordmark />
-          <span>AI Dramaturgy &amp; Spatial Previs</span>
+          <span>Theatre Rehearsal &amp; Stage Previs</span>
         </footer>
       </main>
     </div>

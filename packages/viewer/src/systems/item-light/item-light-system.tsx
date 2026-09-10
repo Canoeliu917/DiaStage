@@ -3,6 +3,7 @@ import { findLevelAncestorId, sceneRegistry, useInteractive, useScene } from '@p
 import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import { MathUtils, type PointLight, Vector3 } from 'three'
+import { useNeutralRenderEnvironment } from '../../components/viewer/render-environment'
 import { useItemLightPool } from '../../store/use-item-light-pool'
 import useViewer from '../../store/use-viewer'
 
@@ -86,6 +87,10 @@ function scoreRegistration(
 }
 
 export function ItemLightSystem() {
+  return useNeutralRenderEnvironment() ? null : <ActiveItemLightSystem />
+}
+
+function ActiveItemLightSystem() {
   const lightRefs = useRef<Array<PointLight | null>>(Array.from({ length: POOL_SIZE }, () => null))
   const slots = useRef<SlotRuntime[]>(
     Array.from({ length: POOL_SIZE }, () => ({ key: null, pendingKey: null, isFadingOut: false })),

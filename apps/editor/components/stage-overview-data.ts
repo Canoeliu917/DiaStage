@@ -1,11 +1,12 @@
 import type { AnyNode, BuildingNode, LevelNode, ZoneNode } from '@pascal-app/core'
-import { nodeRegistry } from '@pascal-app/core/registry'
+import { getTheatreNodeLabel, getTheatreNodeName } from '@pascal-app/editor'
+import { isLegacyLight } from '@/lib/legacy-lighting'
 
 export type StageNodeRow = {
   id: AnyNode['id']
   name: string
   typeLabel: string
-  kind: 'light' | 'object' | 'container'
+  kind: 'object'
   parentLabel: string
   visible: boolean
   effectiveVisible: boolean
@@ -22,22 +23,22 @@ function isContainer(node: AnyNode): boolean {
   return node.type === 'site' || node.type === 'building' || node.type === 'level'
 }
 
-function isLight(node: AnyNode): boolean {
-  return (
-    node.type === 'item' &&
-    (node.asset.interactive?.effects.some((effect) => effect.kind === 'light') ?? false)
-  )
-}
-
 function typeLabel(node: AnyNode): string {
-  if (node.type === 'item') return isLight(node) ? '点光灯' : '物件'
-  return nodeRegistry.get(node.type)?.presentation?.label ?? '场景节点'
+  const theatreLabels: Record<string, string> = {
+    furniture: '家具',
+    prop: '舞台物件',
+    'scenic-unit': '布景',
+    'stage-floor': '舞台地面',
+  }
+  const theatreKind = node.metadata.theatreKind
+  if (typeof theatreKind === 'string' && theatreLabels[theatreKind])
+    return theatreLabels[theatreKind]
+  if (node.type === 'item') return '物件'
+  return getTheatreNodeLabel(node.type)
 }
 
 function nodeName(node: AnyNode): string {
-  return (
-    node.name?.trim() || (node.type === 'item' ? node.asset.name.trim() : '') || typeLabel(node)
-  )
+  return getTheatreNodeName(node)
 }
 
 function ancestors(nodes: Record<string, AnyNode>, node: AnyNode): AnyNode[] {
@@ -53,10 +54,10 @@ function ancestors(nodes: Record<string, AnyNode>, node: AnyNode): AnyNode[] {
 }
 
 const nameOrder = new Intl.Collator('zh-CN', { numeric: true })
-const kindOrder: Record<StageNodeRow['kind'], number> = { light: 0, container: 1, object: 2 }
 
 export function buildStageRows(nodes: Record<string, AnyNode>): StageNodeRow[] {
   return Object.values(nodes)
+    .filter((node) => !isContainer(node) && !isLegacyLight(node) && node.type !== 'zone')
     .map((node): StageNodeRow => {
       const parents = ancestors(nodes, node)
       const label = typeLabel(node)
@@ -64,14 +65,14 @@ export function buildStageRows(nodes: Record<string, AnyNode>): StageNodeRow[] {
         id: node.id,
         name: nodeName(node),
         typeLabel: label,
-        kind: isLight(node) ? 'light' : isContainer(node) ? 'container' : 'object',
+        kind: 'object',
         parentLabel: parents.reverse().map(nodeName).join(' / ') || '根级',
         visible: node.visible !== false,
         effectiveVisible:
           node.visible !== false && parents.every((parent) => parent.visible !== false),
       }
     })
-    .sort((a, b) => kindOrder[a.kind] - kindOrder[b.kind] || nameOrder.compare(a.name, b.name))
+    .sort((a, b) => nameOrder.compare(a.name, b.name))
 }
 
 export function getStageNodeSelection(

@@ -4,9 +4,11 @@ import {
   type AnyNode,
   type AnyNodeId,
   type IconRef,
+  getWallEffectiveHeightForNodes,
   nodeRegistry,
   type ParamAction,
-  type ParamField,
+  type ParametricDescriptor,
+  useInteractive,
   useScene,
   type ZoneNode,
 } from '@pascal-app/core'
@@ -17,6 +19,8 @@ import { type ComponentType, lazy, Suspense, useCallback } from 'react'
 import { resolveMoveActionNode } from '../../../lib/direct-manipulation'
 import { sfxEmitter } from '../../../lib/sfx-bus'
 import { collectZoneContentIds } from '../../../lib/zone-content'
+import { getTheatreNodeLabel } from '../../../lib/theatre-presentation'
+import { theatreParametrics, type TheatreParamField } from '../../../lib/theatre-parametrics'
 import useEditor from '../../../store/use-editor'
 import { ActionButton, ActionGroup } from '../controls/action-button'
 import { PanelSection } from '../controls/panel-section'
@@ -60,16 +64,20 @@ export function ParametricInspector({
   const nodeType = useScene((s) => (selectedId ? (s.nodes[selectedId]?.type ?? null) : null))
 
   const def = nodeType ? nodeRegistry.get(nodeType) : undefined
-  const parametrics = def?.parametrics
+  const parametrics = theatreParametrics(nodeType, def?.parametrics as ParametricDescriptor<AnyNode> | undefined)
 
   const handleUpdate = useCallback(
     (patch: Partial<AnyNode>) => {
       if (!selectedId) return
       const scene = useScene.getState()
       const node = scene.nodes[selectedId]
+      if ('operationState' in patch) {
+        if (node?.type === 'door') useInteractive.getState().removeDoorOpenState(node.id)
+        if (node?.type === 'window') useInteractive.getState().removeWindowOpenState(node.id)
+      }
       if (parametrics?.derive && node) {
         const next = { ...node, ...patch } as AnyNode
-        patch = { ...patch, ...parametrics.derive(next, patch, node as AnyNode) }
+        patch = Object.assign({}, patch, parametrics.derive(next, patch, node))
       }
       // Bundle the edited node + any reconcile follow-ups into ONE
       // updateNodes call so a single inspector edit is a single undo step.
@@ -120,7 +128,18 @@ export function ParametricInspector({
     [selectedId, clearSelection],
   )
 
-  if (!selectedId || !def || !parametrics) return null
+  if (!selectedId || !def) return null
+  if (!parametrics) return (
+    <PanelWrapper footer={footer} onClose={clearSelection} title="兼容物件" width={320}>
+      <p className="p-3 text-sm text-muted-foreground">该物件保留在原场景中，可查看与移动；详细参数仅作兼容保存。</p>
+      <PanelSection title="操作">
+        <ActionGroup>
+          {def.capabilities.movable && <ActionButton icon={<Move className="h-4 w-4" />} label="移动" onClick={handleMove} />}
+          {def.capabilities.deletable !== false && <ActionButton icon={<Trash2 className="h-4 w-4" />} label="删除" onClick={() => handleDelete()} />}
+        </ActionGroup>
+      </PanelSection>
+    </PanelWrapper>
+  )
 
   // `parametrics.customPanel` escape hatch — kind owns its panel
   // entirely (loaded lazily so the bundle isn't eager). Used by kinds
@@ -142,7 +161,7 @@ export function ParametricInspector({
   }
 
   const presentation = def.presentation
-  const title = presentation?.label ?? nodeType ?? ''
+  const title = getTheatreNodeLabel(nodeType ?? '')
   const iconNode = renderIcon(presentation?.icon)
   const canMove = !!def.capabilities.movable
   const canDelete = def.capabilities.deletable !== false
@@ -165,7 +184,7 @@ export function ParametricInspector({
           {group.fields.map((field, fi) => (
             <FieldRenderer
               key={`field-${gi}-${fi}-${String(field.key)}`}
-              field={field as ParamField<AnyNode>}
+              field={field}
               nodeId={selectedId}
               onUpdate={handleUpdate}
             />
@@ -293,7 +312,7 @@ function resolveCustomPanel(loader: () => Promise<{ default: ComponentType<any> 
 // ─── Per-field renderers ─────────────────────────────────────────────
 
 interface FieldRendererProps {
-  field: ParamField<AnyNode>
+  field: TheatreParamField
   nodeId: AnyNodeId
   onUpdate: (patch: Partial<AnyNode>) => void
 }
@@ -307,6 +326,7 @@ function FieldRenderer({ field, nodeId, onUpdate }: FieldRendererProps) {
   // changes — same outcome.
   const value = useScene((s) => {
     const n = s.nodes[nodeId]
+    if (n?.type === 'wall' && key === 'height') return getWallEffectiveHeightForNodes(n, s.nodes)
     return n ? (n as Record<string, unknown>)[key] : undefined
   })
   // visibleIf may consult other fields on the node — subscribe to its boolean

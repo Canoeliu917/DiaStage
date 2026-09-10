@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-09T09:30:33.874213+00:00",
+  "title": "Design System: 咫角 DiaStage",
+  "extensions": {
+    "colorMeta": {
+      "stage": {
+        "role": "neutral",
+        "displayName": "Stage black",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "brand-bar": {
+        "role": "neutral",
+        "displayName": "Brand black",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "control": {
+        "role": "neutral",
+        "displayName": "Control charcoal",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "control-raised": {
+        "role": "neutral",
+        "displayName": "Raised charcoal",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "control-hover": {
+        "role": "neutral",
+        "displayName": "Hover gray",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "control-border": {
+        "role": "neutral",
+        "displayName": "Control rule",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "stage-text": {
+        "role": "neutral",
+        "displayName": "Stage white",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "muted-text": {
+        "role": "neutral",
+        "displayName": "Supporting gray",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "selection": {
+        "role": "primary",
+        "displayName": "Selected pale gray",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "selection-ink": {
+        "role": "neutral",
+        "displayName": "Selected dark ink",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "workspace-selection": {
+        "role": "primary",
+        "displayName": "Workspace white",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "archive": {
+        "role": "neutral",
+        "displayName": "Archive paper",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "archive-ink": {
+        "role": "neutral",
+        "displayName": "Archive ink",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "archive-action": {
+        "role": "primary",
+        "displayName": "Archive action black",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      },
+      "identity-text": {
+        "role": "neutral",
+        "displayName": "Identity white",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.7 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "brand": {
+        "displayName": "Chinese identity",
+        "purpose": "Wordmark only; responsive size is documented in Layout."
+      },
+      "display": {
+        "displayName": "Archive headline",
+        "purpose": "Chinese Source Han Sans SC page headline."
+      },
+      "title": {
+        "displayName": "Inspector title",
+        "purpose": "Camera and rehearsal section identity."
+      },
+      "body": {
+        "displayName": "Working controls",
+        "purpose": "Courier New English and bundled variable Source Han Sans SC Chinese."
+      },
+      "label": {
+        "displayName": "Shot and timing labels",
+        "purpose": "Indices and timing data."
+      }
+    },
+    "shadows": [
+      {
+        "name": "modeling-action-menu",
+        "value": "0 6px 18px #0002",
+        "purpose": "Small modeling overlay; hidden in Director."
+      },
+      {
+        "name": "selected-shot-edge",
+        "value": "inset 3px 0 #eee",
+        "purpose": "Persistent shot selection indicator."
+      }
+    ],
+    "motion": [
+      {
+        "name": "color-state",
+        "value": "180ms",
+        "purpose": "Workspace and scene archive hover changes."
+      },
+      {
+        "name": "inspector-width",
+        "value": "width 150ms ease",
+        "purpose": "Sidebar resizing transition except while dragging."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "Global animation and transition duration under prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "navigation-wrap",
+        "value": "1100px",
+        "query": "(max-width: 1100px)"
+      },
+      {
+        "name": "inherited-mobile-layout",
+        "value": "768px",
+        "query": "window.innerWidth < 768"
+      },
+      {
+        "name": "compact-ui",
+        "value": "700px",
+        "query": "(max-width: 700px)"
+      },
+      {
+        "name": "narrow-navigation",
+        "value": "460px",
+        "query": "(max-width: 460px)"
+      }
+    ],
+    "layout": {
+      "archiveMaxWidth": "1280px",
+      "note": "Container limit, not a media breakpoint."
+    },
+    "provenance": {
+      "identity": "apps/editor/public/diastage-mark.svg — authored geometric SVG.",
+      "generatedRasterMedia": [],
+      "existingMedia": "Existing models, material assets and user scene thumbnails retain their source colors.",
+      "tonalRamps": "Synthesized neutral OKLCH preview ramps; not additional application tokens."
+    },
+    "sources": [
+      "apps/editor/app/globals.css",
+      "apps/editor/app/layout.tsx",
+      "apps/editor/components/studio-navigation.tsx",
+      "apps/editor/components/studio-sidebar.tsx",
+      "apps/editor/components/camera-studio/studio.css",
+      "apps/editor/components/camera-rehearsal-panel.tsx",
+      "apps/editor/app/scenes/page.tsx",
+      "packages/editor/src/hooks/use-mobile.ts",
+      "packages/editor/src/components/editor/editor-layout-v2.tsx"
+    ],
+    "review": {
+      "disposition": "SHIP",
+      "reviewerHandoff": "All seven final captures inspected with no blocker. Tool-disarm and director modeling-toolbar overlay findings resolved.",
+      "captures": [
+        ".impeccable/review/desktop.png",
+        ".impeccable/review/desktop-space.png",
+        ".impeccable/review/mobile.png",
+        ".impeccable/review/mobile-camera.png",
+        ".impeccable/review/user-703.png",
+        ".impeccable/review/desktop-library.png",
+        ".impeccable/review/mobile-library.png"
+      ]
+    }
+  },
+  "components": [
+    {
+      "name": "Archive primary button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The black scene-creation action on the light archive.",
+      "html": "<button class=\"ds-primary\" type=\"button\">新建场景</button>",
+      "css": ".ds-primary{padding:12px 22px;background:#191919;color:#f5f5f5;border:0;border-radius:3px;font:13px var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);cursor:pointer}.ds-primary:hover{background:#3a3a3a}.ds-primary:focus-visible{outline:2px solid currentColor;outline-offset:4px}"
+    },
+    {
+      "name": "Camera secondary button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Neutral camera operations; pressed state uses pale fill.",
+      "html": "<button class=\"ds-secondary\" type=\"button\" aria-pressed=\"false\">保存镜头</button>",
+      "css": ".ds-secondary{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;background:#2b2b2b;border:1px solid #494949;border-radius:4px;padding:7px 10px;color:#ededed;font:13px/1.6 var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);white-space:nowrap;cursor:pointer}.ds-secondary:hover{background:#3b3b3b;border-color:#717171}.ds-secondary[aria-pressed=true]{background:#e5e5e5;border-color:#e5e5e5;color:#141414}.ds-secondary:focus-visible{outline:2px solid #eee;outline-offset:2px}.ds-secondary:disabled{opacity:.4;cursor:not-allowed}"
+    },
+    {
+      "name": "Camera field",
+      "kind": "input",
+      "refersTo": "input-camera",
+      "description": "Native camera field with a visible label and pale keyboard focus.",
+      "html": "<label class=\"ds-field\">镜头名称<input aria-label=\"镜头名称\" value=\"空桌 · 开场\"></label>",
+      "css": ".ds-field{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:14px 0;color:#c7c7c7;font:12px/1.6 var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace)}.ds-field input{width:65%;min-width:0;background:#202020;border:1px solid #444;border-radius:4px;color:#ededed;font:inherit;padding:7px 8px;caret-color:currentColor}.ds-field input:focus-visible{outline:2px solid #eee;outline-offset:2px}"
+    },
+    {
+      "name": "Workspace navigation",
+      "kind": "nav",
+      "refersTo": "nav-workspace",
+      "description": "The two labeled groups, including a persistent pressed state.",
+      "html": "<nav class=\"ds-workspaces\" aria-label=\"工作区\"><button type=\"button\" aria-pressed=\"false\">空间搭建</button><button type=\"button\" aria-pressed=\"true\">导演工作台</button></nav>",
+      "css": ".ds-workspaces{display:flex;align-items:center;gap:8px;background:#101010}.ds-workspaces button{display:flex;min-height:44px;align-items:center;justify-content:center;gap:9px;padding:10px 20px;border:1px solid transparent;border-radius:4px;background:transparent;font:500 14px var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);color:#bdbdbd;white-space:nowrap;transition:background-color 180ms,color 180ms;cursor:pointer}.ds-workspaces button[aria-pressed=true]{background:#f0f0f0;color:#111}.ds-workspaces button:hover:not(:disabled):not([aria-pressed=true]){background:#272727;color:#fff}.ds-workspaces button:focus-visible{outline:2px solid #f5f5f5;outline-offset:3px}.ds-workspaces button:disabled{opacity:.5;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-workspaces button{transition-duration:.01ms}}"
+    },
+    {
+      "name": "Rehearsal status",
+      "kind": "chip",
+      "refersTo": "chip-status",
+      "description": "Transport status pairs Chinese text with a shape; recording is a square.",
+      "html": "<span class=\"ds-status\" data-state=\"recording\" role=\"status\">录制中</span>",
+      "css": ".ds-status{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;border:1px solid #494949;border-radius:3px;padding:3px 6px;font:12px/1.6 var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);white-space:nowrap;color:#c7c7c7}.ds-status::before{content:\"\";width:6px;height:6px;border:1px solid currentColor;border-radius:50%}.ds-status:not([data-state=idle]){background:#e5e5e5;border-color:#e5e5e5;color:#141414}.ds-status[data-state=recording]::before{background:currentColor;border-radius:0}"
+    },
+    {
+      "name": "Selected shot card",
+      "kind": "card",
+      "refersTo": "card-shot",
+      "description": "A selectable shot row with index, title, duration and an inset selection edge.",
+      "html": "<button class=\"ds-shot\" type=\"button\" aria-pressed=\"true\"><span>01</span><strong>空桌 · 开场</strong><small>5.0s</small></button>",
+      "css": ".ds-shot{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:9px;align-items:center;width:100%;text-align:left;border:1px solid #3c3c3c;background:#202020;color:#ededed;border-radius:4px;padding:12px;font:13px/1.6 var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);cursor:pointer}.ds-shot:hover{background:#2c2c2c}.ds-shot[aria-pressed=true]{border-color:#bdbdbd;background:#303030;box-shadow:inset 3px 0 #eee}.ds-shot span,.ds-shot small{font:12px/1.5 var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);color:#bdbdbd}.ds-shot strong{font-weight:500;font-size:13px;overflow-wrap:anywhere}.ds-shot:focus-visible{outline:2px solid #eee;outline-offset:2px}.ds-shot:disabled{opacity:.4;cursor:not-allowed}"
+    },
+    {
+      "name": "DiaStage identity",
+      "kind": "custom",
+      "refersTo": "brand-lockup",
+      "description": "The authored SVG, continuous white-and-black word blocks and fixed English subtitle.",
+      "html": "<div class=\"ds-identity\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" fill=\"none\" role=\"img\" aria-label=\"咫角 DiaStage\"><path d=\"M6 34V6h28M14 42h28V14\" stroke=\"#f5f5f5\" stroke-width=\"3\"/><path d=\"M14 34 34 14v20H14Z\" fill=\"#f5f5f5\"/></svg><div><strong><span class=\"ds-cn\">咫角</span><span class=\"ds-en\">DiaStage</span></strong><span class=\"ds-slogan\">AI Dramaturgy &amp; Spatial Previs</span></div></div>",
+      "css": ".ds-identity{display:flex;align-items:center;gap:14px;color:#f5f5f5;background:#101010;font-family:var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace)}.ds-identity>svg{width:36px;height:36px;flex-shrink:0}.ds-identity>div{display:flex;flex-direction:column;gap:5px}.ds-identity strong{display:flex;align-items:center;gap:8px;font-size:23px;font-weight:700;line-height:1.15;white-space:nowrap;letter-spacing:0}.ds-cn{font-family:var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);font-size:28px;font-weight:600;letter-spacing:0}.ds-slogan{font-size:10px;line-height:1.5;color:#bfbfbf;letter-spacing:.055em;white-space:nowrap}.ds-cn,.ds-en{display:inline-flex;align-items:center;height:34px;padding-inline:4px;background:#fff;color:#000}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Director's Prompt Desk",
+    "overview": "咫角 DiaStage pairs a dark working stage with a light scene archive. Courier New Latin lettering and Source Han Sans SC Chinese text give the director a calm, legible desk; the live scene remains the dominant creative surface.\n\nThe brand is 咫角 DiaStage, with the fixed subtitle AI Dramaturgy & Spatial Previs. Interface copy is Chinese. The geometric corner mark is authored SVG; no generated raster media was introduced.",
+    "keyCharacteristics": [
+      "Black, white and gray interface chrome.",
+      "Two explicit workspaces with labeled tools and clear pressed states.",
+      "Rectangular controls, fine dividers and restrained motion."
+    ],
+    "rules": [
+      {
+        "name": "The Content Color Rule",
+        "body": "Keep interface chrome monochrome; preserve the colors of the scene itself.",
+        "section": "colors"
+      }
+    ],
+    "dos": [
+      "Do use Courier New for English and bundled Source Han Sans SC for Chinese, with one continuous white background per brand word.",
+      "Do preserve visible focus, text labels, pressed states and reduced-motion support.",
+      "Do use the existing model, material and scene-thumbnail colors without recoloring their content."
+    ],
+    "donts": [
+      "Don't introduce a decorative accent palette, gradients or glass panels into the DiaStage chrome.",
+      "Don't add modeling overlays to the director's viewport or merge the two workspace tool groups.",
+      "Don't invent raster imagery or replace the authored geometric SVG identity."
+    ]
+  }
+}

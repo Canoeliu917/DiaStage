@@ -1,0 +1,32 @@
+$ biome lint
+apps\editor\components\camera-studio\dock.tsx:83:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  i This hook specifies more dependencies than necessary: sceneId.
+  
+    81 │   }, [])
+    82 │ 
+  > 83 │   useEffect(() => {
+       │   ^^^^^^^^^
+    84 │     disposed.current = false
+    85 │     session.current += 1
+  
+  i Outer scope values aren't valid dependencies because mutating them doesn't re-render the component.
+  
+    93 │       useCameraStudio.getState().stop()
+    94 │     }
+  > 95 │   }, [sceneId])
+       │       ^^^^^^^
+    96 │ 
+    97 │   useEffect(
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    95 │ ··},·[sceneId])
+       │       -------  
+
+Checked 2167 files in 2s. No fixes applied.
+Found 1 info.

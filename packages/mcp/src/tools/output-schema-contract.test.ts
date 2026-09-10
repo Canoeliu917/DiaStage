@@ -39,7 +39,7 @@ async function connectListedClient() {
     level.id,
   )
 
-  const server = createPascalMcpServer({ bridge })
+  const server = createPascalMcpServer({ bridge, profile: 'legacy' })
   const [srvT, cliT] = InMemoryTransport.createLinkedPair()
   const client = new Client({ name: 'output-schema-contract', version: '0.0.0' })
   await Promise.all([server.connect(srvT), client.connect(cliT)])

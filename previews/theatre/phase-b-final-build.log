@@ -1,0 +1,88 @@
+Started: 2026-09-10T01:41:15.3913996+08:00
+• turbo 2.9.17
+
+   • Packages in scope: editor
+   • Running build in 1 packages
+   • Remote caching disabled, using shared worktree cache
+
+@pascal-app/capture-protocol:build: cache hit, replaying logs b701d35741269987
+@pascal-app/capture-protocol:build: $ tsc --build
+@pascal-app/core:build: cache hit, replaying logs 7e5eefd4d8398c30
+@pascal-app/core:build: $ tsc --build
+@pascal-app/mcp:build: cache hit, replaying logs 43071e2df353de2a
+@pascal-app/mcp:build: $ tsc --build
+@pascal-app/viewer:build: cache hit, replaying logs 576aa2228408c421
+@pascal-app/viewer:build: $ tsc --build
+@pascal-app/nodes:build: cache miss, executing e0365aa2b924deae
+@pascal-app/nodes:build: $ tsc --build
+editor:build: cache miss, executing 7c58daccda64d417
+editor:build: $ dotenv -e ../../.env.local -- next build
+editor:build: ▲ Next.js 16.3.0 (Turbopack)
+editor:build: ✓ Running next.config.ts took 83ms
+editor:build: - Experiments (use with caution):
+editor:build:   · serverActions
+editor:build: 
+editor:build:   Creating an optimized production build ...
+editor:build: ✓ Compiled successfully in 7.0s
+editor:build:   Skipping validation of types
+editor:build:   Finished TypeScript config validation in 13ms ...
+editor:build:   Collecting page data using 14 workers ...
+editor:build:   Generating static pages using 14 workers (0/7) ...
+editor:build:   Generating static pages using 14 workers (1/7) 
+editor:build:   Generating static pages using 14 workers (3/7) 
+editor:build:   Generating static pages using 14 workers (5/7) 
+editor:build: ✓ Generating static pages using 14 workers (7/7) in 1498ms
+editor:build: Turbopack build encountered 1 warning:
+editor:build: ./packages/mcp/dist/storage/sqlite-scene-store.js:210:29
+editor:build: Warning: Dynamic filesystem access causes tracing of the whole project
+editor:build:   [90m208 |[0m ...ts = {}) {
+editor:build:   [90m209 |[0m ...= opts.env ?? process.env;
+editor:build: [33m[1m>[0m [90m210 |[0m ...asePath = path.resolve(opts.databasePath ?? resolveDefaultDatabasePath(env));
+editor:build:   [90m    |[0m              [33m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+editor:build:   [90m211 |[0m ...eneBytes = resolveMaxSceneBytes(env, opts.maxSceneBytes);
+editor:build:   [90m212 |[0m ...
+editor:build:   [90m213 |[0m ...oject(opts) {
+editor:build: 
+editor:build: Static analysis determined that this filesystem access causes the whole project to be traced and included in the output.
+editor:build: This is usually unintentional and leads to all source files (including the public folder) to be deployed as part of the server code.
+editor:build: This can slow down deployments or lead to failures when size limits are exceeded.
+editor:build: To resolve this, you can
+editor:build: - make sure the path is statically scoped to some subfolder, for example path.join(process.cwd(), 'data', bar), or
+editor:build:   Finalizing page optimization ...
+editor:build: - only use them in development, or
+editor:build: - opt out by adding an ignore comment to the highlighted call: path.resolve(/*turbopackIgnore: true*/ ...), or
+editor:build: - remove them.
+editor:build: 
+editor:build: Import trace:
+editor:build:   App Route:
+editor:build:     ./packages/mcp/dist/storage/sqlite-scene-store.js
+editor:build:     ./packages/mcp/dist/storage/index.js
+editor:build:     ./apps/editor/lib/scene-store-server.ts
+editor:build:     ./apps/editor/app/api/scenes/[id]/events/route.ts
+editor:build: 
+editor:build: 
+editor:build: 
+editor:build: Route (app)
+editor:build: ┌ ○ /
+editor:build: ├ ○ /_not-found
+editor:build: ├ ƒ /api/health
+editor:build: ├ ƒ /api/plugins/mint/[...path]
+editor:build: ├ ƒ /api/scenes
+editor:build: ├ ƒ /api/scenes/[id]
+editor:build: ├ ƒ /api/scenes/[id]/events
+editor:build: ├ ○ /privacy
+editor:build: ├ ƒ /scene/[id]
+editor:build: ├ ƒ /scenes
+editor:build: └ ○ /terms
+editor:build: 
+editor:build: 
+editor:build: ○  (Static)   prerendered as static content
+editor:build: ƒ  (Dynamic)  server-rendered on demand
+editor:build: 
+
+ Tasks:    6 successful, 6 total
+Cached:    4 cached, 6 total
+  Time:    13.549s 
+
+BUILD_EXIT=0
+Finished: 2026-09-10T01:41:51.5758539+08:00

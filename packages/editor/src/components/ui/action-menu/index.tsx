@@ -25,7 +25,11 @@ export function ActionMenu({ className }: { className?: string }) {
   const hasReferenceOnMobile = useEditor((s) => isMobile && Boolean(s.selectedReferenceId))
   const CONTEXTUAL_TABS = new Set(['ai', 'items', 'studio'])
   const isContextualPanelOnMobile = useEditor(
-    (s) => isMobile && CONTEXTUAL_TABS.has(s.activeSidebarPanel),
+    (s) =>
+      isMobile &&
+      (CONTEXTUAL_TABS.has(s.activeSidebarPanel) ||
+        s.activeSidebarPanel.startsWith('theatre-') ||
+        s.activeSidebarPanel === 'remount'),
   )
   const reducedMotion = useReducedMotion()
 

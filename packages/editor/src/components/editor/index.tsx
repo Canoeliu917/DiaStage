@@ -167,6 +167,7 @@ export interface EditorProps {
   sidebarTabs?: (SidebarTab & { component: React.ComponentType })[]
   /** Hide registered panel entries in v2 without changing installed scene plugins. */
   showPluginPanels?: boolean
+  showLevelSelector?: boolean
   viewerToolbarLeft?: ReactNode
   viewerToolbarRight?: ReactNode
   /**
@@ -187,6 +188,8 @@ export interface EditorProps {
    * one node is selected.
    */
   multiSelectionFooter?: ReactNode
+  /** Replace the native selection inspector; undefined keeps the default, null hides it. */
+  selectionPanelSlot?: ReactNode
 
   /** Host-owned content mounted inside the editor's React Three Fiber scene. */
   viewerSceneSlot?: ReactNode
@@ -201,6 +204,8 @@ export interface EditorProps {
 
   // Persistence — defaults to localStorage when omitted
   onLoad?: () => Promise<SceneGraph | null>
+  /** Stable persisted source identity; prevents UI refreshes from reloading an older snapshot. */
+  sceneLoadKey?: string
   onSave?: (scene: SceneGraph, options?: { keepalive?: boolean }) => Promise<void>
   onDirty?: () => void
   onSaveStatusChange?: (status: SaveStatus) => void
@@ -1240,17 +1245,20 @@ function EditorContent({
   sidebarTopSlot,
   sidebarTabs,
   showPluginPanels = true,
+  showLevelSelector = true,
   viewerToolbarLeft,
   viewerToolbarRight,
   stageOverlay,
   inspectorFooter,
   multiSelectionFooter,
+  selectionPanelSlot,
   viewerSceneSlot,
   viewerRuntimeSlot,
   studioSceneSlot,
   floorplanSceneSlot,
   projectId,
   onLoad,
+  sceneLoadKey,
   onSave,
   onDirty,
   onSaveStatusChange,
@@ -1289,6 +1297,7 @@ function EditorContent({
   // autosaves that scaffold over the real project.
   const [sceneLoadError, setSceneLoadError] = useState<unknown>(null)
   const [sceneLoadAttempt, setSceneLoadAttempt] = useState(0)
+  const loadedSourceRef = useRef<{ key: string; attempt: number } | null>(null)
   const [sceneReadyKey, setSceneReadyKey] = useState(0)
   const [isViewerSceneReady, setIsViewerSceneReady] = useState(false)
   const [previewStageMode, setPreviewStageMode] = useState<ViewerStageMode>('3d')
@@ -1327,6 +1336,11 @@ function EditorContent({
 
   // Load scene on mount (or when onLoad identity changes, e.g. project switch)
   useEffect(() => {
+    if (
+      sceneLoadKey !== undefined &&
+      loadedSourceRef.current?.key === sceneLoadKey &&
+      loadedSourceRef.current.attempt === sceneLoadAttempt
+    ) return
     let cancelled = false
 
     async function load() {
@@ -1345,6 +1359,9 @@ function EditorContent({
         const sceneGraph = onLoad ? await onLoad() : loadSceneFromLocalStorage()
         if (!cancelled) {
           applySceneGraphToEditor(sceneGraph)
+          loadedSourceRef.current = sceneLoadKey === undefined
+            ? null
+            : { key: sceneLoadKey, attempt: sceneLoadAttempt }
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
@@ -1374,7 +1391,7 @@ function EditorContent({
     return () => {
       cancelled = true
     }
-  }, [onLoad, isLoadingSceneRef, sceneLoadAttempt])
+  }, [onLoad, sceneLoadKey, isLoadingSceneRef, sceneLoadAttempt])
 
   const retrySceneLoad = useCallback(() => {
     setSceneLoadAttempt((attempt) => attempt + 1)
@@ -1595,7 +1612,9 @@ function EditorContent({
               navbarSlot={navbarSlot}
               overlays={
                 <>
-                  {!(isCaptureMode || stageOverlay) && <FloatingLevelSelector />}
+                  {showLevelSelector && !(isCaptureMode || stageOverlay) && (
+                    <FloatingLevelSelector />
+                  )}
                   {!(isVersionPreviewMode || isCaptureMode || isStudioMode) && (
                     <div className="pointer-events-auto">
                       <ActionMenu />
@@ -1603,10 +1622,12 @@ function EditorContent({
                   )}
                   {!(isVersionPreviewMode || isCaptureMode || isStudioMode) && (
                     <div className="pointer-events-auto">
-                      <PanelManager
-                        inspectorFooter={inspectorFooter}
-                        multiSelectionFooter={multiSelectionFooter}
-                      />
+                      {selectionPanelSlot === undefined ? (
+                        <PanelManager
+                          inspectorFooter={inspectorFooter}
+                          multiSelectionFooter={multiSelectionFooter}
+                        />
+                      ) : selectionPanelSlot}
                     </div>
                   )}
                   {!isCaptureMode && (
@@ -1693,7 +1714,7 @@ function EditorContent({
               <ActionMenu />
             </div>
             <div className="pointer-events-auto">
-              <PanelManager />
+              {selectionPanelSlot === undefined ? <PanelManager /> : selectionPanelSlot}
             </div>
             <div className="pointer-events-auto">
               <HelperManager />

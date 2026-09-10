@@ -190,7 +190,7 @@ export function insertBuildNodes(snapshot: BuildSnapshot, parentId: AnyNodeId): 
   const scene = useScene.getState()
   if (scene.readOnly) throw new Error('当前场景为只读。')
   const level = scene.nodes[parentId]
-  if (level?.type !== 'level') throw new Error('请先选择要插入的楼层。')
+  if (level?.type !== 'level') throw new Error('请先选择要插入的表演层。')
   if (!useScene.temporal.getState().isTracking) throw new Error('请先结束当前放置操作。')
   const validated = validateBuildSnapshot(snapshot)
   const cloned = cloneNodesInto(validated.nodes, { rootId: validated.rootIds[0]!, parentId })
@@ -208,7 +208,7 @@ export function insertBuildNodes(snapshot: BuildSnapshot, parentId: AnyNodeId): 
     const definition = nodeRegistry.get(node.type)
     if (roots.has(node.id)) {
       if (definition?.floorplanScope === 'building' || node.type === 'elevator') {
-        if (building?.type !== 'building') throw new Error('该预设需要楼层所属的有效建筑。')
+        if (building?.type !== 'building') throw new Error('该预设需要表演层所属的有效舞台空间。')
         node.parentId = building.id
       } else node.parentId = parentId
     }
@@ -343,5 +343,6 @@ const LIBRARY_LABELS: Record<string, string> = {
 }
 
 export function buildPresetLabel(preset: BuildPreset): string {
-  return preset.source === 'library' ? (LIBRARY_LABELS[preset.name] ?? preset.name) : preset.name
+  const label = preset.source === 'library' ? (LIBRARY_LABELS[preset.name] ?? preset.name) : preset.name
+  return label.replaceAll('楼梯', '台阶').replaceAll('墙体', '景片').replaceAll('厚墙', '厚景片').replaceAll('弧形墙', '弧形景片').replaceAll('矮墙', '矮景片').replaceAll('围栏', '栏杆').replaceAll('体块', '台块').replaceAll('搁板', '置物架')
 }

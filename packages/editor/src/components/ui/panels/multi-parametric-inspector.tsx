@@ -4,14 +4,15 @@ import {
   type AnyNode,
   type AnyNodeId,
   nodeRegistry,
-  type ParamField,
   type ParametricDescriptor,
+  useInteractive,
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { useCallback, useMemo } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { selectionMatchesSessionGroup } from '../../../lib/session-groups'
+import { theatreParametrics, type TheatreParamField, type TheatreParametricDescriptor } from '../../../lib/theatre-parametrics'
 import useSessionGroups from '../../../store/use-session-groups'
 import { PanelSection } from '../controls/panel-section'
 import { SliderControl } from '../controls/slider-control'
@@ -49,13 +50,13 @@ export function MultiParametricInspector({ footer }: { footer?: React.ReactNode 
   )
 
   const def = nodeType ? nodeRegistry.get(nodeType) : undefined
-  const parametrics = def?.parametrics as ParametricDescriptor<AnyNode> | undefined
+  const parametrics = theatreParametrics(nodeType, def?.parametrics as ParametricDescriptor<AnyNode> | undefined)
 
   const handleClose = useCallback(() => {
     setSelection({ selectedIds: [] })
   }, [setSelection])
 
-  if (nodeIds.length < 2 || !nodeType || !parametrics) return null
+  if (nodeIds.length < 2 || !nodeType) return null
 
   const display = getTypeDisplay(nodeType)
   const title = matchedGroup ? `${matchedGroup.label} · ${breakdown}` : breakdown || display.label
@@ -73,9 +74,10 @@ export function MultiParametricInspector({ footer }: { footer?: React.ReactNode 
           {matchedGroup.label} （仅当前会话）。普通点击会重新选中全部成员，不随项目保存。
         </div>
       )}
-      {parametrics.groups.map((group, gi) => (
+      {!parametrics && <p className="p-3 text-sm text-muted-foreground">这些物件保留原参数，可整体移动与删除。</p>}
+      {parametrics?.groups.map((group, gi) => (
         <MultiGroupFields
-          fields={group.fields as ParamField<AnyNode>[]}
+          fields={group.fields}
           key={`group-${gi}`}
           nodeIds={nodeIds}
           nodeType={nodeType}
@@ -98,10 +100,10 @@ function MultiGroupFields({
   parametrics,
 }: {
   title: string
-  fields: ParamField<AnyNode>[]
+  fields: TheatreParamField[]
   nodeIds: AnyNodeId[]
   nodeType: AnyNode['type']
-  parametrics: ParametricDescriptor<AnyNode>
+  parametrics: TheatreParametricDescriptor
 }) {
   const genericFields = fields.filter((field) => field.kind !== 'custom')
   const anyVisible = useScene((s) =>
@@ -152,9 +154,9 @@ function MultiFieldRenderer({
   nodeIds,
   parametrics,
 }: {
-  field: ParamField<AnyNode>
+  field: TheatreParamField
   nodeIds: AnyNodeId[]
-  parametrics: ParametricDescriptor<AnyNode>
+  parametrics: TheatreParametricDescriptor
 }) {
   const key = String(field.key)
   const visible = useScene((s) =>
@@ -170,6 +172,11 @@ function MultiFieldRenderer({
 
   const preview = useCallback(
     (patch: Partial<AnyNode>) => {
+      if ('operationState' in patch) for (const id of nodeIds) {
+        const node = useScene.getState().nodes[id]
+        if (node?.type === 'door') useInteractive.getState().removeDoorOpenState(id)
+        if (node?.type === 'window') useInteractive.getState().removeWindowOpenState(id)
+      }
       previewMultiNodeFields(nodeIds.map((id) => [id, patch] as const))
     },
     [nodeIds],
@@ -226,7 +233,7 @@ function MultiVec3Field({
   mixed: boolean
   nodeIds: AnyNodeId[]
   origin: [number, number, number]
-  parametrics: ParametricDescriptor<AnyNode>
+  parametrics: TheatreParametricDescriptor
   value: [number, number, number]
 }) {
   const axes: Array<{ label: string; index: 0 | 1 | 2 }> = [

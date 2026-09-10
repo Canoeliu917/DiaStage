@@ -27,7 +27,7 @@ import {
 import { useCameraStudio } from './camera-studio/store'
 import './remount.css'
 
-const STEPS = ['源场地', '目标场地', '空间校准', '映射预览', '实体落位', '复台验收']
+const STEPS = ['源场地', '目标场地', '空间标定', '映射预览', '实体落位', '复台验收']
 const xyz = (point: Vec3) => point.map((value) => value.toFixed(3)).join(' / ')
 
 function NumberField({
@@ -37,12 +37,12 @@ function NumberField({
   min,
 }: {
   label: string
-  value: number
+  value: number | null
   onChange: (value: number) => void
   min?: number
 }) {
-  const [text, setText] = useState(String(value))
-  useEffect(() => setText(String(value)), [value])
+  const [text, setText] = useState(value === null ? '' : String(value))
+  useEffect(() => setText(value === null ? '' : String(value)), [value])
   const number = Number(text)
   const valid =
     text.trim() !== '' && Number.isFinite(number) && (min === undefined || number >= min)
@@ -54,6 +54,7 @@ function NumberField({
         step="0.01"
         min={min}
         value={text}
+        placeholder={value === null ? '未测量' : undefined}
         aria-invalid={!valid}
         onChange={(event) => {
           const next = event.target.value
@@ -67,7 +68,7 @@ function NumberField({
             onChange(Number(next))
         }}
         onBlur={() => {
-          if (!valid) setText(String(value))
+          if (!valid) setText(value === null ? '' : String(value))
         }}
       />
     </label>
@@ -77,9 +78,11 @@ function NumberField({
 function VenueFields({
   venue,
   onChange,
+  heightMeasured = true,
 }: {
   venue: VenueProfile
-  onChange: (venue: VenueProfile) => void
+  onChange: (venue: VenueProfile, measuredHeight?: boolean) => void
+  heightMeasured?: boolean
 }) {
   return (
     <>
@@ -96,13 +99,20 @@ function VenueFields({
         {(['width', 'depth', 'height'] as const).map((key, index) => (
           <NumberField
             key={key}
-            label={`${['宽', '深', '高'][index]} / 米`}
-            value={venue.bounds[key]}
+            label={`${['宽', '深', '实测净高'][index]} / 米`}
+            value={key === 'height' && !heightMeasured ? null : venue.bounds[key]}
             min={0.01}
-            onChange={(value) => onChange({ ...venue, bounds: { ...venue.bounds, [key]: value } })}
+            onChange={(value) =>
+              onChange({ ...venue, bounds: { ...venue.bounds, [key]: value } }, key === 'height')
+            }
           />
         ))}
       </div>
+      {!heightMeasured && (
+        <p className="rm-notice">
+          净高尚未测量，默认显示空间不代表实测值。请填写实测净高，才能生成 1:1 复台预览。
+        </p>
+      )}
     </>
   )
 }
@@ -119,7 +129,9 @@ function AnchorFields({
       <legend>{venue.name}</legend>
       {venue.anchors.map((anchor, index) => (
         <div key={anchor.id}>
-          <p>{['台口中点 · CL / PL', '舞台右侧基准', '舞台后方基准'][index]}</p>
+          <p>
+            {['台口中点 · 中心线与台口线交点', '横向基准（默认世界 +X）', '舞台后方基准'][index]}
+          </p>
           <div className="rm-grid-three">
             {(['X', 'Y', 'Z'] as const).map((axis, axisIndex) => (
               <NumberField
@@ -217,6 +229,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
     plan !== null &&
     !stale &&
     plan.calibration.valid &&
+    draft.sourceHeightMeasured &&
     errors.length === 0 &&
     reviewed &&
     !blocked
@@ -263,13 +276,22 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
             <>
               <VenueFields
                 venue={draft.sourceVenue}
-                onChange={(venue) => changeVenue('sourceVenue', venue)}
+                heightMeasured={draft.sourceHeightMeasured}
+                onChange={(venue, measuredHeight) =>
+                  run(() => {
+                    updateRemountInput(sceneId, {
+                      sourceVenue: venue,
+                      ...(measuredHeight ? { sourceHeightMeasured: true } : {}),
+                    })
+                    setReviewed(false)
+                  })
+                }
               />
               <p className="rm-help">
-                选取本次搬运的道具。子物件随组合一起记录，建筑结构留在原场地。
+                选取本次搬运的布景与机位。子物件随组合一起记录；跟随机位须同时选入其跟随的布景。新舞台的实测净高随配置保存同步至舞台资料。
               </p>
               <div className="rm-candidates">
-                {candidates.length === 0 && <p>请先在搭台中放置物件或块体。</p>}
+                {candidates.length === 0 && <p>请先在置景中放置布景或添加机位。</p>}
                 {candidates.map((candidate) => (
                   <label key={candidate.nodeId} className="rm-candidate">
                     <input
@@ -357,7 +379,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 </select>
               </label>
               <p className="rm-help">
-                场地宽度以中线 CL 为中心，深度从台口线 PL 向台后延伸。扫描层仅用于目视参考。
+                场地宽度以中心线为中心，深度从台口线向台后延伸。扫描层仅用于目视参考。
                 请开启扫描参考的模型显示，并等待加载完成。
               </p>
               <div className="rm-metric">
@@ -373,8 +395,9 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
           {step === 2 && (
             <>
               <p className="rm-help">
-                在两个场地输入同一套基准三角形：台口中点、右侧基准、后方基准。默认两条基线各 1
-                米，不能用不同场地的边角代替对应点。X/Z 为地面，Y 向上。
+                在两个场地输入同一套基准三角形：台口中点、横向基准、后方基准。默认两条基线各 1
+                米，不能用不同场地的边角代替对应点。这里沿用世界 X/Z
+                标定坐标，横向基准不是演员台右；Y 向上。
               </p>
               <AnchorFields
                 venue={draft.sourceVenue}
@@ -419,7 +442,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 <span>灰 · 场地参考</span>
               </div>
               <p className="rm-help">
-                Ghost 为道具尺寸包围盒。虚线为手工走位线；不会在确认前改动场景节点。
+                幽灵预览表示布景尺寸包围盒及虚拟机位标记。机位标记不代表真实摄影设备占地；虚线包括机位移动及手工走位线。确认前不改动正式场景。
               </p>
               {draft.obstacleWarnings.map((warning) => (
                 <p className="rm-notice" key={warning}>
@@ -429,7 +452,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
               {plan && (
                 <>
                   <div className="rm-metric">
-                    <span>总体校准误差 RMS</span>
+                    <span>总体校准误差（均方根）</span>
                     <strong>
                       {(plan.calibration.rmsError * 1000).toFixed(2)} <small>mm</small>
                     </strong>
@@ -472,7 +495,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                           <dd>{xyz(placement.sourcePosition)}</dd>
                           <dt>目标位置 X / Y / Z · 米</dt>
                           <dd>{xyz(placement.targetPosition)}</dd>
-                          <dt>距 CL / 距 PL · 米（有向）</dt>
+                          <dt>距中心线 / 距台口线 · 米（有向）</dt>
                           <dd>
                             {local[0].toFixed(3)} / {local[2].toFixed(3)}
                           </dd>
@@ -557,30 +580,32 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                   >
                     更新走位线
                   </button>
-                  {draft.sourceSnapshots.map((snapshot) => (
-                    <label className="rm-field" key={snapshot.nodeId}>
-                      <span>{snapshot.name}</span>
-                      <select
-                        value={snapshot.representation}
-                        onChange={(event) =>
-                          run(() =>
-                            updateRemountInput(sceneId, {
-                              representations: {
-                                [snapshot.nodeId]: event.target.value as
-                                  | 'physical'
-                                  | 'proxy'
-                                  | 'virtual',
-                              },
-                            }),
-                          )
-                        }
-                      >
-                        <option value="physical">实体道具</option>
-                        <option value="proxy">替代道具</option>
-                        <option value="virtual">虚拟参考</option>
-                      </select>
-                    </label>
-                  ))}
+                  {draft.sourceSnapshots
+                    .filter((snapshot) => snapshot.sourceKind !== 'camera')
+                    .map((snapshot) => (
+                      <label className="rm-field" key={snapshot.nodeId}>
+                        <span>{snapshot.name}</span>
+                        <select
+                          value={snapshot.representation}
+                          onChange={(event) =>
+                            run(() =>
+                              updateRemountInput(sceneId, {
+                                representations: {
+                                  [snapshot.nodeId]: event.target.value as
+                                    | 'physical'
+                                    | 'proxy'
+                                    | 'virtual',
+                                },
+                              }),
+                            )
+                          }
+                        >
+                          <option value="physical">实体道具</option>
+                          <option value="proxy">替代道具</option>
+                          <option value="virtual">虚拟参考</option>
+                        </select>
+                      </label>
+                    ))}
                 </details>
               )}
             </>
@@ -588,7 +613,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
           {step === 4 && (
             <>
               <p className="rm-help">
-                确认后，将预览中的全部物件作为一次操作写入场景，并保存场地、校准点与原始布局。已有场景自动保存继续生效。
+                确认后，将预览中的布景和机位作为一次操作写入场景，并保存场地、校准点与原始布局。机位的全部关键帧与注视方向一起映射。已有场景自动保存继续生效。
               </p>
               {!plan && <p className="rm-notice">请先生成映射预览。</p>}
               {plan && (
@@ -653,7 +678,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
               </div>
               {draft.lastPlan && (
                 <p className="rm-help">
-                  比例 1 : 1 · 校准 RMS {(draft.lastPlan.calibration.rmsError * 1000).toFixed(2)}{' '}
+                  比例 1 : 1 · 校准误差 {(draft.lastPlan.calibration.rmsError * 1000).toFixed(2)}{' '}
                   mm。现场复测、逐件签收与验收清单将在第二阶段接入。
                 </p>
               )}
@@ -670,7 +695,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 撤销本次复台
               </button>
               <p className="rm-help">
-                若已继续编辑，可通过编辑器历史记录撤销。复台不会更改镜头关键帧。
+                若已继续编辑，可通过编辑器历史记录撤销。选入的机位关键帧、注视点与跟随偏移随布景一起复台，也一起撤销。
               </p>
             </>
           )}

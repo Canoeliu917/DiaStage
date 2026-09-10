@@ -1,0 +1,36 @@
+[
+  {
+    "ProcessId": 41228,
+    "CommandLine": "node C:\\Users\\25101\\AppData\\Local\\Temp\\pascal-cli-test-RCFK7a\\home\\runtime\\1.2.3\\apps\\editor\\server.js"
+  },
+  {
+    "ProcessId": 41400,
+    "CommandLine": "node C:\\Users\\25101\\AppData\\Local\\Temp\\pascal-cli-test-RCFK7a\\home\\runtime\\1.2.3\\services\\pascal-mcp.mjs --http --host 127.0.0.1 --port 53703"
+  },
+  {
+    "ProcessId": 39288,
+    "CommandLine": "node C:\\Users\\25101\\AppData\\Local\\Temp\\pascal-cli-test-IJ1GwV\\home\\runtime\\1.2.3\\apps\\editor\\server.js"
+  },
+  {
+    "ProcessId": 39768,
+    "CommandLine": "node C:\\Users\\25101\\AppData\\Local\\Temp\\pascal-cli-test-IJ1GwV\\home\\runtime\\1.2.3\\services\\pascal-mcp.mjs --http --host 127.0.0.1 --port 53713"
+  }
+]
+[
+  {
+    "ProcessId": 43296,
+    "CommandLine": "node C:\\Users\\25101\\AppData\\Local\\Temp\\pascal-cli-test-kesKUW\\home\\runtime\\1.2.3\\apps\\editor\\server.js"
+  },
+  {
+    "ProcessId": 40312,
+    "CommandLine": "node C:\\Users\\25101\\AppData\\Local\\Temp\\pascal-cli-test-kesKUW\\home\\runtime\\1.2.3\\services\\pascal-mcp.mjs --http --host 127.0.0.1 --port 63439"
+  },
+  {
+    "ProcessId": 38764,
+    "CommandLine": "node C:\\Users\\25101\\AppData\\Local\\Temp\\pascal-cli-test-zXas1b\\home\\runtime\\1.2.3\\apps\\editor\\server.js"
+  },
+  {
+    "ProcessId": 7776,
+    "CommandLine": "node C:\\Users\\25101\\AppData\\Local\\Temp\\pascal-cli-test-zXas1b\\home\\runtime\\1.2.3\\services\\pascal-mcp.mjs --http --host 127.0.0.1 --port 63445"
+  }
+]

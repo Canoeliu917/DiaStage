@@ -1,0 +1,33 @@
+packages\editor\src\components\editor\index.tsx:1331:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  i This hook specifies more dependencies than necessary: sceneLoadAttempt.
+  
+    1330 │   // Load scene on mount (or when onLoad identity changes, e.g. project switch)
+  > 1331 │   useEffect(() => {
+         │   ^^^^^^^^^
+    1332 │     let cancelled = false
+    1333 │ 
+  
+  i This dependency can be removed from the list.
+  
+    1377 │       cancelled = true
+    1378 │     }
+  > 1379 │   }, [onLoad, isLoadingSceneRef, sceneLoadAttempt])
+         │                                  ^^^^^^^^^^^^^^^^
+    1380 │ 
+    1381 │   const retrySceneLoad = useCallback(() => {
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    1379 │ ··},·[onLoad,·isLoadingSceneRef,·sceneLoadAttempt])
+         │                                ------------------  
+
+Skipped 1 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 13 files in 96ms. Fixed 8 files.
+Found 1 info.

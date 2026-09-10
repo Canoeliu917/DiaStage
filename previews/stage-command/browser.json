@@ -1,0 +1,12 @@
+{
+  "url": "http://127.0.0.1:4318/scene/307d1e04-4f51-4a5d-99de-41315484cf5f?workspace=set&applyPlan=1",
+  "checks": [
+    "Offline sample produces sofa/window/door ghost and explicit defaults",
+    "Confirmed plan applies through normal scene store and persists exactly three objects",
+    "One undo removes entire batch; redo restores all three",
+    "A follow-up command changes the same saved sofa without replacing its ID",
+    "Ambiguous right side cannot apply before clarification"
+  ],
+  "errors": [],
+  "failed": []
+}

@@ -23,7 +23,7 @@ if (!process.env.CAMERA_STUDIO_DOCK_TEST) {
   let collapsed = true
   const editor = {
     isPreviewMode: false,
-    activeSidebarPanel: 'camera-studio',
+    activeSidebarPanel: 'observe',
     workspaceMode: 'edit',
     setPreviewMode: (value: boolean) => {
       editor.isPreviewMode = value
@@ -151,15 +151,12 @@ if (!process.env.CAMERA_STUDIO_DOCK_TEST) {
     openPanel()
     assert.equal(editor.isPreviewMode, false)
     assert.equal(editor.workspaceMode, workspace, 'opening a panel preserves the workspace')
-    assert.equal(
-      editor.activeSidebarPanel,
-      workspace === 'studio' ? 'camera-rehearsal' : 'camera-studio',
-    )
+    assert.equal(editor.activeSidebarPanel, workspace === 'studio' ? 'camera-rehearsal' : 'observe')
     assert.equal(collapsed, false, `${workspace} panel opens from a collapsed sidebar`)
   }
 
   editor.workspaceMode = 'studio'
-  editor.activeSidebarPanel = 'camera-studio'
+  editor.activeSidebarPanel = 'observe'
   const cameraDock = elements(CameraStudioDock({ sceneId: 'test-scene' }))
   assert.ok(
     cameraDock.some((node) => String(node.props?.className).startsWith('cs-record ')),

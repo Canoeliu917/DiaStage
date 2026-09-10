@@ -1,22 +1,25 @@
 'use client'
 
-import { useEditor, useSidebarStore } from '@pascal-app/editor'
+import { useEditor, useIsMobile, useSidebarStore } from '@pascal-app/editor'
 import { Clapperboard, Hammer, Layers, ScanLine } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { migrateStudioPanel, type StudioGroup } from '@/lib/studio-workspaces'
 import { useCameraStudio } from './camera-studio/store'
 import { StudioWordmark } from './studio-wordmark'
+import { useRehearsalPlayback } from './theatre/state'
 
-export type StudioGroup = 'space' | 'director' | 'remount'
+export type { StudioGroup } from '@/lib/studio-workspaces'
 
 export function openStudioPanel(panel: string): boolean {
+  panel = migrateStudioPanel(panel)
   const editor = useEditor.getState()
   if (editor.isFirstPersonMode || editor.isCaptureMode) return false
   useCameraStudio.getState().stop()
+  useRehearsalPlayback.getState().stop()
   editor.setPreviewMode(false)
-  if (['stage-overview', 'camera-studio', 'camera-rehearsal', 'picture', 'remount'].includes(panel))
-    editor.setMode('select')
+  if (panel !== 'build' && panel !== 'items') editor.setMode('select')
   editor.setWorkspaceMode(panel === 'camera-rehearsal' ? 'studio' : 'edit')
   editor.setActiveSidebarPanel(panel)
   useSidebarStore.getState().setIsCollapsed(false)
@@ -35,6 +38,16 @@ export function StudioNavigation({
   onGroupChange: (group: StudioGroup) => void
 }) {
   const exclusive = useEditor((s) => s.isFirstPersonMode || s.isCaptureMode)
+  const mobile = useIsMobile()
+  const menu = (
+    <>
+      {actions}
+      <Link href="/scenes">
+        <Layers size={16} />
+        剧目库
+      </Link>
+    </>
+  )
 
   return (
     <header className="studio-navigation">
@@ -48,13 +61,13 @@ export function StudioNavigation({
         />
         <div>
           <StudioWordmark />
-          <span className="studio-slogan">AI Dramaturgy &amp; Spatial Previs</span>
+          <span className="studio-slogan">Theatre Rehearsal &amp; Stage Previs</span>
         </div>
       </div>
       <nav className="studio-workspaces" aria-label="工作区">
         {[
-          { id: 'space' as const, label: '搭台', icon: Hammer },
-          { id: 'director' as const, label: '看台', icon: Clapperboard },
+          { id: 'set' as const, label: '置景', icon: Hammer },
+          { id: 'rehearse' as const, label: '排演', icon: Clapperboard },
           { id: 'remount' as const, label: '复台', icon: ScanLine },
         ].map(({ id, label, icon: Icon }) => (
           <button
@@ -86,11 +99,23 @@ export function StudioNavigation({
             退出取景
           </button>
         )}
-        {actions}
-        <Link href="/scenes">
-          <Layers size={16} />
-          场景库
-        </Link>
+        {mobile ? (
+          <details className="studio-mobile-menu">
+            <summary>更多</summary>
+            <div>
+              <p>戏剧排演与舞台复现</p>
+              <button type="button" onClick={() => useEditor.getState().setViewMode('3d')}>
+                三维舞台
+              </button>
+              <button type="button" onClick={() => useEditor.getState().setViewMode('2d')}>
+                俯视调度图
+              </button>
+              {menu}
+            </div>
+          </details>
+        ) : (
+          menu
+        )}
       </div>
     </header>
   )

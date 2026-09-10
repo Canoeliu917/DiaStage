@@ -108,11 +108,11 @@ export function CameraPanel() {
       <div className="cs-heading">
         <Camera size={20} />
         <div>
-          <h2>机位</h2>
+          <h2>舞台镜头</h2>
           <p>设置摄像机，安排连续运镜。</p>
         </div>
       </div>
-      {!state.runtimeReady && (
+      {!state.stageReady && !state.floorplanReady && (
         <button
           className="cs-button cs-wide"
           disabled={state.recording}
@@ -135,11 +135,11 @@ export function CameraPanel() {
           <button
             className="cs-button"
             aria-label="添加机位"
-            disabled={!state.runtimeReady}
+            disabled={busy}
             onClick={() => {
               const current = useCameraStudio.getState()
               if (current.playing || current.recording) return
-              const k = current.captureCamera(0)
+              const k = current.captureCamera(0) ?? newShot().keyframes[0]!
               if (!k) {
                 current.setNotice('请等待三维透视画面加载完成，再添加机位。')
                 return
@@ -198,7 +198,7 @@ export function CameraPanel() {
                 className="cs-icon"
                 aria-label="删除机位"
                 title="删除机位"
-                disabled={state.project.shots.length < 2}
+                disabled={busy}
                 onClick={() => state.removeShot(shot.id)}
               >
                 <Trash2 size={15} />
@@ -277,7 +277,7 @@ export function CameraPanel() {
                   onChange={(lookAt) => updateKey({ lookAt })}
                 />
                 <label className="cs-field">
-                  视角（FOV，度）
+                  视野角度（度）
                   <input
                     aria-label="摄像机视角"
                     type="number"
@@ -293,7 +293,7 @@ export function CameraPanel() {
                 <div className="cs-row">
                   <button
                     className="cs-button"
-                    disabled={!state.runtimeReady}
+                    disabled={busy || !state.runtimeReady}
                     onClick={() => {
                       const captured = state.captureCamera(keyframe.time)
                       if (captured)
@@ -308,285 +308,301 @@ export function CameraPanel() {
                   </button>
                   <button
                     className="cs-button"
-                    disabled={!state.runtimeReady}
-                    onClick={() => state.seek(keyframe.time)}
+                    disabled={busy}
+                    onClick={() => {
+                      useEditor.getState().setViewMode('3d')
+                      useViewer.getState().setCameraMode('perspective')
+                      useEditor.getState().setActiveSidebarPanel('observe')
+                      state.observeWhenReady(keyframe.time)
+                    }}
                   >
-                    在主画面查看
+                    从此机位观察
                   </button>
                 </div>
               </>
             )}
-            <div className="cs-section-title">
-              <h3>运镜</h3>
-              <span>{shot.keyframes.length} 个关键帧</span>
-            </div>
-            <label className="cs-field">
-              运镜时长（秒）
-              <input
-                aria-label="机位时长"
-                type="number"
-                min={1}
-                max={120}
-                step={1}
-                value={shot.duration}
-                onChange={(event) => {
-                  const duration = event.target.valueAsNumber
-                  if (!Number.isFinite(duration) || duration < 1 || duration > 120) return
-                  if (
-                    shot.keyframes.some((key) => key.time > duration) ||
-                    shot.motion?.keyframes.some((key) => key.time > duration)
-                  ) {
-                    useCameraStudio.setState({
-                      notice: '时长不能短于最后一个关键帧；请先调整关键帧时间。',
-                    })
-                    return
-                  }
-                  patch({ duration })
-                }}
-              />
-            </label>
-            <div className="cs-keyframes" role="group" aria-label="运镜关键帧">
-              {shot.keyframes.map((key) => (
-                <button
-                  key={key.id}
-                  aria-pressed={state.selectedKeyframeId === key.id}
-                  aria-label={`编辑 ${key.time.toFixed(1)} 秒关键帧`}
-                  onClick={() => state.selectKeyframe(key.id)}
-                >
-                  {key.time.toFixed(1)} 秒
-                </button>
-              ))}
-            </div>
-            <button className="cs-button cs-wide" disabled={!state.runtimeReady} onClick={capture}>
-              {shot.keyframes.some((key) => Math.abs(key.time - state.time) < 0.001)
-                ? '更新此关键帧'
-                : '添加关键帧'}{' '}
-              · {state.time.toFixed(1)} 秒
-            </button>
-            <p className="cs-help">从当前视角保存。拖动底部时间线到新时间，即可添加下一帧。</p>
-            {keyframe && (
-              <>
-                <label className="cs-field">
-                  关键帧时间（秒）
-                  <input
-                    aria-label="关键帧时间"
-                    type="number"
-                    min={0}
-                    max={shot.duration}
-                    step={0.1}
-                    value={keyframe.time}
-                    onChange={(event) => {
-                      const time = event.target.valueAsNumber
-                      if (
-                        Number.isFinite(time) &&
-                        time >= 0 &&
-                        time <= shot.duration &&
-                        !shot.keyframes.some(
-                          (key) => key.id !== keyframe.id && Math.abs(key.time - time) < 0.001,
-                        )
-                      )
-                        updateKey({ time })
-                    }}
-                  />
-                </label>
-                <button
-                  className="cs-link"
-                  disabled={shot.keyframes.length < 2}
-                  onClick={() =>
-                    patch({ keyframes: shot.keyframes.filter((key) => key.id !== keyframe.id) })
-                  }
-                >
-                  删除此关键帧
-                </button>
-              </>
-            )}
-            <h4 className="mt-6 text-xs font-semibold">目标跟随</h4>
-            <label className="cs-field">
-              跟随方式
-              <select
-                aria-label="跟随方式"
-                value={shot.follow?.mode ?? 'path'}
-                onChange={(e) =>
-                  patch({
-                    follow:
-                      e.target.value === 'path'
-                        ? null
-                        : {
-                            nodeId: followNodeId,
-                            mode: e.target.value as 'lookAt' | 'offset',
-                            offset: [2.4, 1.8, 3.2],
-                            lookAtOffset: [0, 0.6, 0],
-                          },
-                  })
-                }
+            <details>
+              <summary>高级设置 · 运镜与跟随</summary>
+              <div className="cs-section-title">
+                <h3>运镜</h3>
+                <span>{shot.keyframes.length} 个关键帧</span>
+              </div>
+              <label className="cs-field">
+                运镜时长（秒）
+                <input
+                  aria-label="机位时长"
+                  type="number"
+                  min={1}
+                  max={120}
+                  step={1}
+                  value={shot.duration}
+                  onChange={(event) => {
+                    const duration = event.target.valueAsNumber
+                    if (!Number.isFinite(duration) || duration < 1 || duration > 120) return
+                    if (
+                      shot.keyframes.some((key) => key.time > duration) ||
+                      shot.motion?.keyframes.some((key) => key.time > duration)
+                    ) {
+                      useCameraStudio.setState({
+                        notice: '时长不能短于最后一个关键帧；请先调整关键帧时间。',
+                      })
+                      return
+                    }
+                    patch({ duration })
+                  }}
+                />
+              </label>
+              <div className="cs-keyframes" role="group" aria-label="运镜关键帧">
+                {shot.keyframes.map((key) => (
+                  <button
+                    key={key.id}
+                    aria-pressed={state.selectedKeyframeId === key.id}
+                    aria-label={`编辑 ${key.time.toFixed(1)} 秒关键帧`}
+                    onClick={() => state.selectKeyframe(key.id)}
+                  >
+                    {key.time.toFixed(1)} 秒
+                  </button>
+                ))}
+              </div>
+              <button
+                className="cs-button cs-wide"
+                disabled={!state.runtimeReady}
+                onClick={capture}
               >
-                <option value="path">按机位路径拍摄</option>
-                <option value="lookAt" disabled={!subjects.length}>
-                  沿路径移动，始终看向目标
-                </option>
-                <option value="offset" disabled={!subjects.length}>
-                  与目标保持固定距离
-                </option>
-              </select>
-            </label>
-            {shot.follow && (
-              <>
-                <label className="cs-field">
-                  跟随对象
-                  <select
-                    aria-label="跟随目标"
-                    value={shot.follow.nodeId}
-                    onChange={(e) =>
-                      patch({ follow: { ...shot.follow!, nodeId: e.target.value }, motion: null })
+                {shot.keyframes.some((key) => Math.abs(key.time - state.time) < 0.001)
+                  ? '更新此关键帧'
+                  : '添加关键帧'}{' '}
+                · {state.time.toFixed(1)} 秒
+              </button>
+              <p className="cs-help">从当前视角保存。拖动底部时间线到新时间，即可添加下一帧。</p>
+              {keyframe && (
+                <>
+                  <label className="cs-field">
+                    关键帧时间（秒）
+                    <input
+                      aria-label="关键帧时间"
+                      type="number"
+                      min={0}
+                      max={shot.duration}
+                      step={0.1}
+                      value={keyframe.time}
+                      onChange={(event) => {
+                        const time = event.target.valueAsNumber
+                        if (
+                          Number.isFinite(time) &&
+                          time >= 0 &&
+                          time <= shot.duration &&
+                          !shot.keyframes.some(
+                            (key) => key.id !== keyframe.id && Math.abs(key.time - time) < 0.001,
+                          )
+                        )
+                          updateKey({ time })
+                      }}
+                    />
+                  </label>
+                  <button
+                    className="cs-link"
+                    disabled={shot.keyframes.length < 2}
+                    onClick={() =>
+                      patch({ keyframes: shot.keyframes.filter((key) => key.id !== keyframe.id) })
                     }
                   >
-                    {subjects.map((n) => (
-                      <option key={n.id} value={n.id}>
-                        {n.name || n.id}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {shot.follow.mode === 'offset' && (
+                    删除此关键帧
+                  </button>
+                </>
+              )}
+              <h4 className="mt-6 text-xs font-semibold">目标跟随</h4>
+              <label className="cs-field">
+                跟随方式
+                <select
+                  aria-label="跟随方式"
+                  value={shot.follow?.mode ?? 'path'}
+                  onChange={(e) =>
+                    patch({
+                      follow:
+                        e.target.value === 'path'
+                          ? null
+                          : {
+                              nodeId: followNodeId,
+                              mode: e.target.value as 'lookAt' | 'offset',
+                              offset: [2.4, 1.8, 3.2],
+                              lookAtOffset: [0, 0.6, 0],
+                            },
+                    })
+                  }
+                >
+                  <option value="path">按机位路径拍摄</option>
+                  <option value="lookAt" disabled={!subjects.length}>
+                    沿路径移动，始终看向目标
+                  </option>
+                  <option value="offset" disabled={!subjects.length}>
+                    与目标保持固定距离
+                  </option>
+                </select>
+              </label>
+              {shot.follow && (
+                <>
+                  <label className="cs-field">
+                    跟随对象
+                    <select
+                      aria-label="跟随目标"
+                      value={shot.follow.nodeId}
+                      onChange={(e) =>
+                        patch({ follow: { ...shot.follow!, nodeId: e.target.value }, motion: null })
+                      }
+                    >
+                      {subjects.map((n) => (
+                        <option key={n.id} value={n.id}>
+                          {n.name || n.id}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {shot.follow.mode === 'offset' && (
+                    <VectorField
+                      label="摄像机相对距离"
+                      value={shot.follow.offset}
+                      onChange={(offset) => patch({ follow: { ...shot.follow!, offset } })}
+                    />
+                  )}
                   <VectorField
-                    label="摄像机相对距离"
-                    value={shot.follow.offset}
-                    onChange={(offset) => patch({ follow: { ...shot.follow!, offset } })}
+                    label="目标取景偏移"
+                    value={shot.follow.lookAtOffset}
+                    onChange={(lookAtOffset) =>
+                      patch({ follow: { ...shot.follow!, lookAtOffset } })
+                    }
                   />
-                )}
-                <VectorField
-                  label="目标取景偏移"
-                  value={shot.follow.lookAtOffset}
-                  onChange={(lookAtOffset) => patch({ follow: { ...shot.follow!, lookAtOffset } })}
-                />
-                <label className="cs-check">
-                  <input
-                    type="checkbox"
-                    checked={!!shot.motion}
-                    onChange={(e) => {
-                      const n = nodes[shot.follow!.nodeId as keyof typeof nodes] as unknown as
-                        | { position?: Vec3 }
-                        | undefined
-                      const p = n?.position ?? [0, 0, 0]
-                      patch({
-                        motion: e.target.checked
-                          ? {
-                              nodeId: shot.follow!.nodeId,
-                              keyframes: [
-                                { time: 0, position: [...p] as Vec3 },
-                                { time: shot.duration, position: [p[0], p[1], p[2] - 1] },
-                              ],
-                            }
-                          : null,
-                      })
-                    }}
-                  />
-                  让对象沿行动线移动
-                </label>
-                {shot.motion && (
-                  <div className="cs-inset">
-                    <p className="cs-help">
-                      行动点相对于对象所在层级设置；只在预演中移动，停止后还原。
-                    </p>
-                    {shot.motion.keyframes.map((point, i) => (
-                      <div className="cs-motion" key={i}>
-                        <label className="cs-field">
-                          行动点 {i + 1}
-                          <input
-                            aria-label={`行动点 ${i + 1} 时间`}
-                            type="number"
-                            min={0}
-                            max={shot.duration}
-                            step={0.1}
-                            value={point.time}
-                            onChange={(e) => {
-                              const time = e.target.valueAsNumber
-                              if (
-                                !Number.isFinite(time) ||
-                                time < 0 ||
-                                time > shot.duration ||
-                                shot.motion!.keyframes.some(
-                                  (p, j) => j !== i && Math.abs(p.time - time) < 0.001,
-                                )
-                              )
-                                return
-                              patch({
-                                motion: {
-                                  ...shot.motion!,
-                                  keyframes: shot
-                                    .motion!.keyframes.map((p, j) => (j === i ? { ...p, time } : p))
-                                    .sort((a, b) => a.time - b.time),
-                                },
-                              })
-                            }}
-                          />
-                        </label>
-                        <VectorField
-                          label={`行动点 ${i + 1}`}
-                          value={point.position}
-                          onChange={(position) =>
-                            patch({
-                              motion: {
-                                ...shot.motion!,
-                                keyframes: shot.motion!.keyframes.map((p, j) =>
-                                  j === i ? { ...p, position } : p,
-                                ),
-                              },
-                            })
-                          }
-                        />
-                        {shot.motion!.keyframes.length > 2 && (
-                          <button
-                            className="cs-link"
-                            onClick={() =>
-                              patch({
-                                motion: {
-                                  ...shot.motion!,
-                                  keyframes: shot.motion!.keyframes.filter((_, j) => j !== i),
-                                },
-                              })
-                            }
-                          >
-                            删除行动点
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                    <button
-                      className="cs-button cs-wide"
-                      onClick={() => {
-                        const points = shot.motion!.keyframes
-                        const intervals = points
-                          .slice(1)
-                          .map((p, i) => ({ i, gap: p.time - points[i]!.time }))
-                          .sort((a, b) => b.gap - a.gap)
-                        const interval = intervals[0]
-                        if (!interval || interval.gap < 0.02) return
-                        const a = points[interval.i],
-                          b = points[interval.i + 1]
-                        if (!a || !b) return
+                  <label className="cs-check">
+                    <input
+                      type="checkbox"
+                      checked={!!shot.motion}
+                      onChange={(e) => {
+                        const n = nodes[shot.follow!.nodeId as keyof typeof nodes] as unknown as
+                          | { position?: Vec3 }
+                          | undefined
+                        const p = n?.position ?? [0, 0, 0]
                         patch({
-                          motion: {
-                            ...shot.motion!,
-                            keyframes: [
-                              ...points,
-                              {
-                                time: (a.time + b.time) / 2,
-                                position: a.position.map(
-                                  (v, i) => (v + b.position[i]!) / 2,
-                                ) as Vec3,
-                              },
-                            ].sort((a, b) => a.time - b.time),
-                          },
+                          motion: e.target.checked
+                            ? {
+                                nodeId: shot.follow!.nodeId,
+                                keyframes: [
+                                  { time: 0, position: [...p] as Vec3 },
+                                  { time: shot.duration, position: [p[0], p[1], p[2] - 1] },
+                                ],
+                              }
+                            : null,
                         })
                       }}
-                    >
-                      插入行动点
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
+                    />
+                    让对象沿行动线移动
+                  </label>
+                  {shot.motion && (
+                    <div className="cs-inset">
+                      <p className="cs-help">
+                        行动点相对于对象所在层级设置；只在预演中移动，停止后还原。
+                      </p>
+                      {shot.motion.keyframes.map((point, i) => (
+                        <div className="cs-motion" key={i}>
+                          <label className="cs-field">
+                            行动点 {i + 1}
+                            <input
+                              aria-label={`行动点 ${i + 1} 时间`}
+                              type="number"
+                              min={0}
+                              max={shot.duration}
+                              step={0.1}
+                              value={point.time}
+                              onChange={(e) => {
+                                const time = e.target.valueAsNumber
+                                if (
+                                  !Number.isFinite(time) ||
+                                  time < 0 ||
+                                  time > shot.duration ||
+                                  shot.motion!.keyframes.some(
+                                    (p, j) => j !== i && Math.abs(p.time - time) < 0.001,
+                                  )
+                                )
+                                  return
+                                patch({
+                                  motion: {
+                                    ...shot.motion!,
+                                    keyframes: shot
+                                      .motion!.keyframes.map((p, j) =>
+                                        j === i ? { ...p, time } : p,
+                                      )
+                                      .sort((a, b) => a.time - b.time),
+                                  },
+                                })
+                              }}
+                            />
+                          </label>
+                          <VectorField
+                            label={`行动点 ${i + 1}`}
+                            value={point.position}
+                            onChange={(position) =>
+                              patch({
+                                motion: {
+                                  ...shot.motion!,
+                                  keyframes: shot.motion!.keyframes.map((p, j) =>
+                                    j === i ? { ...p, position } : p,
+                                  ),
+                                },
+                              })
+                            }
+                          />
+                          {shot.motion!.keyframes.length > 2 && (
+                            <button
+                              className="cs-link"
+                              onClick={() =>
+                                patch({
+                                  motion: {
+                                    ...shot.motion!,
+                                    keyframes: shot.motion!.keyframes.filter((_, j) => j !== i),
+                                  },
+                                })
+                              }
+                            >
+                              删除行动点
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        className="cs-button cs-wide"
+                        onClick={() => {
+                          const points = shot.motion!.keyframes
+                          const intervals = points
+                            .slice(1)
+                            .map((p, i) => ({ i, gap: p.time - points[i]!.time }))
+                            .sort((a, b) => b.gap - a.gap)
+                          const interval = intervals[0]
+                          if (!interval || interval.gap < 0.02) return
+                          const a = points[interval.i],
+                            b = points[interval.i + 1]
+                          if (!a || !b) return
+                          patch({
+                            motion: {
+                              ...shot.motion!,
+                              keyframes: [
+                                ...points,
+                                {
+                                  time: (a.time + b.time) / 2,
+                                  position: a.position.map(
+                                    (v, i) => (v + b.position[i]!) / 2,
+                                  ) as Vec3,
+                                },
+                              ].sort((a, b) => a.time - b.time),
+                            },
+                          })
+                        }}
+                      >
+                        插入行动点
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </details>
           </>
         )}
       </fieldset>

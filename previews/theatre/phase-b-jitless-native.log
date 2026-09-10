@@ -1,0 +1,11 @@
+bun test v1.3.14 (0d9b296a)
+
+packages\core\src\schema\compiled-node-parsers.test.ts:
+(pass) compiled node parsers — jitless (CSP) profile > declines to compile and keeps parsing correctly [192.75ms]
+
+ 1 pass
+ 250 filtered out
+ 0 fail
+ 6 expect() calls
+Ran 1 test across 1 file. [460.00ms]
+TEST_EXIT=0

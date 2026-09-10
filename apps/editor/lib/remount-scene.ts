@@ -26,6 +26,7 @@ import {
   createStageFrame,
   type DeploymentPlan,
   DeploymentPlanSchema,
+  getObjectCorners,
   inverseRotatePoint,
   type ProductionLayout,
   ProductionLayoutSchema,
@@ -34,19 +35,46 @@ import {
   relativeRotation,
   rotatePoint,
   subtract,
+  toFrameCoordinates,
+  transformDirection,
+  transformPoint,
   type Vec3,
   type VenueProfile,
   VenueProfileSchema,
 } from '@pascal-app/core/remount'
 import { z } from 'zod'
 import { create } from 'zustand'
+import {
+  type CameraProject,
+  type Shot,
+  sampleShot,
+  validateCameraProject,
+} from '../components/camera-studio/model'
+import { isLegacyLight } from './legacy-lighting'
+import { THEATRE_METADATA_KEY } from './theatre/scene-adapter'
+import { StageSceneDocumentSchema } from './theatre/simulation'
+import { readStageDocument } from './theatre/simulation-store'
 
-const SourceSnapshotSchema = RemountObjectSchema.extend({ fingerprint: z.string() })
+const CAMERA_METADATA_KEY = 'diastageCameraStudio'
+const cameraSnapshotSchema = z.unknown().transform((input, context): Shot => {
+  try {
+    return validateCameraProject({ version: 1, shots: [input] }).shots[0]!
+  } catch {
+    context.addIssue({ code: 'custom', message: '复台机位快照无效，请重新记录演出布置。' })
+    return z.NEVER
+  }
+})
+const SourceSnapshotSchema = RemountObjectSchema.extend({
+  fingerprint: z.string(),
+  sourceKind: z.enum(['node', 'camera']).default('node'),
+  camera: cameraSnapshotSchema.optional(),
+})
 type SourceSnapshot = z.infer<typeof SourceSnapshotSchema>
 
 export const RemountMetadataSchema = z.object({
   version: z.literal(1),
   sourceVenue: VenueProfileSchema,
+  sourceHeightMeasured: z.boolean().default(true),
   targetVenue: VenueProfileSchema,
   layout: ProductionLayoutSchema.nullable(),
   sourceSnapshots: z.array(SourceSnapshotSchema),
@@ -74,7 +102,7 @@ type RemountDraft = RemountMetadata & {
 function defaultVenue(id: string, name: string, x: number): VenueProfile {
   const anchors: VenueProfile['anchors'] = [
     { id: 'origin', name: '台口中点', position: [x, 0, 2.5] },
-    { id: 'right', name: '舞台右向', position: [x + 1, 0, 2.5] },
+    { id: 'right', name: '横向基准', position: [x + 1, 0, 2.5] },
     { id: 'upstage', name: '舞台后向', position: [x, 0, 1.5] },
   ]
   return {
@@ -87,9 +115,29 @@ function defaultVenue(id: string, name: string, x: number): VenueProfile {
 }
 
 function defaults(): RemountMetadata {
+  const document = readStageDocument()
+  let sourceVenue = defaultVenue('source', '原场地', 0)
+  if (document) {
+    const { origin, width, depth, height, id, name } = document.venue
+    const point: Vec3 = [origin[0], origin[1], origin[2] + depth / 2]
+    // Preserve the existing calibration handedness; this axis is not actor stage-right.
+    const anchors: VenueProfile['anchors'] = [
+      { id: 'origin', name: '台口中点', position: point },
+      { id: 'right', name: '横向基准', position: add(point, [1, 0, 0]) },
+      { id: 'upstage', name: '舞台后向', position: add(point, [0, 0, -1]) },
+    ]
+    sourceVenue = {
+      id,
+      name,
+      anchors,
+      frame: createStageFrame(anchors),
+      bounds: { width, depth, height },
+    }
+  }
   return {
     version: 1,
-    sourceVenue: defaultVenue('source', '原场地', 0),
+    sourceVenue,
+    sourceHeightMeasured: !document || currentSite().metadata.stageHeightMeasured !== false,
     targetVenue: defaultVenue('target', '目标场地', 10),
     layout: null,
     sourceSnapshots: [],
@@ -149,6 +197,14 @@ export function reloadRemount(sceneId: string): void {
   const key = sceneKey(sceneId)
   const raw = currentSite().metadata.remount
   const saved = raw === undefined ? defaults() : RemountMetadataSchema.parse(raw)
+  if (
+    raw !== undefined &&
+    typeof raw === 'object' &&
+    raw !== null &&
+    !Object.hasOwn(raw, 'sourceHeightMeasured') &&
+    currentSite().metadata.stageHeightMeasured === false
+  )
+    saved.sourceHeightMeasured = false
   useRemountDraft.setState({
     ...saved,
     sceneKey: key,
@@ -204,7 +260,7 @@ function stableVector(next: Vec3, current: Vec3): Vec3 {
   ) as Vec3
 }
 
-function worldPose(id: string | null, nodes: SceneNodes, path = new Set<string>()): Pose {
+export function worldPose(id: string | null, nodes: SceneNodes, path = new Set<string>()): Pose {
   if (id === null) return { position: ZERO, rotation: ZERO }
   if (path.has(id)) throw new Error('场景父子关系存在循环。')
   const node = nodes[id as AnyNodeId]
@@ -240,7 +296,79 @@ function fingerprint(node: MovableNode): string {
   return JSON.stringify(rest)
 }
 
-function objectSnapshot(node: MovableNode, nodes: SceneNodes): SourceSnapshot {
+function canonicalCameras(): CameraProject {
+  const state = useScene.getState()
+  const site = state.rootNodeIds.map((id) => state.nodes[id]).find((node) => node?.type === 'site')
+  return validateCameraProject(site?.metadata[CAMERA_METADATA_KEY] ?? { version: 1, shots: [] })
+}
+
+function cameraFingerprint(shot: Shot): string {
+  return JSON.stringify({
+    ...shot,
+    keyframes: shot.keyframes.map(({ id, time, fov }) => ({ id, time, fov })),
+    follow: shot.follow && { nodeId: shot.follow.nodeId, mode: shot.follow.mode },
+  })
+}
+
+function cameraSnapshot(id: string, nodes: SceneNodes): SourceSnapshot {
+  const shot = canonicalCameras().shots.find((candidate) => `camera:${candidate.id}` === id)
+  if (!shot) throw new Error('机位已删除或尚未保存，请重新记录演出布置。')
+  if (shot.motion)
+    throw new Error(
+      `「${shot.name}」带有独立物件运动轨迹；请先在观察与记录中移除该轨迹，再复台，避免改写排演。`,
+    )
+  let target: Vec3 | undefined
+  if (shot.follow) {
+    try {
+      target = worldPose(movable(nodes[shot.follow.nodeId as AnyNodeId]).id, nodes).position
+    } catch {
+      throw new Error(`「${shot.name}」的跟随对象不属于可搬运布景，请先解除跟随或选择支持的布景。`)
+    }
+  }
+  const pose = sampleShot(shot, 0, target)
+  const direction = subtract(pose.lookAt, pose.position)
+  const length = Math.hypot(...direction)
+  if (length < 1e-8) throw new Error(`「${shot.name}」的位置与注视点重合，请先调整机位。`)
+  return SourceSnapshotSchema.parse({
+    nodeId: id,
+    sourceKind: 'camera',
+    camera: shot,
+    name: `${shot.name} · 机位`,
+    representation: 'virtual',
+    position: pose.position,
+    rotation: [
+      Math.hypot(direction[1], direction[2]) < 1e-10 ? 0 : Math.atan2(direction[1], -direction[2]),
+      Math.asin(Math.max(-1, Math.min(1, -direction[0] / length))),
+      0,
+    ],
+    dimensions: [0.35, 0.25, 0.5],
+    boundsCenter: [0, 0, 0],
+    fingerprint: cameraFingerprint(shot),
+  })
+}
+
+function snapshotFor(id: string, nodes: SceneNodes): SourceSnapshot {
+  return id.startsWith('camera:')
+    ? cameraSnapshot(id, nodes)
+    : objectSnapshot(movable(nodes[id as AnyNodeId]), nodes)
+}
+
+function validateCameraDependencies(snapshots: SourceSnapshot[]) {
+  const included = new Set(snapshots.map((snapshot) => snapshot.nodeId))
+  for (const snapshot of snapshots) {
+    if (snapshot.sourceKind !== 'camera') continue
+    if (!snapshot.camera || snapshot.nodeId !== `camera:${snapshot.camera.id}`)
+      throw new Error('机位快照与布局不匹配，请重新记录。')
+    if (snapshot.representation !== 'virtual')
+      throw new Error('舞台机位使用虚拟参考，不作为实体设备的碰撞尺寸。')
+    if (snapshot.camera.motion) throw new Error('独立物件运动轨迹暂不能安全复台，请先移除该轨迹。')
+    if (snapshot.camera.follow && !included.has(snapshot.camera.follow.nodeId)) {
+      throw new Error(`请同时选入「${snapshot.camera.name}」跟随的布景，或先解除跟随。`)
+    }
+  }
+}
+
+export function objectSnapshot(node: MovableNode, nodes: SceneNodes): SourceSnapshot {
   const pose = worldPose(node.id, nodes)
   let dimensions: Vec3
   let boundsCenter: Vec3
@@ -277,6 +405,11 @@ function expandSelection(nodeIds: string[], nodes: SceneNodes): string[] {
   const result = new Set<string>()
   const visit = (id: string) => {
     if (result.has(id)) return
+    if (id.startsWith('camera:')) {
+      cameraSnapshot(id, nodes)
+      result.add(id)
+      return
+    }
     const node = movable(nodes[id as AnyNodeId])
     result.add(id)
     for (const child of node.children) visit(child)
@@ -293,23 +426,58 @@ export function getRemountCandidates(): {
   reason?: string
 }[] {
   const nodes = useScene.getState().nodes
-  return Object.values(nodes)
-    .filter((node) => node.type === 'item' || node.type === 'block')
-    .map((node) => {
-      const name = node.name || (node.type === 'item' ? node.asset.name : '块体')
-      try {
-        for (const id of expandSelection([node.id], nodes))
-          objectSnapshot(movable(nodes[id as AnyNodeId]), nodes)
-        return { nodeId: node.id, name, eligible: true }
-      } catch (error) {
-        return {
-          nodeId: node.id,
-          name,
-          eligible: false,
-          reason: error instanceof Error ? error.message : '不支持的物件',
+  const candidates: { nodeId: string; name: string; eligible: boolean; reason?: string }[] =
+    Object.values(nodes)
+      .filter((node) => (node.type === 'item' || node.type === 'block') && !isLegacyLight(node))
+      .map((node) => {
+        const name = node.name || (node.type === 'item' ? node.asset.name : '块体')
+        try {
+          for (const id of expandSelection([node.id], nodes))
+            objectSnapshot(movable(nodes[id as AnyNodeId]), nodes)
+          return { nodeId: node.id, name, eligible: true }
+        } catch (error) {
+          return {
+            nodeId: node.id,
+            name,
+            eligible: false,
+            reason: error instanceof Error ? error.message : '不支持的物件',
+          }
         }
-      }
-    })
+      })
+  let cameras: CameraProject
+  try {
+    cameras = canonicalCameras()
+  } catch {
+    return [
+      ...candidates,
+      {
+        nodeId: 'camera:unreadable',
+        name: '机位资料无法读取',
+        eligible: false,
+        reason: '原始机位资料已保留，请恢复有效备份后再复台机位。',
+      },
+    ]
+  }
+  for (const shot of cameras.shots) {
+    const nodeId = `camera:${shot.id}`
+    try {
+      cameraSnapshot(nodeId, nodes)
+      candidates.push({
+        nodeId,
+        name: `${shot.name} · 机位`,
+        eligible: true,
+        ...(shot.follow ? { reason: '跟随机位：请同时选入所跟随的布景。' } : {}),
+      })
+    } catch (error) {
+      candidates.push({
+        nodeId,
+        name: `${shot.name} · 机位`,
+        eligible: false,
+        reason: error instanceof Error ? error.message : '机位快照无效',
+      })
+    }
+  }
+  return candidates
 }
 
 export function captureProductionLayout(sceneId: string, nodeIds: string[]): void {
@@ -320,6 +488,7 @@ export function captureProductionLayout(sceneId: string, nodeIds: string[]): voi
   if (ids.length === 0) throw new Error('请至少选择一个可搬运物件。')
   const included = new Set(ids)
   const sourceSnapshots = ids.map((id) => {
+    if (id.startsWith('camera:')) return cameraSnapshot(id, nodes)
     const node = movable(nodes[id as AnyNodeId])
     let assemblyId = id
     let parentId = node.parentId
@@ -329,6 +498,7 @@ export function captureProductionLayout(sceneId: string, nodeIds: string[]): voi
     }
     return SourceSnapshotSchema.parse({ ...objectSnapshot(node, nodes), assemblyId })
   })
+  validateCameraDependencies(sourceSnapshots)
   const layout = ProductionLayoutSchema.parse({
     id: 'production',
     name: '演出布置',
@@ -341,7 +511,10 @@ export function captureProductionLayout(sceneId: string, nodeIds: string[]): voi
 export function updateRemountInput(
   sceneId: string,
   patch: Partial<
-    Pick<RemountMetadata, 'sourceVenue' | 'targetVenue' | 'clearance' | 'tolerance'>
+    Pick<
+      RemountMetadata,
+      'sourceVenue' | 'sourceHeightMeasured' | 'targetVenue' | 'clearance' | 'tolerance'
+    >
   > & {
     paths?: ProductionLayout['paths']
     representations?: Record<string, RemountObject['representation']>
@@ -369,11 +542,39 @@ function validatedSources(draft: RemountDraft, nodes: SceneNodes): SourceSnapsho
   if (JSON.stringify(ids) !== JSON.stringify(draft.layout.objectNodeIds))
     throw new Error('保存的演出布置与原始快照不匹配。')
   for (const source of draft.sourceSnapshots) {
-    if (fingerprint(movable(nodes[source.nodeId as AnyNodeId])) !== source.fingerprint) {
+    if (snapshotFor(source.nodeId, nodes).fingerprint !== source.fingerprint) {
       throw new Error('物件尺寸、挂接或子树已变化，请重新记录演出布置。')
     }
+    if (source.sourceKind === 'node' && nodes[source.nodeId as AnyNodeId]?.metadata.stageLocked)
+      throw new Error('复台包含已锁定布景，请先解锁。')
   }
+  validateCameraDependencies(draft.sourceSnapshots)
   return draft.sourceSnapshots
+}
+
+function assertMeasuredHeight(draft: RemountDraft) {
+  if (!draft.sourceHeightMeasured)
+    throw new Error('源场地净高尚未测量。请在源场地填写实测净高，再生成预览或确认复台。')
+}
+
+function mappedCamera(shot: Shot, draft: RemountDraft): Shot {
+  const point = (value: Vec3) =>
+    transformPoint(value, draft.sourceVenue.frame, draft.targetVenue.frame)
+  const direction = (value: Vec3) =>
+    transformDirection(value, draft.sourceVenue.frame, draft.targetVenue.frame)
+  return {
+    ...shot,
+    keyframes: shot.keyframes.map((frame) => ({
+      ...frame,
+      position: point(frame.position),
+      lookAt: point(frame.lookAt),
+    })),
+    follow: shot.follow && {
+      ...shot.follow,
+      offset: direction(shot.follow.offset),
+      lookAtOffset: direction(shot.follow.lookAtOffset),
+    },
+  }
 }
 
 function obstacleSnapshot(
@@ -436,6 +637,7 @@ function obstacleSnapshot(
 export function previewRemount(sceneId: string): DeploymentPlan {
   assertWritable()
   const draft = draftFor(sceneId)
+  assertMeasuredHeight(draft)
   const nodes = useScene.getState().nodes
   const objects = validatedSources(draft, nodes)
   const selected = new Set(objects.map((entry) => entry.nodeId))
@@ -462,6 +664,43 @@ export function previewRemount(sceneId: string): DeploymentPlan {
     clearance: draft.clearance,
     tolerance: draft.tolerance,
   })
+  for (const object of objects) {
+    if (!object.camera || object.camera.follow?.mode === 'offset') continue
+    const points = object.camera.keyframes.map((frame) => frame.position)
+    if (points.length > 1)
+      plan.paths.push({
+        id: `${object.nodeId}:movement`,
+        name: `${object.camera.name} · 机位移动`,
+        sourcePoints: points,
+        targetPoints: points.map((point) =>
+          transformPoint(point, draft.sourceVenue.frame, draft.targetVenue.frame),
+        ),
+      })
+    if (
+      points.some((position) =>
+        getObjectCorners({ ...object, position }).some((point) => {
+          const [right, up, back] = toFrameCoordinates(
+            transformPoint(point, draft.sourceVenue.frame, draft.targetVenue.frame),
+            draft.targetVenue.frame,
+          )
+          const { width, depth, height } = draft.targetVenue.bounds
+          return (
+            Math.abs(right) > width / 2 + 1e-6 ||
+            back < -1e-6 ||
+            back > depth + 1e-6 ||
+            up < -1e-6 ||
+            up > height + 1e-6
+          )
+        }),
+      )
+    )
+      plan.conflicts.push({
+        nodeId: object.nodeId,
+        type: 'out-of-bounds',
+        severity: 'error',
+        message: `${object.camera.name} 的机位关键帧超出目标场地可用范围。`,
+      })
+  }
   const { materials, collections, installedPlugins } = useScene.getState()
   useRemountDraft.setState({
     plan,
@@ -505,12 +744,33 @@ export function isRemountPreviewCurrent(sceneId: string): boolean {
   })
 }
 
-function metadataUpdate(draft: RemountDraft, lastPlan = draft.lastPlan) {
+function metadataUpdate(draft: RemountDraft, lastPlan = draft.lastPlan, cameras?: CameraProject) {
   const site = currentSite()
   const remount = RemountMetadataSchema.parse(
     JSON.parse(JSON.stringify(RemountMetadataSchema.parse({ ...draft, lastPlan }))),
   )
-  return { id: site.id, data: { metadata: { ...site.metadata, remount } } }
+  const document = readStageDocument()
+  const measuredSource =
+    document && draft.sourceVenue.id === document.venue.id && draft.sourceHeightMeasured
+      ? {
+          stageHeightMeasured: true,
+          [THEATRE_METADATA_KEY]: StageSceneDocumentSchema.parse({
+            ...document,
+            venue: { ...document.venue, height: draft.sourceVenue.bounds.height },
+          }),
+        }
+      : {}
+  return {
+    id: site.id,
+    data: {
+      metadata: {
+        ...site.metadata,
+        ...measuredSource,
+        ...(cameras ? { [CAMERA_METADATA_KEY]: validateCameraProject(cameras) } : {}),
+        remount,
+      },
+    },
+  }
 }
 
 export function saveRemountConfig(sceneId: string, guardBlocked = false): void {
@@ -527,6 +787,7 @@ export function saveRemountConfig(sceneId: string, guardBlocked = false): void {
 export function applyRemount(sceneId: string, guardBlocked = false): void {
   assertWritable(guardBlocked)
   const draft = draftFor(sceneId)
+  assertMeasuredHeight(draft)
   const nodes = useScene.getState().nodes
   if (!draft.plan || !isRemountPreviewCurrent(sceneId))
     throw new Error('预览已过期，请重新生成预览。')
@@ -535,8 +796,18 @@ export function applyRemount(sceneId: string, guardBlocked = false): void {
   if (!plan.calibration.valid || plan.conflicts.some((conflict) => conflict.severity === 'error'))
     throw new Error('请先解决标定误差或物理冲突。')
   const placed = new Map(plan.placements.map((placement) => [placement.nodeId, placement]))
+  const cameras = canonicalCameras()
+  let cameraChanged = false
   const updates: { id: AnyNodeId; data: Partial<AnyNode> }[] = []
   for (const placement of plan.placements) {
+    const source = draft.sourceSnapshots.find((snapshot) => snapshot.nodeId === placement.nodeId)!
+    if (source.sourceKind === 'camera' && source.camera) {
+      cameras.shots = cameras.shots.map((shot) =>
+        shot.id === source.camera!.id ? mappedCamera(source.camera!, draft) : shot,
+      )
+      cameraChanged = true
+      continue
+    }
     const node = movable(nodes[placement.nodeId as AnyNodeId])
     const parentPlacement = node.parentId ? placed.get(node.parentId) : undefined
     const parent = parentPlacement
@@ -566,7 +837,7 @@ export function applyRemount(sceneId: string, guardBlocked = false): void {
       },
     })
   }
-  updates.push(metadataUpdate(draft, plan))
+  updates.push(metadataUpdate(draft, plan, cameraChanged ? cameras : undefined))
   const previousEntry = useScene.temporal.getState().pastStates.at(-1)
   useScene.getState().applyNodeChanges({ update: updates })
   const entry = useScene.temporal.getState().pastStates.at(-1)

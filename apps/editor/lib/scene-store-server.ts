@@ -1,5 +1,6 @@
 import type { SceneOperations } from '@pascal-app/mcp/operations'
 import type { SceneStore } from '@pascal-app/mcp/storage'
+import { guardSceneApiRequest } from './scene-api-security'
 
 /**
  * Per-process singleton. The factory is async because backend modules are
@@ -32,6 +33,18 @@ export function getSceneOperations(): Promise<SceneOperations> {
     })()
   }
   return cachedOperations
+}
+
+export async function getScenePageOperations(requestHeaders: Headers): Promise<SceneOperations> {
+  const host = requestHeaders.get('host')
+  if (!host) throw new Error('场景读取被拒绝：缺少请求主机。')
+  const protocol = requestHeaders.get('x-forwarded-proto') === 'https' ? 'https' : 'http'
+  const request = new Request(`${protocol}://${host}/api/scenes`, { headers: requestHeaders })
+  const denied = guardSceneApiRequest(request)
+  if (denied) throw new Error(`场景读取被拒绝：${denied.status}`)
+
+  // Server pages share the runtime store; a NEXT_PUBLIC origin is frozen at build time.
+  return getSceneOperations()
 }
 
 /**

@@ -1,0 +1,195 @@
+Started: 2026-09-10T01:19:42.1854545+08:00
+packages\editor\src\components\editor\index.tsx:1331:3 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  i This hook specifies more dependencies than necessary: sceneLoadAttempt.
+  
+    1330 │   // Load scene on mount (or when onLoad identity changes, e.g. project switch)
+  > 1331 │   useEffect(() => {
+         │   ^^^^^^^^^
+    1332 │     let cancelled = false
+    1333 │ 
+  
+  i This dependency can be removed from the list.
+  
+    1377 │       cancelled = true
+    1378 │     }
+  > 1379 │   }, [onLoad, isLoadingSceneRef, sceneLoadAttempt])
+         │                                  ^^^^^^^^^^^^^^^^
+    1380 │ 
+    1381 │   const retrySceneLoad = useCallback(() => {
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    1379 │ ··},·[onLoad,·isLoadingSceneRef,·sceneLoadAttempt])
+         │                                ------------------  
+
+packages\editor\src\components\ui\controls\material-picker.tsx:202:26 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  i This hook specifies more dependencies than necessary: libraryVersion.
+  
+    200 │     getLibraryMaterialsVersion,
+    201 │   )
+  > 202 │   const dynamicSources = useMemo(
+        │                          ^^^^^^^
+    203 │     () => new Set(getDynamicLibraryMaterials().map((item) => item.source)),
+    204 │     [libraryVersion],
+  
+  i This dependency can be removed from the list.
+  
+    202 │   const dynamicSources = useMemo(
+    203 │     () => new Set(getDynamicLibraryMaterials().map((item) => item.source)),
+  > 204 │     [libraryVersion],
+        │      ^^^^^^^^^^^^^^
+    205 │   )
+    206 │   const visibleSourceFilters = SOURCE_FILTERS.filter(
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    204 │ ····[libraryVersion],
+        │      --------------  
+
+apps\editor\components\theatre\theatre.css:27:120 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    25 │ .th-transport output { font-variant-numeric:tabular-nums; }
+    26 │ .th-transport .th-action { width:100%; color:var(--muted-foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  > 27 │ @media(max-width:800px) { .studio-slogan {display:none} .studio-project-name {display:none} .studio-navigation {gap:8px!important;padding:8px 12px!important;min-height:0!important} .studio-identity {flex:none!important} .studio-navigation-actions {margin-left:auto!important;font-size:11px} .studio-workspaces {order:3;width:100%;justify-content:stretch!important} .studio-workspaces button {flex:1} .theatre-panel {padding:16px} .theatre-panel button {min-height:44px} .th-transport {padding:8px 12px;gap:8px} }
+       │                                                                                                                        ^^^^^^^^^^
+    28 │ 
+    29 │ .studio-workspace .diastage-tool-rail {width:96px;}
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    27 │ @media(max-width:800px)·{·.studio-slogan·{display:none}·.studio-project-name·{display:none}·.studio-navigation·{gap:8px!important;padding:8px·12px!important;min-height:0!important}·.studio-identity·{flex:none!important}·.studio-navigation-actions·{margin-left:auto!important;font-size:11px}·.studio-workspaces·{order:3;width:100%;justify-content:stretch!important}·.studio-workspaces·button·{flex:1}·.theatre-panel·{padding:16px}·.theatre-panel·button·{min-height:44px}·.th-transport·{padding:8px·12px;gap:8px}·}
+       │                                                                                                                        ----------                                                                                                                                                                                                                                                                                                                                                                                               
+
+apps\editor\components\theatre\theatre.css:27:147 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    25 │ .th-transport output { font-variant-numeric:tabular-nums; }
+    26 │ .th-transport .th-action { width:100%; color:var(--muted-foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  > 27 │ @media(max-width:800px) { .studio-slogan {display:none} .studio-project-name {display:none} .studio-navigation {gap:8px!important;padding:8px 12px!important;min-height:0!important} .studio-identity {flex:none!important} .studio-navigation-actions {margin-left:auto!important;font-size:11px} .studio-workspaces {order:3;width:100%;justify-content:stretch!important} .studio-workspaces button {flex:1} .theatre-panel {padding:16px} .theatre-panel button {min-height:44px} .th-transport {padding:8px 12px;gap:8px} }
+       │                                                                                                                                                   ^^^^^^^^^^
+    28 │ 
+    29 │ .studio-workspace .diastage-tool-rail {width:96px;}
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    27 │ @media(max-width:800px)·{·.studio-slogan·{display:none}·.studio-project-name·{display:none}·.studio-navigation·{gap:8px!important;padding:8px·12px!important;min-height:0!important}·.studio-identity·{flex:none!important}·.studio-navigation-actions·{margin-left:auto!important;font-size:11px}·.studio-workspaces·{order:3;width:100%;justify-content:stretch!important}·.studio-workspaces·button·{flex:1}·.theatre-panel·{padding:16px}·.theatre-panel·button·{min-height:44px}·.th-transport·{padding:8px·12px;gap:8px}·}
+       │                                                                                                                                                   ----------                                                                                                                                                                                                                                                                                                                                                                    
+
+apps\editor\components\theatre\theatre.css:27:170 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    25 │ .th-transport output { font-variant-numeric:tabular-nums; }
+    26 │ .th-transport .th-action { width:100%; color:var(--muted-foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  > 27 │ @media(max-width:800px) { .studio-slogan {display:none} .studio-project-name {display:none} .studio-navigation {gap:8px!important;padding:8px 12px!important;min-height:0!important} .studio-identity {flex:none!important} .studio-navigation-actions {margin-left:auto!important;font-size:11px} .studio-workspaces {order:3;width:100%;justify-content:stretch!important} .studio-workspaces button {flex:1} .theatre-panel {padding:16px} .theatre-panel button {min-height:44px} .th-transport {padding:8px 12px;gap:8px} }
+       │                                                                                                                                                                          ^^^^^^^^^^
+    28 │ 
+    29 │ .studio-workspace .diastage-tool-rail {width:96px;}
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    27 │ @media(max-width:800px)·{·.studio-slogan·{display:none}·.studio-project-name·{display:none}·.studio-navigation·{gap:8px!important;padding:8px·12px!important;min-height:0!important}·.studio-identity·{flex:none!important}·.studio-navigation-actions·{margin-left:auto!important;font-size:11px}·.studio-workspaces·{order:3;width:100%;justify-content:stretch!important}·.studio-workspaces·button·{flex:1}·.theatre-panel·{padding:16px}·.theatre-panel·button·{min-height:44px}·.th-transport·{padding:8px·12px;gap:8px}·}
+       │                                                                                                                                                                          ----------                                                                                                                                                                                                                                                                                                                                             
+
+apps\editor\components\theatre\theatre.css:27:209 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    25 │ .th-transport output { font-variant-numeric:tabular-nums; }
+    26 │ .th-transport .th-action { width:100%; color:var(--muted-foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  > 27 │ @media(max-width:800px) { .studio-slogan {display:none} .studio-project-name {display:none} .studio-navigation {gap:8px!important;padding:8px 12px!important;min-height:0!important} .studio-identity {flex:none!important} .studio-navigation-actions {margin-left:auto!important;font-size:11px} .studio-workspaces {order:3;width:100%;justify-content:stretch!important} .studio-workspaces button {flex:1} .theatre-panel {padding:16px} .theatre-panel button {min-height:44px} .th-transport {padding:8px 12px;gap:8px} }
+       │                                                                                                                                                                                                                 ^^^^^^^^^^
+    28 │ 
+    29 │ .studio-workspace .diastage-tool-rail {width:96px;}
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    27 │ @media(max-width:800px)·{·.studio-slogan·{display:none}·.studio-project-name·{display:none}·.studio-navigation·{gap:8px!important;padding:8px·12px!important;min-height:0!important}·.studio-identity·{flex:none!important}·.studio-navigation-actions·{margin-left:auto!important;font-size:11px}·.studio-workspaces·{order:3;width:100%;justify-content:stretch!important}·.studio-workspaces·button·{flex:1}·.theatre-panel·{padding:16px}·.theatre-panel·button·{min-height:44px}·.th-transport·{padding:8px·12px;gap:8px}·}
+       │                                                                                                                                                                                                                 ----------                                                                                                                                                                                                                                                                                                      
+
+apps\editor\components\theatre\theatre.css:27:265 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    25 │ .th-transport output { font-variant-numeric:tabular-nums; }
+    26 │ .th-transport .th-action { width:100%; color:var(--muted-foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  > 27 │ @media(max-width:800px) { .studio-slogan {display:none} .studio-project-name {display:none} .studio-navigation {gap:8px!important;padding:8px 12px!important;min-height:0!important} .studio-identity {flex:none!important} .studio-navigation-actions {margin-left:auto!important;font-size:11px} .studio-workspaces {order:3;width:100%;justify-content:stretch!important} .studio-workspaces button {flex:1} .theatre-panel {padding:16px} .theatre-panel button {min-height:44px} .th-transport {padding:8px 12px;gap:8px} }
+       │                                                                                                                                                                                                                                                                         ^^^^^^^^^^
+    28 │ 
+    29 │ .studio-workspace .diastage-tool-rail {width:96px;}
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    27 │ @media(max-width:800px)·{·.studio-slogan·{display:none}·.studio-project-name·{display:none}·.studio-navigation·{gap:8px!important;padding:8px·12px!important;min-height:0!important}·.studio-identity·{flex:none!important}·.studio-navigation-actions·{margin-left:auto!important;font-size:11px}·.studio-workspaces·{order:3;width:100%;justify-content:stretch!important}·.studio-workspaces·button·{flex:1}·.theatre-panel·{padding:16px}·.theatre-panel·button·{min-height:44px}·.th-transport·{padding:8px·12px;gap:8px}·}
+       │                                                                                                                                                                                                                                                                         ----------                                                                                                                                                                                                                                              
+
+apps\editor\components\theatre\theatre.css:27:354 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    25 │ .th-transport output { font-variant-numeric:tabular-nums; }
+    26 │ .th-transport .th-action { width:100%; color:var(--muted-foreground); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  > 27 │ @media(max-width:800px) { .studio-slogan {display:none} .studio-project-name {display:none} .studio-navigation {gap:8px!important;padding:8px 12px!important;min-height:0!important} .studio-identity {flex:none!important} .studio-navigation-actions {margin-left:auto!important;font-size:11px} .studio-workspaces {order:3;width:100%;justify-content:stretch!important} .studio-workspaces button {flex:1} .theatre-panel {padding:16px} .theatre-panel button {min-height:44px} .th-transport {padding:8px 12px;gap:8px} }
+       │                                                                                                                                                                                                                                                                                                                                                                  ^^^^^^^^^^
+    28 │ 
+    29 │ .studio-workspace .diastage-tool-rail {width:96px;}
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    27 │ @media(max-width:800px)·{·.studio-slogan·{display:none}·.studio-project-name·{display:none}·.studio-navigation·{gap:8px!important;padding:8px·12px!important;min-height:0!important}·.studio-identity·{flex:none!important}·.studio-navigation-actions·{margin-left:auto!important;font-size:11px}·.studio-workspaces·{order:3;width:100%;justify-content:stretch!important}·.studio-workspaces·button·{flex:1}·.theatre-panel·{padding:16px}·.theatre-panel·button·{min-height:44px}·.th-transport·{padding:8px·12px;gap:8px}·}
+       │                                                                                                                                                                                                                                                                                                                                                                  ----------                                                                                                                                                     
+
+packages\editor\src\components\ui\item-catalog\item-catalog.tsx:5:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! This import is unused.
+  
+    3 │ import type { AssetInput } from '@pascal-app/core'
+    4 │ import { resolveCdnUrl, useViewer } from '@pascal-app/viewer'
+  > 5 │ import { useEffect } from 'react'
+      │        ^^^^^^^^^^^^^
+    6 │ import { triggerSFX } from './../../../lib/sfx-bus'
+    7 │ import { cn } from './../../../lib/utils'
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Safe fix: Remove the unused imports.
+  
+      2   2 │   ␍
+      3   3 │   import type { AssetInput } from '@pascal-app/core'␍
+      4     │ - import·{·resolveCdnUrl,·useViewer·}·from·'@pascal-app/viewer'␍
+      5     │ - import·{·useEffect·}·from·'react'␍
+          4 │ + import·{·resolveCdnUrl,·useViewer·}·from·'@pascal-app/viewer'␍
+      6   5 │   import { triggerSFX } from './../../../lib/sfx-bus'␍
+      7   6 │   import { cn } from './../../../lib/utils'␍
+  
+
+Checked 72 files in 127ms. No fixes applied.
+Found 7 warnings.
+Found 2 infos.
+LINT_EXIT=0
+Finished: 2026-09-10T01:19:42.6438790+08:00

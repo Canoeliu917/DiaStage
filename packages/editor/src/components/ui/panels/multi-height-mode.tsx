@@ -68,7 +68,7 @@ export function MultiHeightModeField({
 }: {
   nodeIds: AnyNodeId[]
   nodeType: 'wall' | 'ceiling'
-  parametrics: ParametricDescriptor<AnyNode>
+  parametrics: Pick<ParametricDescriptor<AnyNode>, 'derive' | 'reconcile'>
   min?: number
   max?: number
   step?: number
@@ -158,7 +158,7 @@ export function MultiHeightModeField({
         mixed={mixedMode}
         onChange={applyMode}
         options={[
-          { label: '跟随楼层', value: 'storey' },
+          { label: '跟随舞台空间', value: 'storey' },
           { label: '自定义高度', value: 'custom' },
         ]}
         value={mode.kind === 'same' ? mode.value : 'storey'}

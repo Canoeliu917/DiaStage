@@ -8,9 +8,15 @@ const portableBuild = process.env.PASCAL_PORTABLE_BUILD === '1'
 const nextConfig: NextConfig = {
   devIndicators: false,
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
-  ...(portableBuild
-    ? { output: 'standalone' as const, outputFileTracingRoot: path.join(appDirectory, '../..') }
-    : {}),
+  serverExternalPackages: ['pdfjs-dist', 'mammoth', 'fflate'],
+  outputFileTracingRoot: path.join(appDirectory, '../..'),
+  outputFileTracingIncludes: {
+    '/api/script/stage-plan': [
+      './lib/scripts/document-worker.mjs',
+      '../../node_modules/{pdfjs-dist,mammoth,fflate,@napi-rs/canvas,@napi-rs/canvas-*,@xmldom/xmldom,argparse,base64-js,bluebird,core-util-is,dingbat-to-unicode,duck,immediate,inherits,isarray,jszip,lie,lop,option,pako,path-is-absolute,process-nextick-args,readable-stream,safe-buffer,setimmediate,sprintf-js,string_decoder,underscore,util-deprecate,xmlbuilder}/**/*',
+    ],
+  },
+  ...(portableBuild ? { output: 'standalone' as const } : {}),
   logging: {
     browserToTerminal: true,
   },

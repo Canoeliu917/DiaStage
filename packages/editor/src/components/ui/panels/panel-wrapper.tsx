@@ -4,10 +4,8 @@ import { Icon } from '@iconify/react'
 import {
   type AnyNode,
   type AnyNodeId,
-  getInspectorExtensions,
   type IconRef,
   type InspectorExtension,
-  useRegistryVersion,
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
@@ -22,7 +20,6 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -120,22 +117,13 @@ export function PanelWrapper({
   // kind-owned `customPanel`s (wall, slab, …) render their own
   // <PanelWrapper>, so this is the one spot every inspector card flows
   // through. Extensions only apply to a single-node selection.
-  const registryVersion = useRegistryVersion()
   const selectedId = useViewer((s) =>
     s.selection.selectedIds.length === 1 ? s.selection.selectedIds[0] : undefined,
   ) as AnyNodeId | undefined
   // Subscribe to the selected node's *type* only — a string primitive that
   // doesn't change as fields are edited (same trick as ParametricInspector).
-  const selectedType = useScene((s) => (selectedId ? (s.nodes[selectedId]?.type ?? null) : null))
-  const installedPlugins = useScene((s) => s.installedPlugins)
-  const extensions = useMemo(() => {
-    // re-derive when plugin extensions register after mount (async plugin load)
-    void registryVersion
-    if (!selectedType) return []
-    return getInspectorExtensions(selectedType).filter(
-      (extension) => !extension.pluginId || installedPlugins.includes(extension.pluginId),
-    )
-  }, [selectedType, installedPlugins, registryVersion])
+  // Keep loaded plugin data available without exposing specialist inspector extensions.
+  const extensions: InspectorExtension[] = []
 
   // Which extension's content fills the card body (extension mode). The two
   // expanded modes are EITHER/OR: extension mode replaces the regular

@@ -421,11 +421,6 @@ export const useKeyboard = ({
         useEditor.getState().setPhase('structure')
         useEditor.getState().setStructureLayer('elements')
         useEditor.getState().armMaterialPaint()
-      } else if (e.key === 'g' && !e.metaKey && !e.ctrlKey) {
-        if (isVersionPreviewMode) return
-        e.preventDefault()
-        // G for ground. The ToolMode transition moves to the site phase itself.
-        useEditor.getState().armToolMode({ mode: 'terrain-sculpt' })
       } else if (e.key === 'c' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
         if (isVersionPreviewMode) return
         e.preventDefault()

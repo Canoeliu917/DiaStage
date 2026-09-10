@@ -1,7 +1,7 @@
 'use client'
 
 import { Icon } from '@iconify/react'
-import { type IconRef, useScene } from '@pascal-app/core'
+import { type IconRef, useRegistryVersion, useScene } from '@pascal-app/core'
 import { Plus } from 'lucide-react'
 import {
   type ComponentType,
@@ -12,6 +12,7 @@ import {
   useSyncExternalStore,
 } from 'react'
 import useEditor from '../../../store/use-editor'
+import { syncLegacyScenePlugins } from '../../../lib/scene'
 import {
   editorHostPanelRegistry,
   type EditorHostPanel,
@@ -103,17 +104,14 @@ export function useHostPanels(hostPanels?: ExtraPanel[]): ExtraPanel[] {
     editorHostPanelRegistry.getSnapshot,
   )
   const workspaceMode = useEditor((s) => s.workspaceMode)
+  const registryVersion = useRegistryVersion()
   const installedPlugins = useScene((s) => s.installedPlugins)
   const readOnly = useScene((s) => s.readOnly)
   const hostIds = new Set(hostPanels?.map((p) => p.id))
 
   useEffect(() => {
-    const scene = useScene.getState()
-    if (scene.hasExplicitPluginInstallState) return
-    const defaults = editorHostPanelRegistry.getDefaultInstalledPluginIds()
-    if (defaults.every((pluginId) => scene.installedPlugins.includes(pluginId))) return
-    scene.setInstalledPlugins([...scene.installedPlugins, ...defaults], { explicit: false })
-  }, [registered])
+    syncLegacyScenePlugins()
+  }, [registered, registryVersion])
 
   const fromRegistry = registered
     .filter(

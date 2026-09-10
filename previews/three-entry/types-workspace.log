@@ -1,0 +1,38 @@
+$ turbo run check-types
+• turbo 2.9.17
+
+   • Packages in scope: @pascal-app/capture-protocol, @pascal-app/capture-viewer, @pascal-app/cli, @pascal-app/core, @pascal-app/editor, @pascal-app/ifc-converter, @pascal-app/mcp, @pascal-app/nodes, @pascal-app/viewer, @pascal/typescript-config, @repo/eslint-config, @repo/typescript-config, @repo/ui, editor, ifc-converter-app
+   • Running check-types in 15 packages
+   • Remote caching disabled, using shared worktree cache
+
+@pascal-app/cli:check-types: cache hit, replaying logs 2b05ec29d8989bba
+@pascal-app/cli:check-types: $ tsc --build --pretty false && tsc --project tsconfig.scripts.json --pretty false
+@repo/ui:check-types: cache hit, replaying logs 3296066ad9c05e60
+@repo/ui:check-types: $ tsgo --noEmit
+@pascal-app/capture-protocol:build: cache hit, replaying logs 8f8ddb757a710d61
+@pascal-app/capture-protocol:build: $ tsc --build
+@pascal-app/core:build: cache hit, replaying logs d699c661d2fee58a
+@pascal-app/core:build: $ tsc --build
+@pascal-app/ifc-converter:build: cache hit, replaying logs 1fb6304cfa74d636
+@pascal-app/ifc-converter:build: $ tsc --build
+@pascal-app/mcp:build: cache hit, replaying logs d144de322f9a2f1a
+@pascal-app/mcp:build: $ tsc --build
+@pascal-app/viewer:build: cache hit, replaying logs 07be167323eae1cb
+@pascal-app/viewer:build: $ tsc --build
+@pascal-app/editor:check-types: cache hit, replaying logs 614d46dbe7bf3641
+@pascal-app/editor:check-types: $ tsgo --noEmit
+@pascal-app/nodes:build: cache hit, replaying logs 72f106ef51b12332
+@pascal-app/nodes:build: $ tsc --build
+editor:check-types: cache miss, executing 026740e5270acc37
+ifc-converter-app:check-types: cache hit, replaying logs cd6d35e522f2fa7d
+ifc-converter-app:check-types: $ next typegen && tsc --noEmit
+ifc-converter-app:check-types: Generating route types...
+ifc-converter-app:check-types: ✓ Types generated successfully
+editor:check-types: $ next typegen && tsc --noEmit
+editor:check-types: Generating route types...
+editor:check-types: ✓ Types generated successfully
+
+ Tasks:    11 successful, 11 total
+Cached:    10 cached, 11 total
+  Time:    4.603s 
+

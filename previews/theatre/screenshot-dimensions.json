@@ -1,0 +1,68 @@
+[
+  {
+    "file": "before-desktop.jpg",
+    "width": 1054,
+    "height": 900,
+    "format": "Jpeg"
+  },
+  {
+    "file": "legacy-scene.jpg",
+    "width": 768,
+    "height": 1024,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-a-desktop.jpg",
+    "width": 1440,
+    "height": 900,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-a-mobile.jpg",
+    "width": 390,
+    "height": 844,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-a-tablet.jpg",
+    "width": 768,
+    "height": 1024,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-b-desktop.jpg",
+    "width": 1440,
+    "height": 900,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-b-mobile.jpg",
+    "width": 390,
+    "height": 844,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-b-plan.jpg",
+    "width": 1440,
+    "height": 900,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-b-playback.jpg",
+    "width": 1440,
+    "height": 900,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-b-tablet.jpg",
+    "width": 768,
+    "height": 1024,
+    "format": "Jpeg"
+  },
+  {
+    "file": "phase-b-takes.jpg",
+    "width": 1440,
+    "height": 900,
+    "format": "Jpeg"
+  }
+]

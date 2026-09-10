@@ -2,6 +2,7 @@
 
 import {
   clearSceneHistory,
+  getNodePluginId,
   nodeRegistry,
   resolveLevelId,
   sceneRegistry,
@@ -396,6 +397,28 @@ function hasUsableSceneGraph(sceneGraph?: SceneGraph | null): sceneGraph is Scen
   )
 }
 
+function legacyScenePlugins(nodes: Record<string, unknown>): string[] {
+  const plugins = new Set(editorHostPanelRegistry.getDefaultInstalledPluginIds())
+  for (const node of Object.values(nodes)) {
+    if (!node || typeof node !== 'object' || !('type' in node) || typeof node.type !== 'string')
+      continue
+    const pluginId = getNodePluginId(node.type)
+    if (pluginId && pluginId !== 'pascal:core') plugins.add(pluginId)
+  }
+  return [...plugins]
+}
+
+/** Legacy graphs can load before their node plugins finish registering. */
+export function syncLegacyScenePlugins(): void {
+  const scene = useScene.getState()
+  if (scene.hasExplicitPluginInstallState) return
+  const required = legacyScenePlugins(scene.nodes)
+  if (required.every((pluginId) => scene.installedPlugins.includes(pluginId))) return
+  scene.setInstalledPlugins([...new Set([...scene.installedPlugins, ...required])], {
+    explicit: false,
+  })
+}
+
 export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
   const defaultInstalledPlugins = editorHostPanelRegistry.getDefaultInstalledPluginIds()
   if (hasUsableSceneGraph(sceneGraph)) {
@@ -403,7 +426,7 @@ export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
     useScene.getState().setScene(nodes as any, rootNodeIds as any, {
       collections: collections as any,
       materials: materials as any,
-      installedPlugins: installedPlugins ?? defaultInstalledPlugins,
+      installedPlugins: installedPlugins ?? legacyScenePlugins(nodes),
       hasExplicitPluginInstallState: installedPlugins !== undefined,
     })
   } else {

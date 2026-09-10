@@ -62,7 +62,7 @@ export default function PrivacyPage() {
 
             <h3 className="mt-4 font-medium text-lg">项目数据</h3>
             <p className="text-foreground/90 leading-relaxed">
-              当您使用平台时，我们会存储您的项目，包括三维建筑设计、平面图及相关元数据。
+              当您使用平台时，我们会存储您的项目，包括舞台置景与排演记录、平面图及相关元数据。
             </p>
 
             <h3 className="mt-4 font-medium text-lg">使用情况分析</h3>

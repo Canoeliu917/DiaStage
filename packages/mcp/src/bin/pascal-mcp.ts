@@ -11,7 +11,7 @@ import { createSceneStore } from '../storage'
 import { connectHttp } from '../transports/http'
 import { connectStdio } from '../transports/stdio'
 
-const HELP = `pascal-mcp — MCP server for the Pascal editor
+const HELP = `pascal-mcp — DiaStage read-only theatre scene MCP server
 
 USAGE:
   pascal-mcp [--stdio | --http --port <n>] [--scene <path>]

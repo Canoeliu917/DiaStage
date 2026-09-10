@@ -1,0 +1,47 @@
+{
+  "screenshots": [
+    {
+      "file": "phase-a-desktop.jpg",
+      "width": 1440,
+      "height": 900,
+      "format": "Jpeg"
+    },
+    {
+      "file": "phase-a-mobile.jpg",
+      "width": 390,
+      "height": 844,
+      "format": "Jpeg"
+    },
+    {
+      "file": "phase-a-tablet.jpg",
+      "width": 768,
+      "height": 1024,
+      "format": "Jpeg"
+    },
+    {
+      "file": "phase-b-desktop.jpg",
+      "width": 1440,
+      "height": 900,
+      "format": "Jpeg"
+    },
+    {
+      "file": "phase-b-mobile.jpg",
+      "width": 390,
+      "height": 844,
+      "format": "Jpeg"
+    },
+    {
+      "file": "phase-b-tablet.jpg",
+      "width": 768,
+      "height": 1024,
+      "format": "Jpeg"
+    }
+  ],
+  "finalReload": "2026-09-09T17:26:24.236Z",
+  "errors": [],
+  "desktop": {
+    "height": 900,
+    "scrollWidth": 1440,
+    "width": 1440
+  }
+}

@@ -9,9 +9,7 @@ import {
   useCameraDirectorRuntime,
   useCameraDirectorState,
 } from '@/lib/camera-director'
-import { validateCameraProject } from './model'
 import { downloadFile } from './panel'
-import { demoProject, newShot } from './presets'
 import { startCanvasRecording } from './recording'
 import { useCameraStudio } from './store'
 import './studio.css'
@@ -59,7 +57,7 @@ export function CameraStudioDock({ sceneId }: { sceneId: string }) {
   const preview = useEditor((s) => s.isPreviewMode)
   const studio = useEditor((s) => s.workspaceMode === 'studio')
   const exclusiveMode = useEditor((s) => s.isFirstPersonMode || s.isCaptureMode)
-  const cameraPanel = useEditor((s) => s.activeSidebarPanel === 'camera-studio')
+  const cameraPanel = useEditor((s) => ['observe', 'record'].includes(s.activeSidebarPanel))
   const shot = state.project.shots.find((s) => s.id === state.selectedShotId)
   const [recording, setRecording] = useState(false)
   const [starting, setStarting] = useState(false)
@@ -85,46 +83,10 @@ export function CameraStudioDock({ sceneId }: { sceneId: string }) {
   useEffect(() => {
     disposed.current = false
     session.current += 1
-    const key = `camera-studio:v1:${sceneId}`
-    try {
-      const saved = localStorage.getItem(key)
-      useCameraStudio
-        .getState()
-        .setProject(
-          saved
-            ? validateCameraProject(JSON.parse(saved))
-            : sceneId === 'empty-table-camera'
-              ? demoProject()
-              : { version: 1, shots: [newShot()] },
-        )
-      if (!saved && sceneId === 'empty-table-camera') {
-        const viewer = useViewer.getState()
-        viewer.setSceneTheme('overcast')
-        viewer.setShading('rendered')
-        viewer.setTextures(true)
-        viewer.setEdges('off')
-        viewer.setShadows(false)
-        viewer.setShowGrid(false)
-      }
-    } catch (error) {
-      useCameraStudio.getState().setProject({ version: 1, shots: [newShot()] })
-      useCameraStudio.setState({
-        notice: `机位工程读取失败，请导入备份：${error instanceof Error ? error.message : ''}`,
-      })
-    }
-    const unsubscribe = useCameraStudio.subscribe((next, prev) => {
-      if (next.project === prev.project) return
-      try {
-        localStorage.setItem(key, JSON.stringify(next.project))
-      } catch {
-        useCameraStudio.setState({ notice: '浏览器未能保存机位工程，请导出工程文件备份。' })
-      }
-    })
     return () => {
       disposed.current = true
       generation.current += 1
       pending.current = false
-      unsubscribe()
       recorder.current?.cancel()
       recorder.current = null
       useCameraStudio.getState().setRecording(false)
@@ -274,7 +236,7 @@ export function CameraStudioDock({ sceneId }: { sceneId: string }) {
                   onClick={() => {
                     state.stop()
                     useEditor.getState().setPreviewMode(false)
-                    useEditor.getState().setActiveSidebarPanel('camera-studio')
+                    useEditor.getState().setActiveSidebarPanel('observe')
                     useSidebarStore.getState().setIsCollapsed(false)
                   }}
                 >
@@ -350,6 +312,7 @@ export function CameraStudioDock({ sceneId }: { sceneId: string }) {
                   <option value="1280x720">720p · 横屏</option>
                   <option value="1920x1080">1080p · 横屏</option>
                   <option value="1080x1920">1080p · 竖屏</option>
+                  <option value="1080x1080">1080p · 方形</option>
                 </select>
                 <button
                   className={`cs-record ${recording ? 'is-recording' : ''}`}

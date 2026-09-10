@@ -12,8 +12,8 @@ export const CONTINUATION_PROFILES: Record<
 > = {
   wall: {
     options: ['room', 'single'],
-    default: 'room',
-    labels: { room: '房间（自动闭合）', single: '单段墙体' },
+    default: 'single',
+    labels: { room: '闭合景片组', single: '单段景片' },
     icons: { room: 'lucide:square', single: 'lucide:minus' },
   },
   fence: {
@@ -21,8 +21,8 @@ export const CONTINUATION_PROFILES: Record<
     default: 'continuous',
     labels: {
       continuous: '连续',
-      single: '单段围栏',
-      curved: '曲线围栏',
+      single: '单段栏杆',
+      curved: '曲线栏杆',
     },
     icons: {
       continuous: 'lucide:waypoints',

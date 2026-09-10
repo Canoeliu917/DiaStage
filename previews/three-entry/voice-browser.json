@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "lifecycle": {
+    "trackStops": 2,
+    "microphoneRequests": 3
+  },
+  "transcribeRequests": 2,
+  "pageErrors": [],
+  "mode": "Fake browser microphone and mocked transcription HTTP; no real audio or API call."
+}

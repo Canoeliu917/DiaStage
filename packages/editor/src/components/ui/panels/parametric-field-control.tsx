@@ -1,13 +1,14 @@
 'use client'
 
-import type { AnyNode, ParamField } from '@pascal-app/core'
+import type { AnyNode } from '@pascal-app/core'
+import type { TheatreParamField } from '../../../lib/theatre-parametrics'
 import { SegmentedControl } from '../controls/segmented-control'
 import { SliderControl } from '../controls/slider-control'
 import { ToggleControl } from '../controls/toggle-control'
 import { precisionForStep, prettifyEnumValue, prettifyKey } from './parametric-field-utils'
 
 interface ParametricFieldControlProps {
-  field: ParamField<AnyNode>
+  field: TheatreParamField
   value: unknown
   mixed?: boolean
   onChange: (patch: Partial<AnyNode>) => void
@@ -30,7 +31,7 @@ export function ParametricFieldControl({
       const precision = precisionForStep(step)
       return (
         <SliderControl
-          label={prettifyKey(key)}
+          label={field.label ?? prettifyKey(key)}
           max={field.max}
           min={field.min}
           mixed={mixed}

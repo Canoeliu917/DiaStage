@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-09T09:30:33.874213+00:00",
-  "title": "Design System: 咫角 DiaStage",
+  "generatedAt": "2026-09-10T00:00:00+08:00",
+  "title": "Design System: 咫台 DiaStage",
   "extensions": {
     "colorMeta": {
       "stage": {
@@ -310,17 +310,9 @@
       "packages/editor/src/components/editor/editor-layout-v2.tsx"
     ],
     "review": {
-      "disposition": "SHIP",
-      "reviewerHandoff": "All seven final captures inspected with no blocker. Tool-disarm and director modeling-toolbar overlay findings resolved.",
-      "captures": [
-        ".impeccable/review/desktop.png",
-        ".impeccable/review/desktop-space.png",
-        ".impeccable/review/mobile.png",
-        ".impeccable/review/mobile-camera.png",
-        ".impeccable/review/user-703.png",
-        ".impeccable/review/desktop-library.png",
-        ".impeccable/review/mobile-library.png"
-      ]
+      "disposition": "PENDING_THEATRE_REVIEW",
+      "reviewerHandoff": "Prior captures belong to 2026-09-09. Stage A/B require fresh desktop, tablet and mobile evidence.",
+      "captures": []
     }
   },
   "components": [
@@ -352,8 +344,8 @@
       "name": "Workspace navigation",
       "kind": "nav",
       "refersTo": "nav-workspace",
-      "description": "The two labeled groups, including a persistent pressed state.",
-      "html": "<nav class=\"ds-workspaces\" aria-label=\"工作区\"><button type=\"button\" aria-pressed=\"false\">空间搭建</button><button type=\"button\" aria-pressed=\"true\">导演工作台</button></nav>",
+      "description": "Three peer workspaces; rehearsal opens actors and action.",
+      "html": "<nav class=\"ds-workspaces\" aria-label=\"工作区\"><button type=\"button\" aria-pressed=\"false\">置景</button><button type=\"button\" aria-pressed=\"true\">排演</button><button type=\"button\" aria-pressed=\"false\">复台</button></nav>",
       "css": ".ds-workspaces{display:flex;align-items:center;gap:8px;background:#101010}.ds-workspaces button{display:flex;min-height:44px;align-items:center;justify-content:center;gap:9px;padding:10px 20px;border:1px solid transparent;border-radius:4px;background:transparent;font:500 14px var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);color:#bdbdbd;white-space:nowrap;transition:background-color 180ms,color 180ms;cursor:pointer}.ds-workspaces button[aria-pressed=true]{background:#f0f0f0;color:#111}.ds-workspaces button:hover:not(:disabled):not([aria-pressed=true]){background:#272727;color:#fff}.ds-workspaces button:focus-visible{outline:2px solid #f5f5f5;outline-offset:3px}.ds-workspaces button:disabled{opacity:.5;cursor:not-allowed}@media(prefers-reduced-motion:reduce){.ds-workspaces button{transition-duration:.01ms}}"
     },
     {
@@ -377,17 +369,17 @@
       "kind": "custom",
       "refersTo": "brand-lockup",
       "description": "The authored SVG, continuous white-and-black word blocks and fixed English subtitle.",
-      "html": "<div class=\"ds-identity\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" fill=\"none\" role=\"img\" aria-label=\"咫角 DiaStage\"><path d=\"M6 34V6h28M14 42h28V14\" stroke=\"#f5f5f5\" stroke-width=\"3\"/><path d=\"M14 34 34 14v20H14Z\" fill=\"#f5f5f5\"/></svg><div><strong><span class=\"ds-cn\">咫角</span><span class=\"ds-en\">DiaStage</span></strong><span class=\"ds-slogan\">AI Dramaturgy &amp; Spatial Previs</span></div></div>",
+      "html": "<div class=\"ds-identity\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" fill=\"none\" role=\"img\" aria-label=\"咫台 DiaStage\"><path d=\"M6 34V6h28M14 42h28V14\" stroke=\"#f5f5f5\" stroke-width=\"3\"/><path d=\"M14 34 34 14v20H14Z\" fill=\"#f5f5f5\"/></svg><div><strong><span class=\"ds-cn\">咫台</span><span class=\"ds-en\">DiaStage</span></strong><span class=\"ds-slogan\">DiaStage: Theatre Rehearsal &amp; Stage Previs</span></div></div>",
       "css": ".ds-identity{display:flex;align-items:center;gap:14px;color:#f5f5f5;background:#101010;font-family:var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace)}.ds-identity>svg{width:36px;height:36px;flex-shrink:0}.ds-identity>div{display:flex;flex-direction:column;gap:5px}.ds-identity strong{display:flex;align-items:center;gap:8px;font-size:23px;font-weight:700;line-height:1.15;white-space:nowrap;letter-spacing:0}.ds-cn{font-family:var(--font-diastage,\"Courier New\",\"Source Han Sans SC\",monospace);font-size:28px;font-weight:600;letter-spacing:0}.ds-slogan{font-size:10px;line-height:1.5;color:#bfbfbf;letter-spacing:.055em;white-space:nowrap}.ds-cn,.ds-en{display:inline-flex;align-items:center;height:34px;padding-inline:4px;background:#fff;color:#000}"
     }
   ],
   "narrative": {
-    "northStar": "The Director's Prompt Desk",
-    "overview": "咫角 DiaStage pairs a dark working stage with a light scene archive. Courier New Latin lettering and Source Han Sans SC Chinese text give the director a calm, legible desk; the live scene remains the dominant creative surface.\n\nThe brand is 咫角 DiaStage, with the fixed subtitle AI Dramaturgy & Spatial Previs. Interface copy is Chinese. The geometric corner mark is authored SVG; no generated raster media was introduced.",
+    "northStar": "The Rehearsal Prompt Desk",
+    "overview": "咫台 DiaStage uses a monochrome rehearsal desk to organize actors, action and stage placement. Subtitle: DiaStage: Theatre Rehearsal & Stage Previs. 中文副标题：戏剧排演与舞台复现。",
     "keyCharacteristics": [
       "Black, white and gray interface chrome.",
-      "Two explicit workspaces with labeled tools and clear pressed states.",
-      "Rectangular controls, fine dividers and restrained motion."
+      "Three workspaces: 置景, 排演, 复台. Rehearsal opens 人物与行动.",
+      "Actors and action lead; observation settings are progressively disclosed."
     ],
     "rules": [
       {
@@ -403,7 +395,7 @@
     ],
     "donts": [
       "Don't introduce a decorative accent palette, gradients or glass panels into the DiaStage chrome.",
-      "Don't add modeling overlays to the director's viewport or merge the two workspace tool groups.",
+      "Keep camera details inside observation; do not make them the rehearsal default.",
       "Don't invent raster imagery or replace the authored geometric SVG identity."
     ]
   }

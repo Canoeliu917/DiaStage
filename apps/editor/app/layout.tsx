@@ -4,8 +4,8 @@ import { ClientBootstrap } from './client-bootstrap'
 import './globals.css'
 
 export const metadata = {
-  title: '咫台 · AI Dramaturgy & Spatial Previs',
-  description: '咫台 — AI Dramaturgy & Spatial Previs。搭建空间、调度镜头与预演场景序列。',
+  title: '咫台 DiaStage: Theatre Rehearsal & Stage Previs',
+  description: '咫台 — 戏剧排演与舞台复现。置景、人物走位与行动排演、跨场地复台。',
   icons: { icon: '/diastage-mark.svg' },
 }
 

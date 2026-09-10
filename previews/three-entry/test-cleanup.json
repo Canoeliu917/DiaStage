@@ -1,0 +1,11 @@
+{
+  "status": "Test child processes stopped; temporary files retained",
+  "stoppedPids": [18032, 30224, 18000, 23164],
+  "verification": "Each PID was checked against its exact test fixture command line before a narrower Stop-Process command; none remained afterward. Development server 4318 remains PID 7356.",
+  "retainedDirectories": [
+    "C:/Users/25101/AppData/Local/Temp/pascal-cli-test-Ao7yZH",
+    "C:/Users/25101/AppData/Local/Temp/pascal-cli-test-1h5fFW"
+  ],
+  "approvalReview": "The earlier combined process-stop and recursive-directory-removal command was rejected as blocked by policy without a further reason. Directory deletion was not retried. The safer process-only cleanup succeeded.",
+  "supersedes": "The running-process status in tests-additional.log"
+}

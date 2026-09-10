@@ -41,11 +41,12 @@ if (!process.env.CAMERA_PANEL_TEST) {
     ...viewer,
     useViewer: Object.assign(
       (select: (state: ReturnType<typeof viewerStore.getState>) => unknown) =>
-        select(viewerStore.getState()),
+        select ? select(viewerStore.getState()) : viewerStore.getState(),
       viewerStore,
     ),
   }))
   mock.module('./store', () => ({ useCameraStudio: Object.assign(() => store.getState(), store) }))
+  mock.module('../theatre/simulation-panel', () => ({ useSimulationSelection: () => true }))
   mock.module('react', () => ({
     ...React,
     useRef: <T>(value: T) => ({ current: value }),
@@ -56,7 +57,6 @@ if (!process.env.CAMERA_PANEL_TEST) {
   const { CameraPanel } = await import('./panel')
   const { CameraRehearsalPanel } = await import('../camera-rehearsal-panel')
   const { CommunityViewerToolbarRight, StudioPicturePanel } = await import('../viewer-toolbar')
-  const { LightingPanel } = await import('../lighting/panel')
   const { getCameraDirectorState } = await import('../../lib/camera-director')
   const { validateCameraProject } = await import('./model')
 
@@ -152,15 +152,15 @@ if (!process.env.CAMERA_PANEL_TEST) {
   creationPanel = elements(CameraPanel())
   assert.equal(
     creationPanel.find((entry) => entry.props?.['aria-label'] === '添加机位')?.props?.disabled,
-    true,
+    false,
   )
   click(creationPanel, '添加机位')
   assert.equal(
     store.getState().project.shots.length,
-    2,
-    'an unavailable live view never creates a fallback camera',
+    3,
+    'SET can add a default camera without loading the recorder runtime',
   )
-  assert.equal(focusCalls, 1)
+  assert.equal(focusCalls, 2)
   store.getState().setProject(project)
   store.getState().setRuntime(runtime)
   store.getState().setStageFocus(null)
@@ -205,7 +205,7 @@ if (!process.env.CAMERA_PANEL_TEST) {
   )
   store.getState().setRecording(false)
   panel = elements(CameraPanel())
-  click(panel, '在主画面查看')
+  click(panel, '从此机位观察')
   assert.equal(store.getState().previewing, true, 'main-camera takeover remains an explicit action')
   store.getState().stop()
 
@@ -276,26 +276,23 @@ if (!process.env.CAMERA_PANEL_TEST) {
     ['01 运动路径', '02 播放预演', '03 运动平滑', '04 镜头参数', '05 记录手动运镜', '06 输出视频'],
   )
 
+  const previousLevelMode = viewerStore.getState().levelMode
   const toolbar = elements(CommunityViewerToolbarRight()).flatMap((entry) =>
-    typeof entry.type === 'function' &&
-    ['LevelModeToggle', 'WallModeToggle'].includes(entry.type.name)
+    typeof entry.type === 'function' && entry.type.name === 'WallModeToggle'
       ? elements((entry.type as () => unknown)())
       : [entry],
   )
-  const level = input(toolbar, '楼层显示')
-  level.onChange({ target: { value: 'solo', valueAsNumber: Number.NaN } })
-  assert.equal(viewerStore.getState().levelMode, 'solo')
-  const walls = input(toolbar, '墙体显示')
+  assert.equal(
+    toolbar.some((entry) => entry.props?.['aria-label'] === '楼层显示'),
+    false,
+  )
+  assert.equal(viewerStore.getState().levelMode, previousLevelMode)
+  const walls = input(toolbar, '景片显示')
   walls.onChange({ target: { value: 'translucent', valueAsNumber: Number.NaN } })
   assert.equal(viewerStore.getState().wallMode, 'translucent')
-  const picture = elements(StudioPicturePanel({ sceneId }))
-  const lightingIndex = picture.findIndex((entry) => entry.type === LightingPanel)
-  assert.equal(picture[lightingIndex]?.props?.sceneId, sceneId)
-  assert.ok(lightingIndex < picture.findIndex((entry) => entry.props?.children === '光影'))
-  assert.deepEqual(
-    picture.filter((entry) => entry.type === 'h3').map((entry) => entry.props?.children),
-    ['光影', '显示效果'],
-  )
+  const picture = elements(StudioPicturePanel())
+  assert.ok(picture.some((entry) => entry.type === 'h2' && entry.props?.children === '显示'))
+  assert.ok(!JSON.stringify(picture).includes('光影'))
   assert.equal(
     picture.some((entry) => entry.props?.['aria-label'] === '楼层显示'),
     false,

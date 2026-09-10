@@ -1,0 +1,453 @@
+Started: 2026-09-10T00:55:10.4769865+08:00
+bun test v1.3.14 (0d9b296a)
+
+packages\mcp\src\index.test.ts:
+(pass) version module loads [266.66ms]
+(pass) createPascalMcpServer is a function [0.45ms]
+
+packages\mcp\src\theatre-profile.test.ts:
+(pass) default theatre MCP exposes only implemented reads and rejects mutations [38.88ms]
+(pass) legacy registration requires explicit host opt-in [65.24ms]
+
+packages\mcp\src\bridge\scene-bridge.test.ts:
+(pass) SceneBridge > loadDefault / getters > creates default Site → Building → Level [1.92ms]
+(pass) SceneBridge > loadDefault / getters > loadDefault is idempotent when scene already loaded [0.12ms]
+(pass) SceneBridge > loadDefault / getters > getNode returns the node by id [0.19ms]
+(pass) SceneBridge > loadDefault / getters > getNode returns null for unknown id [0.13ms]
+(pass) SceneBridge > createNode > creates a wall attached to a level [3.27ms]
+(pass) SceneBridge > createNode > created wall has the correct parentId [0.23ms]
+(pass) SceneBridge > updateNode > merges new fields on existing node [20.97ms]
+(pass) SceneBridge > updateNode > throws on unknown id [2.47ms]
+(pass) SceneBridge > deleteNode > deletes a leaf node [1.17ms]
+(pass) SceneBridge > deleteNode > cascade=false throws if node has children [0.40ms]
+(pass) SceneBridge > deleteNode > cascade=true removes node and all descendants [0.35ms]
+(pass) SceneBridge > deleteNode > throws on unknown id [0.15ms]
+(pass) SceneBridge > undo / redo > round-trips create + update [74.37ms]
+(pass) SceneBridge > undo / redo > getHistory tracks pointers [31.32ms]
+(pass) SceneBridge > undo / redo > clearHistory wipes past/future [15.67ms]
+(pass) SceneBridge > undo / redo > undo/redo without history returns 0 [0.31ms]
+(pass) SceneBridge > applyPatch > applies mixed create/update/delete atomically [32.93ms]
+(pass) SceneBridge > applyPatch > is all-or-nothing: invalid op rolls back no changes [0.92ms]
+(pass) SceneBridge > applyPatch > rejects create with non-existent parentId [0.19ms]
+(pass) SceneBridge > applyPatch > rejects delete of unknown id [0.08ms]
+(pass) SceneBridge > applyPatch > rejects delete with cascade=false on a node with children [13.74ms]
+(pass) SceneBridge > applyPatch > accepts delete with cascade=true on a node with children [12.70ms]
+(pass) SceneBridge > applyPatch > rejects create with schema-invalid node [2.62ms]
+(pass) SceneBridge > applyPatch > rejects unknown op [0.13ms]
+(pass) SceneBridge > applyPatch > rejects update with non-object data [0.11ms]
+(pass) SceneBridge > applyPatch > rejects undefined patch entry [0.08ms]
+(pass) SceneBridge > validateScene > returns valid for default scene [4.66ms]
+(pass) SceneBridge > validateScene > flags bad nodes fed in via setScene [1.44ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > getChildren uses the flat dict (handles site children-as-objects) [0.26ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > getChildren works for level (children-as-ids) [0.21ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > getAncestry walks to root [0.55ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > getAncestry returns [] for unknown id [0.34ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > resolveLevelId returns the enclosing level [0.47ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > resolveLevelId returns null if no level ancestor [0.33ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > findNodes filters by type [0.25ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > findNodes filters by parentId [0.80ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > findNodes filters by levelId (via ancestry) [6.33ms]
+(pass) SceneBridge > traversal: site quirk & generic helpers > findNodes with parentId: null finds roots [0.23ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > exportJSON returns the scene shape [0.13ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > exportJSON deep-clones (mutation does not leak back) [0.11ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON accepts a parsed object [0.58ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON accepts a JSON string [0.27ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON preserves explicit plugin installs [0.33ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON round-trips the material palette [0.29ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON round-trips collections [0.23ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > legacy graphs do not become explicitly uninstalled on export [0.15ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON throws on malformed JSON string [0.20ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON throws when parsed JSON is not an object [0.11ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON throws on wrong top-level shape [0.13ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON rejects prototype-polluting keys in string form [0.14ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > loadJSON rejects prototype-polluting keys in object form [0.28ms]
+(pass) SceneBridge > setScene / exportJSON / loadJSON > setScene round-trip preserves node count [0.28ms]
+(pass) SceneBridge > flushDirty > drains the dirty set [8.31ms]
+(pass) SceneBridge > composite nodes > can build a small scene via LevelNode/BuildingNode helpers [3.91ms]
+(pass) SceneBridge > composite nodes > zone and item nodes are creatable and discoverable [4.12ms]
+
+packages\mcp\src\lib\safe-fetch.test.ts:
+(pass) safeFetch — SSRF protection > rejects non-http schemes [0.83ms]
+(pass) safeFetch — SSRF protection > rejects loopback addresses [0.86ms]
+(pass) safeFetch — SSRF protection > rejects link-local / cloud metadata [0.07ms]
+(pass) safeFetch — SSRF protection > rejects private IP ranges [0.11ms]
+(pass) safeFetch — SSRF protection > rejects local-style hostnames [0.09ms]
+(pass) safeFetch — SSRF protection > rejects IPv4-mapped IPv6 loopback [0.96ms]
+(pass) safeFetch — SSRF protection > rejects malformed URL [0.18ms]
+(pass) safeFetch — SSRF protection > applies PASCAL_ALLOWED_ASSET_ORIGINS env allowlist when set [0.32ms]
+
+packages\mcp\src\operations\scene-operations.test.ts:
+(pass) SceneOperationsFacade scene events > appendSceneEvent and listSceneEvents preserve the store receiver [19.39ms]
+(pass) SceneOperationsFacade scene events > appendSceneEvent returns null and listSceneEvents throws when the store lacks scene events [3.10ms]
+(pass) SceneOperationsFacade exportSceneGraph > carries the material palette off the bridge [0.80ms]
+
+packages\mcp\src\prompts\prompts.test.ts:
+(pass) from_brief > includes brief in the returned user message [3.83ms]
+(pass) from_brief > appends constraints section when provided [1.24ms]
+(pass) from_brief > buildFromBriefPrompt omits constraints section when empty [0.09ms]
+(pass) from_brief > buildFromBriefPrompt names every way to bind a scene [0.09ms]
+(pass) from_brief > buildFromBriefPrompt states the consequence of not binding a scene [0.04ms]
+(pass) iterate_on_feedback > returns single user message referencing the feedback and the scene resource [0.98ms]
+(pass) iterate_on_feedback > buildIterateOnFeedbackPrompt emphasises minimal diff [0.03ms]
+(pass) renovation_from_photos > parses JSON-array photo lists and emits image/text content [1.84ms]
+(pass) renovation_from_photos > data-URL with explicit mimeType becomes image content [0.10ms]
+(pass) renovation_from_photos > comma-separated fallback parses a list correctly [0.14ms]
+(pass) renovation_from_photos > empty lists produce no per-photo sections but still include task directive [0.04ms]
+
+packages\mcp\src\resources\resources.test.ts:
+(pass) pascal://scene/current > returns the full scene JSON [3.25ms]
+(pass) pascal://scene/current > reflects mutations to the store [1.34ms]
+(pass) pascal://scene/current/summary > returns markdown with counts and bbox [1.50ms]
+(pass) pascal://scene/current/summary > estimated floor area sums zone polygon areas [1.76ms]
+(pass) pascal://scene/current/summary > empty scene returns a markdown skeleton without crashing [0.93ms]
+(pass) pascal://catalog/items > returns built-in catalog subset [0.86ms]
+(pass) pascal://agent-guide > returns MCP-first project guidance [0.64ms]
+(pass) pascal://agent-guide > keeps the legacy agent guide URI as an alias [0.67ms]
+(pass) pascal://constraints/{levelId} > returns slabs + wall footprints for a known level [2.42ms]
+(pass) pascal://constraints/{levelId} > returns {error:"level_not_found"} for unknown levelId [1.78ms]
+
+packages\mcp\src\storage\sqlite-scene-store.test.ts:
+(pass) resolveDefaultDatabasePath > respects PASCAL_DB_PATH when set [0.16ms]
+(pass) resolveDefaultDatabasePath > resolves PASCAL_DATA_DIR to pascal.db [0.04ms]
+(pass) resolveDefaultDatabasePath > falls back to XDG_DATA_HOME on Unix [0.02ms]
+(pass) resolveDefaultDatabasePath > falls back to homedir + .pascal/data/pascal.db [0.01ms]
+(pass) SqliteSceneStore > backend is "sqlite" [3.20ms]
+(pass) SqliteSceneStore > round-trips a saved scene through a reopened database [18.41ms]
+(pass) SqliteSceneStore > round-trips collections, materials and installed plugins [18.91ms]
+(pass) SqliteSceneStore > loads a stored scene whose material does not match the strict schema [14.92ms]
+(pass) SqliteSceneStore > stores optional metadata verbatim [14.98ms]
+(pass) SqliteSceneStore > generates ids for new scenes and rejects explicit slug collisions [14.21ms]
+(pass) SqliteSceneStore > sanitizes explicit ids [15.20ms]
+(pass) SqliteSceneStore > increments version and preserves createdAt on overwrite [24.47ms]
+(pass) SqliteSceneStore > enforces optimistic locking for save, rename, and delete [15.60ms]
+(pass) SqliteSceneStore > expectedVersion=0 creates a brand-new explicit id [16.29ms]
+(pass) SqliteSceneStore > lists newest first and supports project, owner, and limit filters [47.53ms]
+(pass) SqliteSceneStore > rename writes a revision row and delete cascades revisions [46.16ms]
+(pass) SqliteSceneStore > appends and lists scene events in order [16.21ms]
+(pass) SqliteSceneStore > validates name and scene size [23.64ms]
+(pass) SqliteSceneStore > load returns null for missing scenes and errors on corrupt graph rows [33.78ms]
+
+packages\mcp\src\storage\store.test.ts:
+(pass) sanitizeSlug > lowercases input [0.04ms]
+(pass) sanitizeSlug > converts spaces to hyphens [0.01ms]
+(pass) sanitizeSlug > strips non alphanumeric characters
+(pass) sanitizeSlug > collapses runs of hyphens
+(pass) sanitizeSlug > collapses runs from mixed input [0.01ms]
+(pass) sanitizeSlug > trims hyphens from the ends
+(pass) sanitizeSlug > enforces 64-char maximum [0.03ms]
+(pass) sanitizeSlug > trims trailing hyphen after truncation [0.02ms]
+(pass) sanitizeSlug > throws when result is empty [0.04ms]
+(pass) sanitizeSlug > preserves already-valid slugs
+(pass) isValidSlug > accepts typical slugs [0.01ms]
+(pass) isValidSlug > rejects empty string
+(pass) isValidSlug > rejects uppercase
+(pass) isValidSlug > rejects underscores and other punctuation [0.01ms]
+(pass) isValidSlug > rejects leading or trailing hyphens
+(pass) isValidSlug > rejects consecutive hyphens
+(pass) isValidSlug > rejects strings > 64 chars
+(pass) isValidSlug > accepts exactly 64 chars [0.02ms]
+(pass) generateSlug > returns a 12-char string [0.02ms]
+(pass) generateSlug > is lowercase alphanumeric [0.10ms]
+(pass) generateSlug > passes isValidSlug [0.13ms]
+(pass) generateSlug > produces unique values across many calls [0.16ms]
+
+packages\mcp\src\templates\templates.test.ts:
+(pass) scene templates > empty-studio has required metadata [0.04ms]
+(pass) scene templates > empty-studio template nodes all pass AnyNode.safeParse [2.43ms]
+(pass) scene templates > empty-studio root ids resolve and parent links point to existing nodes [0.06ms]
+(pass) scene templates > two-bedroom has required metadata
+(pass) scene templates > two-bedroom template nodes all pass AnyNode.safeParse [0.48ms]
+(pass) scene templates > two-bedroom root ids resolve and parent links point to existing nodes
+(pass) scene templates > garden-house has required metadata
+(pass) scene templates > garden-house template nodes all pass AnyNode.safeParse [1.43ms]
+(pass) scene templates > garden-house root ids resolve and parent links point to existing nodes
+(pass) scene templates > empty-studio has 4 walls, 1 zone, 1 door, 1 window [0.07ms]
+(pass) scene templates > two-bedroom has 9 walls, 4 zones, 4 doors, 5 windows [0.03ms]
+(pass) scene templates > garden-house has a fenced garden zone [0.03ms]
+
+packages\mcp\src\tools\apply-patch.test.ts:
+(pass) apply_patch > applies a batch of create + update [27.17ms]
+(pass) apply_patch > syncs derived stair openings after stair patches [13.13ms]
+(pass) apply_patch > rejects update to a non-existent node [1.54ms]
+(pass) apply_patch > rejects malformed patch shape [1.12ms]
+
+packages\mcp\src\tools\check-collisions.test.ts:
+(pass) check_collisions > detects overlapping item AABBs [3.36ms]
+(pass) check_collisions > returns empty array when items do not overlap [1.21ms]
+(pass) check_collisions > items standing close but not overlapping are not collisions [1.33ms]
+(pass) check_collisions > scopes to levelId [1.27ms]
+
+packages\mcp\src\tools\construction-tools.test.ts:
+(pass) construction tools > create_story_shell creates level-owned walls plus slab and ceiling [5.90ms]
+(pass) construction tools > create_stair_between_levels creates one rectangular manual opening [4.89ms]
+(pass) construction tools > create_stair_between_levels defaults opening offset to zero [4.78ms]
+(pass) construction tools > verify_scene flags suspicious multi-story wall heights [7.28ms]
+(pass) construction tools > create_roof creates a dedicated roof level by default [9.03ms]
+(pass) construction tools > story construction tools reject dedicated roof support levels [2.21ms]
+(pass) construction tools > create_roof requires an explicit roof support level when roofLevelId is provided [1.85ms]
+(pass) construction tools > verify_scene flags roofs mixed into occupied levels [3.53ms]
+
+packages\mcp\src\tools\create-level.test.ts:
+(pass) create_level > appends a level on a building with stored height [2.71ms]
+(pass) create_level > rejects unknown building id [1.16ms]
+(pass) create_level > rejects non-building parent [1.06ms]
+
+packages\mcp\src\tools\create-wall.test.ts:
+(pass) create_wall > creates a wall with custom thickness [2.94ms]
+(pass) create_wall > accepts a natural-language thickness and canonicalizes to meters [5.14ms]
+(pass) create_wall > rejects an out-of-unit-family value [2.35ms]
+(pass) create_wall > publishes a live scene snapshot when bound to a saved scene [3.01ms]
+(pass) create_wall > rejects unknown level id [1.13ms]
+(pass) create_wall > rejects invalid start tuple [0.94ms]
+
+packages\mcp\src\tools\cut-opening.test.ts:
+(pass) cut_opening > creates a door opening on a wall [9.48ms]
+(pass) cut_opening > creates a window opening on a wall [2.69ms]
+(pass) cut_opening > rejects unknown wall id [0.89ms]
+(pass) cut_opening > rejects out-of-range position [1.08ms]
+
+packages\mcp\src\tools\delete-node.test.ts:
+(pass) delete_node > deletes a leaf node [2.78ms]
+(pass) delete_node > refuses to delete a node with children without cascade [0.71ms]
+(pass) delete_node > cascades when cascade=true [1.06ms]
+(pass) delete_node > errors on unknown id [0.99ms]
+
+packages\mcp\src\tools\describe-node.test.ts:
+(pass) describe_node > describes a wall with human sentence [3.20ms]
+(pass) describe_node > ancestry for wall includes level and building [1.65ms]
+(pass) describe_node > errors on unknown id [1.07ms]
+
+packages\mcp\src\tools\door-clearance.test.ts:
+(pass) door-clearance > doorKeepoutFromWall covers both sides of a horizontal wall door [3.14ms]
+(pass) door-clearance > item in clear zone blocks door; item outside does not [0.06ms]
+(pass) door-clearance > findBlockedDoors reports furniture in keep-out [0.15ms]
+(pass) door-clearance > collectDoorKeepouts skips doors without a wall parent [0.02ms]
+(pass) door-clearance > keepoutForPolygonEdge plans clearance on room edge [0.09ms]
+(pass) door-clearance > aabbsOverlap: gap is minimum free space (not penetration depth) [0.03ms]
+(pass) door-clearance > findBlockedDoors does not cross stacked levels (L1) [0.12ms]
+(pass) door-clearance > itemNodePlanAabb respects scale (L4) [0.02ms]
+(pass) door-clearance > keepoutCoversPlanned detects covered entrance edge (L2 helper) [0.07ms]
+(pass) door-clearance > keepoutCoversPlanned rejects glancing nearby door (L6) [0.03ms]
+
+packages\mcp\src\tools\duplicate-level.test.ts:
+(pass) duplicate_level > duplicates a level with its wall descendants [2.52ms]
+(pass) duplicate_level > rejects unknown id [1.05ms]
+(pass) duplicate_level > rejects non-level target [1.37ms]
+
+packages\mcp\src\tools\export-glb.test.ts:
+(pass) export_glb > returns not_implemented structurally (not an error) [4.40ms]
+(pass) export_glb > structuredContent exposes the status [0.77ms]
+
+packages\mcp\src\tools\export-json.test.ts:
+(pass) export_json > returns serialisable JSON [1.88ms]
+(pass) export_json > pretty=true produces indented output [1.02ms]
+(pass) export_json > pretty=false (default) produces compact output [0.69ms]
+
+packages\mcp\src\tools\find-nodes.test.ts:
+(pass) find_nodes > filters by type [4.67ms]
+(pass) find_nodes > returns empty list for unused type [0.78ms]
+(pass) find_nodes > zoneId filters walls whose midpoint falls in the zone polygon [1.88ms]
+(pass) find_nodes > invalid type is rejected [0.99ms]
+
+packages\mcp\src\tools\get-node.test.ts:
+(pass) get_node > returns node by id [2.04ms]
+(pass) get_node > errors on unknown id [0.86ms]
+(pass) get_node > rejects missing id argument [0.66ms]
+
+packages\mcp\src\tools\get-scene.test.ts:
+(pass) get_scene > returns scene with nodes and rootNodeIds [4.18ms]
+(pass) get_scene > reflects mutations to the bridge [0.73ms]
+(pass) get_scene > returns structured content [0.93ms]
+
+packages\mcp\src\tools\layout-clearance.test.ts:
+(pass) layout-clearance > findItemItemCollisions detects rotated footprint overlap [0.25ms]
+(pass) layout-clearance > findItemItemCollisions ignores separated items [0.04ms]
+(pass) layout-clearance > classifyPlacement flags door keep-out and item overlap [0.23ms]
+(pass) layout-clearance > findValidPlacement nudges off an overlapping neighbor [0.47ms]
+(pass) layout-clearance > generatePlacementCandidates includes primary and offsets [0.10ms]
+(pass) layout-clearance > layoutIssuesFromScene merges door blocks and item overlaps [0.33ms]
+(pass) layout-clearance > item gap of 0.08 m flags near-touching items (L3) [0.06ms]
+(pass) layout-clearance > scaled items collide via getScaledDimensions (L4) [0.03ms]
+(pass) layout-clearance > findValidPlacement reports primary door failure not last OOB (L7) [0.15ms]
+
+packages\mcp\src\tools\live-sync.test.ts:
+(pass) live sync persistence reporting > warns unbound when no active scene is bound [3.25ms]
+(pass) live sync persistence reporting > omits persistence and appends an event when publish succeeds [1.87ms]
+(pass) live sync persistence reporting > warns events_unsupported when the store lacks scene events [0.91ms]
+(pass) publishLiveSceneSnapshot > returns unbound without an active scene [0.15ms]
+(pass) publishLiveSceneSnapshot > returns events_unsupported when the store lacks scene events [0.18ms]
+(pass) publishLiveSceneSnapshot > returns published when bound to an event-capable store [0.20ms]
+
+packages\mcp\src\tools\measure.test.ts:
+(pass) measure > computes distance between two wall midpoints [2.09ms]
+(pass) measure > computes zone area via shoelace for self-measurement [1.18ms]
+(pass) measure > subtracts slab holes without changing an un-holed slab area [1.26ms]
+(pass) measure > falls back to the outer polygon when a loaded document carries no holes field [1.04ms]
+(pass) measure > errors on unknown id [0.60ms]
+
+packages\mcp\src\tools\measurement.test.ts:
+(pass) measurement() > parses natural-language length to meters [3.62ms]
+(pass) measurement() > passes numbers through unchanged (backward compatible) [0.12ms]
+(pass) measurement() > reads a bare numeric string as the field unit [0.30ms]
+(pass) measurement() > canonicalizes angles to the field unit [0.43ms]
+(pass) measurement() > enforces min/max bounds in the field unit [0.39ms]
+(pass) measurement() > rejects unparseable input with a model-readable message [0.24ms]
+(pass) measurement() > positive rejects zero and negatives (restores .positive() behavior) [0.45ms]
+(pass) measurement() > rejects ambiguous separators instead of a silent 1000x reading [0.27ms]
+(pass) measurement() > emits a number|string JSON schema advertising natural language [0.51ms]
+
+packages\mcp\src\tools\output-schema-contract.test.ts:
+(pass) registered tool output schemas > read-only tools satisfy their declared output schema for a listed client [45.58ms]
+(pass) registered tool output schemas > create_from_template declares the no-store saveSkipped field [43.98ms]
+
+packages\mcp\src\tools\place-item.test.ts:
+(pass) place_item > places an item on a wall and derives wallT [2.85ms]
+(pass) place_item > places a floor item through a slab target but parents it to the level for rendering [1.73ms]
+(pass) place_item > rejects placement on an unsupported node [0.94ms]
+(pass) place_item > rejects unknown target [0.72ms]
+
+packages\mcp\src\tools\redo.test.ts:
+(pass) redo > redoes a previously undone create [34.95ms]
+(pass) redo > returns 0 when nothing to redo [3.38ms]
+(pass) redo > rejects non-positive steps [1.07ms]
+
+packages\mcp\src\tools\room-tools.test.ts:
+(pass) room tools > search_assets returns built-in catalog matches [2.30ms]
+(pass) room tools > create_room creates a valid zone/slab/ceiling/wall bundle [2.76ms]
+(pass) room tools > create_room rejects dedicated roof support levels [1.70ms]
+(pass) room tools > add_door and add_window convert t to wall-local meters [2.79ms]
+(pass) room tools > add_door and add_window accept position as a t alias [2.29ms]
+(pass) room tools > furnish_room parents floor items to the level and keeps the scene valid [2.38ms]
+(pass) room tools > furnish_room can infer level and polygon from zoneId [3.88ms]
+(pass) room tools > furnish_room never leaves items blocking doors after bathroom layout [3.38ms]
+(pass) room tools > furnish_room does not stack items on each other (overlap smart skip/nudge) [2.66ms]
+(pass) room tools > furnish_room records door-clearance skips when a door sits on the furniture wall [2.34ms]
+
+packages\mcp\src\tools\scene-query.test.ts:
+(pass) scene query tools > list_levels returns level ids [2.54ms]
+(pass) scene query tools > get_level_summary includes walls, zones, and openings [1.82ms]
+(pass) scene query tools > verify_scene reports practical issues without replacing validate_scene [1.47ms]
+(pass) scene query tools > verify_scene reports item–item footprint overlaps [1.52ms]
+(pass) scene query tools > verify_scene reports furniture blocking door clearance [3.06ms]
+(pass) scene query tools > verify_scene separates occupied stories from dedicated roof levels [2.57ms]
+(pass) scene query tools > verify_scene reports bad opening linkage and wall-local bounds [2.04ms]
+(pass) scene query tools > verify_scene reports stairs outside their source floor slab [2.16ms]
+(pass) scene query tools > verify_scene reports stair wall obstructions and missing destination slab openings [2.42ms]
+
+packages\mcp\src\tools\set-zone.test.ts:
+(pass) set_zone > creates a zone on a level [2.30ms]
+(pass) set_zone > rejects polygon with <3 vertices [0.93ms]
+(pass) set_zone > rejects unknown level id [0.75ms]
+
+packages\mcp\src\tools\undo.test.ts:
+(pass) undo > undoes one step [13.20ms]
+(pass) undo > returns 0 when nothing to undo [1.20ms]
+(pass) undo > rejects non-positive steps [0.81ms]
+
+packages\mcp\src\tools\validate-scene.test.ts:
+(pass) validate_scene > default scene is valid [1.58ms]
+(pass) validate_scene > reports structured errors [0.86ms]
+(pass) validate_scene > returns structuredContent [0.86ms]
+
+packages\mcp\src\transports\http.test.ts:
+(pass) connectHttp listens on the given port and accepts MCP traffic [53.86ms]
+(pass) connectHttp close() stops the server [21.95ms]
+(pass) connectHttp requires auth when binding a non-loopback host [0.85ms]
+(pass) connectHttp rejects unauthenticated requests when a token is configured [15.57ms]
+(pass) connectHttp handles allowed CORS preflight [15.13ms]
+(pass) connectHttp serves authenticated supervisor health [16.78ms]
+(pass) connectHttp isolates simultaneous client sessions [29.47ms]
+
+packages\mcp\src\transports\stdio.test.ts:
+(pass) connectStdio is an async function [0.10ms]
+(pass) server+client over linked in-memory pair can list tools [3.15ms]
+
+packages\mcp\src\tools\photo-to-scene\photo-to-scene.test.ts:
+(pass) photo_to_scene > happy path: vision reply → walls + rooms + scene in bridge + saved [6.68ms]
+(pass) photo_to_scene > sampling unavailable → sampling_unavailable error [1.36ms]
+(pass) photo_to_scene > invalid JSON reply → sampling_response_unparseable [1.64ms]
+(pass) photo_to_scene > save=false → returns graph inline, no sceneId [2.73ms]
+
+packages\mcp\src\tools\scene-lifecycle\delete-scene.test.ts:
+(pass) delete_scene > deletes an existing scene and returns { deleted: true } [1.92ms]
+(pass) delete_scene > throws scene_not_found when deleting an unknown id [0.76ms]
+(pass) delete_scene > throws version_conflict when expectedVersion mismatches [0.88ms]
+
+packages\mcp\src\tools\scene-lifecycle\list-scenes.test.ts:
+(pass) list_scenes > returns all saved scenes by default [2.87ms]
+(pass) list_scenes > filters by projectId [1.58ms]
+(pass) list_scenes > rejects non-positive limit per schema [0.85ms]
+(pass) list_scenes > caps results with limit [0.72ms]
+
+packages\mcp\src\tools\scene-lifecycle\load-scene.test.ts:
+(pass) load_scene > loads a stored scene and returns its SceneMeta [2.50ms]
+(pass) load_scene > throws scene_not_found when id is unknown [1.22ms]
+(pass) load_scene > rejects empty id per schema [1.19ms]
+
+packages\mcp\src\tools\scene-lifecycle\project-status.test.ts:
+(pass) project lifecycle tools > creates a project and returns an editor URL [2.14ms]
+(pass) project lifecycle tools > reports status for an existing project [1.16ms]
+
+packages\mcp\src\tools\scene-lifecycle\rename-scene.test.ts:
+(pass) rename_scene > renames a scene and returns the new SceneMeta [1.84ms]
+(pass) rename_scene > throws scene_not_found for missing ids [0.61ms]
+(pass) rename_scene > throws version_conflict when expectedVersion mismatches [0.64ms]
+
+packages\mcp\src\tools\scene-lifecycle\save-scene.test.ts:
+(pass) save_scene > saves the current scene and returns SceneMeta with editorUrl [6.68ms]
+(pass) save_scene > saves a provided graph when includeCurrentScene is false [1.14ms]
+(pass) save_scene > rejects a graph with a malicious URL (P4 security fix) [1.14ms]
+(pass) save_scene > errors when includeCurrentScene is false and no graph is provided [1.04ms]
+(pass) save_scene > returns version_conflict when expectedVersion mismatches [1.36ms]
+
+packages\mcp\src\tools\templates\templates.test.ts:
+(pass) list_templates > enumerates all three seed templates [1.79ms]
+(pass) list_templates > returns structuredContent matching the text payload [0.50ms]
+(pass) create_from_template > applies a template to the bridge with fresh ids [1.86ms]
+(pass) create_from_template > rejects unknown template ids [0.86ms]
+(pass) create_from_template > saves to the store when save: true [2.67ms]
+(pass) create_from_template > two invocations produce disjoint id sets [1.87ms]
+(pass) create_from_template > create_house_from_brief creates, saves, and returns an editor URL [3.10ms]
+(pass) create_from_template without a store > applies a template without erroring when no store is wired [1.28ms]
+(pass) create_from_template without a store > save:true is a no-op but still succeeds without a store [1.12ms]
+
+packages\mcp\src\tools\variants\generate-variants.test.ts:
+(pass) generate_variants > happy path: returns count variants that exercise the mutation [3.69ms]
+(pass) generate_variants > deterministic: same seed yields same mutation outputs [2.25ms]
+(pass) generate_variants > no-op: empty scene + wall-thickness still returns count graphs, unchanged [1.09ms]
+(pass) generate_variants > save=true: each variant gets a sceneId and url [1.75ms]
+(pass) generate_variants > baseSceneId not found returns an error [1.32ms]
+(pass) generate_variants > every returned variant validates against AnyNode [1.47ms]
+
+packages\mcp\src\tools\variants\mutations.test.ts:
+(pass) mulberry32 > is deterministic for the same seed [0.07ms]
+(pass) mulberry32 > produces values in [0, 1) [0.15ms]
+(pass) applyMutation: wall-thickness > assigns every wall a thickness from the fixed set [0.41ms]
+(pass) applyMutation: wall-thickness > does not mutate the input graph [0.12ms]
+(pass) applyMutation: wall-height > assigns every wall a height from the fixed set [0.12ms]
+(pass) applyMutation: zone-labels > shuffles labels but preserves the set [0.23ms]
+(pass) applyMutation: room-proportions > only nudges interior walls, leaves perimeter alone [0.29ms]
+(pass) applyMutation: open-plan > removes exactly one interior wall and its attached openings [0.24ms]
+(pass) applyMutation: open-plan > skips gracefully when there are no interior walls [0.09ms]
+(pass) applyMutation: door-positions > sets every door wallT in [0.2, 0.8] [0.26ms]
+(pass) applyMutation: fence-style > sets every fence style to one of privacy/slat/rail [0.22ms]
+(pass) applyMutation: no-op behaviour > wall-thickness on a graph with no walls leaves nodes unchanged [0.08ms]
+
+packages\mcp\src\tools\vision\analyze-floorplan-image.test.ts:
+(pass) analyze_floorplan_image > happy path: valid sampling JSON → structured output [2.95ms]
+(pass) analyze_floorplan_image > sampling unavailable → throws sampling_unavailable [1.13ms]
+(pass) analyze_floorplan_image > sampling returns non-JSON text → sampling_response_unparseable [1.37ms]
+(pass) analyze_floorplan_image > sampling returns JSON that fails schema → sampling_response_invalid [0.95ms]
+(pass) analyze_floorplan_image > strips data URI prefix before base64 → still produces valid output [0.70ms]
+
+packages\mcp\src\tools\vision\analyze-room-photo.test.ts:
+(pass) analyze_room_photo > happy path: valid sampling JSON → structured output [2.99ms]
+(pass) analyze_room_photo > sampling unavailable → throws sampling_unavailable [0.77ms]
+(pass) analyze_room_photo > sampling returns non-JSON text → sampling_response_unparseable [0.71ms]
+(pass) analyze_room_photo > sampling returns JSON that fails schema → sampling_response_invalid [0.65ms]
+
+ 343 pass
+ 0 fail
+ 1303 expect() calls
+Ran 343 tests across 51 files. [1.98s]
+Exit: 0; Finished: 2026-09-10T00:55:12.5867821+08:00

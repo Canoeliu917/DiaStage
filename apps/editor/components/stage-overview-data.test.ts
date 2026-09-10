@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { nodeRegistry, registerNode } from '@pascal-app/core/registry'
 import {
   type AnyNode,
+  BlockNode,
   BuildingNode,
   ItemNode,
   LevelNode,
@@ -45,22 +46,41 @@ function graph(): Record<string, AnyNode> {
   )
 }
 
-test('flat overview retains all levels, containers, zones, scans and hidden rows without mutation', () => {
+test('authored theatre roles identify furniture, props and scenery without changing node types', () => {
+  const nodes = Object.fromEntries(
+    ['furniture', 'prop', 'scenic-unit'].map((kind) => {
+      const node = BlockNode.parse({ metadata: { theatreKind: kind } })
+      return [node.id, node]
+    }),
+  )
+  const before = JSON.stringify(nodes)
+  const rows = buildStageRows(nodes)
+  assert.deepEqual(new Set(rows.map((row) => row.typeLabel)), new Set(['家具', '舞台物件', '布景']))
+  assert.ok(Object.values(nodes).every((node) => node.type === 'block'))
+  assert.equal(JSON.stringify(nodes), before)
+})
+
+test('overview hides hierarchy containers while preserving references and hidden scenery', () => {
   const nodes = graph()
   const original = JSON.stringify(nodes)
   const rows = buildStageRows(nodes)
-  assert.equal(rows.length, Object.keys(nodes).length)
-  assert.deepEqual(new Set(rows.map((row) => row.id)), new Set(Object.keys(nodes)))
+  assert.equal(rows.length, 3)
+  assert.deepEqual(
+    new Set(rows.map((row) => row.id)),
+    new Set(['scan_upper', 'item_lower', 'item_upper']),
+  )
   assert.equal(rows.find((row) => row.id === 'scan_upper')?.visible, false)
-  assert.equal(rows.find((row) => row.id === 'zone_stage')?.kind, 'object')
-  assert.equal(rows.filter((row) => row.kind === 'container').length, 4)
+  assert.equal(
+    rows.some((row) => row.id === 'zone_stage'),
+    false,
+  )
   assert.equal(
     rows.find((row) => row.id === 'item_lower')?.parentLabel,
-    '剧场 / 主楼 / 楼层 2 / 表演区',
+    '剧场 / 主楼 / 表演层 1 / 表演区',
   )
-  assert.equal(rows.find((row) => row.id === 'site_main')?.parentLabel, '根级')
-  assert.ok(
-    rows.findIndex((row) => row.id === 'level_2') < rows.findIndex((row) => row.id === 'level_10'),
+  assert.equal(
+    rows.some((row) => row.id === 'site_main'),
+    false,
   )
   assert.ok(
     rows.findIndex((row) => row.id === 'item_upper') <
@@ -76,12 +96,15 @@ test('own visibility remains distinct from visibility inherited from an ancestor
   const nested = rows.find((row) => row.id === 'item_lower')!
   assert.equal(nested.visible, true)
   assert.equal(nested.effectiveVisible, false)
-  assert.equal(rows.find((row) => row.id === 'zone_stage')?.effectiveVisible, false)
+  assert.equal(
+    rows.some((row) => row.id === 'zone_stage'),
+    false,
+  )
   assert.equal(rows.find((row) => row.id === 'item_upper')?.effectiveVisible, true)
   assert.equal(rows.find((row) => row.id === 'scan_upper')?.effectiveVisible, false)
 })
 
-test('only a real item light effect identifies a light and sorts it before containers and objects', () => {
+test('legacy light effects are absent from the overview without filtering by user names', () => {
   const nodes = graph()
   nodes.item_named = item('item_named', 'level_2', '点光灯 Light 灯光')
   nodes.item_light = ItemNode.parse({
@@ -96,15 +119,15 @@ test('only a real item light effect identifies a light and sorts it before conta
     },
   })
   const rows = buildStageRows(nodes)
-  assert.equal(rows[0]?.id, 'item_light')
-  assert.equal(rows[0]?.typeLabel, '点光灯')
-  assert.equal(rows[0]?.kind, 'light')
-  assert.equal(rows[1]?.kind, 'container')
+  assert.equal(
+    rows.some((row) => row.id === 'item_light'),
+    false,
+  )
   assert.equal(rows.find((row) => row.id === 'item_named')?.kind, 'object')
   assert.equal(rows.find((row) => row.id === 'item_named')?.typeLabel, '物件')
 })
 
-test('type labels read the existing registry presentation and unnamed items use their asset name', () => {
+test('theatre labels adapt legacy presentation without rewriting registry or node data', () => {
   const restore = nodeRegistry._snapshot()
   try {
     nodeRegistry._reset()
@@ -120,9 +143,12 @@ test('type labels read the existing registry presentation and unnamed items use 
     })
     const nodes = graph()
     nodes.item_asset = item('item_asset', null, '')
+    const original = JSON.stringify(nodes)
     const rows = buildStageRows(nodes)
-    assert.equal(rows.find((row) => row.id === 'scan_upper')?.typeLabel, '三维扫描')
+    assert.equal(rows.find((row) => row.id === 'scan_upper')?.typeLabel, '场地参考')
     assert.equal(rows.find((row) => row.id === 'item_asset')?.name, '素材')
+    assert.equal(nodeRegistry.get('scan')?.presentation?.label, '三维扫描')
+    assert.equal(JSON.stringify(nodes), original)
   } finally {
     restore()
   }

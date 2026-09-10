@@ -1,0 +1,12 @@
+{
+  "url": "http://127.0.0.1:4318/scene/4ae665dfcdcc?workspace=set",
+  "checks": [
+    "Manual entry creates an independent measured stage and opens its library",
+    "2D preview makes no scene nodes; one click commits a valid placement",
+    "Rename, lock, resize, rotation and hide/reveal commit through the executor and persist",
+    "Duplicate placement is one undo step and redoes once",
+    "Collision and out-of-bounds clicks keep Ghost without nodes; Escape cancels",
+    "Changing view cancels the draft; desktop drag-drop raycasts into the 3D stage"
+  ],
+  "errors": []
+}

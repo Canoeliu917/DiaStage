@@ -1,0 +1,13 @@
+Started: 2026-09-10T01:19:14.2505750+08:00
+COMPOSITE_EXIT=0
+Checking packages/editor/tsconfig.json
+TYPE_EXIT=0
+Checking packages/ui/tsconfig.json
+TYPE_EXIT=0
+Checking packages/cli/tsconfig.scripts.json
+TYPE_EXIT=0
+Checking apps/editor/tsconfig.json
+TYPE_EXIT=0
+Checking apps/ifc-converter/tsconfig.json
+TYPE_EXIT=0
+Finished: 2026-09-10T01:19:46.0525636+08:00

@@ -1,0 +1,165 @@
+packages\editor\src\components\ui\controls\material-picker.tsx:202:26 lint/correctness/useExhaustiveDependencies  FIXABLE  ━━━━━━━━━━
+
+  i This hook specifies more dependencies than necessary: libraryVersion.
+  
+    200 │     getLibraryMaterialsVersion,
+    201 │   )
+  > 202 │   const dynamicSources = useMemo(
+        │                          ^^^^^^^
+    203 │     () => new Set(getDynamicLibraryMaterials().map((item) => item.source)),
+    204 │     [libraryVersion],
+  
+  i This dependency can be removed from the list.
+  
+    202 │   const dynamicSources = useMemo(
+    203 │     () => new Set(getDynamicLibraryMaterials().map((item) => item.source)),
+  > 204 │     [libraryVersion],
+        │      ^^^^^^^^^^^^^^
+    205 │   )
+    206 │   const visibleSourceFilters = SOURCE_FILTERS.filter(
+  
+  i React relies on hook dependencies to determine when to re-compute Effects.
+    Specifying more dependencies than required can lead to unnecessary re-rendering
+    and degraded performance.
+  
+  i Unsafe fix: Remove the extra dependencies from the list.
+  
+    204 │ ····[libraryVersion],
+        │      --------------  
+
+apps\editor\components\theatre\theatre.css:151:14 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    149 │   }
+    150 │   .studio-navigation {
+  > 151 │     gap: 8px !important;
+        │              ^^^^^^^^^^
+    152 │     padding: 8px 12px !important;
+    153 │     min-height: 0 !important;
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    151 │ ····gap:·8px·!important;
+        │             ----------- 
+
+apps\editor\components\theatre\theatre.css:152:23 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    150 │   .studio-navigation {
+    151 │     gap: 8px !important;
+  > 152 │     padding: 8px 12px !important;
+        │                       ^^^^^^^^^^
+    153 │     min-height: 0 !important;
+    154 │   }
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    152 │ ····padding:·8px·12px·!important;
+        │                      ----------- 
+
+apps\editor\components\theatre\theatre.css:153:19 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    151 │     gap: 8px !important;
+    152 │     padding: 8px 12px !important;
+  > 153 │     min-height: 0 !important;
+        │                   ^^^^^^^^^^
+    154 │   }
+    155 │   .studio-identity {
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    153 │ ····min-height:·0·!important;
+        │                  ----------- 
+
+apps\editor\components\theatre\theatre.css:156:16 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    154 │   }
+    155 │   .studio-identity {
+  > 156 │     flex: none !important;
+        │                ^^^^^^^^^^
+    157 │   }
+    158 │   .studio-navigation-actions {
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    156 │ ····flex:·none·!important;
+        │               ----------- 
+
+apps\editor\components\theatre\theatre.css:159:23 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    157 │   }
+    158 │   .studio-navigation-actions {
+  > 159 │     margin-left: auto !important;
+        │                       ^^^^^^^^^^
+    160 │     font-size: 11px;
+    161 │   }
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    159 │ ····margin-left:·auto·!important;
+        │                      ----------- 
+
+apps\editor\components\theatre\theatre.css:165:30 lint/complexity/noImportantStyles  FIXABLE  ━━━━━━━━━━
+
+  ! Avoid the use of the !important style.
+  
+    163 │     order: 3;
+    164 │     width: 100%;
+  > 165 │     justify-content: stretch !important;
+        │                              ^^^^^^^^^^
+    166 │   }
+    167 │   .studio-workspaces button {
+  
+  i This style reverses the cascade logic, and precedence is reversed. This could lead to having styles with higher specificity being overridden by styles with lower specificity.
+  
+  i Unsafe fix: Remove the style.
+  
+    165 │ ····justify-content:·stretch·!important;
+        │                             ----------- 
+
+packages\editor\src\components\ui\item-catalog\item-catalog.tsx:5:8 lint/correctness/noUnusedImports  FIXABLE  ━━━━━━━━━━
+
+  ! This import is unused.
+  
+    3 │ import type { AssetInput } from '@pascal-app/core'
+    4 │ import { resolveCdnUrl, useViewer } from '@pascal-app/viewer'
+  > 5 │ import { useEffect } from 'react'
+      │        ^^^^^^^^^^^^^
+    6 │ import { triggerSFX } from './../../../lib/sfx-bus'
+    7 │ import { cn } from './../../../lib/utils'
+  
+  i Unused imports might be the result of an incomplete refactoring.
+  
+  i Safe fix: Remove the unused imports.
+  
+      2   2 │   ␍
+      3   3 │   import type { AssetInput } from '@pascal-app/core'␍
+      4     │ - import·{·resolveCdnUrl,·useViewer·}·from·'@pascal-app/viewer'␍
+      5     │ - import·{·useEffect·}·from·'react'␍
+          4 │ + import·{·resolveCdnUrl,·useViewer·}·from·'@pascal-app/viewer'␍
+      6   5 │   import { triggerSFX } from './../../../lib/sfx-bus'␍
+      7   6 │   import { cn } from './../../../lib/utils'␍
+  
+
+Checked 75 files in 122ms. No fixes applied.
+Found 7 warnings.
+Found 1 info.
+LINT_EXIT=0

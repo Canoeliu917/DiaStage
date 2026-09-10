@@ -1,6 +1,6 @@
 ---
 name: "咫台"
-description: "AI Dramaturgy & Spatial Previs"
+description: "DiaStage: Theatre Rehearsal & Stage Previs"
 colors:
   stage: "#111111"
   brand-bar: "#101010"
@@ -86,80 +86,24 @@ components:
     textColor: "{colors.identity-text}"
 ---
 
-# Design System: 咫台
+# Design System: 咫台 DiaStage
 
-## Overview
+当前产品约束以 PRODUCT.md 与本轮简化排演规格为准，旧阶段规划不再有效。
 
-**Creative North Star: "The Director's Prompt Desk"**
+## 视觉与文字
+沿用现有黑白灰、细边框、紧凑工作台，不增加装饰噪声。英文 Courier New，中文本地思源黑体。品牌词分别连续显示，白底黑字。人物颜色与复台警示色属于内容语义，均配文字或形状说明。
 
-咫台 pairs a dark working stage with a light scene archive. Courier New Latin lettering and Source Han Sans SC Chinese text give the director a calm, legible desk; the live scene remains the dominant creative surface.
+## 信息架构
+顶部只有置景、排演、复台。左侧上半区为共享舞台总览，列出布景、人物和摄影机；下半区为可调大小的操作面板。
+置景下为舞台与场地、布景调整、舞台库、舞台镜头、舞台口令。舞台库只分基础台面、景片与开口、平台与台阶、大型舞台布景、人物标记、舞台镜头。
+排演默认模拟排演，显示独占第二行，观察与记录并排，排演版本固定最后。
+复台保留六步：源场地、目标场地、空间标定、映射预览、实体落位、复台验收。
 
-The brand is 咫台, with the fixed subtitle AI Dramaturgy & Spatial Previs. Interface copy is Chinese. The geometric corner mark is authored SVG; no generated raster media was introduced.
+## 操作
+人物设置只展示名称、颜色、位置、朝向、路线与时长。路线主要在舞台中表达。摄影机的复杂路径、跟随、采样与编码参数逐步展开。
+二维、三维、分屏属于显示；导演、观众、机位属于观察。用户不编辑渲染器照明。
+所有字段有中文含义与单位，错误和保存状态可读；旧数据读取失败时保留原文。
+语音和剧本先显示方案，允许取消对象和修改尺寸、台位；只在确认后批量写入。剧本结果按“剧本明确写出 / 系统推测 / 需要确认”排列，窄屏纵向展开。上传同时提供文件选择和拖入，触控目标至少 44 像素。
 
-**Key Characteristics:**
-
-- Black, white and gray interface chrome.
-- Three explicit workspaces — 搭台, 看台 and 复台 — with labeled tools and clear pressed states.
-- Rectangular controls, fine dividers and restrained motion.
-
-## Colors
-
-Neutral contrast carries hierarchy. The frontmatter records reused values from the implemented 咫台 surfaces.
-
-- **Primary:** pale selection and dark archive actions identify the current workspace or a principal action.
-- **Neutral:** stage and brand-bar anchor the editor; raised controls and gray borders separate operations; archive and archive-ink provide the light scene library.
-- Existing semantic colors in inherited editor controls remain outside the brand palette. Model, material and scene-thumbnail colors are content and remain unchanged.
-
-**The Content Color Rule.** Keep interface chrome monochrome; preserve the colors of the scene itself.
-
-## Typography
-
-The user specifies Courier New for all English and Source Han Sans SC for all Chinese. One shared stack serves controls, headings, timings and labels. Source Han Sans SC v2.005 is bundled as a variable WOFF2 (250–900) through next/font/local with display:swap; the Adobe SIL OFL license ships beside it. Courier New uses the installed system face. Geist, Barlow and Pixel are no longer loaded.
-
-The Chinese wordmark is 28px / 600; its English subtitle is 10px with .055em tracking. Camera and rehearsal titles use the title token; the picture-panel title is 21px. Helper text is 12px, while the archive uses 14px explanatory copy and 25px scene names. Numeric fields and transport output use tabular figures.
-
-## Layout
-
-The workspace is a full-height column (100dvh): brand/navigation bar, working region and wrapping transport dock. The desktop navigation starts at 88px minimum height with 14px 24px padding. A labeled tool rail and resizable inspector sit beside the live viewport. 搭台 contains modeling and object placement; 看台 separates 舞台 (scene tree), 画面 (lighting and display), 机位 (camera position and movement), and 编排 (sequence tracks and playback); 复台 handles venue transfer. The shared 三维 / 二维 / 分屏 controls stay in the top bar and describe viewport layouts, not camera shots. 监看 displays the selected camera shot's framing.
-
-The scene archive has a 1280px maximum container, 68px 48px 24px padding, and ruled rows with a 16:9 thumbnail, scene details and an opening link. **1280px is a container limit, not a breakpoint.**
-
-| Threshold | Implemented behavior |
-| --- | --- |
-| ≤1100px | Navigation wraps; workspace choices take a full-width row. Dock gaps reduce to 8px, timeline to 100px and select width to 130px. |
-| <768px | The inherited editor hook selects its mobile layout, with mobile tool navigation and panel sheet. |
-| ≤700px | Brand mark becomes 28px, Chinese wordmark 25px, project name hides; workspace buttons are 38px minimum height. Panel horizontal padding becomes 16px and timeline 85px. Archive padding becomes 40px 20px 16px; rows use a 110px thumbnail and a second-column opening link. |
-| ≤460px | Identity and action groups each occupy a full row; workspace choices return to normal flow order. |
-
-## Elevation & Depth
-
-Large work surfaces are flat, separated by tonal changes and thin borders. The viewer has no decorative corner clipping or shadow. The modeling action menu retains a small shadow (0 6px 18px #0002) and no backdrop blur; it is hidden in Director. Selected shot rows use an inset 3px white edge. Video dialogs use a dark backdrop (#000c).
-
-Motion is limited to state changes: navigation and archive rows use 180ms color transitions; sidebar width uses 150ms ease when not dragging. The global reduced-motion rule reduces animation and transition duration to 0.01ms and disables smooth scrolling.
-
-## Shapes
-
-Controls use compact rectangles with the control radius; archive actions and status chips use the smaller radius, and dialogs use the overlay radius. Fine rules organize sections. The mark combines two open corners and a triangular stage plane; reuse `apps/editor/public/diastage-mark.svg`.
-
-## Components
-
-- **Wordmark:** 咫台 has one uninterrupted white rectangle with black text, 34px high and 4px inline padding. Screen readers receive the complete name once. The English slogan and shared font stack are preserved. Mobile-specific refinement is paused at the user's request.
-
-- **Buttons:** pale pressed states on dark panels; black primary action in the archive; neutral hover changes. Disabled camera controls use .4 opacity, workspace choices .5.
-- **Fields:** dark fill, a 1px gray border, compact padding and native input/select behavior. Camera fields have a 2px pale focus outline with 2px offset; workspace navigation uses 3px offset and archive controls 4px.
-- **Navigation:** always retain the three labeled workspace choices and their `aria-pressed` state. Tool selection opens its inspector; camera, rehearsal and picture entry disarms modeling.
-- **Shot cards:** full-width selectable rows with index, wrapping title and duration. Selection adds the inset edge and a brighter border rather than relying on color alone.
-- **Status chips:** text plus an outlined circular marker at rest; recording uses a filled square. Active transport uses pale fill and dark text.
-- **Rehearsal:** six numbered, collapsible sections with 44px section headers. Busy operation locks the body while exposing the stop action.
-- **Scene archive:** ruled linked rows, real thumbnails when present and a scan-line fallback when absent. No invented thumbnail imagery.
-
-## Do's and Don'ts
-
-- Do use Courier New for English and bundled Source Han Sans SC for Chinese, with one continuous white background behind 咫台.
-- Do preserve visible focus, text labels, pressed states and reduced-motion support.
-- Do use the existing model, material and scene-thumbnail colors without recoloring their content.
-
-- Don't introduce a decorative accent palette, gradients or glass panels into the 咫台 chrome.
-- Don't add modeling overlays to 看台 or merge the three workspace tool groups.
-- Don't invent raster imagery or replace the authored geometric SVG identity.
-
+## 布局验证
+检查 1440×900、820×1180、1180×820、390×844。窄屏使用任务选择与可关闭抽屉，不让版本入口遮挡舞台。当前三入口验证记录在 THREE_ENTRY_IMPLEMENTATION.md，上一轮界面记录保留于 SIMPLIFIED_REHEARSAL.md。

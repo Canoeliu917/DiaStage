@@ -11,6 +11,7 @@ import * as THREE from 'three/webgpu'
 import { SHADOW_ONLY_LAYER } from '../../lib/layers'
 import { getSceneTheme } from '../../lib/scene-themes'
 import useViewer from '../../store/use-viewer'
+import { useNeutralRenderEnvironment } from './render-environment'
 
 // Diagnostic toggle: `?disable=shadows` skips the shadow-map render pass
 // (which doubles draw calls for every shadow-casting mesh) so you can
@@ -75,6 +76,19 @@ const SHADOW_BACKOFF = 10
 const SHADOW_FALLBACK_RADIUS = 30
 
 export function Lights() {
+  const neutral = useNeutralRenderEnvironment()
+  return neutral ? (
+    <>
+      <ambientLight intensity={1.4} color="#ffffff" />
+      <directionalLight position={[4, 8, 6]} intensity={2} color="#ffffff" />
+      <directionalLight position={[-4, 5, -3]} intensity={0.8} color="#ffffff" />
+    </>
+  ) : (
+    <ThemeLights />
+  )
+}
+
+function ThemeLights() {
   const sceneTheme = useViewer((state) => state.sceneTheme)
   const theme = getSceneTheme(sceneTheme)
   const shadows = useViewer((state) => state.shadows)

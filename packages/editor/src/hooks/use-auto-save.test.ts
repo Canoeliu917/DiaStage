@@ -132,4 +132,16 @@ describe('decideExitFlush', () => {
       }),
     ).toBe('flush')
   })
+
+  test('flushes an authorized history or deletion snapshot but still defers while loading', () => {
+    const snapshot = {
+      isLoadingScene: false,
+      hasDirtyChanges: true,
+      storedNodeCount: 7,
+      currentNodeCount: 4,
+      authorizedNodeDrop: true,
+    }
+    expect(decideExitFlush(snapshot)).toBe('flush')
+    expect(decideExitFlush({ ...snapshot, isLoadingScene: true })).toBe('skip-loading')
+  })
 })

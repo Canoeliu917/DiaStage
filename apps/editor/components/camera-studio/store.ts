@@ -52,6 +52,8 @@ type CameraStudioState = {
   canvas: HTMLCanvasElement | null
   runtimeReady: boolean
   capture: RuntimeBridge['capture']
+  pendingObservation: number | null
+  observeWhenReady: (time: number) => void
   setProject: (project: CameraProject) => void
   selectShot: (id: string) => void
   addShot: (shot: Shot) => void
@@ -148,6 +150,12 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
   notice: '',
   canvas: null,
   runtimeReady: false,
+  pendingObservation: null,
+  observeWhenReady: (time) => {
+    if (!Number.isFinite(time) || !get().selectedShotId) return
+    if (get().runtimeReady) get().seek(time)
+    else set({ pendingObservation: time })
+  },
   capture: null,
   setProject: (input) => {
     const project = validateCameraProject(input)
@@ -158,6 +166,7 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
       cameraUndo: [],
       cameraRedo: [],
       stageDraft: null,
+      pendingObservation: null,
       time: 0,
       playing: false,
       previewing: false,
@@ -268,8 +277,15 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
       notice: '',
     })
   },
-  stop: () => set({ time: 0, playing: false, previewing: false }),
+  stop: () => set({ time: 0, playing: false, previewing: false, pendingObservation: null }),
   captureCamera: (time) => get().capture?.(time ?? get().time) ?? null,
-  setRuntime: (bridge) => set(bridge),
+  setRuntime: (bridge) => {
+    set(bridge)
+    const time = get().pendingObservation
+    if (bridge.runtimeReady && time !== null) {
+      set({ pendingObservation: null })
+      get().seek(time)
+    }
+  },
   setNotice: (notice) => set({ notice }),
 }))

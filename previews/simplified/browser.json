@@ -1,0 +1,13 @@
+{
+  "url": "http://127.0.0.1:4318/scene/70248ea9dcf4",
+  "checks": [
+    "Home has no Editor canvas; manual entry created an independent scene",
+    "Navigation order and Observe/Record shared row match the specification",
+    "Performer, 2D route creation, persistence, playback, pause and loop work",
+    "Version save and restore are reachable",
+    "Camera can be created in SET and observed through the lazily loaded runtime",
+    "Desktop, iPad and small layouts captured without document overflow",
+    "All six Remount steps remain reachable; application math and undo covered by unit tests"
+  ],
+  "errors": []
+}

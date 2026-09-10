@@ -524,7 +524,6 @@ export function CameraStageSystem({ enabled }: { enabled: boolean }) {
   const showActors = useCameraStudio((state) => state.showStageCameras)
   const showMonitor = useCameraStudio((state) => state.monitorVisible)
   const playback = useCameraStudio((state) => state.playing || state.previewing || state.recording)
-  const lightingPanel = useEditor((state) => state.activeSidebarPanel === 'picture')
   const editorReady = useEditor(
     (state) =>
       state.workspaceMode === 'edit' &&
@@ -538,8 +537,7 @@ export function CameraStageSystem({ enabled }: { enabled: boolean }) {
   const idle = useInteractionScope(
     (state) =>
       state.scope.kind === 'idle' ||
-      (state.scope.kind === 'handle-drag' &&
-        (state.scope.handle === 'camera-stage' || state.scope.handle === 'lighting')),
+      (state.scope.kind === 'handle-drag' && state.scope.handle === 'camera-stage'),
   )
   const sceneReady = useScene((state) => !state.readOnly && state.rootNodeIds.length > 0)
   const paused = useViewer((state) => state.renderPaused)
@@ -556,13 +554,13 @@ export function CameraStageSystem({ enabled }: { enabled: boolean }) {
         'paused',
         playback
           ? '主画面取景中；点击“停止并还原”后可继续摆放摄像机'
-          : '请返回看台的三维选择视图后监看',
+          : '请返回舞台镜头的三维选择视图后监看',
       )
     else if (!selected) state.setMonitorStatus('waiting', '从当前视角创建或选择一个摄像机')
     else if (!showMonitor) state.setMonitorStatus('off', '独立监看已关闭')
     return () => {
       useCameraStudio.getState().setStageReady(false)
-      useCameraStudio.getState().setMonitorStatus('paused', '请返回看台的三维选择视图后监看')
+      useCameraStudio.getState().setMonitorStatus('paused', '请返回舞台镜头的三维选择视图后监看')
     }
   }, [ready, playback, selected, showMonitor])
   useEffect(() => {
@@ -599,7 +597,6 @@ export function CameraStageSystem({ enabled }: { enabled: boolean }) {
   return (
     <>
       {showActors &&
-        !lightingPanel &&
         project.shots.map((shot) => {
           const active = shot.id === selectedId
           const key = active ? frame : shot.keyframes[0]

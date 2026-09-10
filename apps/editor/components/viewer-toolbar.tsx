@@ -16,21 +16,13 @@ import {
   useSidebarStore,
   type ViewMode,
 } from '@pascal-app/editor'
-import {
-  CLAY_PALETTE,
-  type EdgeMode,
-  getSceneTheme,
-  requestWalkthroughPointerLock,
-  SCENE_THEMES,
-  useViewer,
-} from '@pascal-app/viewer'
+import { type EdgeMode, requestWalkthroughPointerLock, useViewer } from '@pascal-app/viewer'
 import {
   Box,
   Check,
   ChevronsLeft,
   ChevronsRight,
   Columns2,
-  Contrast,
   Eye,
   EyeOff,
   Footprints,
@@ -42,28 +34,15 @@ import {
   ScanLine,
   SlidersHorizontal,
   Sparkles,
-  SquareUserRound,
-  SwatchBook,
   Tag,
 } from 'lucide-react'
 import Image from 'next/image'
 import { type ReactNode, useCallback } from 'react'
 import { flushSync } from 'react-dom'
 import { cn } from '@/lib/utils'
-import { LightingPanel } from './lighting/panel'
+import { useCameraStudio } from './camera-studio/store'
+import { useSimulationSelection } from './theatre/simulation-panel'
 import { Tooltip, TooltipContent, TooltipTrigger } from './toolbar-tooltip'
-
-const themeLabels: Record<string, string> = {
-  Studio: '摄影棚',
-  Paper: '纸白',
-  Sunset: '日落',
-  Overcast: '阴天',
-  Blueprint: '蓝图',
-  Mediterranean: '地中海',
-  Twilight: '暮色',
-  Night: '夜景',
-  Verdant: '葱郁',
-}
 
 const TOOLBAR_CONTAINER =
   'inline-flex min-h-9 shrink-0 items-stretch overflow-hidden rounded-lg border border-border bg-background'
@@ -114,17 +93,10 @@ const VIEW_MODES: { id: ViewMode; label: string; icon: React.ReactNode }[] = [
   },
 ]
 
-const levelModeLabels: Record<string, string> = {
-  manual: '手动',
-  stacked: '叠放',
-  exploded: '展开',
-  solo: '仅本层',
-}
-
 const wallModeLabels: Record<string, string> = {
   up: '完整',
   cutaway: '剖切',
-  down: '矮墙',
+  down: '低位',
   translucent: '半透明',
 }
 
@@ -138,9 +110,8 @@ const FLOORPLAN_ANNOTATION_OPTIONS = [
   { id: 'manualDimensions', name: '手动尺寸标注', icon: Ruler },
   { id: 'measurements', name: '测量', icon: ScanLine },
   { id: 'openingMarks', name: '门窗标记', icon: Tag },
-  { id: 'structuralGrids', name: '结构轴网与柱中心', icon: Grid2X2 },
-  { id: 'roomLabels', name: '房间标签', icon: SquareUserRound },
-  { id: 'stairAnnotations', name: '楼梯标注', icon: Footprints },
+  { id: 'structuralGrids', name: '舞台基准线', icon: Grid2X2 },
+  { id: 'stairAnnotations', name: '台阶标注', icon: Footprints },
 ] as const
 
 const FLOORPLAN_MODE_OPTIONS = [
@@ -157,9 +128,9 @@ const FLOORPLAN_MODE_OPTIONS = [
 ] as const
 
 const FLOORPLAN_WALL_DIMENSION_REFERENCE_OPTIONS = [
-  { id: 'finished-faces', name: '完成面', detail: '包含全部墙体厚度' },
-  { id: 'centerline', name: '墙体中心线', detail: '墙体轴线' },
-  { id: 'stud-faces', name: '结构面', detail: '结构核心表面' },
+  { id: 'finished-faces', name: '完成面', detail: '包含全部景片厚度' },
+  { id: 'centerline', name: '景片中心线', detail: '景片轴线' },
+  { id: 'stud-faces', name: '内部参照面', detail: '景片内部参照' },
 ] as const
 
 function ViewModeControl() {
@@ -222,39 +193,15 @@ function CollapseSidebarButton() {
   )
 }
 
-function LevelModeToggle() {
-  const levelMode = useViewer((state) => state.levelMode)
-  const setLevelMode = useViewer((state) => state.setLevelMode)
-
-  return (
-    <label className="flex items-center gap-2 px-2.5 text-xs text-muted-foreground">
-      楼层
-      <select
-        aria-label="楼层显示"
-        className="min-w-0 bg-background py-2 text-xs text-foreground"
-        value={levelMode}
-        onChange={(event) => setLevelMode(event.target.value as typeof levelMode)}
-      >
-        {levelMode === 'manual' && <option value="manual">手动</option>}
-        {(['stacked', 'exploded', 'solo'] as const).map((mode) => (
-          <option key={mode} value={mode}>
-            {levelModeLabels[mode]}
-          </option>
-        ))}
-      </select>
-    </label>
-  )
-}
-
 function WallModeToggle() {
   const wallMode = useViewer((state) => state.wallMode)
   const setWallMode = useViewer((state) => state.setWallMode)
 
   return (
     <label className="flex items-center gap-2 px-2.5 text-xs text-muted-foreground">
-      墙体
+      景片
       <select
-        aria-label="墙体显示"
+        aria-label="景片显示"
         className="min-w-0 bg-background py-2 text-xs text-foreground"
         value={wallMode}
         onChange={(event) => setWallMode(event.target.value as typeof wallMode)}
@@ -294,12 +241,8 @@ function DisplayMenu() {
   const setCameraMode = useViewer((state) => state.setCameraMode)
   const shading = useViewer((state) => state.shading)
   const setShading = useViewer((state) => state.setShading)
-  const sceneTheme = useViewer((state) => state.sceneTheme)
-  const setSceneTheme = useViewer((state) => state.setSceneTheme)
   const edges = useViewer((state) => state.edges)
   const setEdges = useViewer((state) => state.setEdges)
-  const shadows = useViewer((state) => state.shadows)
-  const setShadows = useViewer((state) => state.setShadows)
   const magneticSnap = useEditor((state) => state.magneticSnap)
   const setMagneticSnap = useEditor((state) => state.setMagneticSnap)
   const annotationVisibility = useFloorplanAnnotationVisibility((state) => state.visibility)
@@ -316,7 +259,6 @@ function DisplayMenu() {
   const activeShading =
     SHADING_OPTIONS.find((option) => option.id === shading) ?? SHADING_OPTIONS[0]
   const activeEdges = EDGE_OPTIONS.find((option) => option.id === edges) ?? EDGE_OPTIONS[0]
-  const activeTheme = getSceneTheme(sceneTheme)
 
   // Keep the menu open when flipping a toggle.
   const keepOpen = (event: Event, fn: () => void) => {
@@ -423,7 +365,7 @@ function DisplayMenu() {
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger>
                     <Ruler className="h-4 w-4" />
-                    <span>墙体尺寸</span>
+                    <span>景片尺寸</span>
                     <span className="ml-auto text-muted-foreground text-xs">
                       {
                         FLOORPLAN_WALL_DIMENSION_REFERENCE_OPTIONS.find(
@@ -461,11 +403,6 @@ function DisplayMenu() {
           <span className="ml-auto text-muted-foreground text-xs">
             {magneticSnap ? '开启' : '关闭'}
           </span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onSelect={(e) => keepOpen(e, () => setShadows(!shadows))}>
-          <Contrast className="h-4 w-4" />
-          <span>阴影</span>
-          <span className="ml-auto text-muted-foreground text-xs">{shadows ? '开启' : '关闭'}</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(e) =>
@@ -572,39 +509,6 @@ function DisplayMenu() {
             ))}
           </DropdownMenuSubContent>
         </DropdownMenuSub>
-
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <SwatchBook className="h-4 w-4" />
-            <span>环境</span>
-            <span className="ml-auto truncate text-muted-foreground text-xs">
-              {themeLabels[activeTheme.name] ?? activeTheme.name}
-            </span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="min-w-48 rounded-xl border-border/45 bg-popover/95 backdrop-blur-xl">
-            {SCENE_THEMES.map((theme) => {
-              const swatches = (['wall', 'roof', 'floor', 'glazing'] as const).map(
-                (role) => theme.clayTints?.[role] ?? CLAY_PALETTE[role],
-              )
-              return (
-                <DropdownMenuItem key={theme.id} onSelect={() => setSceneTheme(theme.id)}>
-                  <span
-                    className="grid h-5 w-5 shrink-0 grid-cols-2 overflow-hidden rounded-sm border border-black/10"
-                    style={{ backgroundColor: theme.background }}
-                  >
-                    {swatches.map((color, index) => (
-                      <span key={`${theme.id}-${index}`} style={{ backgroundColor: color }} />
-                    ))}
-                  </span>
-                  <span className="text-foreground">{themeLabels[theme.name] ?? theme.name}</span>
-                  {sceneTheme === theme.id ? (
-                    <Check className="ml-auto h-4 w-4 text-foreground" />
-                  ) : null}
-                </DropdownMenuItem>
-              )
-            })}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -668,95 +572,79 @@ export function CommunityViewerToolbarLeft() {
   )
 }
 
-export function StudioPicturePanel({ sceneId }: { sceneId: string }) {
-  const sceneTheme = useViewer((state) => state.sceneTheme)
-  const shadows = useViewer((state) => state.shadows)
-  const shading = useViewer((state) => state.shading)
-  const edges = useViewer((state) => state.edges)
-  const fieldClass = 'flex flex-col gap-2 text-xs text-muted-foreground'
-  const selectClass = 'w-full rounded border border-border bg-background px-2 py-2 text-foreground'
+export function StudioPicturePanel() {
+  const viewer = useViewer()
+  const cameras = useCameraStudio((s) => s.showStageCameras)
+  const routes = useSimulationSelection((s) => s.showRoutes)
   return (
-    <section className="studio-picture-panel flex h-full flex-col gap-6 overflow-y-auto p-5">
-      <header className="studio-panel-heading">
-        <h2>画面</h2>
-        <p>调整舞台的光影和显示效果。</p>
-      </header>
-      <LightingPanel sceneId={sceneId} />
-      <div className="studio-picture-section">
-        <h3>光影</h3>
-        <label className={fieldClass}>
-          环境
-          <select
-            className={selectClass}
-            value={sceneTheme}
-            onChange={(event) => useViewer.getState().setSceneTheme(event.target.value)}
-          >
-            {SCENE_THEMES.map((theme) => (
-              <option key={theme.id} value={theme.id}>
-                {themeLabels[theme.name] ?? theme.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={shadows}
-            onChange={(event) => useViewer.getState().setShadows(event.target.checked)}
-          />
-          显示阴影
-        </label>
-      </div>
-      <div className="studio-picture-section">
-        <h3>显示效果</h3>
-        <label className={fieldClass}>
-          着色方式
-          <select
-            className={selectClass}
-            value={shading}
-            onChange={(event) =>
-              useViewer.getState().setShading(event.target.value as typeof shading)
-            }
-          >
-            {SHADING_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className={fieldClass}>
-          轮廓边线
-          <select
-            className={selectClass}
-            value={edges}
-            onChange={(event) => useViewer.getState().setEdges(event.target.value as EdgeMode)}
-          >
-            {EDGE_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        视图、楼层和墙高在画布顶部调整；摄像机取景请打开“机位”。
-      </p>
+    <section className="theatre-panel" aria-label="显示">
+      <h2>显示</h2>
+      <ViewModeControl />
+      <label>
+        画面模式
+        <select
+          value={viewer.textures ? 'preview' : viewer.sceneTheme === 'night' ? 'blackbox' : 'white'}
+          onChange={(e) => {
+            viewer.setSceneTheme(e.target.value === 'blackbox' ? 'night' : 'studio')
+            viewer.setTextures(e.target.value === 'preview')
+            viewer.setShading(e.target.value === 'preview' ? 'rendered' : 'solid')
+          }}
+        >
+          <option value="white">白模</option>
+          <option value="blackbox">黑匣子</option>
+          <option value="preview">演出预览</option>
+        </select>
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={viewer.showGrid}
+          onChange={(e) => viewer.setShowGrid(e.target.checked)}
+        />
+        网格
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={viewer.showGuides}
+          onChange={(e) => viewer.setShowGuides(e.target.checked)}
+        />
+        辅助线
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={routes}
+          onChange={(e) => useSimulationSelection.setState({ showRoutes: e.target.checked })}
+        />
+        人物路线
+      </label>
+      <label>
+        <input
+          type="checkbox"
+          checked={cameras}
+          onChange={(e) => useCameraStudio.getState().setShowStageCameras(e.target.checked)}
+        />
+        摄影机模型
+      </label>
+      <WallModeToggle />
+      <DisplayMenu />
     </section>
   )
 }
 
 export function CommunityViewerToolbarRight() {
   return (
-    <div className={TOOLBAR_CONTAINER}>
-      <LevelModeToggle />
-      <WallModeToggle />
-      <div className="my-1.5 w-px bg-border/50" />
-      <DisplayMenu />
-      <div className="my-1.5 w-px bg-border/50" />
-      <WalkthroughButton />
-      <PreviewButton />
-    </div>
+    <details className="theatre-view-options">
+      <summary>显示与观察</summary>
+      <div className={TOOLBAR_CONTAINER}>
+        <WallModeToggle />
+        <div className="my-1.5 w-px bg-border/50" />
+        <DisplayMenu />
+        <div className="my-1.5 w-px bg-border/50" />
+        <WalkthroughButton />
+        <PreviewButton />
+      </div>
+    </details>
   )
 }

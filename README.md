@@ -1,487 +1,101 @@
-# Pascal Editor
+# 咫台 DiaStage
 
-A 3D building editor built with React Three Fiber and WebGPU.
+**DiaStage: Theatre Rehearsal & Stage Previs**\
+**戏剧排演与舞台复现**
 
-[![npm @pascal-app/core](https://img.shields.io/npm/v/@pascal-app/core?label=%40pascal-app%2Fcore)](https://www.npmjs.com/package/@pascal-app/core)
-[![npm @pascal-app/viewer](https://img.shields.io/npm/v/@pascal-app/viewer?label=%40pascal-app%2Fviewer)](https://www.npmjs.com/package/@pascal-app/viewer)
-[![npm @pascal-app/cli](https://img.shields.io/npm/v/@pascal-app/cli?label=%40pascal-app%2Fcli)](https://www.npmjs.com/package/@pascal-app/cli)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Server-5865F2?logo=discord&logoColor=white)](https://discord.gg/XRKsDcpqgS)
-[![X (Twitter)](https://img.shields.io/badge/follow-%40pascal__app-black?logo=x&logoColor=white)](https://x.com/pascal_app)
+在虚拟舞台排一遍，再按同一套位置、走位与尺寸把演出搭回来。咫台面向导演、演员、舞台美术、舞台监督与戏剧学习者。
 
-https://github.com/user-attachments/assets/8b50e7cf-cebe-4579-9cf3-8786b35f7b6b
+## 工作区
 
-## Run the Editor Locally
+| 工作区 | 要完成的事 |
+| --- | --- |
+| 置景 | 选择场地，放置景片、台块与家具，摆放舞台镜头 |
+| 排演 | 模拟人物站位和移动，显示、观察、记录并保存排演版本 |
+| 复台 | 记录源场、校准目标场地，预览真实尺度落位并确认应用 |
 
-Node.js 22.13 or newer can create a persistent local Pascal installation without
-cloning this repository:
+**观察与记录**属于排演。人物位置和路线由模拟排演数据定义。
 
-```bash
-npx @pascal-app/cli editor
+## 本地启动
+
+需要 Node.js 22.13 或更新版本。Windows 可在仓库根目录运行：
+
+```powershell
+.\启动镜场.ps1
 ```
 
-The CLI starts the editor and an authenticated MCP service in the background, selects
-collision-free loopback ports, and keeps projects in `~/.pascal/data/pascal.db`. Configure
-an agent to launch `pascal mcp connect`. See [Run Pascal locally](https://editor.pascal.app/docs/developers/local-editor)
-for pnpm/Bun commands, project management, MCP setup, updates, storage paths, and
-troubleshooting.
+脚本名称因本地使用习惯保留。它会安装缺失依赖、构建内部包，在本机 4318 端口启动开发服务。保留终端窗口，Ctrl+C 停止服务。
 
-## Using Published Packages
+打开 <http://127.0.0.1:4318/> 选择开始方式，或进入剧目库。新用户从新项目开始；已有项目按原 ID 打开。历史《空桌》样例初始化说明保存在 [历史操作文档](docs/history/2026-09-10-before-theatre/CAMERA_STUDIO.md)，不自动覆盖已有场景。
 
-The viewer runtime and built-in node definitions are separate packages. Install the full built-in
-viewer set, then load the built-in plugin once before mounting `<Viewer>`. Capture sessions are an
-optional transport-neutral extension:
+通用开发命令：
 
-```bash
-npm install @pascal-app/core @pascal-app/viewer @pascal-app/editor @pascal-app/nodes
-npm install @pascal-app/capture-protocol @pascal-app/capture-viewer
-```
-
-```typescript
-import { loadPlugin } from '@pascal-app/core'
-import { builtinPlugin } from '@pascal-app/nodes'
-
-await loadPlugin(builtinPlugin)
-```
-
-See the [`@pascal-app/viewer` quick start](packages/viewer/README.md#usage) for a React example.
-
-
-## Repository Architecture
-
-This is a Turborepo monorepo with the reusable editor packages, the standalone app,
-and the CLI that distributes it:
-
-```
-editor/
-├── apps/
-│   └── editor/          # Next.js application
-├── packages/
-│   ├── core/            # Schemas, scene state, and registry contracts
-│   ├── viewer/          # 3D rendering runtime and shared systems
-│   ├── capture-protocol/ # Static/live capture-session contracts
-│   ├── capture-viewer/  # Capture source runtime and reference renderers
-│   ├── editor/          # Editing tools and UI components
-│   ├── nodes/           # Built-in node definitions, renderers, and systems
-│   ├── cli/             # Persistent local editor installer and process manager
-│   ├── mcp/             # Model Context Protocol server and scene storage
-│   └── ui/              # Shared UI components
-```
-
-### Separation of Concerns
-
-| Package | Responsibility |
-|---------|---------------|
-| **@pascal-app/core** | Node schemas, scene state (Zustand), registry contracts, spatial queries, and event bus |
-| **@pascal-app/viewer** | 3D rendering via React Three Fiber, shared render systems, default camera/controls, and post-processing |
-| **@pascal-app/capture-protocol** | Versioned capture manifests, normalized streams, and transport-neutral static/live sources |
-| **@pascal-app/capture-viewer** | Viewer child runtime and reference model, device-motion, and point-cloud layers |
-| **@pascal-app/editor** | Editing tools, panels, selection, and direct-manipulation UI |
-| **@pascal-app/nodes** | Built-in registry plugin with node definitions, renderers, geometry, and systems |
-| **@pascal-app/cli** | Installs and manages a versioned standalone editor runtime and persistent local data |
-| **@pascal-app/mcp** | Exposes scene tools, resources, prompts, and local storage to MCP-compatible AI hosts |
-| **apps/editor** | Standalone Next.js host for the editor packages |
-
-The **viewer** renders the scene with sensible defaults. The **editor** extends it with interactive tools, selection management, and editing capabilities.
-
-### Stores
-
-Each package has its own Zustand store for managing state:
-
-| Store | Package | Responsibility |
-|-------|---------|----------------|
-| `useScene` | `@pascal-app/core` | Scene data: nodes, root IDs, dirty nodes, CRUD operations. Persisted to IndexedDB with undo/redo via Zundo. |
-| `useViewer` | `@pascal-app/viewer` | Viewer state: current selection (building/level/zone IDs), level display mode (stacked/exploded/solo), camera mode. |
-| `useEditor` | `apps/editor` | Editor state: active tool, structure layer visibility, panel states, editor-specific preferences. |
-
-**Access patterns:**
-
-```typescript
-// Subscribe to state changes (React component)
-const nodes = useScene((state) => state.nodes)
-const levelId = useViewer((state) => state.selection.levelId)
-const activeTool = useEditor((state) => state.tool)
-
-// Access state outside React (callbacks, systems)
-const node = useScene.getState().nodes[id]
-useViewer.getState().setSelection({ levelId: 'level_123' })
-```
-
----
-
-## Core Concepts
-
-### Nodes
-
-Nodes are the data primitives that describe the 3D scene. All nodes extend `BaseNode`:
-
-```typescript
-BaseNode {
-  id: string              // Auto-generated with type prefix (e.g., "wall_abc123")
-  type: string            // Discriminator for type-safe handling
-  parentId: string | null // Parent node reference
-  visible: boolean
-  camera?: Camera         // Optional saved camera position
-  metadata?: JSON         // Arbitrary metadata (e.g., { isTransient: true })
-}
-```
-
-**Node Hierarchy:**
-
-```
-Site
-└── Building
-    └── Level
-        ├── Wall → Item (doors, windows)
-        ├── Slab
-        ├── Ceiling → Item (lights)
-        ├── Roof
-        ├── Zone
-        ├── Scan (3D reference)
-        └── Guide (2D reference)
-```
-
-Nodes are stored in a **flat dictionary** (`Record<id, Node>`), not a nested tree. Parent-child relationships are defined via `parentId` and `children` arrays.
-
----
-
-### Scene State (Zustand Store)
-
-The scene is managed by a Zustand store in `@pascal-app/core`:
-
-```typescript
-useScene.getState() = {
-  nodes: Record<id, AnyNode>,  // All nodes
-  rootNodeIds: string[],       // Top-level nodes (sites)
-  dirtyNodes: Set<string>,     // Nodes pending system updates
-
-  createNode(node, parentId),
-  updateNode(id, updates),
-  deleteNode(id),
-}
-```
-
-**Middleware:**
-- **Persist** - Saves to IndexedDB (excludes transient nodes)
-- **Temporal** (Zundo) - Undo/redo with 50-step history
-
----
-
-### Scene Registry
-
-The registry maps node IDs to their Three.js objects for fast lookup:
-
-```typescript
-sceneRegistry = {
-  nodes: Map<id, Object3D>,    // ID → 3D object
-  byType: {
-    wall: Set<id>,
-    item: Set<id>,
-    zone: Set<id>,
-    // ...
-  }
-}
-```
-
-Renderers register their refs using the `useRegistry` hook:
-
-```tsx
-const ref = useRef<Mesh>(null!)
-useRegistry(node.id, 'wall', ref)
-```
-
-This allows systems to access 3D objects directly without traversing the scene graph.
-
----
-
-### Node Renderers
-
-Renderers are React components that create Three.js objects for each node type:
-
-```
-SceneRenderer
-└── NodeRenderer (dispatches by type)
-    ├── BuildingRenderer
-    ├── LevelRenderer
-    ├── WallRenderer
-    ├── SlabRenderer
-    ├── ZoneRenderer
-    ├── ItemRenderer
-    └── ...
-```
-
-**Pattern:**
-1. Renderer creates a placeholder mesh/group
-2. Registers it with `useRegistry`
-3. Systems update geometry based on node data
-
-Example (simplified):
-```tsx
-const WallRenderer = ({ node }) => {
-  const ref = useRef<Mesh>(null!)
-  useRegistry(node.id, 'wall', ref)
-
-  return (
-    <mesh ref={ref}>
-      <boxGeometry args={[0, 0, 0]} />  {/* Replaced by WallSystem */}
-      <meshStandardMaterial />
-      {node.children.map(id => <NodeRenderer key={id} nodeId={id} />)}
-    </mesh>
-  )
-}
-```
-
----
-
-### Systems
-
-Systems are React components that run in the render loop (`useFrame`) to update geometry and transforms. They process **dirty nodes** marked by the store.
-
-**Core Systems (in `@pascal-app/core`):**
-
-| System | Responsibility |
-|--------|---------------|
-| `WallSystem` | Generates wall geometry with mitering and CSG cutouts for doors/windows |
-| `SlabSystem` | Generates floor geometry from polygons |
-| `CeilingSystem` | Generates ceiling geometry |
-| `RoofSystem` | Generates roof geometry |
-| `ItemSystem` | Positions items on walls, ceilings, or floors (slab elevation) |
-
-**Viewer Systems (in `@pascal-app/viewer`):**
-
-| System | Responsibility |
-|--------|---------------|
-| `LevelSystem` | Handles level visibility and vertical positioning (stacked/exploded/solo modes) |
-| `ScanSystem` | Controls 3D scan visibility |
-| `GuideSystem` | Controls guide image visibility |
-
-**Processing Pattern:**
-```typescript
-useFrame(() => {
-  for (const id of dirtyNodes) {
-    const obj = sceneRegistry.nodes.get(id)
-    const node = useScene.getState().nodes[id]
-
-    // Update geometry, transforms, etc.
-    updateGeometry(obj, node)
-
-    dirtyNodes.delete(id)
-  }
-})
-```
-
----
-
-### Dirty Nodes
-
-When a node changes, it's marked as **dirty** in `useScene.getState().dirtyNodes`. Systems check this set each frame and only recompute geometry for dirty nodes.
-
-```typescript
-// Automatic: createNode, updateNode, deleteNode mark nodes dirty
-useScene.getState().updateNode(wallId, { thickness: 0.2 })
-// → wallId added to dirtyNodes
-// → WallSystem regenerates geometry next frame
-// → wallId removed from dirtyNodes
-```
-
-**Manual marking:**
-```typescript
-useScene.getState().dirtyNodes.add(wallId)
-```
-
----
-
-### Event Bus
-
-Inter-component communication uses a typed event emitter (mitt):
-
-```typescript
-// Node events
-emitter.on('wall:click', (event) => { ... })
-emitter.on('item:enter', (event) => { ... })
-emitter.on('zone:context-menu', (event) => { ... })
-
-// Grid events (background)
-emitter.on('grid:click', (event) => { ... })
-
-// Event payload
-NodeEvent {
-  node: AnyNode
-  position: [x, y, z]
-  localPosition: [x, y, z]
-  normal?: [x, y, z]
-  stopPropagation: () => void
-}
-```
-
----
-
-### Spatial Grid Manager
-
-Handles collision detection and placement validation:
-
-```typescript
-spatialGridManager.canPlaceOnFloor(levelId, position, dimensions, rotation)
-spatialGridManager.canPlaceOnWall(wallId, t, height, dimensions)
-spatialGridManager.getSlabElevationAt(levelId, x, z)
-```
-
-Used by item placement tools to validate positions and calculate slab elevations.
-
----
-
-## Editor Architecture
-
-The editor extends the viewer with:
-
-### Tools
-
-Tools are activated via the toolbar and handle user input for specific operations:
-
-- **SelectTool** - Selection and manipulation
-- **WallTool** - Draw walls
-- **ZoneTool** - Create zones
-- **ItemTool** - Place furniture/fixtures
-- **SlabTool** - Create floor slabs
-
-### Selection Manager
-
-The editor uses a custom selection manager with hierarchical navigation:
-
-```
-Site → Building → Level → Zone → Items
-```
-
-Each depth level has its own selection strategy for hover/click behavior.
-
-### Editor-Specific Systems
-
-- `ZoneSystem` - Controls zone visibility based on level mode
-- Custom camera controls with node focusing
-
----
-
-## Data Flow
-
-```
-User Action (click, drag)
-       ↓
-Tool Handler
-       ↓
-useScene.createNode() / updateNode()
-       ↓
-Node added/updated in store
-Node marked dirty
-       ↓
-React re-renders NodeRenderer
-useRegistry() registers 3D object
-       ↓
-System detects dirty node (useFrame)
-Updates geometry via sceneRegistry
-Clears dirty flag
-```
-
----
-
-## Building a Plugin
-
-The editor is extensible: a plugin ships node kinds (schema, 3D/2D rendering, placement tools, inspector parametrics) and left-rail panels through the same `Plugin` manifest the built-ins use — there is no separate internal API.
-
-- **Developer guide** — [Create a plugin](https://editor.pascal.app/docs/developers/plugins): the `Plugin` shape, panel contributions, discovery, lifecycle, and what's in/out of v1.
-- **Worked example** — [`pascalorg/plugin-trees`](https://github.com/pascalorg/plugin-trees): a standalone plugin with procedural trees, flowers, grass, and a presets panel. Clone it as a starting point.
-
----
-
-## Technology Stack
-
-- **React 19** + **Next.js 16**
-- **Three.js** (WebGPU renderer)
-- **React Three Fiber** + **Drei**
-- **Zustand** (state management)
-- **Zod** (schema validation)
-- **Zundo** (undo/redo)
-- **three-bvh-csg** (Boolean geometry operations)
-- **Turborepo** (monorepo management)
-- **Bun** (package manager)
-
----
-
-## Getting Started
-
-### Development
-
-Run the development server from the **root directory** to enable hot reload for all packages:
-
-```bash
-# Install dependencies
-bun install
-
-# Run development server (builds packages + starts editor with watch mode)
+```sh
+bun install --frozen-lockfile
 bun dev
-
-# This will:
-# 1. Build @pascal-app/core and @pascal-app/viewer
-# 2. Start watching both packages for changes
-# 3. Start the Next.js editor dev server
-# Open http://localhost:3002
 ```
 
-**Important:** Always run `bun dev` from the root directory to ensure the package watchers are running. This enables hot reload when you edit files in `packages/core/src/` or `packages/viewer/src/`.
+`bun dev` 使用根目录配置的开发端口。锁定的包管理器版本为 Bun 1.3.14。
 
-### Building for Production
+## 最小排演流程
 
-```bash
-# Build all packages
-turbo build
+1. 手动输入宽深新建舞台，或用语音、文字、PDF / DOCX 形成方案，检查并确认布景。
+2. 进入排演，添加人物标记、设置位置与朝向。
+3. 点击记录移动，在舞台上依次选择位置，再设置时长。
+4. 播放、暂停、回到开始或循环，检查人物移动。
+5. 从显示切换视图，从观察切换视点；记录中输出无声视频。
+6. 保存排演版本，或进入复台检查另一场地的落位。
 
-# Build specific package
-turbo build --filter=@pascal-app/core
+当前约束见 [PRODUCT.md](PRODUCT.md)，本轮审计与验收见 [SIMPLIFIED_REHEARSAL.md](SIMPLIFIED_REHEARSAL.md)。排演版本与输出视频不同。
+
+## 数据与兼容
+
+- 舞台节点沿用现有 scene store、批量更新、撤销和自动保存。
+- 戏剧领域数据位于 `apps/editor/lib/theatre/`，经校验后写入场景根节点 metadata。
+- 旧节点类型由兼容层读取，经戏剧适配层呈现。更换产品入口不改变用户节点 ID。
+- 历史观察缓存按原键保留；旧照明移入 legacy，不执行、不加入新版本。
+- 本地启动脚本使用 `data/pascal.db`。备份时先停止服务，再复制完整数据目录；不要仅因名称删除数据库。
+
+## 本次范围与后续
+
+三入口共用舞台方案、确定性坐标与命令执行器。手动拖放和点击落位可用；语音转写与复杂文本解析需要服务端配置。剧本只读取文本型 PDF / DOCX，保留可核对的原文出处，确认前不改舞台。实施与验收记录见 [THREE_ENTRY_IMPLEMENTATION.md](THREE_ENTRY_IMPLEMENTATION.md)。
+摄影机可与布景共同复台；有独立物件运动或未纳入的跟随主体时明确阻止不完整映射。真实扫描、OCR 与 AR 不在本轮范围。
+此前 A–F 的剧情分析与提示本规划已取消；旧交付记录只作历史资料。
+
+已有观察和复台能力见 [CAMERA_STUDIO.md](CAMERA_STUDIO.md) 和 [REMOUNT.md](REMOUNT.md)。
+
+## 语音与剧本配置
+
+在服务端根目录 `.env.local` 中设置后重启；不要使用 `NEXT_PUBLIC_` 前缀，不把密钥提交到 Git：
+
+```dotenv
+OPENAI_API_KEY=你的服务端密钥
+DIASTAGE_COMMAND_MODEL=gpt-5.6-luna
+DIASTAGE_TRANSCRIBE_MODEL=gpt-transcribe
 ```
 
-### Publishing Packages
+不配置密钥也可以手动置景、使用确定性文字示例。转写失败保留本页录音供重试，离开页面即释放；复杂剧本无模型服务时明确报错。录音最多 90 秒 / 12 MB，优先使用设备支持的 MP4；上传剧本最多 20 MB、300 页、300,000 字符，处理超时 60 秒。生产录音需要 HTTPS。
 
-```bash
-# Build packages
-turbo build --filter=@pascal-app/core --filter=@pascal-app/viewer
+新舞台高度可以暂不填写，但复台前必须补测。原始音频和剧本不写入项目；项目只保存确认后选用的证据摘录与默认值。
 
-# Publish to npm
-npm publish --workspace=@pascal-app/core --access public
-npm publish --workspace=@pascal-app/viewer --access public
+## 架构与验证
+
+`packages/core` 负责场景事实，`packages/viewer` 负责渲染，`packages/editor` 与 `apps/editor` 负责操作体验。戏剧领域纯数据与计算不依赖展示层。
+
+```sh
+bun test apps/editor/lib/theatre
+bun test apps/editor/components
+bun test packages/mcp/src/theatre-profile.test.ts
+bun x tsgo --noEmit -p apps/editor/tsconfig.json
+bun run lint
+bun x turbo run build --filter=editor --env-mode=loose
 ```
 
----
+这些是可执行命令，不是预先声明通过。每阶段实际结果、截图和未解决项须记录在交付报告中。
 
-## Key Files
+## 来源与版权
 
-| Path | Description |
-|------|-------------|
-| `packages/core/src/schema/` | Node type definitions (Zod schemas) |
-| `packages/core/src/store/use-scene.ts` | Scene state store |
-| `packages/core/src/hooks/scene-registry/` | 3D object registry |
-| `packages/core/src/systems/` | Geometry generation systems |
-| `packages/viewer/src/components/renderers/` | Node renderers |
-| `packages/viewer/src/components/viewer/` | Main Viewer component |
-| `apps/editor/components/tools/` | Editor tools |
-| `apps/editor/store/` | Editor-specific state |
+本仓库保留从 [Pascal Editor](https://github.com/pascalorg/editor) 派生的基础代码。原版权为 **Copyright (c) 2026 Pascal Group Inc.**，完整 MIT 许可位于 [LICENSES/PASCAL-MIT.txt](LICENSES/PASCAL-MIT.txt)，各 package 原许可证继续保留。
 
----
+DiaStage 自有部分见 [DIASTAGE_COPYRIGHT.md](DIASTAGE_COPYRIGHT.md)，其他代码与字体来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。产品身份调整不改变上游权利声明。
 
-## Contributing
-
-Bug fixes, features, docs and ideas are all welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) for setup, code style and the PR flow.
-
-- New node kinds and sidebar panels ship as [plugins](https://editor.pascal.app/docs/developers/plugins) rather than edits to the built-ins — [`pascalorg/plugin-trees`](https://github.com/pascalorg/plugin-trees) is a worked example
-- Questions and ideas go to [Discussions](https://github.com/pascalorg/editor/discussions); reproducible bugs go to [Issues](https://github.com/pascalorg/editor/issues)
-- Participation is covered by our [Code of Conduct](CODE_OF_CONDUCT.md)
-- Security problems go to [SECURITY.md](SECURITY.md), not a public issue
-
----
-
-## Contributors
-
-<a href="https://github.com/Aymericr"><img src="https://avatars.githubusercontent.com/u/4444492?v=4" width="60" height="60" alt="Aymeric Rabot" style="border-radius:50%"></a>
-<a href="https://github.com/wass08"><img src="https://avatars.githubusercontent.com/u/6551176?v=4" width="60" height="60" alt="Wassim Samad" style="border-radius:50%"></a>
-<a href="https://github.com/sudhir9297"><img src="https://avatars.githubusercontent.com/sudhir9297?v=4" width="60" height="60" alt="Sudhir" style="border-radius:50%"></a>
-
----
-
-<a href="https://trendshift.io/repositories/23831" target="_blank"><img src="https://trendshift.io/api/badge/repositories/23831" alt="pascalorg/editor | Trendshift" width="250" height="55"/></a>
+重构前的五份文档、原文中的上游贡献者与技术记录完整保存在 [历史目录](docs/history/2026-09-10-before-theatre/)。

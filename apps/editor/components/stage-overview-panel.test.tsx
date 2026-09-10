@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
-  test('stage overview exposes all objects and lights and protects scene edits', () => {
+  test('stage overview exposes scenery without lights and protects scene edits', () => {
     const child = spawnSync(process.execPath, ['run', fileURLToPath(import.meta.url)], {
       env: { ...process.env, STAGE_OVERVIEW_PANEL_TEST: '1' },
       encoding: 'utf8',
@@ -94,9 +94,14 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   }))
   mock.module('./camera-studio/store', () => ({
     useCameraStudio: Object.assign(
-      (select: (state: ReturnType<typeof camera.getState>) => unknown) => select(camera.getState()),
+      (select?: (state: ReturnType<typeof camera.getState>) => unknown) =>
+        select ? select(camera.getState()) : camera.getState(),
       camera,
     ),
+  }))
+  mock.module('./theatre/simulation-panel', () => ({
+    useStageDocument: () => ({ document: null }),
+    useSimulationSelection: { setState: () => {} },
   }))
   mock.module('./lighting/store', () => ({
     useLighting: Object.assign(() => lighting.getState(), lighting),
@@ -200,20 +205,13 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
 
   reset()
   const view = render()
-  for (const node of fixtures) view.row(node.name!)
-  view.row('新增聚光灯')
-  view.row('基础环境光')
-  view.row('天空环境反射')
-  const theme = viewer.getSceneTheme('studio')
-  assert.equal(
-    view.rows.length,
-    fixtures.length + 1 + theme.lights.length + 2 + Number(!!theme.hemi),
-  )
+  view.row('下层座椅')
+  view.row('上层座椅')
+  assert.equal(view.rows.length, 2)
+  assert.ok(!text(view.nodes).includes('原生灯具'))
+  assert.ok(!text(view.nodes).includes('新增聚光灯'))
   assert.ok(!view.nodes.some((node) => node.type === 'details'))
   assert.match(text(view.row('上层座椅')), /随上级隐藏/)
-  assert.match(text(view.row('原生灯具')), /灯光已启用.*模型已隐藏/)
-  core.useInteractive.setState({ items: { item_lamp: { controlValues: [false] } } })
-  assert.match(text(render().row('原生灯具')), /灯光已关闭.*模型已隐藏/)
 
   view.button('上层座椅', 'select').onClick()
   assert.deepEqual(calls, ['mode', 'route', 'selection'])
@@ -227,9 +225,6 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   view.button('下层座椅').onClick()
   assert.deepEqual(calls, ['updateNode'])
   assert.equal(scene.getState().nodes.item_lower?.visible, false)
-  view.button('新增聚光灯').onClick()
-  assert.equal(lighting.getState().project.lights[0]?.enabled, false)
-  assert.equal(lighting.getState().past.length, 1)
 
   for (const lock of [
     'readOnly',
@@ -250,7 +245,6 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     const beforeNodes = scene.getState().nodes
     const beforeLights = lighting.getState().project
     stale.button('下层座椅').onClick()
-    stale.button('新增聚光灯').onClick()
     assert.equal(scene.getState().nodes, beforeNodes, `${lock}: stale model toggle is blocked`)
     assert.equal(
       lighting.getState().project,
@@ -259,7 +253,6 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     )
     const locked = render()
     assert.equal(locked.button('下层座椅').disabled, true)
-    assert.equal(locked.button('新增聚光灯').disabled, true)
   }
   for (const status of ['playing', 'recording', 'exporting'] as const) {
     reset()
@@ -273,16 +266,11 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     const beforeLights = lighting.getState().project
     const beforeSelection = viewerStore.getState().selection
     const beforeLightSelection = lighting.getState().selectedLightId
-    for (const name of ['下层座椅', '新增聚光灯', '基础环境光']) {
+    for (const name of ['下层座椅']) {
       stale.button(name, 'select').onClick()
       stale.button(name, 'action').onClick()
     }
     stale.button('下层座椅').onClick()
-    stale.button('新增聚光灯').onClick()
-    const staleShadows = stale.nodes.find(
-      (node) => node.type === 'input' && node.props?.type === 'checkbox',
-    )?.props as { onChange: (event: { target: { checked: boolean } }) => void }
-    staleShadows.onChange({ target: { checked: false } })
     assert.deepEqual(calls, [], `${status}: stale actions cannot select, focus, or switch panels`)
     assert.equal(scene.getState().nodes, beforeNodes, `${status}: model visibility is unchanged`)
     assert.equal(
@@ -294,22 +282,10 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     assert.equal(lighting.getState().selectedLightId, beforeLightSelection)
     assert.equal(viewerStore.getState().shadows, true, `${status}: shadows are unchanged`)
     const locked = render()
-    for (const name of ['下层座椅', '新增聚光灯', '基础环境光']) {
+    for (const name of ['下层座椅']) {
       assert.equal(locked.button(name, 'select').disabled, true)
       assert.equal(locked.button(name, 'action').disabled, true)
     }
     assert.equal(locked.button('下层座椅').disabled, true)
-    assert.equal(locked.button('新增聚光灯').disabled, true)
-    const lockedShadows = locked.nodes.find(
-      (node) => node.type === 'input' && node.props?.type === 'checkbox',
-    )
-    assert.equal(lockedShadows?.props?.disabled, true)
   }
-  reset()
-  const previous = render()
-  lighting.setState({ loadedSceneId: 'scene-b' })
-  const otherProject = lighting.getState().project
-  previous.button('新增聚光灯').onClick()
-  assert.equal(lighting.getState().project, otherProject, 'a stale scene cannot toggle a light')
-  assert.ok(!render().rows.some((row) => text(row).includes('新增聚光灯')))
 }

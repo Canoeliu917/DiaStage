@@ -31,7 +31,7 @@ export type MaterialPickerProps = {
 // No 'All': the browse surfaces (Items / Rooms / Build) dropped it and default
 // to the Pascal library — the combined list buried the curated set.
 const SOURCE_FILTERS: { id: MaterialSourceFilter; label: string }[] = [
-  { id: 'pascal', label: 'Pascal' },
+  { id: 'pascal', label: '内置资源' },
   { id: 'mine', label: '我的' },
   { id: 'workspace', label: '工作区' },
   { id: 'community', label: '社区' },
@@ -44,14 +44,14 @@ function getCategoryLabel(category: (typeof MATERIAL_CATEGORIES)[number]) {
     stone: '石材',
     brick: '砖石',
     tile: '瓷砖',
-    wallpaper: '壁纸',
+    wallpaper: '图案纸',
     concrete: '混凝土',
     metal: '金属',
     plastic: '塑料',
     fabric: '织物',
     carpet: '地毯',
     leather: '皮革',
-    roofing: '屋面',
+    roofing: '兼容表面',
     ground: '地面',
     glass: '玻璃',
     other: '其他',
@@ -60,7 +60,7 @@ function getCategoryLabel(category: (typeof MATERIAL_CATEGORIES)[number]) {
 }
 
 function filterBySource(items: MaterialCatalogItem[], filter: MaterialSourceFilter) {
-  return items.filter((item) => (item.source ?? 'pascal') === filter)
+  return items.filter((item) => item.category !== 'roofing' && (item.source ?? 'pascal') === filter)
 }
 
 // Built-in catalog ids are reserved by core; host/user entries keep their own labels.
@@ -109,10 +109,6 @@ const BUILTIN_MATERIAL_LABELS: Record<string, string> = {
   'flooring-tile68': '花纹地砖',
   'flooring-woodenceramic2': '仿木瓷砖 2',
   'flooring-woodparquet76': '拼花木地板',
-  'roof-classicshingles': '经典屋面瓦',
-  'roof-claytiles': '黏土屋面瓦',
-  'roof-terracottatiles': '赤陶屋面瓦',
-  'roof-weatheredshingles': '风化屋面瓦',
   'preset-white': '白色',
   'preset-softwhite': '柔白色',
   'preset-cream': '奶油色',
@@ -221,7 +217,7 @@ export function MaterialPicker({
   useEffect(() => {
     const catalogId = getLibraryMaterialIdFromRef(selectedMaterialPreset) ?? undefined
     const entry = getCatalogMaterialById(catalogId)
-    if (entry?.category) {
+    if (entry?.category && entry.category !== 'roofing') {
       setSelectedCategory(entry.category)
       setSourceFilter(entry.source ?? 'pascal')
     }

@@ -1,0 +1,330 @@
+Started: 2026-09-10T00:54:54.8627526+08:00
+bun test v1.3.14 (0d9b296a)
+
+scripts\theatre-product-copy.test.ts:
+(pass) product copy and default resource classifications do not expose excluded workflows [239.94ms]
+(pass) product entrypoints cannot re-arm isolated tools or source classifications [0.83ms]
+
+apps\editor\components\camera-rehearsal-system.test.ts:
+(pass) rehearsal restores its host, finishes Takes and cancels rendered-frame exports [445.29ms]
+
+apps\editor\components\remount-preview-system.test.tsx:
+(pass) scan previews follow live meshes and release only their own resources [249.19ms]
+
+apps\editor\components\stage-overview-data.test.ts:
+52 |   assert.equal(rows.length, Object.keys(nodes).length)
+53 |   assert.deepEqual(new Set(rows.map((row) => row.id)), new Set(Object.keys(nodes)))
+54 |   assert.equal(rows.find((row) => row.id === 'scan_upper')?.visible, false)
+55 |   assert.equal(rows.find((row) => row.id === 'zone_stage')?.kind, 'object')
+56 |   assert.equal(rows.filter((row) => row.kind === 'container').length, 4)
+57 |   assert.equal(
+              ^
+AssertionError: Expected values to be strictly equal:
++ actual - expected
+
++ '剧场 / 主楼 / 表演层 1 / 表演区'
+- '剧场 / 主楼 / 楼层 2 / 表演区'
+             ^
+
+ generatedMessage: true,
+     actual: "剧场 / 主楼 / 表演层 1 / 表演区",
+   expected: "剧场 / 主楼 / 楼层 2 / 表演区",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at D:\Codex\2026-09-08\new-chat-2\outputs\camera-studio\apps\editor\components\stage-overview-data.test.ts:57:10
+      at fn (node:test:215:18)
+(fail) flat overview retains all levels, containers, zones, scans and hidden rows without mutation [49.74ms]
+(pass) own visibility remains distinct from visibility inherited from an ancestor [0.83ms]
+(pass) only a real item light effect identifies a light and sorts it before containers and objects [2.02ms]
+119 |       presentation: { label: '三维扫描', icon: { kind: 'url', src: '/icons/mesh.webp' } },
+120 |     })
+121 |     const nodes = graph()
+122 |     nodes.item_asset = item('item_asset', null, '')
+123 |     const rows = buildStageRows(nodes)
+124 |     assert.equal(rows.find((row) => row.id === 'scan_upper')?.typeLabel, '三维扫描')
+                 ^
+AssertionError: Expected values to be strictly equal:
+
+'场地参考' !== '三维扫描'
+
+ generatedMessage: true,
+     actual: "场地参考",
+   expected: "三维扫描",
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at D:\Codex\2026-09-08\new-chat-2\outputs\camera-studio\apps\editor\components\stage-overview-data.test.ts:124:12
+      at fn (node:test:215:18)
+(fail) type labels read the existing registry presentation and unnamed items use their asset name [1.14ms]
+(pass) selection uses the actual ancestor path and the existing container and zone semantics [0.35ms]
+(pass) isolated nodes and cyclic parent chains terminate without inventing a level or building [0.75ms]
+
+apps\editor\components\stage-overview-panel.test.tsx:
+(pass) stage overview exposes all objects and lights and protects scene edits [2098.89ms]
+
+apps\editor\components\studio-navigation.test.tsx:
+(pass) workspace navigation stops recording, selects and expands panels, and exits exclusive modes [222.31ms]
+
+apps\editor\lib\api-put-empty-guard.test.ts:
+(pass) rejects an empty graph over a populated scene with 409 empty_graph_rejected [3.76ms]
+(pass) the rejected PUT leaves the stored scene untouched [0.26ms]
+(pass) a populated save still goes through [2.89ms]
+(pass) force: true allows an intentional wipe [1.34ms]
+(pass) an empty save over an already-empty scene needs no force [0.81ms]
+
+apps\editor\lib\build-presets.test.ts:
+(pass) 882 public presets are complete and one missing library material is explicitly rejected [93.59ms]
+(pass) embedded materials remap only collisions and undo with the imported nodes [5.31ms]
+(pass) tool parameters retain finishes and shape while removing original IDs and hosts [1.06ms]
+(pass) complex stairs insert a complete fresh subtree in one undo step [1.86ms]
+(pass) elevator presets attach to the target building and resolve only its service levels [2.93ms]
+(pass) invalid snapshots and an active history pause cannot partly insert nodes [1.03ms]
+
+apps\editor\lib\build-tab-state.test.ts:
+(pass) roof feature selection > does not select every accessory for the plain roof tool [6.00ms]
+(pass) roof feature selection > selects exactly the matching accessory [0.08ms]
+(pass) roof feature selection > ignores missing tool identities [0.07ms]
+(pass) roof creation exposes every supported roof type [0.05ms]
+
+apps\editor\lib\camera-director.test.ts:
+(pass) camera director curves and rigs > auto easing has UE-style soft endpoints [0.09ms]
+(pass) camera director curves and rigs > fixed rig keeps camera position while allowing target and lens keys [0.19ms]
+(pass) camera director curves and rigs > unlocked rail translates while preserving its starting world orientation [0.03ms]
+(pass) camera director curves and rigs > 50 mm full-frame vertical field of view uses filmback height [0.05ms]
+(pass) camera lag > substeps remain frame-rate independent [0.24ms]
+(pass) take recorder Reduce Keys > removes redundant samples from a straight camera move [0.14ms]
+(pass) take recorder Reduce Keys > keeps a meaningful deviation in position or target [0.02ms]
+(pass) camera director persistence and runtime isolation > partial valid caches merge defaults and keep scenes, listeners and saved assets separate [4.10ms]
+(pass) camera director persistence and runtime isolation > damaged cache values are reported and never silently rewritten during hydration [3.61ms]
+(pass) camera director persistence and runtime isolation > invalid in-memory updates retain the valid asset and report a notice without persisting [0.47ms]
+(pass) camera director persistence and runtime isolation > storage failures leave the current session usable and show an error [0.18ms]
+(pass) camera director persistence and runtime isolation > runtime registration and unmount publish ready snapshots only to their scene [0.13ms]
+
+apps\editor\lib\empty-graph-guard.test.ts:
+(pass) countGraphNodes > counts nodes on a well-formed graph [0.08ms]
+(pass) countGraphNodes > treats missing/odd shapes as empty [0.02ms]
+(pass) isEmptyGraphOverwrite > blocks a 0-node write over a populated server copy (the wipe class) [0.01ms]
+(pass) isEmptyGraphOverwrite > allows saves that carry nodes [0.01ms]
+(pass) isEmptyGraphOverwrite > allows empty saves over an already-empty scene
+
+apps\editor\lib\floorplan-export-surface.test.ts:
+(pass) package entry floorplan export surface > exportFloorplanPdf accepts every scope member [0.06ms]
+
+apps\editor\lib\graph-schema.test.ts:
+(pass) accepts a graph containing a plugin node kind [0.65ms]
+(pass) accepts a builtin container whose children include a plugin node id [2.76ms]
+(pass) accepts a cabinet run containing a derived L-corner run [2.69ms]
+(pass) keeps plugin child ids in the parsed graph [0.14ms]
+(pass) preserves installedPlugins alongside a plugin node [0.07ms]
+(pass) rejects a plugin node that fails the base envelope [0.23ms]
+(pass) rejects URL-shaped plugin fields outside the AssetUrl allowlist [0.61ms]
+(pass) accepts the asset URL forms core allows [0.24ms]
+(pass) does not treat prose or drive paths as URLs [0.22ms]
+(pass) reports deeply nested plugin nodes as a validation issue, not a crash [2.62ms]
+(pass) still rejects invalid builtin nodes [0.36ms]
+(pass) treats an unnamespaced unknown type as a foreign node [0.14ms]
+(pass) keeps materials in the parsed output [0.19ms]
+(pass) rejects a material texture URL outside the allowlist [0.61ms]
+(pass) accepts a material texture URL inside the allowlist [0.06ms]
+(pass) does not rewrite materials it accepts [0.07ms]
+
+apps\editor\lib\material-assets.test.ts:
+(pass) every bundled material thumbnail and texture is a real local image [52.77ms]
+(pass) the public material snapshot retains both sources and fills wallpaper and other [0.22ms]
+(pass) saved library references resolve again when the host reloads the public catalog [0.20ms]
+
+apps\editor\lib\remount-scene.test.ts:
+(pass) remount scene boundary > preview is ephemeral; ten transforms plus metadata commit once and undo together [19.51ms]
+(pass) remount scene boundary > scene content mutations invalidate a preview and a foreign edit cannot be undone by remount [6.26ms]
+(pass) remount scene boundary > saving only a level camera keeps the preview current and Apply preserves the camera [3.14ms]
+(pass) remount scene boundary > position, level metadata and scene material changes still invalidate the preview [5.70ms]
+(pass) remount scene boundary > input edits clear preview; malformed numbers are rejected before mutation [3.27ms]
+(pass) remount scene boundary > read-only, playback and live edit locks protect every scene write [3.01ms]
+(pass) remount scene boundary > parent and child are included once, share assembly and never inherit parent mesh scale [1.71ms]
+(pass) remount scene boundary > world snapshots include building rotation, stacked level height and slab support; Apply preserves visual height [2.98ms]
+(pass) remount scene boundary > metadata JSON roundtrip and reload retain original source snapshots; repeated Apply does not accumulate [9.93ms]
+(pass) remount scene boundary > unsupported hosts and non-finite geometry are reported as ineligible; scene switches invalidate access [2.20ms]
+(pass) remount scene boundary > existing target walls and columns become collision proxies and block Apply [8.65ms]
+(pass) remount scene boundary > a 180 degree block yaw survives the Euler representation without being mistaken for a tilt [1.59ms]
+(pass) remount scene boundary > remote metadata changes cannot be overwritten by an old draft; explicit reload adopts them [6.94ms]
+(pass) remount scene boundary > ordinary undo of saved configuration requires reloading before another save [1.22ms]
+
+apps\editor\lib\rooms-presets.test.ts:
+(pass) public room presets > all 89 published room snapshots validate through native node schemas [45.70ms]
+(pass) public room presets > 84 complete rooms are available while missing scene and library dependencies are rejected [46.83ms]
+(pass) public room presets > search supports Chinese names and tags while preserving community authors names [1.05ms]
+(pass) public room presets > a room inserts all roots, descendants and its zone in one undoable operation [3.13ms]
+(pass) public room presets > bad coordinates, unsupported nodes and read-only insertion do not mutate the scene [1.33ms]
+(pass) public room presets > provided scene materials survive parsing and only conflicting IDs are remapped on insertion [2.68ms]
+
+apps\editor\lib\scene-api-security.test.ts:
+(pass) allows loopback scene API requests without a token [0.37ms]
+(pass) requires a token for non-loopback scene API requests [0.24ms]
+(pass) accepts bearer token auth when configured [0.37ms]
+(pass) applies configured CORS origins for preflight [0.29ms]
+
+apps\editor\lib\scene-signature.test.ts:
+(pass) an omitted field signs the same as its applied default [0.24ms]
+(pass) changing any signed field changes the signature [0.06ms]
+
+apps\editor\lib\scene-store-server.test.ts:
+(pass) getSceneStore > returns the same promise on repeated calls [0.44ms]
+(pass) getSceneStore > resolves to the same store instance across calls [0.20ms]
+(pass) getSceneStore > reset helper clears the cached singleton [0.21ms]
+(pass) getSceneStore > getSceneOperations wraps the cached store [0.29ms]
+
+apps\editor\components\camera-studio\camera-stage-floorplan.test.tsx:
+(pass) floorplan camera gestures share world coordinates, preview and one-step history without crossing owners [303.35ms]
+
+apps\editor\components\camera-studio\camera-stage-runtime.test.tsx:
+(pass) native camera gizmo moves, cancels, commits once and restores controls without changing scene nodes [395.17ms]
+
+apps\editor\components\camera-studio\camera-stage.test.ts:
+(pass) translation preserves aim vector and rotation preserves focus distance [1.32ms]
+(pass) selected keyframe and one committed drag share existing project history [0.46ms]
+(pass) loading another scene clears temporary pose and camera edit history [0.14ms]
+(pass) recording blocks camera edits while playback controls remain available [0.20ms]
+(pass) readback preserves WebGPU top-down rows and flips WebGL rows [0.23ms]
+(pass) monitor restores shared renderer state before asynchronous readback and on render failure [0.94ms]
+
+apps\editor\components\camera-studio\director-key.test.ts:
+(pass) a camera frame transfers its exact framing to a sequence without sharing mutable vectors [0.26ms]
+(pass) invalid coordinates or lens inputs cannot become a sequence key [0.26ms]
+
+apps\editor\components\camera-studio\dock.test.ts:
+(pass) dock cancels pending recordings, starts duplicates once and expands requested panels [175.70ms]
+
+apps\editor\components\camera-studio\model.test.ts:
+(pass) validation produces clean, sorted data without mutating the input [0.48ms]
+(pass) invalid times, IDs and degenerate camera poses are rejected [0.86ms]
+(pass) path passes exactly through each keyframe and clamps outside the shot [0.32ms]
+(pass) smooth interpolation has no segment overshoot and has continuous interior velocity [2.82ms]
+(pass) look-at follows the moving target; offset mode moves the camera too [0.39ms]
+(pass) object motion uses local positions and supports stationary single-keyframe tracks [0.20ms]
+
+apps\editor\components\camera-studio\panel.test.ts:
+ 8 |     const child = spawnSync(process.execPath, ['run', fileURLToPath(import.meta.url)], {
+ 9 |       env: { ...process.env, CAMERA_PANEL_TEST: '1' },
+10 |       encoding: 'utf8',
+11 |       timeout: 20_000,
+12 |     })
+13 |     assert.equal(child.status, 0, child.error?.message ?? `${child.stdout}\n${child.stderr}`)
+                ^
+AssertionError: 
+79 |     assert.equal(typeof action, 'function')
+80 |     ;(action as () => void)()
+81 |   }
+82 |   function input(nodes: Element[], label: string) {
+83 |     const element = nodes.find((entry) => entry.props?.['aria-label'] === label)
+84 |     assert.ok(element, `missing input: ${label}`)
+                ^
+AssertionError: missing input: 楼层显示
+ generatedMessage: false,
+     actual: undefined,
+   expected: true,
+   operator: "==",
+       code: "ERR_ASSERTION"
+
+      at input (D:\Codex\2026-09-08\new-chat-2\outputs\camera-studio\apps\editor\components\camera-studio\panel.test.ts:84:12)
+
+Bun v1.3.14 (Windows x64)
+
+
+1 !== 0
+
+ generatedMessage: false,
+     actual: 1,
+   expected: 0,
+   operator: "strictEqual",
+       code: "ERR_ASSERTION"
+
+      at D:\Codex\2026-09-08\new-chat-2\outputs\camera-studio\apps\editor\components\camera-studio\panel.test.ts:13:12
+      at fn (node:test:215:18)
+(fail) camera panels edit selected frames, bridge them to the director and expose explicit display options [1823.26ms]
+
+apps\editor\components\camera-studio\recording.test.ts:
+(pass) canvas recording preserves framing, chooses the real format, and releases failed sessions [2.92ms]
+
+apps\editor\components\camera-studio\runtime.test.ts:
+(pass) runtime motion, floor support, following and Stop share the rendered pose [335.68ms]
+
+apps\editor\components\lighting\model.test.ts:
+(pass) lighting project boundary > defaults are editable copies and round-trip as a versioned project [1.31ms]
+(pass) lighting project boundary > accepts four lights at the documented numeric boundaries [0.67ms]
+(pass) lighting project boundary > rejects malformed JSON shapes without coercing or discarding unknown fields [0.64ms]
+(pass) lighting project boundary > rejects invalid scalar values, text, and colors [1.35ms]
+(pass) lighting project boundary > uses the same finite coordinate and minimum aim distance rule as the renderer [1.54ms]
+
+apps\editor\components\lighting\panel.test.tsx:
+(pass) lighting controls protect recordings and scene ownership, including pending file imports [295.86ms]
+
+apps\editor\components\lighting\persistence.test.ts:
+(pass) lighting browser persistence > loads an empty scene without writing until a real edit, and excludes transient state [1.17ms]
+(pass) lighting browser persistence > scene switch clears drafts/history and never writes one scene into another [0.34ms]
+(pass) lighting browser persistence > valid saved data survives mount, cleanup and remount without automatic rewrites [0.27ms]
+(pass) lighting browser persistence > keeps corrupt cache untouched until an explicit validated import repairs it [0.70ms]
+(pass) lighting browser persistence > preserves valid JSON with invalid schema and reports unavailable storage [0.32ms]
+(pass) lighting browser persistence > save failure is visible and preserves the in-memory project for export and retry [0.21ms]
+
+apps\editor\components\lighting\runtime.test.tsx:
+(pass) lighting keeps real scene lights, isolates helpers, and shares cancellable 3D/2D edits [492.36ms]
+
+apps\editor\components\lighting\store.test.ts:
+(pass) lighting edits and history > starts empty and adds at most four individually undoable lights [0.44ms]
+(pass) lighting edits and history > many drag drafts commit once and undo/redo never touch scene or camera state [0.47ms]
+(pass) lighting edits and history > cancels draft edits without changing data or adding history [0.11ms]
+(pass) lighting edits and history > invalid imports, patches, and drafts fail atomically [0.35ms]
+(pass) lighting edits and history > no-op and missing light edits do not add undo steps or change IDs [0.19ms]
+(pass) lighting edits and history > deletion restores valid selection and a new edit clears redo [0.15ms]
+(pass) lighting edits and history > explicit project import clones data, clears old history and re-enables persistence [0.07ms]
+
+apps\editor\lib\theatre\new-production.test.ts:
+(pass) new theatre production > default graph has a real 8 by 6 metre stage and a valid persisted rehearsal [3.45ms]
+(pass) new theatre production > example adds editable circular table, chairs, door and letter with a single undo [12.29ms]
+(pass) new theatre production > repeated examples use unique nodes and do not replace earlier scenes [11.99ms]
+
+apps\editor\lib\theatre\scene-adapter.test.ts:
+(pass) theatre scene persistence > opening a legacy scene reads no theatre data and does not change nodes [0.75ms]
+(pass) theatre scene persistence > metadata edits preserve old root metadata and form one scene commit and undo [0.86ms]
+(pass) theatre scene persistence > save, JSON reload and reopen retain authored theatre entities and versions [4.25ms]
+(pass) theatre scene persistence > snapshot restore restores scenery and theatre together while preserving history and other metadata [3.85ms]
+(pass) theatre scene persistence > invalid input and missing prop nodes never enter the scene [1.06ms]
+(pass) theatre scene persistence > read-only and active live edits block writes and version restore [1.07ms]
+(pass) theatre scene persistence > a damaged stored snapshot cannot remove valid live nodes [1.88ms]
+(pass) theatre scene persistence > restoring a take retains old plugin nodes and their unrecognized fields [2.85ms]
+
+apps\editor\lib\theatre\theatre.test.ts:
+(pass) theatre domain > the empty-table rehearsal is valid and generates independent IDs [0.86ms]
+(pass) theatre domain > role motion honors initial hold, constant speed, arrival orientation and pause [0.45ms]
+(pass) theatre domain > seeking and replaying is deterministic and does not mutate authored positions [0.19ms]
+(pass) theatre domain > prop preset, pickup, handoff and release have exactly one owner [0.11ms]
+(pass) theatre domain > rejects non-finite geometry and time before sampling or saving [0.36ms]
+(pass) theatre domain > rejects missing role, mark, beat and prop references [0.81ms]
+(pass) theatre domain > rejects overlapping role paths and overflowing pauses [0.57ms]
+(pass) theatre domain > rejects broken holder chains, duplicate handoff times and unpositioned releases [0.40ms]
+(pass) theatre domain > action and beat timing reads the rehearsal clock independently of camera state [0.24ms]
+(pass) theatre domain > stage left/right follows the actor facing the audience at positive Z [0.20ms]
+
+packages\core\src\remount\remount.test.ts:
+(pass) 1: identity and translation preserve physical dimensions and source snapshots [3.78ms]
+(pass) 2: ninety degree stage mapping rotates position and orientation with no scale [0.54ms]
+(pass) 3: general XYZ rotation and world/local composition round trip [0.32ms]
+(pass) 4: nonfinite, coincident, collinear, downward, tilted and stale axes reject [0.51ms]
+(pass) 5: noisy/noncongruent calibration reports residual and refuses confirmation [0.39ms]
+(pass) 6: smaller venues flag all eight rotated corners and vertical overflow [0.95ms]
+(pass) floor bounds tolerate baked mesh rounding but reject one millimeter below ground [0.46ms]
+(pass) 7: full 3D OBB collision distinguishes overlap, height and rotated separation [1.67ms]
+(pass) 8: virtual objects only report venue bounds; proxies retain true size; assembly ignores self collision [0.60ms]
+(pass) 9: unsupported modes and scaling reject; world paths migrate and target obstacles stay fixed [0.82ms]
+
+3 tests failed:
+(fail) flat overview retains all levels, containers, zones, scans and hidden rows without mutation [49.74ms]
+(fail) type labels read the existing registry presentation and unnamed items use their asset name [1.14ms]
+(fail) camera panels edit selected frames, bridge them to the director and expose explicit display options [1823.26ms]
+
+ 162 pass
+ 3 fail
+ 2183 expect() calls
+Ran 165 tests across 37 files. [10.92s]
+Exit: 1; Finished: 2026-09-10T00:55:06.0500483+08:00

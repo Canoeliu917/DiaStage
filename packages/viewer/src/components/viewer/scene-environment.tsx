@@ -5,6 +5,7 @@ import { useEffect, useMemo } from 'react'
 import * as THREE from 'three/webgpu'
 import { getSceneTheme } from '../../lib/scene-themes'
 import useViewer from '../../store/use-viewer'
+import { useNeutralRenderEnvironment } from './render-environment'
 
 /**
  * Scene IBL — a small procedural gradient sky (cool zenith → warm horizon →
@@ -66,6 +67,10 @@ function buildGradientSky(): THREE.DataTexture {
 }
 
 export function SceneEnvironment() {
+  return useNeutralRenderEnvironment() ? null : <GradientEnvironment />
+}
+
+function GradientEnvironment() {
   const scene = useThree((state) => state.scene)
   const texture = useMemo(buildGradientSky, [])
   const appearance = useViewer((state) => getSceneTheme(state.sceneTheme).appearance)

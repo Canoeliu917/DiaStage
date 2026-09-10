@@ -1,4 +1,4 @@
-import { mintHostPanel, mintPlugin } from '@mint/pascal-plugin'
+import { mintPlugin } from '@mint/pascal-plugin'
 import {
   type AnyNodeDefinition,
   discoverPlugins,
@@ -8,11 +8,10 @@ import {
   registerLibraryMaterials,
   registerNode,
 } from '@pascal-app/core'
-import { registerEditorHostPanel } from '@pascal-app/editor'
 import { builtinPlugin } from '@pascal-app/nodes'
-import { bonesHostPanel, bonesPlugin } from '@pascal-app/plugin-bones'
+import { bonesPlugin } from '@pascal-app/plugin-bones'
 import { streetscapePlugin } from '@pascal-app/plugin-streetscape'
-import { treesHostPanel, treesPlugin } from '@pascal-app/plugin-trees'
+import { treesPlugin } from '@pascal-app/plugin-trees'
 import { PASCAL_LIBRARY_MATERIALS } from './pascal-library-materials'
 
 // Idempotency guards: HMR can reload this module, but `registerNode`
@@ -89,13 +88,10 @@ export async function loadExternalPlugins(): Promise<void> {
 // discovery source instead of replacing it. Its Nature rail panel is host UI,
 // so it is registered separately from the core plugin manifest.
 extendPluginDiscovery(async () => [treesPlugin])
-registerEditorHostPanel(treesHostPanel)
 extendPluginDiscovery(async () => [bonesPlugin])
 // Opt-in: Bones ships uninstalled — users enable it per scene from the
 // Plugins panel (engineering X-ray is a specialist view, not a default).
-registerEditorHostPanel({ ...bonesHostPanel, defaultInstalled: false })
 extendPluginDiscovery(async () => [mintPlugin])
-registerEditorHostPanel(mintHostPanel)
 extendPluginDiscovery(async () => [streetscapePlugin])
 // Keep existing streetscape nodes readable without offering its authoring panel.
 

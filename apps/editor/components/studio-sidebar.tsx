@@ -1,70 +1,87 @@
 'use client'
 
-import { ItemsPanel, type SidebarTab, useEditor, useIsMobile } from '@pascal-app/editor'
+import { type SidebarTab, useEditor, useIsMobile } from '@pascal-app/editor'
 import {
   Camera,
-  Clapperboard,
+  Eye,
   Hammer,
+  History,
   Layers,
   Package,
   ScanLine,
-  Settings,
   SlidersHorizontal,
+  Users,
+  Video,
+  Mic,
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { BuildTab } from './build-tab'
-import { CameraRehearsalPanel } from './camera-rehearsal-panel'
-import { CameraPanel } from './camera-studio/panel'
-import { RemountPanel } from './remount-panel'
+import dynamic from 'next/dynamic'
+import { useEffect, useMemo, useState } from 'react'
+import { migrateStudioGroup, migrateStudioPanel, type StudioGroup } from '@/lib/studio-workspaces'
 import { StageOverviewPanel } from './stage-overview-panel'
-import { openStudioPanel, type StudioGroup } from './studio-navigation'
-import { StudioPicturePanel } from './viewer-toolbar'
+import { openStudioPanel } from './studio-navigation'
 
-function EditorItemsPanel() {
-  return <ItemsPanel showSourceFilter={false} showTagFilters={false} />
-}
+const SimulationPanel = dynamic(() =>
+  import('./theatre/simulation-panel').then((m) => m.SimulationPanel),
+)
+const VenuePanel = dynamic(() => import('./theatre/simulation-panel').then((m) => m.VenuePanel))
+const VersionsPanel = dynamic(() => import('./theatre/versions-panel').then((m) => m.VersionsPanel))
+const CameraPanel = dynamic(() => import('./camera-studio/panel').then((m) => m.CameraPanel))
+const RecordPanel = dynamic(() => import('./theatre/observe-panel').then((m) => m.RecordPanel))
+const ObservePanel = dynamic(() => import('./theatre/observe-panel').then((m) => m.ObservePanel))
+const CameraRehearsalPanel = dynamic(() =>
+  import('./camera-rehearsal-panel').then((m) => m.CameraRehearsalPanel),
+)
+const RemountPanel = dynamic(() => import('./remount-panel').then((m) => m.RemountPanel))
+const DisplayPanel = dynamic(() => import('./viewer-toolbar').then((m) => m.StudioPicturePanel))
 
-const emptyPanel = () => null
-const SPACE_TABS = [
-  { id: 'build', label: '建模', component: BuildTab, icon: Hammer },
-  { id: 'items', label: '物件库', component: EditorItemsPanel, icon: Package },
-]
-
+const StageLibrary = dynamic(() => import('./stage-entry/manual-stage-panel').then(m => m.StageLibraryPanel))
+const StageProperties = dynamic(() => import('./stage-entry/manual-stage-panel').then(m => m.StageObjectPanel))
+const StageCommandInput = dynamic(() => import('./stage-entry/command-input').then(m => m.StageCommandInput))
 export function useStudioSidebar(sceneId: string) {
-  const isMobile = useIsMobile()
-  const activePanel = useEditor((state) => state.activeSidebarPanel)
-  const [selectedGroup, setSelectedGroup] = useState<StudioGroup>('space')
+  const mobile = useIsMobile()
+  const activePanel = useEditor((s) => s.activeSidebarPanel)
+  const [selectedGroup, setSelectedGroup] = useState<StudioGroup>('set')
+  const panel = migrateStudioPanel(activePanel)
   const group: StudioGroup =
-    activePanel === 'remount'
+    panel === 'remount'
       ? 'remount'
-      : ['camera-studio', 'camera-rehearsal', 'picture'].includes(activePanel)
-        ? 'director'
-        : activePanel === 'build' ||
-            activePanel === 'items' ||
-            activePanel.startsWith('pascal:') ||
-            activePanel === 'plugins'
-          ? 'space'
+      : ['simulation', 'display', 'observe', 'record', 'versions', 'camera-rehearsal'].includes(
+            panel,
+          )
+        ? 'rehearse'
+        : ['theatre-venue', 'build', 'items', 'stage-cameras', 'stage-command'].includes(panel)
+          ? 'set'
           : selectedGroup
+
+  useEffect(() => {
+    if (activePanel !== panel) openStudioPanel(panel)
+  }, [activePanel, panel])
 
   const sidebarTabs = useMemo<(SidebarTab & { component: React.ComponentType })[]>(() => {
     const entries =
-      group === 'space'
-        ? SPACE_TABS
-        : group === 'director'
+      group === 'set'
+        ? [
+            { id: 'theatre-venue', label: '舞台与场地', component: VenuePanel, icon: Layers },
+            { id: 'build', label: '布景调整', component: () => <section className="stage-manual"><h2>布景调整</h2><p>选中舞台上的布景，调整台位、尺寸与角度。</p><StageProperties /></section>, icon: Hammer },
+            { id: 'items', label: '舞台库', component: StageLibrary, icon: Package },
+            { id: 'stage-cameras', label: '舞台镜头', component: CameraPanel, icon: Camera },
+            { id: 'stage-command', label: '舞台口令', component: () => <section className="stage-command-panel"><h2>舞台口令</h2><StageCommandInput sceneId={sceneId} /></section>, icon: Mic },
+          ]
+        : group === 'rehearse'
           ? [
+              { id: 'simulation', label: '模拟排演', component: SimulationPanel, icon: Users },
+              { id: 'display', label: '显示', component: DisplayPanel, icon: SlidersHorizontal },
+              { id: 'observe', label: '观察', component: ObservePanel, icon: Eye },
               {
-                id: 'picture',
-                label: '画面',
-                component: () => <StudioPicturePanel sceneId={sceneId} />,
-                icon: SlidersHorizontal,
+                id: panel === 'camera-rehearsal' ? 'camera-rehearsal' : 'record',
+                label: '记录',
+                component:
+                  panel === 'camera-rehearsal'
+                    ? () => <CameraRehearsalPanel sceneId={sceneId} />
+                    : RecordPanel,
+                icon: Video,
               },
-              { id: 'camera-studio', label: '机位', component: CameraPanel, icon: Camera },
-              {
-                id: 'camera-rehearsal',
-                label: '编排',
-                component: () => <CameraRehearsalPanel sceneId={sceneId} />,
-                icon: Clapperboard,
-              },
+              { id: 'versions', label: '排演版本', component: VersionsPanel, icon: History },
             ]
           : [
               {
@@ -74,20 +91,16 @@ export function useStudioSidebar(sceneId: string) {
                 icon: ScanLine,
               },
             ]
-    const tabs = [
-      ...entries,
-      { id: 'settings', label: '设置', component: emptyPanel, icon: Settings },
-    ]
-    if (isMobile)
-      tabs.splice(group === 'remount' ? 1 : 0, 0, {
+    if (mobile)
+      entries.unshift({
         id: 'stage-overview',
-        label: '舞台',
+        label: '舞台总览',
         component: () => <StageOverviewPanel sceneId={sceneId} />,
         icon: Layers,
       })
-    return tabs.map(({ icon: Icon, ...entry }) => ({
+    return entries.map(({ icon: Icon, ...entry }) => ({
       ...entry,
-      icon: <Icon className="h-6 w-6" />,
+      icon: <Icon className="h-5 w-5" />,
       mobileIcon: <Icon className="h-5 w-5" />,
       mobileDefaultSnap: 0.5,
       onSelect: () => {
@@ -96,11 +109,16 @@ export function useStudioSidebar(sceneId: string) {
         return true
       },
     }))
-  }, [group, sceneId, isMobile])
-
-  const onGroupChange = (next: StudioGroup) => {
-    const panel = { space: 'build', director: 'camera-studio', remount: 'remount' }[next]
-    if (openStudioPanel(panel)) setSelectedGroup(next)
+  }, [group, mobile, panel, sceneId])
+  return {
+    group,
+    sidebarTabs,
+    onGroupChange: (input: StudioGroup) => {
+      const next = migrateStudioGroup(input)
+      if (
+        openStudioPanel({ set: 'items', rehearse: 'simulation', remount: 'remount' }[next])
+      )
+        setSelectedGroup(next)
+    },
   }
-  return { group, onGroupChange, sidebarTabs }
 }

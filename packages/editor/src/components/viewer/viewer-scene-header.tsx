@@ -4,7 +4,6 @@ import {
   type AnyNode,
   type AnyNodeId,
   type BuildingNode,
-  getLevelDisplayName,
   type LevelNode,
   useScene,
   type ZoneNode,
@@ -15,18 +14,9 @@ import Link from 'next/link'
 import type { ReactNode } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { cn } from '../../lib/utils'
+import { getTheatreNodeName } from '../../lib/theatre-presentation'
 
-const getNodeName = (node: AnyNode): string => {
-  if ('name' in node && node.name) return node.name
-  if (node.type === 'wall') return '墙体'
-  if (node.type === 'fence') return '围栏'
-  if (node.type === 'item') return (node as { asset: { name: string } }).asset?.name || '物体'
-  if (node.type === 'slab') return '楼板'
-  if (node.type === 'ceiling') return '天花板'
-  if (node.type === 'roof') return '屋顶'
-  if (node.type === 'roof-segment') return '屋顶分段'
-  return node.type
-}
+const getNodeName = getTheatreNodeName
 
 export type ViewerSceneHeaderProps = {
   projectName?: string | null
@@ -153,7 +143,7 @@ export const ViewerSceneHeader = ({
                 className={`truncate transition-colors ${level ? 'text-muted-foreground hover:text-foreground' : 'font-medium text-foreground'}`}
                 onClick={() => handleBreadcrumbClick('building')}
               >
-                {building.name || '建筑'}
+                {getTheatreNodeName(building)}
               </button>
 
               {level && (
@@ -163,7 +153,7 @@ export const ViewerSceneHeader = ({
                     className={`truncate transition-colors ${zone ? 'text-muted-foreground hover:text-foreground' : 'font-medium text-foreground'}`}
                     onClick={() => handleBreadcrumbClick('level')}
                   >
-                    {getLevelDisplayName(level)}
+                    {getTheatreNodeName(level)}
                   </button>
                 </>
               )}
@@ -196,7 +186,7 @@ export const ViewerSceneHeader = ({
       {building && levels.length > 0 && (
         <div className="corner-smooth pointer-events-auto flex w-48 flex-col overflow-hidden rounded-2xl border border-border/40 bg-background/95 py-1 shadow-elevation-4 backdrop-blur-xl transition-colors duration-200 ease-out">
           <span className="px-3 py-2 font-medium text-[10px] text-muted-foreground uppercase tracking-wider">
-            楼层
+            表演层
           </span>
           <div className="flex flex-col">
             {levels.map((lvl) => {
@@ -222,7 +212,7 @@ export const ViewerSceneHeader = ({
                       <Layers className="h-3.5 w-3.5" />
                     </span>
                     <div className="min-w-0 flex-1 truncate text-left">
-                      {getLevelDisplayName(lvl)}
+                      {getTheatreNodeName(lvl)}
                     </div>
                   </div>
                 </button>

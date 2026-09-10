@@ -12,9 +12,9 @@ const SNAP_TARGET_ICONS: Record<SnapTarget, string> = {
 }
 
 const SNAP_TARGET_LABELS: Record<SnapTarget, string> = {
-  wall: '附着到墙体',
-  ceiling: '附着到天花板',
-  roof: '附着到屋顶',
+  wall: '附着到景片',
+  ceiling: '附着到上空遮挡',
+  roof: '附着到兼容物件',
 }
 
 const SNAP_TARGET_BADGE_SIZE_CLASSES: Record<SnapTargetBadgeSize, string> = {

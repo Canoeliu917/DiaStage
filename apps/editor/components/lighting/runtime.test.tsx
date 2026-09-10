@@ -416,9 +416,11 @@ if (!process.env.LIGHTING_RUNTIME_TEST) {
   })
   interaction.scope = { kind: 'handle-drag', handle: 'lighting', nodeId: 'light:scene-a:light-a' }
   const { CameraStageSystem } = await import('../camera-studio/camera-stage-system')
-  const monitorOnly = children(CameraStageSystem({ enabled: true })!)
-  assert.equal(monitorOnly.length, 1, 'lighting drag keeps the monitor and hides camera actors')
-  assert.equal((monitorOnly[0]!.type as { name: string }).name, 'MonitorRenderer')
+  assert.equal(
+    CameraStageSystem({ enabled: true }),
+    null,
+    'the camera runtime no longer makes a special exception for legacy lighting drags',
+  )
   runEffects()
   dispose()
 }

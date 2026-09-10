@@ -7,6 +7,26 @@ import { type SceneGraph, saveSceneToLocalStorage } from '../lib/scene'
 const AUTOSAVE_DEBOUNCE_MS = 1000
 const STRUCTURAL_NODE_COUNT = 4
 
+type NodeSnapshot = Pick<SceneGraph, 'nodes' | 'rootNodeIds'>
+let authorizedNodeDropSnapshot: NodeSnapshot | null = null
+
+/** Authorize only the committed result of an explicit host deletion, never an empty/unloaded graph. */
+export function authorizeSceneNodeDrop(snapshot: NodeSnapshot) {
+  if (
+    snapshot.rootNodeIds.length > 0 &&
+    snapshot.rootNodeIds.every((id) => Object.hasOwn(snapshot.nodes, id))
+  ) {
+    authorizedNodeDropSnapshot = { nodes: snapshot.nodes, rootNodeIds: snapshot.rootNodeIds }
+  }
+}
+
+function isAuthorizedNodeDrop(snapshot: NodeSnapshot) {
+  return (
+    authorizedNodeDropSnapshot?.nodes === snapshot.nodes &&
+    authorizedNodeDropSnapshot.rootNodeIds === snapshot.rootNodeIds
+  )
+}
+
 export function isSuspiciousNodeDrop(previousNodeCount: number, currentNodeCount: number) {
   return previousNodeCount > STRUCTURAL_NODE_COUNT && currentNodeCount <= STRUCTURAL_NODE_COUNT
 }
@@ -37,8 +57,8 @@ export function createStoredNodeCountTracker(initialNodeCount: number) {
      * which is an accidental full deletion far more often than an intent. The
      * caller reports the block; on `true` the write becomes the new baseline.
      */
-    allowWrite(nodeCount: number) {
-      if (isSuspiciousNodeDrop(count, nodeCount)) return false
+    allowWrite(nodeCount: number, authorized = false) {
+      if (isSuspiciousNodeDrop(count, nodeCount) && !authorized) return false
       count = nodeCount
       return true
     },
@@ -65,10 +85,14 @@ export function decideExitFlush(opts: {
   hasDirtyChanges: boolean
   storedNodeCount: number
   currentNodeCount: number
+  authorizedNodeDrop?: boolean
 }): ExitFlushDecision {
   if (!opts.hasDirtyChanges) return 'skip-clean'
   if (opts.isLoadingScene) return 'skip-loading'
-  if (isSuspiciousNodeDrop(opts.storedNodeCount, opts.currentNodeCount)) {
+  if (
+    isSuspiciousNodeDrop(opts.storedNodeCount, opts.currentNodeCount) &&
+    !opts.authorizedNodeDrop
+  ) {
     return 'blocked-suspicious'
   }
   return 'flush'
@@ -107,6 +131,7 @@ export function useAutoSave({
   const pendingSaveRef = useRef(false)
   const executeSaveRef = useRef<(() => Promise<void>) | null>(null)
   const hasDirtyChangesRef = useRef(false)
+  const editRevisionRef = useRef(0)
 
   // Keep latest callback/value refs so the stable subscription always uses current values
   const onSaveRef = useRef(onSave)
@@ -144,6 +169,14 @@ export function useAutoSave({
     let lastCollectionsRef = useScene.getState().collections
     let lastMaterialsRef = useScene.getState().materials
     let lastInstalledPluginsRef = useScene.getState().installedPlugins
+    // zundo splices the target out before notifying scene subscribers. Keep the
+    // previous arrays so only an actual history jump can authorize that target.
+    let pastSnapshots = [...useScene.temporal.getState().pastStates]
+    let futureSnapshots = [...useScene.temporal.getState().futureStates]
+    const unsubscribeHistory = useScene.temporal.subscribe((history) => {
+      pastSnapshots = [...history.pastStates]
+      futureSnapshots = [...history.futureStates]
+    })
 
     async function executeSave() {
       if (isLoadingSceneRef.current || isVersionPreviewModeRef.current) {
@@ -163,7 +196,8 @@ export function useAutoSave({
 
       const currentNodeCount = Object.keys(nodes).length
       const previousNodeCount = storedNodeCount.count
-      if (!storedNodeCount.allowWrite(currentNodeCount)) {
+      const authorizedNodeDrop = isAuthorizedNodeDrop(sceneGraph)
+      if (isSuspiciousNodeDrop(previousNodeCount, currentNodeCount) && !authorizedNodeDrop) {
         console.warn(
           `[autosave] Blocked: scene dropped from ${previousNodeCount} to ${currentNodeCount} nodes. Likely accidental deletion.`,
         )
@@ -173,6 +207,7 @@ export function useAutoSave({
 
       isSavingRef.current = true
       pendingSaveRef.current = false
+      const savedRevision = editRevisionRef.current
       setSaveStatus('saving')
 
       try {
@@ -181,7 +216,11 @@ export function useAutoSave({
         } else {
           saveSceneToLocalStorage(sceneGraph)
         }
-        hasDirtyChangesRef.current = false
+        // A failed request must not weaken the guard's persisted baseline.
+        storedNodeCount.allowWrite(currentNodeCount, authorizedNodeDrop)
+        // A completed request only covers edits present when it started.
+        // Keep later edits dirty so an exit before the next debounce still flushes them.
+        hasDirtyChangesRef.current = editRevisionRef.current !== savedRevision
         setSaveStatus('saved')
       } catch {
         setSaveStatus('error')
@@ -202,7 +241,9 @@ export function useAutoSave({
     executeSaveRef.current = executeSave
 
     const unsubscribe = useScene.subscribe((state) => {
+      if (!isAuthorizedNodeDrop(state)) authorizedNodeDropSnapshot = null
       if (isLoadingSceneRef.current) {
+        authorizedNodeDropSnapshot = null
         lastNodesSnapshot = JSON.stringify(state.nodes)
         storedNodeCount.trackLoadedGraph(Object.keys(state.nodes).length)
         lastCollectionsRef = state.collections
@@ -220,6 +261,14 @@ export function useAutoSave({
         return
       }
 
+      const history = useScene.temporal.getState()
+      const restored =
+        (history.pastStates.length < pastSnapshots.length &&
+          pastSnapshots.some((snapshot) => snapshot.nodes === state.nodes)) ||
+        (history.futureStates.length < futureSnapshots.length &&
+          futureSnapshots.some((snapshot) => snapshot.nodes === state.nodes))
+      if (restored) authorizeSceneNodeDrop(state)
+
       const currentNodesSnapshot = JSON.stringify(state.nodes)
       const changed =
         currentNodesSnapshot !== lastNodesSnapshot ||
@@ -233,6 +282,7 @@ export function useAutoSave({
       lastMaterialsRef = state.materials
       lastInstalledPluginsRef = state.installedPlugins
       hasDirtyChangesRef.current = true
+      editRevisionRef.current += 1
       onDirtyRef.current?.()
       setSaveStatus('pending')
 
@@ -258,11 +308,13 @@ export function useAutoSave({
       const { nodes, rootNodeIds, collections, materials, installedPlugins } = useScene.getState()
       const currentNodeCount = Object.keys(nodes).length
       const previousNodeCount = storedNodeCount.count
+      const authorizedNodeDrop = isAuthorizedNodeDrop({ nodes, rootNodeIds })
       const decision = decideExitFlush({
         isLoadingScene: isLoadingSceneRef.current,
         hasDirtyChanges: hasDirtyChangesRef.current,
         storedNodeCount: previousNodeCount,
         currentNodeCount,
+        authorizedNodeDrop,
       })
       if (decision === 'skip-clean') return
       if (decision === 'skip-loading') {
@@ -279,7 +331,7 @@ export function useAutoSave({
         return
       }
       // 'flush' — adopt the write as the new stored baseline.
-      storedNodeCount.allowWrite(currentNodeCount)
+      storedNodeCount.allowWrite(currentNodeCount, authorizedNodeDrop)
 
       hasDirtyChangesRef.current = false
       const sceneGraph = {
@@ -306,6 +358,7 @@ export function useAutoSave({
       if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
       flushOnExit()
       unsubscribe()
+      unsubscribeHistory()
     }
   }, [setSaveStatus])
 

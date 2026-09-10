@@ -73,7 +73,7 @@ export function paintScopeLabel(scope: PaintScope, info: PaintHoverInfo): string
     case 'matching':
       return '全部匹配项'
     case 'room':
-      return '房间'
+      return '闭合表演区'
     default:
       return info.slotLabel || '当前表面'
   }

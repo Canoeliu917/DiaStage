@@ -1,0 +1,13 @@
+{
+  "url": "http://127.0.0.1:4318/scene/093071eb086e?workspace=set",
+  "checks": [
+    "Manual entry places scenery and a canonical metadata camera in one project",
+    "Remount reads 10×7 actual dimensions and blocks preview until source height is measured",
+    "Six-step preview includes both placements without persisting either transform",
+    "Confirm persists mixed scenery/camera placement plus measured height without fake nodes",
+    "One Remount undo restores and saves both scenery and camera",
+    "SET venue height measurement uses the same command pipeline and persists its measured flag"
+  ],
+  "errors": [],
+  "failedRequests": []
+}

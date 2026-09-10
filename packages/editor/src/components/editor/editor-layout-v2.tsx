@@ -12,7 +12,7 @@ const SIDEBAR_MIN_WIDTH = 300
 const SIDEBAR_MAX_WIDTH = 800
 const SIDEBAR_COLLAPSE_THRESHOLD = 220
 // Matches the rail in <IconRail>; the resize math is relative to it.
-const RAIL_WIDTH = 72
+const RAIL_WIDTH = 96
 const SPLIT_HANDLE_HEIGHT = 8
 const SPLIT_MIN = 0.3
 const SPLIT_MAX = 0.7
@@ -185,7 +185,7 @@ function LeftColumn({
       />
       {!isCollapsed && !tabs.find((t) => t.id === activePanel)?.noPanel && (
         <div
-          className="relative flex h-full min-h-0 flex-col"
+          className="editor-sidebar-tool-panel relative flex h-full min-h-0 flex-col"
           style={{
             width,
             transition: isDragging ? 'none' : 'width 150ms ease',
@@ -212,7 +212,7 @@ function LeftColumn({
 
   return (
     <div
-      className="relative z-10 grid h-full min-h-0 flex-shrink-0 bg-sidebar text-sidebar-foreground"
+      className="editor-sidebar-split relative z-10 grid h-full min-h-0 flex-shrink-0 bg-sidebar text-sidebar-foreground"
       ref={splitContainer}
       style={{
         width: RAIL_WIDTH + width,

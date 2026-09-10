@@ -8,7 +8,7 @@ import { cn } from '../../../../../lib/utils'
 import type { CatalogCategory } from '../../../../../store/use-editor'
 import useEditor from '../../../../../store/use-editor'
 import { furnishTools } from '../../../action-menu/furnish-tools'
-import { CATALOG_ITEMS } from '../../../item-catalog/catalog-items'
+import { THEATRE_CATALOG_ITEMS, theatreCatalogItems } from '../../../item-catalog/theatre-catalog'
 import { ItemCatalog } from '../../../item-catalog/item-catalog'
 import { type FunctionTreeNode, FunctionTreePanel } from './function-tree-panel'
 
@@ -23,6 +23,7 @@ export function ItemsPanel({
   functionTree,
   showSourceFilter = true,
   showTagFilters = true,
+  initialCategory,
 }: {
   items?: AssetInput[]
   /** Called when the search query changes (community edition uses this for server-side search) */
@@ -54,6 +55,7 @@ export function ItemsPanel({
    * open-source editor hides these to keep the panel to plain categories.
    */
   showTagFilters?: boolean
+  initialCategory?: CatalogCategory
 }) {
   // When the embedder supplies a function taxonomy, the hierarchical browse
   // replaces the legacy `furnishTools` category tabs entirely.
@@ -79,6 +81,7 @@ export function ItemsPanel({
       searchResults={searchResults}
       showSourceFilter={showSourceFilter}
       showTagFilters={showTagFilters}
+      initialCategory={initialCategory}
     />
   )
 }
@@ -91,6 +94,7 @@ function LegacyItemsPanel({
   emptyState,
   showSourceFilter = true,
   showTagFilters = true,
+  initialCategory,
 }: {
   items?: AssetInput[]
   onSearchChange?: (query: string) => void
@@ -99,6 +103,7 @@ function LegacyItemsPanel({
   emptyState?: React.ReactNode
   showSourceFilter?: boolean
   showTagFilters?: boolean
+  initialCategory?: CatalogCategory
 }) {
   const mode = useEditor((s) => s.mode)
   const catalogCategory = useEditor((s) => s.catalogCategory)
@@ -122,10 +127,14 @@ function LegacyItemsPanel({
 
   // Auto-select the first category when the panel mounts without one
   useEffect(() => {
+    if (initialCategory) setCatalogCategory(initialCategory)
+  }, [initialCategory, setCatalogCategory])
+
+  useEffect(() => {
     if (!(catalogCategory && furnishTools.some((c) => c.catalogCategory === catalogCategory))) {
-      setCatalogCategory(furnishTools[0]!.catalogCategory)
+      setCatalogCategory(initialCategory ?? furnishTools[0]!.catalogCategory)
     }
-  }, [catalogCategory, setCatalogCategory])
+  }, [catalogCategory, initialCategory, setCatalogCategory])
 
   const activeCategory =
     furnishTools.find((c) => c.catalogCategory === catalogCategory) ?? furnishTools[0]!
@@ -140,7 +149,7 @@ function LegacyItemsPanel({
   }
 
   // Compute tags for the current category (for filter chips)
-  const baseItems = items ?? CATALOG_ITEMS
+  const baseItems = items ? theatreCatalogItems(items) : THEATRE_CATALOG_ITEMS
   // Apply the Library/Community/Mine filter before any category/tag work.
   // Items that don't carry a source field (e.g. seeded built-in catalog
   // entries from `CATALOG_ITEMS`) fall under "library".

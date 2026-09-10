@@ -52,6 +52,7 @@ import {
   type SceneCommitOrigin,
   type SceneSnapshot,
 } from './history-control'
+import { dispatchSceneMutation, type NodeChanges } from './scene-mutation'
 import useLiveNodeOverrides from './use-live-node-overrides'
 import useLiveTransforms from './use-live-transforms'
 
@@ -1224,11 +1225,7 @@ export type SceneState = {
 
   createNode: (node: AnyNode, parentId?: AnyNodeId) => void
   createNodes: (ops: { node: AnyNode; parentId?: AnyNodeId }[]) => void
-  applyNodeChanges: (changes: {
-    create?: { node: AnyNode; parentId?: AnyNodeId }[]
-    update?: { id: AnyNodeId; data: Partial<AnyNode> }[]
-    delete?: AnyNodeId[]
-  }) => void
+  applyNodeChanges: (changes: NodeChanges) => void
 
   updateNode: (id: AnyNodeId, data: Partial<AnyNode>) => void
   updateNodes: (updates: { id: AnyNodeId; data: Partial<AnyNode> }[]) => void
@@ -1550,18 +1547,38 @@ const useScene: UseSceneStore = create<SceneState>()(
         get().dirtyNodes.delete(id)
       },
 
-      createNodes: (ops) => nodeActions.createNodesAction(set, get, ops),
-      createNode: (node, parentId) => nodeActions.createNodesAction(set, get, [{ node, parentId }]),
-      applyNodeChanges: (changes) => nodeActions.applyNodeChangesAction(set, get, changes),
+      createNodes: (ops) =>
+        dispatchSceneMutation(
+          { create: ops },
+          () => nodeActions.createNodesAction(set, get, ops),
+          (changes) => nodeActions.applyNodeChangesAction(set, get, changes),
+        ),
+      createNode: (node, parentId) => get().createNodes([{ node, parentId }]),
+      applyNodeChanges: (changes) =>
+        dispatchSceneMutation(
+          changes,
+          () => nodeActions.applyNodeChangesAction(set, get, changes),
+          (replacement) => nodeActions.applyNodeChangesAction(set, get, replacement),
+        ),
 
-      updateNodes: (updates) => nodeActions.updateNodesAction(set, get, updates),
-      updateNode: (id, data) => nodeActions.updateNodesAction(set, get, [{ id, data }]),
+      updateNodes: (updates) =>
+        dispatchSceneMutation(
+          { update: updates },
+          () => nodeActions.updateNodesAction(set, get, updates),
+          (changes) => nodeActions.applyNodeChangesAction(set, get, changes),
+        ),
+      updateNode: (id, data) => get().updateNodes([{ id, data }]),
 
       // --- DELETE ---
 
-      deleteNodes: (ids) => nodeActions.deleteNodesAction(set, get, ids),
+      deleteNodes: (ids) =>
+        dispatchSceneMutation(
+          { delete: ids },
+          () => nodeActions.deleteNodesAction(set, get, ids),
+          (changes) => nodeActions.applyNodeChangesAction(set, get, changes),
+        ),
 
-      deleteNode: (id) => nodeActions.deleteNodesAction(set, get, [id]),
+      deleteNode: (id) => get().deleteNodes([id]),
 
       // --- COLLECTIONS ---
 

@@ -7,7 +7,8 @@ import { triggerSFX } from './../../../lib/sfx-bus'
 import { cn } from './../../../lib/utils'
 import useEditor, { type CatalogCategory } from './../../../store/use-editor'
 import { resolveAssetSnapTarget, SnapTargetBadge } from '../snap-target-badge'
-import { CATALOG_ITEMS, type CatalogItem } from './catalog-items'
+import type { CatalogItem } from './catalog-items'
+import { THEATRE_CATALOG_ITEMS, theatreCatalogItems } from './theatre-catalog'
 
 export function ItemCatalog({
   category,
@@ -36,10 +37,10 @@ export function ItemCatalog({
   const setMode = useEditor((state) => state.setMode)
   const setTool = useEditor((state) => state.setTool)
 
-  const sourceItems: CatalogItem[] = itemsOverride ?? CATALOG_ITEMS
+  const sourceItems: CatalogItem[] = itemsOverride ? theatreCatalogItems(itemsOverride) : THEATRE_CATALOG_ITEMS
   // Server-provided results bypass all local filtering; otherwise filter by category/search/tags
   const filteredItems: CatalogItem[] =
-    overrideItems ??
+    (overrideItems ? theatreCatalogItems(overrideItems) : undefined) ??
     (() => {
       const categoryItems = search
         ? sourceItems
@@ -68,6 +69,8 @@ export function ItemCatalog({
         const snapTarget = resolveAssetSnapTarget(item?.attachTo)
         return (
           <button
+            aria-label={`${item.name}：点击后在舞台放置`}
+            title="点击舞台放置，Esc 取消"
             className={cn(
               'group relative flex flex-col gap-1.5 rounded-xl p-1.5 transition-colors hover:cursor-pointer hover:bg-sidebar-accent',
               isSelected && 'bg-sidebar-accent ring-2 ring-primary-foreground',

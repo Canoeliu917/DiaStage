@@ -1,0 +1,1402 @@
+Started: 2026-09-10T00:55:05.1485908+08:00
+bun test v1.3.14 (0d9b296a)
+
+packages\editor\src\hooks\use-auto-save.test.ts:
+(pass) isSuspiciousNodeDrop > blocks populated scenes from being flushed as empty skeletons [0.09ms]
+(pass) isSuspiciousNodeDrop > allows ordinary edits and intentionally empty starting scenes [0.02ms]
+(pass) createStoredNodeCountTracker > adopts a loaded graph as the baseline the guard measures against [0.06ms]
+(pass) createStoredNodeCountTracker > keeps blocking after a blocked write instead of adopting the empty graph [0.02ms]
+(pass) createStoredNodeCountTracker > lets ordinary edits through and advances the baseline [0.02ms]
+(pass) createStoredNodeCountTracker > does not treat a deliberately empty new scene as suspicious [0.01ms]
+(pass) createStoredNodeCountTracker > adopts a smaller loaded graph, so restoring an older version still saves
+(pass) decideExitFlush > reproduces the 2026-08-16 scene-wipe sequence and skips the flush [0.03ms]
+(pass) decideExitFlush > never flushes while a load is in flight, whatever the counts say [0.01ms]
+(pass) decideExitFlush > does nothing when there are no dirty changes
+(pass) decideExitFlush > blocks a populated-to-scaffold drop after hydration
+(pass) decideExitFlush > flushes ordinary dirty sessions on exit [0.01ms]
+
+packages\editor\src\hooks\use-keyboard.test.ts:
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) rotation shortcut ownership > leaves R and T to the active item placement tool [6.74ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) rotation shortcut ownership > leaves R and T to the active lean-to placement tool [0.58ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) rotation shortcut ownership > leaves R and T to a moving lean-to extension [0.57ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) rotation shortcut ownership > leaves F to the active lean-to placement tool [0.34ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) history shortcuts during block editing > reserves global rotation shortcuts for the active mesh editor [0.43ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) history shortcuts during block editing > keeps Shift available to cycle snapping while a mesh operation is active [0.53ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) history shortcuts during block editing > undoes and redoes mesh changes without leaving component selection mode [0.86ms]
+
+packages\editor\src\lib\active-placement-surface.test.ts:
+(pass) active placement surface > marks a frozen construction plane so terrain raycasting can bypass it [0.11ms]
+(pass) active placement surface > ordinary surface publishes reset the projection mode [0.02ms]
+(pass) active placement surface > orients the grid to a sloped placement surface [0.02ms]
+
+packages\editor\src\lib\camera-pose.test.ts:
+(pass) camera pose > normalizes a finite pose without retaining input tuples [0.20ms]
+(pass) camera pose > rejects non-finite, malformed, and unknown camera poses [0.07ms]
+(pass) camera pose > plans only perspective fov application and clamps it to a safe range [0.05ms]
+(pass) camera pose > interpolates toward the latest pose and converges exactly [0.18ms]
+(pass) camera pose > settles an already-current pose without advancing on an invalid delta [0.03ms]
+(pass) camera pose > publishes the initial pose before any camera control update event [0.03ms]
+(pass) camera pose > publishes the settled pose when programmatic interpolation releases suppression [0.03ms]
+(pass) camera pose > retargets the bounded interpolation owner to the latest pose [0.06ms]
+(pass) camera pose > preserves view direction while adapting distance to the local viewport [0.11ms]
+
+packages\editor\src\lib\contextual-help.test.ts:
+(pass) resolveSelectModeHelpHints > stays hidden in idle select mode with no selection [0.17ms]
+(pass) resolveSelectModeHelpHints > shows multi-select guidance when a modifier is held without selection [0.03ms]
+(pass) resolveSelectModeHelpHints > shows direct manipulation tips for selected movable and rotatable nodes [0.06ms]
+(pass) resolveSelectModeHelpHints > multi-selection advertises the group move + rotate gestures [0.04ms]
+(pass) resolveSelectModeHelpHints > holding a modifier keeps the same rows and only lights the selection one [0.03ms]
+
+packages\editor\src\lib\continuation.test.ts:
+(pass) canopy continuation > maps the canopy tool to its own single and continuous profile [1.86ms]
+
+packages\editor\src\lib\direct-manipulation.test.ts:
+(pass) snapDirectRotationDelta > snaps rotation deltas to the default angle increment [0.07ms]
+(pass) snapDirectRotationDelta > keeps the raw rotation delta while free-rotating [0.05ms]
+(pass) resolveDirectRotationDragDelta > maps horizontal pointer motion to the direct rotation delta direction [0.03ms]
+(pass) resolveDirectRotationDragDelta > keeps unsnapped drag deltas while free-rotating
+(pass) canDirectMoveNode > rejects floorplan-only move targets (no 3D tool mounts) [0.47ms]
+(pass) canDirectMoveNode > rejects MEP kinds that own move through bespoke selection affordances [0.05ms]
+(pass) canDirectMoveNode > accepts kinds with a bespoke move tool [0.08ms]
+(pass) canDirectMoveNode > accepts nodes with the generic movable capability [0.24ms]
+(pass) canDirectMoveNode > rejects kinds with no registered move path [0.05ms]
+(pass) shouldStartDirectMoveDrag > arms a plain drag for a kind that opts into direct dragging [0.04ms]
+(pass) shouldStartDirectMoveDrag > keeps modifier dragging limited to the sole selected node [0.02ms]
+(pass) shouldStartDirectMoveDrag > does not arm body dragging when a resize handle owns the pointer [0.01ms]
+(pass) pointerEventHitsEditorHandle > keeps a visible resize handle from falling through to a nearer cabinet body [0.08ms]
+(pass) pointerEventHitsEditorHandle > recognises a handle when it is the nearest R3F intersection [0.02ms]
+(pass) pointerEventHitsEditorHandle > does not claim ordinary scene intersections [0.05ms]
+(pass) resolveDirectManipulationNode > routes proxied members to their assembly for direct transforms [0.08ms]
+(pass) resolveDirectManipulationNode > falls back to the selected node when the proxy target is missing [0.02ms]
+(pass) resolveDirectManipulationNode > routes parent-frame children to their rotatable parent [0.15ms]
+(pass) resolveMoveActionNode > routes a nested same-kind child move to its host [0.08ms]
+(pass) resolveMoveActionNode > keeps a child independently movable when its parent is a different kind [0.06ms]
+(pass) resolveMoveActionNode > routes a parent-frame child move to a rotatable assembly parent [0.07ms]
+
+packages\editor\src\lib\elevation-guides.test.ts:
+(pass) elevation guides > collects the level, slab faces, and ceiling plane on the source level [3.00ms]
+(pass) elevation guides > snaps inside the Y tolerance and leaves values outside it alone [0.25ms]
+(pass) elevation guides > uses plan distance to disambiguate datums at the same elevation [0.02ms]
+(pass) elevation guides > publishes one owner-scoped guide only while exactly aligned [0.33ms]
+(pass) elevation guides > publishes an explicitly resolved neighboring datum [0.11ms]
+
+packages\editor\src\lib\floating-menu-scale.test.ts:
+(pass) getFloatingMenuScale > uses the standard orthographic zoom scale and clamps its range [0.18ms]
+(pass) getFloatingMenuScale > uses inverse perspective-camera distance and clamps its range [0.12ms]
+
+packages\editor\src\lib\floorplan-grid-event-point.test.ts:
+(pass) resolveGenericFloorplanGridEventPoint > passes the raw pointer to registry tools so attachment can win before grid [0.10ms]
+(pass) resolveGenericFloorplanGridEventPoint > keeps the floorplan snap for interactions without a registry-owned resolver [0.10ms]
+
+packages\editor\src\lib\fresh-planar-placement.test.ts:
+(pass) commitFreshPlacementSubtree > commits a fresh draft as one undoable clean subtree [5.26ms]
+(pass) commitFreshPlacementSubtree > uses the subtree contract for childless variants and never aliases root-only children [0.56ms]
+(pass) commitFreshPlacementSubtree > commits a duplicated cabinet draft without deleting the original modules [7.44ms]
+(pass) commitFreshPlacementSubtree > flattens duplicated nested cabinet runs into level coordinates before dragging [0.62ms]
+
+packages\editor\src\lib\glb-export.test.ts:
+(pass) prepareSceneForExport > converts NodeMaterials to classic glTF-standard materials [2.01ms]
+(pass) prepareSceneForExport > shared NodeMaterial instances convert to a single shared material [0.41ms]
+(pass) prepareSceneForExport > reference mode swaps stamped compressed textures and leaves unstamped textures embedded [1.40ms]
+(pass) prepareSceneForExport > writes identical texture-reference extras to the texture and image definitions [0.13ms]
+(pass) prepareSceneForExport > strips editor overlays that live off the scene layer [0.50ms]
+(pass) prepareSceneForExport > strips presentation-only geometry marked by its renderer [0.30ms]
+(pass) prepareSceneForExport > excludes hidden scene nodes and descendants by default [0.43ms]
+(pass) prepareSceneForExport > can include hidden scene nodes when visible-only export is disabled [0.48ms]
+(pass) prepareSceneForExport > traditional binary STL excludes hidden nodes by default and can include them [1.23ms]
+(pass) prepareSceneForExport > traditional OBJ excludes hidden nodes by default and can include them [1.57ms]
+(pass) prepareSceneForExport > neutralises an invisible hitbox root but keeps its visible children [0.70ms]
+(pass) prepareSceneForExport > fills undefined slots in an array material so no undefined survives the prune [0.34ms]
+(pass) prepareSceneForExport > stamps identity from the scene registry and strips other userData [0.64ms]
+(pass) prepareSceneForExport > does not flag a door/window openable when no open clip bakes [0.23ms]
+(pass) prepareSceneForExport > keeps the zone identity node with its polygon and strips the fill mesh [0.22ms]
+(pass) prepareSceneForExport > bakes a swing door into an open quaternion clip [0.42ms]
+(pass) prepareSceneForExport > bakes registry-owned open clips and stamps the node openable [0.35ms]
+(pass) prepareSceneForExport > bakes a sliding door into a sampled position clip [0.94ms]
+(pass) prepareSceneForExport > bakes a roll-up curtain into a sampled scale clip [0.45ms]
+(pass) prepareSceneForExport > bakes an identity rest pose for an open folding door [7.82ms]
+
+packages\editor\src\lib\history.test.ts:
+(pass) editor history controller > delegates undo and redo while a host delegate is installed [2.22ms]
+(pass) editor history controller > falls back to standalone Zundo undo and redo when no controller is installed [0.27ms]
+(pass) editor history controller > an older cleanup cannot uninstall a newer controller [0.19ms]
+(pass) editor history controller > publishes delegate state changes and restores standalone availability on teardown [0.30ms]
+
+packages\editor\src\lib\host-tree-children.test.ts:
+(pass) editorHostTreeChildrenRegistry > exposes host children by scene node kind and notifies mounted trees [0.23ms]
+
+packages\editor\src\lib\inspector-card-mode.test.ts:
+(pass) toggleCard (chevron / header press) > folded card expands to the REGULAR controls — no extension [0.06ms]
+(pass) toggleCard (chevron / header press) > regular expanded card folds
+(pass) toggleCard (chevron / header press) > extension mode returns to the regular controls, staying expanded
+(pass) toggleExtension (header icon press) > folded card opens straight into extension-only mode [0.02ms]
+(pass) toggleExtension (header icon press) > regular expanded card swaps to extension-only mode
+(pass) toggleExtension (header icon press) > pressing the ACTIVE extension icon again returns to regular mode
+(pass) toggleExtension (header icon press) > pressing another extension icon switches extension modes directly
+(pass) resolveActiveExtension > null id → regular mode (no extension) [0.03ms]
+(pass) resolveActiveExtension > matching id → that extension fills the body [0.04ms]
+(pass) resolveActiveExtension > stale id (kind changed / plugin gated off) falls back to regular [0.01ms]
+(pass) full user flows (QA script) > chevron → regular only; fold; icon → extension only; icon again → regular [0.02ms]
+(pass) full user flows (QA script) > extension mode exits via the chevron too
+
+packages\editor\src\lib\level-duplication.test.ts:
+(pass) buildLevelDuplicateCreateOps > parents a duplicated bootstrap level back to its building [2.33ms]
+(pass) buildLevelDuplicateCreateOps > does not copy spawn points from the source level [0.84ms]
+
+packages\editor\src\lib\level-print-export.test.ts:
+(pass) per-level print STL export > packages one bed-normalized, scale-correct STL per visible level [8.00ms]
+(pass) per-level print STL export > blocks geometry that crosses or floats above its stored level base [1.48ms]
+(pass) per-level print STL export > orders a basement first and honors additive stored base elevation [1.60ms]
+(pass) per-level print STL export > omits and blocks an unsplit stair that spans two levels [1.08ms]
+(pass) per-level print STL export > does not create a part for a semantically hidden level [0.64ms]
+(pass) per-level print STL export > applies structure scope before partitioning level files [1.03ms]
+(pass) per-level print STL export > uses the asynchronous shell compiler before exporting a level part [49.11ms]
+(pass) per-level print STL export > produces deterministic archive bytes for the same level parts [1.55ms]
+(pass) per-level print STL export > prepends an optional physical-size plinth derived from the lowest level bounds [2.49ms]
+(pass) per-level print STL export > packages named parts in one non-overlapping millimeter-unit 3MF plate mesh [9.57ms]
+
+packages\editor\src\lib\measurement-kind.test.ts:
+(pass) creatable measurement kinds > keeps the supported creation kinds [0.18ms]
+(pass) creatable measurement kinds > falls back from a non-creatable persisted value: smart [0.01ms]
+(pass) creatable measurement kinds > falls back from a non-creatable persisted value: unknown
+(pass) creatable measurement kinds > falls back from a non-creatable persisted value: %s
+(pass) creatable measurement kinds > falls back from a non-creatable persisted value: %s
+
+packages\editor\src\lib\measurement-label.test.ts:
+(pass) measurementPolygonLabelAnchor > keeps a concave polygon label inside its visible fill [0.67ms]
+(pass) measurementPolygonLabelAnchor > returns an on-plane anchor for a sloped polygon [0.06ms]
+
+packages\editor\src\lib\measurements.test.ts:
+(pass) measurement presentation > uses black at rest, indigo while active, and red for dangling references [0.05ms]
+(pass) measurement presentation > uses an indigo analysis color for resting 2D measurements [0.02ms]
+(pass) angle arc presentation > samples the smaller angle from the first ray to the second [0.31ms]
+(pass) angle arc presentation > keeps a constant radius on an arbitrary 3D angle plane [0.06ms]
+(pass) angle arc presentation > omits an arc when either ray is degenerate [0.02ms]
+(pass) linear measurements > formats metric measurements in meters [0.07ms]
+(pass) linear measurements > formats metric measurements in whole millimeters [0.03ms]
+(pass) linear measurements > formats imperial measurements as feet and inches [0.02ms]
+(pass) linear measurements > carries rounded 12 inches into the next foot
+(pass) linear measurements > returns a placeholder for non-finite measurements [0.01ms]
+(pass) linear measurements > formats zero measurements [0.01ms]
+(pass) linear measurements > formats sub-foot imperial measurements
+(pass) linear measurements > formats negative measurements with a sign [0.01ms]
+(pass) linear measurements > converts between meters and the active linear unit [0.02ms]
+(pass) linear measurements > converts numeric control input back to meters for wall panel edits [0.03ms]
+(pass) linear measurements > clamps numeric control input after converting to meters [0.02ms]
+(pass) linear measurements > returns the display label for numeric controls [0.01ms]
+(pass) area measurements > converts square meters to the active area unit [0.02ms]
+(pass) area measurements > returns the display label for area readouts [0.01ms]
+(pass) area measurements > formats an area label with value and unit [0.03ms]
+(pass) area measurements > returns a placeholder for non-finite areas
+(pass) volume measurements > converts cubic meters to the active volume unit [0.01ms]
+(pass) volume measurements > returns the display label for volume readouts [0.01ms]
+(pass) volume measurements > formats a volume label with value and unit [0.02ms]
+(pass) volume measurements > returns a placeholder for non-finite volumes [0.01ms]
+
+packages\editor\src\lib\paint-scope.test.ts:
+(pass) availablePaintScopes > every node offers single [0.14ms]
+(pass) availablePaintScopes > more than one slot adds whole-object [0.03ms]
+(pass) availablePaintScopes > a single slot does not add whole-object [0.02ms]
+(pass) availablePaintScopes > an asset adds all-matching (items) [0.03ms]
+(pass) cyclePaintScope > wraps within the given set [0.04ms]
+(pass) cyclePaintScope > a scope foreign to the set restarts at the first entry
+(pass) cyclePaintScope > an empty set stays single [0.02ms]
+(pass) paintScopeLabel > single shows the hovered slot label [0.05ms]
+(pass) paintScopeLabel > single falls back when there is no slot label
+(pass) paintScopeLabel > object reads "Whole <noun>" [0.02ms]
+(pass) paintScopeLabel > matching / room are kind-agnostic [0.01ms]
+(pass) resolvePaintScopeTargets > single always returns just the clicked surface [0.22ms]
+(pass) resolvePaintScopeTargets > item matching fans the same slot across same-asset items only [0.05ms]
+(pass) resolvePaintScopeTargets > item whole-item fans every enumerated slot of the clicked item [0.03ms]
+(pass) resolvePaintScopeTargets > item whole-item falls back to the single slot when the subtree is unmounted [0.02ms]
+(pass) resolvePaintScopeTargets > wall room selects the enclosed space on the clicked face of a shared wall [2.14ms]
+(pass) resolvePaintScopeTargets > wall room preserves the vertical band while mapping each boundary face side [0.48ms]
+(pass) resolvePaintScopeTargets > wall room maps a reversed boundary wall to its rendered side [0.66ms]
+(pass) resolvePaintScopeTargets > wall room excludes duplicate geometry and spaces from another level [1.33ms]
+(pass) resolvePaintScopeTargets > wall room uses the hit subsegment when one long wall bounds adjacent bays [0.73ms]
+(pass) resolvePaintScopeTargets > wall room with no enclosing space falls back to single [0.13ms]
+(pass) resolvePaintScopeTargets > wall room paints the connected exterior envelope from an exterior face [0.73ms]
+(pass) resolvePaintScopeTargets > wall room does not cross to a disconnected exterior envelope [0.33ms]
+(pass) resolvePaintScopeTargets > wall room excludes shared interior walls from the exterior envelope [0.34ms]
+(pass) resolvePaintScopeTargets > wall room follows an exterior wall that is logically split across rooms [0.33ms]
+(pass) resolvePaintScopeTargets > slab room fans across slabs whose centroid sits in the same space [0.18ms]
+(pass) resolvePaintScopeTargets > slab room stops at the level boundary [0.07ms]
+
+packages\editor\src\lib\planar-cursor-placement.test.ts:
+(pass) resolvePlanarCursorPosition > absolute mode places the point directly at the snapped cursor [0.17ms]
+(pass) resolvePlanarCursorPosition > relative mode preserves the original grab offset from the first cursor sample [0.04ms]
+(pass) resolvePlanarCursorPosition > relative mode cancels the off-center gizmo grab offset so the committed center is offset-independent [0.09ms]
+(pass) resolvePrioritizedPlanarCursorPosition > wall attachment receives the raw proposal and wins over grid snapping [0.11ms]
+(pass) resolvePrioritizedPlanarCursorPosition > falls back to the grid proposal when there is no attachment [0.03ms]
+(pass) resolvePrioritizedPlanarCursorPosition > supports footprint-aware point snapping after attachment resolution [0.07ms]
+
+packages\editor\src\lib\plugin-panels.test.ts:
+(pass) editorHostPanelRegistry > maps registered node kinds back to their owning host panel [0.28ms]
+(pass) managedPluginIds > counts plugins, not panels — one plugin with two panels is one plugin [0.09ms]
+(pass) managedPluginIds > the editor's own panels are not plugins [0.02ms]
+(pass) showsPluginManager > the open lobby — read-only with nothing registered — gets no rail at all [0.03ms]
+(pass) showsPluginManager > a read-only editor keeps the manager as soon as a plugin is registered
+(pass) showsPluginManager > a writable scene always keeps it, even with zero plugins [0.01ms]
+(pass) showsPluginManager > never outside the edit workspace — studio has its own rail [0.05ms]
+(pass) showsPluginManager > the pre-existing behaviour is unchanged for the normal editor [0.02ms]
+
+packages\editor\src\lib\print-3mf.test.ts:
+(pass) print 3MF export > writes a deterministic standards package with explicit millimeter units [3.92ms]
+(pass) print 3MF export > returns a blocking report instead of serializing non-finite coordinates [0.49ms]
+
+packages\editor\src\lib\print-content-scope.test.ts:
+(pass) print content scope > keeps registered structure and its transform ancestors while removing visible furniture [1.25ms]
+(pass) print content scope > preserves all prepared semantic geometry in everything scope [0.69ms]
+
+packages\editor\src\lib\print-export.test.ts:
+(pass) print STL export > writes millimeter-scaled Z-up geometry centered on the print bed [3.59ms]
+(pass) print STL export > blocks open, zero-volume surface geometry before download [0.60ms]
+(pass) print STL export > blocks degenerate triangles [0.26ms]
+(pass) print STL export > blocks an edge shared by more than two triangles [0.17ms]
+(pass) print STL export > does not conflate distinct closed edges inside the boundary matching tolerance [0.26ms]
+(pass) print STL export > blocks disconnected solids in a compiled printable part [0.24ms]
+(pass) print STL export > allows an inward shell to represent a sealed cavity without calling it a second solid [0.28ms]
+(pass) print STL export > blocks a globally inside-out closed surface [0.13ms]
+(pass) print STL export > uses authoritative indexed incidence for a compiled mesh [0.27ms]
+(pass) print STL export > merges located compiler diagnostics into a compiled preflight report [0.22ms]
+(pass) print STL export > omits semantically hidden meshes from the parsed print artifact [0.48ms]
+(pass) print STL export > rejects an invalid architectural scale [0.32ms]
+
+packages\editor\src\lib\print-feature-thickness.test.ts:
+(pass) print feature thickness > measures semantic wall, slab, and roof dimensions at print scale [0.16ms]
+(pass) print feature thickness > blocks located semantic features below a custom target [0.14ms]
+(pass) print feature thickness > includes the canonical Dutch top-rake slab in roof measurement [0.09ms]
+(pass) print feature thickness > does not certify a custom target when source-node coverage is incomplete [0.05ms]
+(pass) print feature thickness > does not certify a custom target from an empty measurement set [0.03ms]
+
+packages\editor\src\lib\print-golden-house.test.ts:
+(pass) print golden house > consolidates hidden-ancestor visibility and structure-only scope [16.81ms]
+(pass) print golden house > preserves door and window voids in the final Manifold level shells [70.49ms]
+(pass) print golden house > emits deterministic two-level 3MF parts and plinth from the same semantic house [59.67ms]
+
+packages\editor\src\lib\print-roof-solids.test.ts:
+(pass) buildPrintableRoofSegmentSolids > builds deterministic indexed print shells for every canonical roof type [55.36ms]
+(pass) buildPrintableRoofSegmentSolids > preserves segment provenance and local transform [1.12ms]
+(pass) buildPrintableRoofSegmentSolids > blocks trims and unsupported accessories until manifold fixtures exist [1.26ms]
+(pass) buildPrintableRoofSegmentSolids > blocks zero structural thickness [0.13ms]
+
+packages\editor\src\lib\print-shell-compiler-baseline.test.ts:
+(pass) print shell compiler baseline > unions overlapping world-space structural meshes into a closed shell [19.22ms]
+(pass) print shell compiler baseline > blocks a structural mesh without Pascal provenance [0.25ms]
+(pass) print shell compiler baseline > compares the semantic full-house baseline union with the Manifold candidate [157.51ms]
+(pass) print shell compiler baseline > blocks a Manifold worker failure without exporting display geometry [0.63ms]
+(pass) print shell compiler baseline > compiles a plane-bound wall independently of its flat 2D display geometry [1.46ms]
+(pass) print shell compiler baseline > blocks unsupported semantic wall forms without falling back to display geometry [0.58ms]
+(pass) print shell compiler baseline > blocks the generated display gable roof from print export [12.91ms]
+(pass) print shell compiler baseline > blocks unsupported semantic roof cuts without falling back to display geometry [14.19ms]
+(pass) print shell compiler baseline > compiles canonical roof modules into deterministic manifold print shells [180.74ms]
+
+packages\editor\src\lib\print-wall-solids.test.ts:
+(pass) buildPrintableWallSolids > builds deterministic closed solids around rectangular door and window voids [11.00ms]
+(pass) buildPrintableWallSolids > preserves the authored wall-local transform [0.34ms]
+(pass) buildPrintableWallSolids > blocks unsupported wall forms and invalid opening contracts [0.39ms]
+
+packages\editor\src\lib\quick-action-nodes.test.ts:
+(pass) collectQuickActionNodeScope > includes nested children of a selected node sibling [0.38ms]
+(pass) collectQuickActionNodeScope > includes other run subtrees when the provider declares level scope [0.09ms]
+(pass) collectQuickActionNodeScope > fails closed when a level-scoped provider has no level ancestor [0.03ms]
+
+packages\editor\src\lib\quick-measurement.test.ts:
+(pass) createQuickMeasurementPointerScheduler > keeps only the latest pointer event and caps expensive work [0.33ms]
+(pass) createQuickMeasurementPointerScheduler > ignores sub-pixel jitter and cancels queued work [0.06ms]
+
+packages\editor\src\lib\rigid-plan-svg-transform.test.ts:
+(pass) resolveAttachmentPreviewRotation > uses wall yaw only while attached and restores the free yaw after detaching [0.03ms]
+(pass) rigidPlanSvgTransform > preserves the existing translation-only preview when yaw is unchanged [0.07ms]
+(pass) rigidPlanSvgTransform > rotates the plan entry around the moved node origin while translating it [0.01ms]
+
+packages\editor\src\lib\scene-bounds.test.ts:
+(pass) computeSceneBoundsXZ > returns null when given an empty array [0.28ms]
+(pass) computeSceneBoundsXZ > returns null when no geometry is found on any node [0.08ms]
+(pass) computeSceneBoundsXZ > computes bounds from wall endpoints [0.17ms]
+(pass) computeSceneBoundsXZ > includes zone polygons [0.10ms]
+(pass) computeSceneBoundsXZ > ignores the default 30×30 site bootstrap polygon [0.07ms]
+(pass) computeSceneBoundsXZ > honours a non-default site polygon [0.02ms]
+(pass) computeSceneBoundsXZ > combines walls, zones and positions across the flat dict [0.07ms]
+(pass) computeSceneBoundsXZ > handles a single degenerate point with a minimum extent [0.03ms]
+(pass) computeSceneBoundsXZ > skips non-finite coordinates [0.02ms]
+
+packages\editor\src\lib\scene-clipboard.test.ts:
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) scene clipboard > copies a selected cabinet run as one subtree instead of independent modules [4.96ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) scene clipboard > promotes a complete module selection to the cabinet run before copying [0.63ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) scene clipboard > remaps a measurement association when its host is copied with it [3.46ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) scene clipboard > detaches a standalone copied opening so its move tool can rehost it [2.06ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) scene clipboard > round-trips nodes and custom scene materials through the browser clipboard [1.96ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) scene clipboard > waits for an in-flight copy before reading the browser clipboard [0.87ms]
+
+packages\editor\src\lib\selection-routing.test.ts:
+(pass) resolveSelectedIdsForNodeClick > preserves the pre-routing selection when a phase switch clears current ids [0.19ms]
+(pass) resolveSelectedIdsForNodeClick > toggles from the pre-routing selection while a modifier is held [0.03ms]
+(pass) resolveSelectedIdsForNodeClick > plain click expands session groups [0.02ms]
+(pass) emitCanvasNodeSelection > publishes the accepted canvas node once [0.14ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) emitCanvasNodeSelection > deletes an accepted floorplan node when Delete mode is active [0.42ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) emitCanvasNodeSelection > preserves a floorplan node and its selection when the scene is read-only [0.16ms]
+(pass) selectionModifiersFromEvent > falls back to tracked modifier state when the click event omits keys [0.06ms]
+(pass) selectionModifiersFromEvent > prefers explicit event key state over stale tracked modifiers [0.02ms]
+(pass) resolveNodeSelectionTarget > routes furniture items to furnish [0.06ms]
+(pass) resolveNodeSelectionTarget > routes door and window catalog items to structure [0.01ms]
+(pass) resolveCanvasSelectionNode > keeps proxied members individually selectable when the kind declares bypassDirectPick [0.37ms]
+(pass) resolveCanvasSelectionNode > keeps nested proxied members leaf-selectable by default [0.03ms]
+(pass) resolveCanvasSelectionNode > follows the proxy when the kind declares no bypass [0.04ms]
+(pass) resolveCanvasSelectionNode > keeps parent-frame children routed to their parent when that parent is solely selected [0.06ms]
+(pass) resolveCanvasSelectionNode > prefers an explicit selection proxy before parent-frame routing [0.06ms]
+(pass) resolveCanvasSelectionNode > routes proxied lean-to roof children to the owning extension [0.04ms]
+(pass) shouldPreserveSelectedRoofHostTarget > keeps the roof host target while that roof is the sole armed selection [0.03ms]
+(pass) shouldPreserveSelectedRoofHostTarget > falls back to segment targeting when the roof host is not armed [0.01ms]
+(pass) shouldPreserveSelectedRoofHostTarget > falls back to segment targeting when the roof is no longer the sole selection [0.01ms]
+
+packages\editor\src\lib\session-groups.test.ts:
+(pass) session-groups > createSessionGroup requires two live members [0.42ms]
+(pass) session-groups > create and expand and ungroup [0.34ms]
+(pass) session-groups > liveSessionGroups hides groups that fall under two live members [0.13ms]
+(pass) session-groups > a deleted member is excluded from reads but kept in membership for undo [0.05ms]
+(pass) session-groups > ungroup leaves inert groups alone so undo can revive them [0.02ms]
+(pass) session-groups > grouping a member of an existing group dissolves that group whole [0.09ms]
+
+packages\editor\src\lib\sfx-player.test.ts:
+(pass) SFX audio context lifecycle > reuses the preloaded cache while the Howler context is unchanged [0.75ms]
+(pass) SFX audio context lifecycle > rebuilds every cached Howl before playing against a new context [0.26ms]
+(pass) SFX audio context lifecycle > contains a stale graph failure and backs off instead of rebuilding per cue [0.17ms]
+(pass) SFX audio context lifecycle > does not queue spatial mutations while a sound is still loading [0.08ms]
+(pass) SFX audio context lifecycle > disposes idempotently and recreates sounds after remount [0.08ms]
+(pass) SFX audio context lifecycle > does not let an emitted SFX failure escape an editor callback [0.16ms]
+(pass) SFX audio context lifecycle > applies bounded gain and stereo positioning to a remote cue [0.14ms]
+(pass) SFX audio context lifecycle > keeps local feedback audible after the same remote cue [0.09ms]
+(pass) SFX audio context lifecycle > keeps one faded terrain loop active and stops it on release [0.25ms]
+(pass) SFX audio context lifecycle > maps each terrain verb to a distinct loop through the SFX bus [0.14ms]
+(pass) SFX audio context lifecycle > fades an active terrain loop out when sound is muted [0.14ms]
+(pass) SFX audio context lifecycle > starts a requested terrain loop when its asset finishes loading [0.12ms]
+(pass) SFX audio context lifecycle > does not start a terrain loop after the sculpt press was released [0.05ms]
+
+packages\editor\src\lib\site-boundary.test.ts:
+(pass) siteBoundaryHandlesEnabled > sculpt hides the handles in every phase [0.09ms]
+(pass) siteBoundaryHandlesEnabled > the site phase offers them in every other mode [0.18ms]
+(pass) siteBoundaryHandlesEnabled > select mode offers them outside the site phase [0.04ms]
+(pass) siteBoundaryHandlesEnabled > a drafting or painting mode outside the site phase hides them [0.06ms]
+(pass) siteBoundaryHandlesEnabled > sculpt is excluded before the phase term, not alongside it [0.03ms]
+
+packages\editor\src\lib\slab-plan-snap.test.ts:
+(pass) resolveSlabEdgeBandSnap > magnetic: an edge inside the wall band sticks to the centerline and shows the beacon [0.83ms]
+(pass) resolveSlabEdgeBandSnap > non-magnetic: only the tight connect stick remains [0.09ms]
+(pass) resolveSlabEdgeBandSnap > clears the beacon when the edge leaves every band [0.06ms]
+
+packages\editor\src\lib\snapping-mode.test.ts:
+(pass) resolveSnapFlags > default mode is grid [0.06ms]
+(pass) resolveSnapFlags > modes are exclusive: 'grid' snaps to the lattice only [0.06ms]
+(pass) resolveSnapFlags > 'off' disables grid, magnetic, and angles
+(pass) resolveSnapFlags > 'lines' keeps magnetic but drops the grid lattice and angle lock
+(pass) resolveSnapFlags > 'angles' keeps the angle lock but drops grid and magnetic
+(pass) resolveSnapFlags > 'lines' and 'angles' are distinct
+(pass) resolveSnapFlags > cycles through every mode and wraps [0.09ms]
+(pass) per-context snapping > items default to magnetic alignment with no angle lock [0.04ms]
+(pass) per-context snapping > group moves use the magnetic item context by default [0.09ms]
+(pass) per-context snapping > walls default to grid and expose the angle lock; polygons do NOT [0.02ms]
+(pass) per-context snapping > cycles within the context set and clamps a foreign value [0.02ms]
+(pass) snapContextOf (profile-driven, node-declared) > translating a whole structural node has no angle (polygon, not wall) [0.05ms]
+(pass) snapContextOf (profile-driven, node-declared) > resolves handle drags from the target node profile [0.04ms]
+(pass) snapContextOf (profile-driven, node-declared) > gives mesh rotation the angle context and other edit operations polygon snapping [0.02ms]
+(pass) snapContextOf (profile-driven, node-declared) > endpoint reshape is angle-bearing (wall); curve + polygon vertex edits are not [0.05ms]
+(pass) snapContextOf (profile-driven, node-declared) > drafting a structural kind (wall OR slab) is angle-bearing (wall) [0.03ms]
+(pass) snapContextOf (profile-driven, node-declared) > an undeclared kind (no snapProfile) gets no snap context [0.03ms]
+(pass) snapContextOf (profile-driven, node-declared) > the room-preset stamp tool (not a node kind) resolves to polygon [0.01ms]
+(pass) snapContextOf (profile-driven, node-declared) > drafting a non-directional structural kind is angle-less (polygon, not wall) [0.13ms]
+
+packages\editor\src\lib\stair-duplication.test.ts:
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) duplicateStairSubtree > moves the exact fresh scene subtree and clears the original selection [5.86ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) duplicateStairSubtree > keeps childless curved stairs on the same real draft path [0.70ms]
+
+packages\editor\src\lib\stair-levels.test.ts:
+(pass) stair level helpers > creates a missing upper level in the same building [0.53ms]
+(pass) stair level helpers > uses the nearest higher sibling level instead of creating one [0.09ms]
+(pass) stair level helpers > ignores levels from other buildings [0.15ms]
+(pass) stair level helpers > includes source and parent-linked sibling levels when building children are stale [0.19ms]
+(pass) stair level helpers > falls back from stale placement level ids to a valid level in the selected building [0.14ms]
+(pass) stair level helpers > repairs panel level ids for stairs with stale from-level data [0.42ms]
+
+packages\editor\src\lib\structured-clone-fallback.test.ts:
+(pass) structuredClone fallback > leaves a native implementation alone [1.08ms]
+(pass) structuredClone fallback > installs a JSON-based clone when the global is missing [0.50ms]
+(pass) structuredClone fallback > lets lingo build its registry without the global [18.14ms]
+
+packages\editor\src\lib\surface-plan-snap.test.ts:
+(pass) resolveSurfacePlanPointSnap magnetic override > magnetic: true acquires a shared wall corner from the full endpoint radius [0.89ms]
+(pass) resolveSurfacePlanPointSnap magnetic override > magnetic: true acquires a T-junction crossing on a wall body [0.35ms]
+(pass) resolveSurfacePlanPointSnap magnetic override > magnetic: false keeps the fallback point outside the tight connect radius [0.11ms]
+(pass) resolveSurfacePlanPointSnap magnetic override > magnetic: false still sticks within the connect radius so ends can meet [0.04ms]
+
+packages\editor\src\lib\terrain-sculpt.test.ts:
+(pass) fieldExtentForSite > covers the whole polygon with padding to spare [0.22ms]
+(pass) fieldExtentForSite > is square and 2ⁿ+1 so a future LOD halving lands on real samples [0.05ms]
+(pass) fieldExtentForSite > centres on the lot even when the lot is off-origin [0.02ms]
+(pass) fieldExtentForSite > holds the default spacing while the lot fits in 257 samples [0.01ms]
+(pass) fieldExtentForSite > stretches spacing rather than stopping short on a huge lot [0.02ms]
+(pass) fieldExtentForSite > a degenerate polygon still yields a usable field [0.02ms]
+(pass) fieldExtentForSite > a null site does not throw [0.01ms]
+(pass) sculptFieldForSite > a virgin site gets a fresh flat field sized to its lot [0.17ms]
+(pass) site footprint > includes the boundary but excludes the padded field and concave notch [0.08ms]
+(pass) site footprint > a brush patch preserves samples outside the property polygon [0.16ms]
+(pass) brushRadiusRange > the low end is the field floor, not a constant [0.13ms]
+(pass) brushRadiusRange > reads the spacing of terrain that already exists [0.02ms]
+(pass) brushRadiusRange > a site with no lot yet still yields a usable range [0.02ms]
+(pass) brushRadiusRange > the range never inverts [0.07ms]
+(pass) clampBrushRadius > holds a radius already in range untouched [0.02ms]
+(pass) clampBrushRadius > the `[`/`]` ladder stays inside the range and reverses [0.27ms]
+(pass) resolveFlattenTarget > an explicit target wins over the ground under the cursor [0.03ms]
+(pass) resolveFlattenTarget > with no explicit target the first click samples the ground [0.05ms]
+(pass) resolveFlattenTarget > an explicit target of 0 is honoured, not treated as absent [0.04ms]
+(pass) abandoning a stroke — the Escape contract > ends the live stroke and commits nothing [0.15ms]
+(pass) abandoning a stroke — the Escape contract > the snapshot taken at begin is never mutated by the dabs it survives [0.13ms]
+(pass) lot-wide terrain writes vs a stroke in flight > levelling the lot drops the stroke instead of hiding behind it [3.81ms]
+(pass) lot-wide terrain writes vs a stroke in flight > clearing terrain drops the stroke even when there is nothing to clear [0.23ms]
+
+packages\editor\src\lib\terrain-verb-color.test.ts:
+(pass) brushRingColor > no two verbs share a colour [0.20ms]
+(pass) brushRingColor > raise and lower are the pair that must never be confused [0.03ms]
+(pass) brushRingColor > flatten and smooth differ too [0.02ms]
+(pass) brushRingColor > sampling overrides every verb with one distinct colour [0.19ms]
+(pass) brushRingColor > every verb resolves to a colour, so a new verb cannot fall through [0.10ms]
+
+packages\editor\src\lib\theatre-presentation.test.ts:
+(pass) theatre presentation boundary > adapts inherited labels without changing scene nodes or custom names [0.52ms]
+(pass) theatre presentation boundary > all default asset categories and search candidates are theatrical [0.18ms]
+(pass) theatre presentation boundary > catalog adaptation preserves original assets and exact dimensions [0.68ms]
+
+packages\editor\src\lib\touch-gesture-priority.test.ts:
+(pass) editorOwnsOneFingerDrag > the camera keeps one finger when nothing is going on [0.08ms]
+(pass) editorOwnsOneFingerDrag > both brush modes claim it with no transient gesture at all [0.02ms]
+(pass) editorOwnsOneFingerDrag > a live gesture claims it in every mode [0.07ms]
+(pass) editorOwnsOneFingerDrag > the non-brush modes leave it to the camera when idle [0.04ms]
+
+packages\editor\src\store\camera-pose-store.test.ts:
+(pass) camera pose store > replays the latest pose and streams later poses to focused subscribers [0.31ms]
+
+packages\editor\src\store\live-draft-preview-stores.test.ts:
+(pass) live draft preview stores > dedupes polygon snapshots and owns an immutable point copy [0.35ms]
+(pass) live draft preview stores > publishes stair point and rotation atomically [0.29ms]
+(pass) live draft preview stores > dedupes curved-fence control points and cursor [0.25ms]
+(pass) live draft preview stores > dedupes path drafts and owns immutable point, parameter, and related-node copies [0.39ms]
+
+packages\editor\src\store\navigation-sync-pose-store.test.ts:
+(pass) navigation sync pose store > replays the latest pose and streams only later pose writes [0.18ms]
+
+packages\editor\src\store\terrain-sculpt-mode.test.ts:
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) terrain-sculpt mode lifecycle > entering claims the sculpting scope for the whole mode [0.64ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) terrain-sculpt mode lifecycle > leaving releases it, so selection works again [0.10ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) terrain-sculpt mode lifecycle > arming sculpt from another phase moves to the site phase [0.18ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) terrain-sculpt mode lifecycle > a phase switch out of site drops the scope [0.09ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the eyedropper arm is not allowed to outlive sculpt mode > leaving via setMode disarms it [0.10ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the eyedropper arm is not allowed to outlive sculpt mode > leaving via a phase switch disarms it too [0.13ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the eyedropper arm is not allowed to outlive sculpt mode > switching away from flatten disarms it [0.12ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the eyedropper arm is not allowed to outlive sculpt mode > staying on flatten keeps it armed [0.11ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the eyedropper arm is not allowed to outlive sculpt mode > picking a target consumes the arm [0.19ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the brush and the 3D canvas travel together > arming from the 2D floorplan opens a 3D pane beside it [0.09ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the brush and the 3D canvas travel together > switching to the 2D floorplan disarms the brush [0.10ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the brush and the 3D canvas travel together > split keeps it armed — the canvas is right there [0.09ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the brush and the 3D canvas travel together > rehydrating the pair resolves it to select [0.18ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the brush and the 3D canvas travel together > rehydrating sculpt beside a visible canvas restores the mode [0.06ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the modes that hide the editing canvas release the brush > entering preview releases it [0.11ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the modes that hide the editing canvas release the brush > entering the first-person walkthrough releases it [0.09ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the modes that hide the editing canvas release the brush > entering the studio workspace releases it [0.12ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) the modes that hide the editing canvas release the brush > a structure-layer switch releases it [0.11ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) entering sculpt mode stands other affordances down > the armed build tool is cleared [0.19ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) isBrushMode > is exactly the two modes that hold a scope for their duration [0.39ms]
+
+packages\editor\src\store\tool-mode.test.ts:
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) ToolMode transition > choosing a paint swatch while selected arms material paint [3.74ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) ToolMode transition > leaving build clears the materialized tool [0.15ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) ToolMode transition > the setMode compatibility wrapper elects a default build tool [0.11ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) ToolMode transition > setTool enters build and null exits it [0.12ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) persisted ToolMode normalization > elects a default for build with a null tool [5.53ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) persisted ToolMode normalization > clears a persisted tool from a non-build mode [0.24ms]
+
+packages\editor\src\store\use-drawing-view.test.ts:
+(pass) drawing type > keeps the workspace on the floor plan [0.04ms]
+(pass) normalizeAnnotationLayoutOverrides > keeps finite pinned drawing-view annotation offsets [0.22ms]
+
+packages\editor\src\store\use-interaction-scope.test.ts:
+(pass) use-interaction-scope state machine > starts idle [0.08ms]
+(pass) use-interaction-scope state machine > begin enters an interaction; end returns to idle atomically [0.15ms]
+(pass) use-interaction-scope state machine > begin is single-owner: a new interaction replaces the prior one [0.04ms]
+(pass) use-interaction-scope state machine > update patches the live payload of the active scope [0.08ms]
+(pass) use-interaction-scope state machine > update is a no-op when idle [0.03ms]
+(pass) use-interaction-scope state machine > update cannot change which interaction is running [0.04ms]
+(pass) use-interaction-scope state machine > selectionEnabled only while idle [0.04ms]
+(pass) use-interaction-scope state machine > mesh edit mode owns its node and disables scene selection for the full session [0.06ms]
+(pass) use-interaction-scope state machine > end is idempotent [0.03ms]
+(pass) derived flag views are leak-free (no parallel flags) > handleDragInfo mirrors handle-drag and clears on end [0.16ms]
+(pass) derived flag views are leak-free (no parallel flags) > editingHoleInfo mirrors a hole reshape and clears on end [0.09ms]
+(pass) derived flag views are leak-free (no parallel flags) > a non-hole reshape never reads as an editing hole [0.07ms]
+(pass) derived flag views are leak-free (no parallel flags) > a floorplan-owned curve drag does not activate the registry reshape tool [0.05ms]
+(pass) derived flag views are leak-free (no parallel flags) > switching interactions never leaks the prior derived view [0.05ms]
+(pass) derived flag views are leak-free (no parallel flags) > every active scope kind leaves at most the views it owns [0.09ms]
+
+packages\editor\src\store\use-measurement-draft.test.ts:
+(pass) measurement draft ownership > locks to the view that places the first point [1.06ms]
+(pass) measurement draft ownership > does not claim an owner for pointer previews [0.33ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) measurement draft ownership > does not reinterpret an active draft after the selected level changes [0.39ms]
+(pass) measurement draft transitions > makes distance ready on its second point [0.22ms]
+(pass) measurement draft transitions > makes angle ready on its third point and closes a perimeter [0.44ms]
+(pass) measurement draft transitions > persists a semantic feature anchor alongside its fallback point [0.14ms]
+(pass) measurement draft transitions > closes a planar area and rejects a non-planar base [0.21ms]
+(pass) measurement draft transitions > retains the first polygon plane through vertex edits until the draft is emptied [0.37ms]
+(pass) measurement draft transitions > projects every later polygon point and feature fallback onto the first surface plane [0.39ms]
+(pass) measurement draft transitions > closes a volume base before accepting explicit extrusion [0.26ms]
+(pass) measurement draft transitions > Backspace removes the final base point and reopens extrusion [0.15ms]
+(pass) measurement draft transitions > reset clears the interaction but preserves the selected kind [0.36ms]
+(pass) measurement draft transitions > finishes a valid polygon and stays ready for another measurement of the same kind [1.31ms]
+(pass) measurement draft transitions > Escape commits an area once three points have been placed [0.45ms]
+(pass) measurement draft transitions > Escape preserves a three-point area when validation cannot finish it [0.21ms]
+(pass) measurement draft transitions > Escape cancels an area with fewer than three placed points [0.16ms]
+(pass) measurement draft transitions > commits one parseable level child in one undoable scene write [0.43ms]
+(pass) measurement draft vertex editing > enforces owner, index, and transition guards during a drag [0.14ms]
+(pass) measurement draft vertex editing > previews an indexed move without scene history and restores it on cancel [0.28ms]
+(pass) measurement draft vertex editing > retains a finished move and still commits the polygon in one undo step [0.29ms]
+(pass) measurement draft vertex editing > inserts a midpoint transiently and removes it again on cancel [0.30ms]
+(pass) measurement draft vertex editing > keeps a dragged midpoint insertion and commits it with the polygon [0.33ms]
+(pass) measurement draft vertex editing > rejects midpoint insertion for distances and incomplete polygons [0.13ms]
+
+packages\editor\src\store\use-quick-measurement-hud.test.ts:
+(pass) quick measurement HUD ownership > uses one active source across split view while single views stay pinned to their pane [0.17ms]
+(pass) quick measurement HUD ownership > falls back to the sibling only when the active source unmounts [0.05ms]
+
+packages\editor\src\components\editor\camera-dragging-lifecycle.test.ts:
+(pass) camera dragging lifecycle > releases wheel interactions even when camera controls never report rest [0.38ms]
+(pass) camera dragging lifecycle > cancels a pending wheel release when another interaction begins [0.06ms]
+
+packages\editor\src\components\editor\floorplan-background-selection.test.ts:
+(pass) resolveFloorplanBackgroundSelection > shift-click on a floorplan node toggles into the current selection [0.19ms]
+(pass) resolveFloorplanBackgroundSelection > shift-click on selected floorplan node toggles it out [0.04ms]
+(pass) resolveFloorplanBackgroundSelection > shift-click on empty floorplan space preserves selection [0.03ms]
+(pass) resolveFloorplanBackgroundSelection > plain click expands a session group [0.03ms]
+(pass) resolveFloorplanBackgroundSelection > alt-click selects one member without expanding [0.10ms]
+(pass) resolveFloorplanBackgroundSelection > uses the registry hit result for zone selection [0.04ms]
+
+packages\editor\src\components\editor\floorplan-camera-sync.test.ts:
+(pass) floorplan camera sync > derives the floor-plan navigation pose from the generic camera pose [0.13ms]
+(pass) floorplan camera sync > applies a floor-plan pose while preserving the generic camera elevation and projection [0.11ms]
+(pass) floorplan camera sync > owns two-way synchronization without echoing tiny camera changes [0.28ms]
+(pass) floorplan camera sync > publishes sub-degree camera rotation for a real-time compass [0.07ms]
+(pass) floorplan camera sync > keeps a sub-degree camera rotation when it arrives with a pan [0.04ms]
+(pass) floorplan camera sync > keeps streaming live camera headings in 3D-only mode [0.08ms]
+(pass) floorplan camera sync > applies the north-alignment pose used by the compass in 3D view [0.06ms]
+(pass) floorplan camera sync > applies 2D-first navigation on initial load without a 3D interaction [0.06ms]
+(pass) floorplan camera sync > delivers the live camera stream through transient subscribers [0.12ms]
+
+packages\editor\src\components\editor\floorplan-navigation-presentation.test.ts:
+(pass) floorplan navigation presentation > keeps the viewport inside the painted floorplan surface throughout rotation [2.87ms]
+(pass) floorplan navigation presentation > keeps the imperative viewBox authoritative during navigation [0.10ms]
+(pass) floorplan navigation presentation > does not mix wheel zoom with a compositor rotation preview [0.02ms]
+(pass) floorplan navigation presentation > does not apply synchronized camera poses over local navigation [0.02ms]
+(pass) floorplan navigation presentation > updates the compass presentation on every live rotation frame [0.06ms]
+(pass) floorplan navigation presentation > keeps the rotation preview in place until the committed state is ready to paint [0.05ms]
+(pass) floorplan navigation presentation > commits every active navigation channel before teardown [0.15ms]
+(pass) floorplan navigation presentation > coalesces a camera pose stream into one settled React commit [0.17ms]
+
+packages\editor\src\components\editor\group-transform-shared.test.ts:
+(pass) group transform participants > includes building-scoped positioned nodes for the active level building [0.39ms]
+(pass) group transform participants > excludes building-scoped positioned nodes from other buildings [0.05ms]
+(pass) group transform participants > uses current elevator defaults for legacy elevators with no saved rotation [0.04ms]
+(pass) group transform participants > resolves building-scoped elevators when legacy level parentId is missing [0.04ms]
+(pass) group transform participants > classifies and transforms polygon kinds (slab / ceiling / zone) [0.38ms]
+(pass) group transform participants > polygon hosts carry their attached positioned children (ceiling items) [0.10ms]
+(pass) group transform participants > supports legacy level-parented elevators already loaded in the editor [0.03ms]
+
+packages\editor\src\components\editor\sidebar-navigation.test.tsx:
+(pass) desktop and mobile sidebar switches honor host activation before selecting a panel [338.64ms]
+
+packages\editor\src\components\editor\sidebar-split.test.tsx:
+(pass) desktop sidebar keeps its top slot across panel changes and bounds cancellable resizing [121.94ms]
+
+packages\editor\src\components\editor\snapshot-capture.test.ts:
+(pass) manual capture feedback ignores background requests and other projects [0.11ms]
+(pass) capture scene restoration > restores all presentation changes before GPU readback settles [0.26ms]
+(pass) capture scene restoration > a setup failure still restores every already-applied change [0.13ms]
+(pass) capture scene restoration > an after-capture listener failure cannot prevent level and visibility restoration [0.12ms]
+(pass) explicit snapshot camera > retains the authored world pose including roll without moving the viewport camera [0.79ms]
+(pass) explicit snapshot camera > matches the authored composition after center crop: {"width":900,"height":1600,"w":1920,"h":1080} [0.13ms]
+(pass) explicit snapshot camera > matches the authored composition after center crop: {"width":1600,"height":900,"w":1080,"h":1920} [0.03ms]
+(pass) explicit snapshot camera > matches the authored composition after center crop: {"width":1440,"height":900,"w":1920,"h":1080} [0.02ms]
+(pass) explicit snapshot camera > rejects a malformed lens before mutating the capture camera [0.07ms]
+(pass) snapshot request correlation > queued authored frames survive a viewport camera and callback replacement [0.37ms]
+(pass) snapshot request correlation > disposing the capture pipeline cancels queued frames before the replacement scene renders [0.13ms]
+(pass) snapshot request correlation > a manual standard shutter waits for a background upload; redundant autosaves are dropped [0.43ms]
+(pass) snapshot request correlation > a manual viewport shutter waits for a background upload; redundant autosaves are dropped [0.06ms]
+(pass) snapshot request correlation > a manual area shutter waits for a background upload; redundant autosaves are dropped [0.02ms]
+(pass) snapshot request correlation > queues a frame dispatched by a save callback until the previous capture releases its lock [0.18ms]
+(pass) snapshot request correlation > a rejected queue task does not strand later captures [0.10ms]
+(pass) snapshot request correlation > reports only the rejected request as busy and allows the next capture after completion [0.13ms]
+(pass) snapshot request correlation > correlates render failures and releases the capture lock [0.09ms]
+(pass) snapshot request correlation > uncorrelated legacy requests still capture [0.05ms]
+
+packages\editor\src\components\editor\studio-slot.test.tsx:
+(pass) Editor mounts Studio slots exclusively and filters both rail and panel content by workspace [335.85ms]
+
+packages\editor\src\components\editor\use-floorplan-hit-testing.test.ts:
+(pass) collectRegistrySelectionIdsInBounds > selects rendered registry geometry and preserves candidate order [0.74ms]
+(pass) collectRegistrySelectionIdsInBounds > ignores rendered entries outside the selectable registry candidates [0.03ms]
+
+packages\editor\src\components\editor-2d\floorplan-cursor-indicator-position.test.ts:
+(pass) projectFloorplanCursorPoint > projects a snapped plan point into overlay-local screen coordinates [3.23ms]
+(pass) projectFloorplanCursorPoint > anchors the placement pin to the projected snap point instead of the raw pointer [0.06ms]
+
+packages\editor\src\components\editor-2d\floorplan-measurement-tool-layer.test.ts:
+(pass) resolveFloorplanMeasurementAxisSnap > snaps to the closest X or Z axis inside the screen-space threshold [0.24ms]
+(pass) resolveFloorplanMeasurementAxisSnap > uses the stronger default magnetic acquisition envelope [0.04ms]
+(pass) resolveFloorplanMeasurementAxisSnap > keeps the surface point when neither axis is close enough [0.02ms]
+(pass) resolveFloorplanMeasurementAxisSnap > keeps a magnetic lock until the wider release threshold [0.05ms]
+(pass) resolveFloorplanMeasurementAxisSnap > marks scene-anchor alignment as a proximity guide [0.02ms]
+(pass) resolveProjectedFloorplanSnap > prefers a registered vertex before a nearby edge [0.13ms]
+(pass) resolveProjectedFloorplanSnap > acquires structural corners inside the stronger screen-space envelope [0.02ms]
+(pass) resolveProjectedFloorplanSnap > projects onto a registered edge in screen space [0.05ms]
+(pass) resolveProjectedFloorplanSnap > leaves the pointer unsnapped outside bounded thresholds [0.02ms]
+(pass) resolveProjectedFloorplanSnap > verifies an axis point only when it stays on the snapped geometry [0.08ms]
+
+packages\editor\src\components\editor-2d\floorplan-render-context.test.ts:
+(pass) floorplan render context > updates the live scale without changing the registry-facing reader [3.41ms]
+(pass) floorplan render context > notifies selected-handle renderers when a hidden floorplan becomes visible [0.09ms]
+
+packages\editor\src\components\ui\snap-target-badge.test.tsx:
+(pass) resolveAssetSnapTarget > maps wall-hosted catalog assets to a wall badge [0.07ms]
+(pass) resolveAssetSnapTarget > maps ceiling-hosted catalog assets to a ceiling badge [0.01ms]
+(pass) resolveAssetSnapTarget > does not badge floor assets [0.03ms]
+(pass) resolveNodeSnapTarget > prefers roof attachment when a node is hosted by a roof segment [0.06ms]
+(pass) resolveNodeSnapTarget > badges gutter-hosted downspouts as roof accessories [0.01ms]
+
+packages\editor\src\components\viewer\floorplan-preview-geometry.test.ts:
+(pass) floorplan preview bounds > composes nested translation and rotation [0.34ms]
+(pass) floorplan preview bounds > includes image rotation and dimension baselines [0.05ms]
+(pass) floorplan preview bounds > pads narrow plans by a usable minimum [0.04ms]
+(pass) floorplan preview bounds > maps clients through letterboxed SVG content [0.10ms]
+(pass) floorplan preview bounds > keeps the plan point beneath a moving pinch midpoint [0.07ms]
+(pass) floorplan preview bounds > clamps zoom without changing the view box aspect ratio [0.01ms]
+
+packages\editor\src\components\viewer\floorplan-preview-navigation.test.ts:
+(pass) floorplan preview navigation > keeps continuous compass rotations across the angle seam [0.10ms]
+(pass) floorplan preview navigation > uses the same north-up azimuth convention as the editor [0.02ms]
+(pass) floorplan preview navigation > maps a camera pose to an aspect-correct centered view box [0.11ms]
+(pass) floorplan preview navigation > reports the actual horizontal span for meet-preserved SVG view boxes [0.03ms]
+
+packages\editor\src\components\viewer\viewer-stage-modes.test.ts:
+(pass) viewer stage modes > supports every ordered combination without duplicates [0.10ms]
+(pass) viewer stage modes > reuses normalized combinations across inline prop arrays [0.01ms]
+(pass) viewer stage modes > falls back to the first enabled mode [0.03ms]
+(pass) viewer stage modes > uses an enabled single-pane mode on mobile but preserves split-only embeds [0.03ms]
+(pass) viewer stage modes > does not require a GPU canvas for a 2D-only embed [0.02ms]
+
+packages\editor\src\components\viewer\viewer-stage.test.tsx:
+(pass) ViewerStage > owns synchronized 2D and 3D composition by default [18.27ms]
+(pass) ViewerStage > keeps a 2D-only embed free of a 3D canvas mount [1.67ms]
+(pass) ViewerStage > supports an explicit navigation synchronization opt-out [1.86ms]
+
+packages\editor\src\lib\floorplan\annotation-visibility.test.ts:
+(pass) floor-plan annotation visibility > fills missing persisted categories with visible defaults [0.13ms]
+(pass) floor-plan annotation visibility > removes automatic dimension primitives without removing plan geometry [0.14ms]
+(pass) floor-plan annotation visibility > removes a complete curved automatic dimension group [0.18ms]
+(pass) floor-plan annotation visibility > removes only the opening mark from door geometry [0.05ms]
+(pass) floor-plan annotation visibility > hides manual dimensions and measurements independently [0.06ms]
+(pass) floor-plan annotation visibility > keeps a contextual dimension when automatic dimensions are hidden [0.02ms]
+(pass) floor-plan annotation visibility > removes a nested automatic wall string beside a contextual dimension [0.07ms]
+(pass) floor-plan annotation visibility > hides structural grids and only the center marks within column geometry [0.04ms]
+(pass) floor-plan annotation visibility > hides room labels without removing the room footprint [0.02ms]
+(pass) floor-plan annotation visibility > hides stair notes and break lines without removing stair geometry [0.03ms]
+
+packages\editor\src\lib\floorplan\apply-alignment.test.ts:
+(pass) applyFloorplanAlignment > can publish passive guides without applying snap [3.80ms]
+(pass) applyFloorplanAlignment > can restrict candidates to the active level [1.23ms]
+
+packages\editor\src\lib\floorplan\drawing-coordination.test.ts:
+(pass) resolveNodeForDrawingType > dispatches drawing coordination through the registered extension [0.33ms]
+(pass) resolveNodeForDrawingType > leaves nodes without a drawing extension unchanged [0.03ms]
+
+packages\editor\src\lib\floorplan\floorplan-export.test.ts:
+(pass) filterFloorplanExportOverlay > preserves annotation metadata while splitting geometry passes [0.23ms]
+(pass) filterFloorplanExportOverlay > preserves value labels and removes editing handles [0.08ms]
+(pass) filterFloorplanExportOverlay > preserves wall, door, and window shapes used as annotation obstacles [0.10ms]
+(pass) filterFloorplanExportOverlay > keeps structural obstacles in model bounds while leaving marks as annotations [0.16ms]
+(pass) filterFloorplanExportOverlay > moves automatic dimensions embedded in base wall geometry into the PDF annotation layer [0.07ms]
+(pass) fitPlanToBox > preserves aspect ratio and centers the plan [0.04ms]
+(pass) floor plan export policy > uses the live floor-plan formatting profile for metric and imperial dimensions [0.03ms]
+(pass) floor plan export policy > fits an oversized plan inside the complete export viewport [0.04ms]
+(pass) floor plan export policy > exports the same annotation categories that are visible in the live view [0.05ms]
+(pass) floor plan export policy > exports only model geometry and room labels in Default [0.01ms]
+(pass) floor plan export policy > matches live screen sizing to the fitted export viewport [0.02ms]
+(pass) floor plan export policy > keeps the export viewport anchored to the structural drawing bounds [0.03ms]
+(pass) floor plan export policy > fits the viewport around the rotated plan instead of clipping its corners [0.10ms]
+(pass) floor plan export policy > keeps annotation-only nodes out of primary model bounds [0.03ms]
+(pass) floor plan export policy > matches the current floor-plan rotation instead of forcing north-up [0.02ms]
+(pass) resolveFloorplanMeasurementSize > sizes the hidden SVG in screen pixels before resolving label collisions [0.02ms]
+(pass) resolveFloorplanPageLayout > uses the available A4 page area for the fitted plan [0.02ms]
+(pass) isFloorplanNodeInExportScope > includes structure-category nodes under structure and full [0.03ms]
+(pass) isFloorplanNodeInExportScope > excludes utility-category nodes under structure
+(pass) isFloorplanNodeInExportScope > includes furnish-category nodes only under full [0.01ms]
+(pass) isFloorplanNodeInExportScope > includes analysis and site-category nodes only under full [0.02ms]
+(pass) isFloorplanNodeInExportScope > excludes nodes with no category except under full
+(pass) isFloorplanNodeInExportScope > handles an undefined definition like a no-category node
+
+packages\editor\src\lib\floorplan\floorplan-extension.test.ts:
+(pass) floor-plan context extensions > defaults wall dimensions to finished faces [0.09ms]
+(pass) floor-plan context extensions > carries the selected centerline or stud-face reference [0.09ms]
+(pass) floor-plan context extensions > normalizes stale persisted references to the finished-face default [0.01ms]
+(pass) floor-plan context extensions > lets presentation code suppress automatic annotation construction [0.02ms]
+
+packages\editor\src\lib\floorplan\floorplan-mode.test.ts:
+(pass) floor-plan mode > defaults unknown and missing values to Default [0.05ms]
+(pass) floor-plan mode > keeps only valid per-project preferences [0.12ms]
+(pass) floor-plan mode > limits tools only when their registry extension declares available modes [0.04ms]
+(pass) floor-plan mode > preserves the existing annotation profile in Expert [0.02ms]
+(pass) floor-plan mode > keeps Default clean until an item is selected [0.03ms]
+(pass) floor-plan mode > reveals a measurement when a referenced object is selected [0.03ms]
+(pass) floor-plan mode > exports Default without selection chrome or technical annotations [0.02ms]
+(pass) floor-plan mode > uses centerline dimensions only in Default [0.02ms]
+
+packages\editor\src\lib\floorplan\floorplan-pdfkit-renderer.test.ts:
+(pass) renderFloorplanGeometryToPdfKit > writes dimension values as native PDF text with fixed point line weights [12.33ms]
+(pass) renderFloorplanGeometryToPdfKit > writes rotated annotation labels through PDF text operators [7.76ms]
+(pass) renderFloorplanGeometryToPdfKit > uses one font face, weight, and point size for every dimension value path [13.89ms]
+
+packages\editor\src\lib\floorplan\floorplan-readonly.test.ts:
+(pass) read-only floorplan context > does not invent siblings for parentless nodes [0.34ms]
+(pass) read-only floorplan context > resolves same-kind siblings from the parent child order [0.31ms]
+
+packages\editor\src\lib\interaction\hot-set.test.ts:
+(pass) attachClassOf > wall and wall-side collapse to wall [0.05ms]
+(pass) attachClassOf > ceiling maps to ceiling [0.01ms]
+(pass) attachClassOf > undefined/null/unknown is surface-resting [0.01ms]
+(pass) isPickableForAttach — wall-mounted (window) > walls and block faces are eligible; floor/ceiling/tops are not [0.05ms]
+(pass) isPickableForAttach — ceiling-mounted > only ceilings are eligible [0.01ms]
+(pass) isPickableForAttach — surface-resting (sofa / cactus) > floor is always eligible [0.01ms]
+(pass) isPickableForAttach — surface-resting (sofa / cactus) > host tops (table, wall-shelf top) are eligible
+(pass) isPickableForAttach — surface-resting (sofa / cactus) > a wall (no top surface) is not eligible
+(pass) isPickableForAttach — surface-resting (sofa / cactus) > a ceiling-mounted host (ceiling fan) is never eligible — Track E
+(pass) isCandidateInHotSet — by scope > idle: everything is in the hot-set (selection filtering lives elsewhere) [0.03ms]
+(pass) isCandidateInHotSet — by scope > placing a surface item: derives from attach class [0.04ms]
+(pass) isCandidateInHotSet — by scope > moving a wall-mounted item: only walls [0.02ms]
+(pass) isCandidateInHotSet — by scope > non-placement active scopes target nothing in the scene [0.02ms]
+
+packages\editor\src\lib\interaction\overlay-policy.test.ts:
+(pass) resolveOverlayPolicy > idle keeps everything shown and pickable [0.04ms]
+(pass) resolveOverlayPolicy > every active scope hides zone labels, fades badges, hides conflicting controls [0.05ms]
+(pass) resolveOverlayPolicy > active affordances and the contextual HUD always stay interactive [0.03ms]
+(pass) shouldShowEditingControls > hides controls that can mutate a read-only scene [0.02ms]
+(pass) resolveFloatingActionMenuVisibility > keeps the active measurement pill while hiding action buttons during a height drag [0.03ms]
+(pass) resolveFloatingActionMenuVisibility > hides the whole menu during interactions without an active measurement pill [0.01ms]
+
+packages\editor\src\lib\sfx\movement-tick.test.ts:
+(pass) movementSfxStepKey > keeps tiny free-move changes in the same bucket [3.39ms]
+(pass) movementSfxStepKey > changes bucket after crossing the free-move cadence [0.03ms]
+(pass) movementSfxStepKey > uses the live grid step when grid snapping is active [0.03ms]
+
+packages\editor\src\components\editor\first-person\build-collider-world.test.ts:
+(pass) buildFirstPersonColliderWorldFromRegistry > includes structure and furnish nodes discovered through the node registry [5.71ms]
+(pass) buildFirstPersonColliderWorldFromRegistry > excludes ceiling surfaces so the walkthrough player passes through them [0.56ms]
+(pass) buildFirstPersonColliderWorldFromRegistry > skips meshes hidden by an invisible ancestor (stale roof segment CSG) [0.29ms]
+(pass) buildFirstPersonColliderWorldFromRegistry > leaves elevators to their dedicated dynamic collider meshes [1.51ms]
+(pass) buildFirstPersonColliderWorldFromRegistry > adds a fallback floor for a visible level with no slab [0.85ms]
+(pass) buildFirstPersonColliderWorldFromRegistry > adds a fallback floor only for the lowest slab-less level in a building [0.43ms]
+(pass) buildFirstPersonColliderWorldFromRegistry > adds a site ground collider so a spawn on bare ground has a floor [0.31ms]
+(pass) buildFirstPersonColliderWorldFromRegistry > a sculpted site walks on its terrain instead of the flat ground slab [3.95ms]
+
+packages\editor\src\components\editor\first-person\terrain-collider.test.ts:
+(pass) createTerrainColliderGeometry > the walkable surface is the field, not a plane [3.09ms]
+(pass) createTerrainColliderGeometry > a sloped field is sampled per vertex, not averaged [1.04ms]
+(pass) createTerrainColliderGeometry > the skirt keeps holding the player far past the field [0.82ms]
+(pass) createTerrainColliderGeometry > every triangle carries a normal, and the surface faces up [1.11ms]
+(pass) createTerrainColliderGeometry > decimates rather than exploding on an absurd field [128.26ms]
+(pass) createTerrainColliderGeometry > returns null for a degenerate field [0.13ms]
+
+packages\editor\src\components\editor\handles\handle-arrow-raycast.test.ts:
+(pass) an occluded handle does not sort ahead of a nearer scene body [0.99ms]
+
+packages\editor\src\components\editor\handles\handle-drag-history.test.ts:
+(pass) commitHandleDragPatch > records the final patch as one undo step after preview history is resumed [0.80ms]
+(pass) commitHandleDragPatch > records a composite multi-node commit as one undo step [0.67ms]
+
+packages\editor\src\components\editor\handles\preview-overrides.test.ts:
+(pass) replacePreviewOverrideIds > clears companion overrides that leave the active preview [0.28ms]
+
+packages\editor\src\components\editor\handles\resize-snap.test.ts:
+(pass) resolveResizeSnapValue > applies only magnetic snapping in lines mode [0.12ms]
+(pass) resolveResizeSnapValue > applies only grid snapping in grid mode [0.05ms]
+(pass) resolveResizeSnapValue > keeps the raw value in off mode [0.02ms]
+(pass) resolveResizeSnapValue > applies a structural connection snap independently of the active mode [0.02ms]
+(pass) resolveResizeSnapValue > bypasses a structural connection snap while force-moving [0.02ms]
+(pass) resolveResizeSnapValue > keeps the last valid value when pointer projection is non-finite [0.02ms]
+
+packages\editor\src\components\editor-2d\renderers\floorplan-annotation-layout.test.ts:
+(pass) floorplanAnnotationObstacleMode > treats fixed annotation categories as layout obstacles [3.52ms]
+(pass) resolveAnnotationLabelRectangles > keeps the higher-priority label and moves the conflicting label [1.01ms]
+(pass) resolveAnnotationLabelRectangles > keeps pinned labels at their drawing-view override and routes other labels around them [0.09ms]
+(pass) resolveAnnotationLabelRectangles > does not move labels that are already clear [0.04ms]
+(pass) resolveAnnotationLabelRectangles > preserves drawing order for labels on the same dimension string [0.10ms]
+(pass) resolveAnnotationLabelRectangles > slides a colliding label along its dimension string before crossing tiers [0.11ms]
+(pass) resolveAnnotationLabelRectangles > tries a short dimension alternative before generic relocation [0.05ms]
+(pass) resolveAnnotationLabelRectangles > falls back to a third position when both short-dimension sides are blocked [0.16ms]
+(pass) resolveAnnotationLabelRectangles > approximates diagonal outlines without blocking their full bounding box [0.07ms]
+(pass) resolveAnnotationLabelRectangles > moves a dimension value clear of a fixed door-mark pill [0.10ms]
+(pass) resolveAnnotationLabelRectangles > finds separate nearby positions for a dense label cluster [0.19ms]
+(pass) resolveAnnotationLabelRectangles > keeps a large dense label cluster readable [1.38ms]
+(pass) resolveAnnotationLabelRectangles > resolves a construction-plan label set without blocking the view transition [39.42ms]
+(pass) resolveSvgAnnotationCollisions > uses captured label references instead of querying for them again [0.43ms]
+
+packages\editor\src\components\editor-2d\renderers\floorplan-dimension-renderer.test.tsx:
+(pass) architectural floor-plan dimensions > leaves a paper-space gap before solid extension lines [0.13ms]
+(pass) architectural floor-plan dimensions > builds consistent 45-degree architectural slash terminators [0.02ms]
+(pass) architectural floor-plan dimensions > honors dimension standard overrides for gaps, terminators, and text placement [1.48ms]
+(pass) architectural floor-plan dimensions > moves a short value beyond its end tick and extends the dimension line [0.71ms]
+(pass) architectural floor-plan dimensions > aligns stepped feature origins to an explicit exterior baseline [0.06ms]
+(pass) architectural floor-plan dimensions > renders one uninterrupted line with the label above it [0.51ms]
+(pass) architectural floor-plan dimensions > keeps farther-out architectural strings fixed before inner strings [0.02ms]
+(pass) architectural floor-plan dimensions > keeps labels readable after the scene rotates [0.02ms]
+(pass) architectural floor-plan dimensions > resolves document annotation sizes from paper points [0.25ms]
+(pass) architectural floor-plan dimensions > uses PDF-safe label plates and hairline measurement strokes for export [0.27ms]
+(pass) architectural floor-plan dimensions > renders a dimension string with shared witness extension lines and ticks [1.49ms]
+(pass) architectural floor-plan dimensions > offsets automatic dimension-string lines when no explicit baseline is supplied [0.61ms]
+
+packages\editor\src\components\editor-2d\renderers\floorplan-geometry-renderer.test.tsx:
+(pass) FloorplanGeometryRenderer static labels > renders a measurement value together with its geometry [5.02ms]
+(pass) FloorplanGeometryRenderer static labels > keeps screen-upright measurement labels readable in rotated exports [0.19ms]
+(pass) FloorplanGeometryRenderer static labels > uses paper-point sizing when document scale is provided [0.09ms]
+(pass) FloorplanGeometryRenderer static labels > uses live screen sizing without enabling document annotation styles [0.15ms]
+(pass) FloorplanGeometryRenderer static labels > renders outlined measurement labels as PDF-safe dark text on a white plate [0.12ms]
+(pass) FloorplanGeometryRenderer static labels > caps PDF annotation linework without changing live stroke widths [0.15ms]
+(pass) FloorplanGeometryRenderer static labels > removes unsupported paint-order outlines from generic PDF text [0.13ms]
+(pass) FloorplanGeometryRenderer static labels > resolves generic annotation text from paper points only in document mode [0.17ms]
+(pass) FloorplanGeometryRenderer static labels > uses a room-label paper profile while preserving room label hierarchy [0.44ms]
+(pass) FloorplanGeometryRenderer static labels > uses paper stroke profiles for leaders and opening marks in document mode [0.41ms]
+(pass) FloorplanGeometryRenderer static labels > registers fixed mark pills as annotation obstacles [0.16ms]
+(pass) FloorplanGeometryRenderer static labels > registers semantic plan primitives as annotation obstacles [0.09ms]
+(pass) FloorplanGeometryRenderer static labels > registers fixed annotation categories as obstacles [0.13ms]
+
+packages\editor\src\components\editor-2d\renderers\floorplan-label-angle.test.ts:
+(pass) resolveFloorplanLabelAngle > keeps segment labels readable while preserving their screen direction [0.05ms]
+(pass) resolveFloorplanLabelAngle > counter-rotates aggregate labels to remain horizontal [0.02ms]
+(pass) resolveFloorplanLabelAngle > ignores sub-degree rotation changes for annotation layout [0.05ms]
+(pass) resolveFloorplanLabelAngle > updates only label orientation while preserving its layout shift [0.22ms]
+(pass) resolveFloorplanLabelAngle > keeps a rotation-only update out of the full collision layout path [0.05ms]
+(pass) resolveFloorplanLabelAngle > runs collision layout when floor-plan scene inputs change [0.01ms]
+(pass) resolveFloorplanLabelAngle > updates captured label references without rediscovering the DOM [0.20ms]
+
+packages\editor\src\components\editor-2d\renderers\floorplan-registry-layer.test.ts:
+(pass) floorplan selection handle sizing > caps visual handle growth at extreme zoom-out [1.59ms]
+(pass) floorplan affordance ownership > keeps the wall center curve drag owned by the floorplan dispatcher [0.13ms]
+(pass) floorplan affordance cancellation > tool:cancel reverts the drag and makes a later pointerup inert [0.39ms]
+(pass) floorplan opening placement interaction routing > passes entries through only while an opening tool or moving opening is active [0.04ms]
+(pass) floorplan vertex double-click routing > routes polygon vertex handles to the kind-owned delete affordance [0.02ms]
+(pass) floorplan annotation overlay routing > keeps explicitly layered selection chrome above selected body fills [0.03ms]
+(pass) floorplan annotation overlay routing > registers upright zone labels for rotation-only presentation updates [0.24ms]
+(pass) floorplan annotation overlay routing > keeps automatic dimension strings left-to-right and top-to-bottom after rotation [0.99ms]
+(pass) floorplan annotation overlay routing > keeps a fixed mark pill together in the overlay pass [0.10ms]
+(pass) floorplan annotation overlay routing > keeps fixed annotation symbols in the overlay pass for collision layout [0.03ms]
+(pass) computeAffectedSiblingIds > propagates cabinet live overrides through the cabinet family [1.09ms]
+(pass) computeAffectedSiblingIds > propagates a live-moving cabinet module back to its owning run [0.11ms]
+(pass) collectFloorplanDependencyNodes > includes referenced hosts and their transform-owning parents [0.15ms]
+(pass) collectFloorplanLinkedLevelNodes > projects a node onto a linked destination level with its real children [0.37ms]
+
+packages\editor\src\components\tools\fence\fence-drafting.test.ts:
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createFenceOnCurrentLevel > freezes a block top above its underlying slab [4.34ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createFenceOnCurrentLevel > pins ground beneath a block top when no slab exists [0.42ms]
+
+packages\editor\src\components\tools\item\draft-creation.test.ts:
+(pass) shouldCreateFloorDraft > does not create a level-hosted draft while block-face placement is active [0.08ms]
+(pass) shouldCreateFloorDraft > creates a draft for an unmounted floor placement [0.02ms]
+
+packages\editor\src\components\tools\item\face-host-commit.test.ts:
+(pass) resolveFaceHostPreviewCommit > commits an intercepted draft click to its active block face [2.59ms]
+
+packages\editor\src\components\tools\item\face-host-preview.test.ts:
+(pass) applyFaceHostPreviewPose > moves the rendered draft synchronously with the pointer result [0.18ms]
+(pass) resolveFaceHostSwitch > ignores a single adjacent-face hit and accepts a repeated hit [0.07ms]
+(pass) resolveFaceHostSwitch > clears a pending switch when the pointer returns to the current face [0.05ms]
+(pass) shouldDetachFaceHostOnLeave > detaches attached items when they leave a block face [0.03ms]
+(pass) shouldDetachFaceHostOnLeave > allows free floor items to leave a block face
+(pass) clampFaceHostPosition > keeps the complete wall item inside the face after snapping [0.08ms]
+(pass) clampFaceHostPosition > rejects a face that is smaller than the item [0.02ms]
+(pass) clampFaceHostCenterPosition > keeps a ceiling fixture footprint inside the face on both axes [0.05ms]
+
+packages\editor\src\components\tools\item\placement-math.test.ts:
+(pass) steppedRotation > rotates a placement clockwise to the next 45 degree increment [0.03ms]
+(pass) steppedRotation > rotates a placement counter-clockwise to the previous 45 degree increment [0.01ms]
+(pass) stripTransient > removes placement-only metadata flags before commit [3.14ms]
+(pass) getDetachedAttachmentPreviewLift > raises attach-only item previews while they are detached from their host [0.14ms]
+(pass) getDetachedAttachmentPreviewLift > keeps floor item previews on the floor [0.02ms]
+
+packages\editor\src\components\tools\item\placement-strategies.test.ts:
+(pass) faceHostStrategy > hosts a wall-mounted item on a vertical block face [0.78ms]
+(pass) faceHostStrategy > does not host a wall-mounted item after the block face is edited into a slope [0.33ms]
+(pass) faceHostStrategy > keeps a wall-mounted item on the active face during adjacent triangle hits [0.60ms]
+(pass) faceHostStrategy > hosts a ceiling item on a downward-facing block face [0.18ms]
+(pass) faceHostStrategy > hosts a floor item on an upward-facing block face [0.28ms]
+(pass) faceHostStrategy > restores floor-local position and rotation when an item leaves a block face [0.18ms]
+(pass) wallStrategy.move > keeps the preview box on the committed point — axis-aligned wall on an elevated slab [0.52ms]
+(pass) wallStrategy.move > keeps the preview box on the committed point — diagonal wall off the world grid [0.14ms]
+(pass) wallStrategy.move > mounts the wall-side preview on the hit face, not through the wall [0.21ms]
+(pass) wallStrategy.move > carries the wall auto-adjusted Y into the preview box [0.28ms]
+
+packages\editor\src\components\tools\item\placement-surface.test.ts:
+(pass) resolveItemPlacementSurfaceNormal > uses the full face normal for a sloped block host [3.84ms]
+(pass) resolveItemPlacementSurfaceNormal > uses the upward host normal for a floor item on a block top face [0.17ms]
+(pass) resolveItemPlacementSurfaceNormal > uses the downward host normal for a block ceiling attachment [0.06ms]
+
+packages\editor\src\components\tools\item\use-draft-node.test.tsx:
+(pass) useDraftNode block face commit > persists the face host used by the placement preview [3.58ms]
+(pass) useDraftNode block face commit > keeps a block-face placement visible until undo removes the committed item [0.66ms]
+(pass) useDraftNode block face commit > moves a block-face item to the floor as one undoable reparent [0.63ms]
+(pass) useDraftNode block face commit > keeps a hosted item visible through a block topology edit and its undo [1.14ms]
+(pass) useDraftNode block face commit > commits before a stop-propagation leave can destroy the block-face draft [1.11ms]
+
+packages\editor\src\components\tools\registry\move-registry-node-tool.test.ts:
+(pass) applies a free rotation step while the move is unattached [0.04ms]
+(pass) rejects rotation steps while the move is wall-attached [0.01ms]
+
+packages\editor\src\components\tools\select\marquee-geometry.test.ts:
+(pass) convexHull2D > drops interior points and keeps the hull [0.10ms]
+(pass) convexHull2D > passes degenerate inputs through [0.02ms]
+(pass) rectIntersectsHull > marquee in the empty corner of a diagonal shape does not match [0.21ms]
+(pass) rectIntersectsHull > marquee crossing the diagonal matches [0.02ms]
+(pass) rectIntersectsHull > hull vertex inside the marquee matches
+(pass) rectIntersectsHull > marquee fully inside a large hull matches [0.02ms]
+(pass) rectIntersectsHull > edge-only crossing (no vertices contained either way) matches [0.09ms]
+(pass) rectIntersectsHull > disjoint shapes do not match [0.05ms]
+(pass) rectIntersectsHull > single projected point matches only when inside the rect [0.02ms]
+(pass) segmentIntersectsPolygon > crossing segment matches [0.05ms]
+(pass) segmentIntersectsPolygon > fully inside matches [0.01ms]
+(pass) segmentIntersectsPolygon > outside segment does not match [0.05ms]
+(pass) polygonsIntersect > overlapping polygons match [0.01ms]
+(pass) polygonsIntersect > containment matches both ways [0.02ms]
+(pass) polygonsIntersect > a rotated diamond beside the quad does not match [0.02ms]
+
+packages\editor\src\components\tools\select\select-candidates.test.ts:
+(pass) selectable candidates > includes building-scoped elevators for the active level building [0.84ms]
+(pass) selectable candidates > includes legacy level-parented elevators already loaded in the editor [0.10ms]
+
+packages\editor\src\components\tools\shared\pointer-support-cap.test.ts:
+(pass) resolvePointerSupportSurface node tops > keeps an off-center orthographic ray on the cursor line [1.71ms]
+(pass) resolvePointerSupportSurface node tops > discovers a plugin-declared top surface without a kind-name list [0.27ms]
+(pass) resolvePointerSupportSurface node tops > keeps the ground result unless node-top surfaces are asked for [0.16ms]
+(pass) resolvePointerSupportSurface node tops > never elects the node the active interaction is placing or moving [0.15ms]
+(pass) resolvePointerSupportSurface node tops > uses a plugin-declared top as the wall construction surface [3.21ms]
+(pass) resolvePointerSupportSurface node tops > tolerates a registered definition without capabilities [0.80ms]
+
+packages\editor\src\components\tools\site\stroke-pointer-ownership.test.ts:
+(pass) strokePointerAction > with no stroke in flight > a down starts one [4.70ms]
+(pass) strokePointerAction > with no stroke in flight > every other event is ignored [0.15ms]
+(pass) strokePointerAction > the owning pointer drives the stroke > move paints, up commits [0.02ms]
+(pass) strokePointerAction > the owning pointer drives the stroke > cancel abandons where up commits [0.02ms]
+(pass) strokePointerAction > a second pointer > down abandons the stroke in flight [0.01ms]
+(pass) strokePointerAction > a second pointer > never touches the owner’s stroke any other way [0.02ms]
+(pass) strokePointerAction > a second pointer > lifting it does not commit — the bug this replaced
+(pass) strokePointerAction > only a down can begin, and only an owning up can commit [0.15ms]
+
+packages\editor\src\components\tools\stair\stair-click-guard.test.ts:
+(pass) createStairCommitGate > allows commits until the session exits [0.09ms]
+(pass) createStairCommitGate > refuses every trigger after a single-continuation exit [0.02ms]
+(pass) swallowFollowUpBrowserClick > stops exactly one follow-up click [0.37ms]
+(pass) swallowFollowUpBrowserClick > disarms after the timeout when no click follows [25.31ms]
+(pass) swallowFollowUpBrowserClick > no-ops without a window-like target [0.14ms]
+
+packages\editor\src\components\tools\wall\wall-drafting.test.ts:
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > endpoint near an existing corner attaches to the corner instead of splitting [1.25ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > committed wall preserves the ghost construction elevation on terrain [1.17ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > never exposes a raised wall at floor elevation during commit [0.30ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > keeps a node-top room plane flat across changing terrain [0.44ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > pins an existing construction source before a generated room slab can lift it [1.10ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a flat-ground draft (no sculpted terrain) commits plane-bound [1.22ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a wall started on a slab stays plane-bound (no stamped height or offset) [0.50ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a fresh-scene wall started on a slab node-top elects that slab plane-bound [0.74ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a direct slab source does not pin a cross-slab wall away from the higher majority support [0.64ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a grazing direct slab source does not override the commit elevation cap [0.54ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a non-ground draft never freezes the ghost height, even at a raised plane [0.32ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > 2D terrain construction options freeze the first-point elevation and wall height [0.26ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > endpoint near the host start corner snaps there without splitting [0.43ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > genuine mid-wall endpoint still splits the host (T junction) [1.63ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > exact duplicate segment is rejected [0.25ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > grid mode: endpoint resolved onto a wall body still splits the host [0.59ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > grid mode: endpoint beyond the connect radius is left alone (no residual snap) [0.34ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > mid-span split migrates the host attachments to the covering half [3.44ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a splitting commit lands as a single undo step [0.52ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a crossing splits both the host and the inserted wall in one undo step [0.73ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > a room divider splits customized auto slabs and ceilings [10.72ms]
+[zustand persist middleware] Unable to update item 'pascal-editor-ui-preferences', the given storage is currently unavailable.
+(pass) createWallOnCurrentLevel > close crossings reject the whole insertion without mutating the scene [0.56ms]
+(pass) resolveEndpointWallSplit > endpoint dropped mid-span splits the host and returns the projection [0.63ms]
+(pass) resolveEndpointWallSplit > mid-span split migrates host attachments to the covering half [0.61ms]
+(pass) resolveEndpointWallSplit > a drop near an existing corner resolves to the corner without splitting [0.18ms]
+(pass) resolveEndpointWallSplit > an opening straddling the drop point skips the split but still resolves the point [0.29ms]
+(pass) resolveEndpointWallSplit > a drop beyond the connect radius resolves nothing and splits nothing [0.05ms]
+(pass) resolveEndpointWallSplit > ignored walls (the moved wall and its commit siblings) are never split [0.22ms]
+(pass) resolveEndpointWallSplit > split + endpoint write compose into a single history step [0.38ms]
+(pass) snapWallDraftPointDetailed > bypassSnap returns the raw point without endpoint or angle snap [0.06ms]
+(pass) snapWallDraftPointDetailed > a stale linked-wall corner swallows a sub-connect-radius correction unless ignored [0.14ms]
+
+packages\editor\src\components\tools\wall\wall-snap-geometry.test.ts:
+(pass) findWallSpecialPointSnap > snaps to a wall corner (endpoint) when near it [2.78ms]
+(pass) findWallSpecialPointSnap > snaps to a wall midpoint when near it (not a corner) [0.09ms]
+(pass) findWallSpecialPointSnap > snaps to the crossing of two walls (intersection) [0.06ms]
+(pass) findWallSpecialPointSnap > keeps every wall that shares a snapped endpoint as provenance [0.02ms]
+(pass) findWallSpecialPointSnap > corner wins over a midpoint when both are in range [0.02ms]
+(pass) findWallSpecialPointSnap > returns null when no special point is in range [0.02ms]
+(pass) findWallSpecialPointSnap > honors tighter per-call radii without changing defaults [0.04ms]
+(pass) chainEndJoinsExistingWall (chain termination) > true when the end lies on a non-chain wall interior (T junction) [0.09ms]
+(pass) chainEndJoinsExistingWall (chain termination) > true when the end lands on a non-chain wall endpoint [0.03ms]
+(pass) chainEndJoinsExistingWall (chain termination) > false when the end only touches the chain walls themselves [0.01ms]
+(pass) chainEndJoinsExistingWall (chain termination) > false for a dead end in free space [0.01ms]
+(pass) chainEndJoinsExistingWall (chain termination) > a near miss beyond the tolerance is not a join [0.02ms]
+(pass) findWallSnapTarget (edge / along-wall) > projects onto a wall body within range [0.02ms]
+(pass) findWallSnapTarget (edge / along-wall) > returns null when too far from any wall [0.01ms]
+(pass) findWallSnapTarget (edge / along-wall) > honors a tighter wall-body radius [0.01ms]
+
+packages\editor\src\components\ui\panels\homogeneous-selection.test.ts:
+(pass) resolveHomogeneousSelection > mixed selection is null [3.60ms]
+(pass) resolveHomogeneousSelection > three walls share the wall type [0.04ms]
+(pass) resolveHomogeneousSelection > proxy-promoted children resolve to the parent type [0.05ms]
+(pass) resolveHomogeneousSelection > stale ids are skipped without breaking a homogeneous remainder [0.02ms]
+(pass) resolveHomogeneousSelection > a single live node after skips is not homogeneous [0.01ms]
+
+packages\editor\src\components\ui\panels\multi-field-value.test.ts:
+(pass) reduceFieldValue > same values collapse to one [3.44ms]
+(pass) reduceFieldValue > vec3 compares elementwise [0.09ms]
+(pass) reduceHeightBoundMode > absent height is follows-level, present height is custom [0.07ms]
+(pass) fieldVisibleForAll > hides when any node would hide the field [0.06ms]
+(pass) buildMultiNodePatches > a mixed field that is never edited produces no patch for it [0.15ms]
+(pass) buildMultiNodePatches > derive and reconcile fan out per node into one batch [0.09ms]
+(pass) commitMultiNodeFields > dragging height onto three walls is one undo step [0.95ms]
+
+packages\editor\src\components\ui\panels\selection-breakdown.test.ts:
+(pass) formatSelectionBreakdown > counts per type in first-appearance order with Chinese labels [4.51ms]
+(pass) formatSelectionBreakdown > humanizes hyphenated kinds [0.03ms]
+(pass) formatSelectionBreakdown > skips missing nodes [0.02ms]
+(pass) formatSelectionBreakdown > empty selection formats to an empty string
+
+packages\editor\src\components\ui\sidebar\panels\settings-panel\print-export-button.test.ts:
+(pass) simple 3D print export > uses one fixed safe print profile [0.48ms]
+(pass) simple 3D print export > blocks the download when preflight finds invalid geometry [0.17ms]
+(pass) simple 3D print export > shows a per-level preflight error when the bundle has no top-level error [0.23ms]
+(pass) simple 3D print export > rejects an exporter response without print metadata [0.08ms]
+
+packages\editor\src\components\ui\sidebar\panels\site-panel\tree-node.test.ts:
+(pass) site tree node routing > renders plugin node kinds through the generic tree row [5.11ms]
+
+ 839 pass
+ 0 fail
+ 10619 expect() calls
+Ran 839 tests across 120 files. [4.42s]
+Exit: 0; Finished: 2026-09-10T00:55:09.7776103+08:00

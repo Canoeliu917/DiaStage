@@ -3,11 +3,7 @@
 import type { SceneGraph } from '@pascal-app/editor'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
-
-const EMPTY_GRAPH: SceneGraph = {
-  nodes: {},
-  rootNodeIds: [],
-}
+import { createTheatreSceneGraph } from '@/lib/theatre/new-production'
 
 interface SaveButtonProps {
   sceneId: string
@@ -19,7 +15,7 @@ interface SaveButtonProps {
 /**
  * Creates a new empty scene and navigates the user to it.
  */
-export function CreateSceneButton({ label = '新建场景' }: { label?: string } = {}) {
+export function CreateSceneButton({ label = '新建剧目' }: { label?: string } = {}) {
   const router = useRouter()
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -31,17 +27,17 @@ export function CreateSceneButton({ label = '新建场景' }: { label?: string }
       const response = await fetch('/api/scenes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: '未命名场景', graph: EMPTY_GRAPH }),
+        body: JSON.stringify({ name: '未命名剧目', graph: createTheatreSceneGraph() }),
       })
       if (!response.ok) {
-        setError(`创建场景失败 (${response.status})`)
+        setError(`创建剧目失败 (${response.status})`)
         return
       }
       const meta = (await response.json()) as { id: string }
       router.push(`/scene/${meta.id}`)
     } catch (err) {
       console.error('[scene-create]', err)
-      setError('创建场景失败，请检查连接后重试。')
+      setError('创建剧目失败，请检查连接后重试。')
     } finally {
       setIsCreating(false)
     }

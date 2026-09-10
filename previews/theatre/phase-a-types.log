@@ -1,0 +1,11 @@
+Started: 2026-09-10T00:55:13.2861735+08:00
+CORE_VIEWER_MCP_EXIT=0
+SHARED_EDITOR_EXIT=0
+apps/editor/app/page.tsx(26,6): error TS17008: JSX element 'div' has no corresponding closing tag.
+apps/editor/app/page.tsx(29,10): error TS17008: JSX element 'Editor' has no corresponding closing tag.
+apps/editor/app/page.tsx(50,11): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+apps/editor/app/page.tsx(58,10): error TS1382: Unexpected token. Did you mean `{'>'}` or `&gt;`?
+apps/editor/app/page.tsx(59,9): error TS17015: Expected corresponding closing tag for JSX fragment.
+apps/editor/app/page.tsx(64,1): error TS1381: Unexpected token. Did you mean `{'}'}` or `&rbrace;`?
+apps/editor/app/page.tsx(65,1): error TS1005: '</' expected.
+APP_EXIT=1; Finished: 2026-09-10T00:55:22.9352856+08:00

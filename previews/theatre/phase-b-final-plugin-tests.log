@@ -1,0 +1,18 @@
+Started: 2026-09-10T01:41:13.8251873+08:00
+bun test v1.3.14 (0d9b296a)
+
+packages\editor\src\lib\scene-plugins.test.ts:
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) legacy scene plugin compatibility without authoring panels > an old tree graph without an install field remains renderable without a host panel [13.51ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) legacy scene plugin compatibility without authoring panels > an explicitly empty install field keeps the user-disabled plugin disabled [0.37ms]
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+[zustand persist middleware] Unable to update item 'viewer-preferences', the given storage is currently unavailable.
+(pass) legacy scene plugin compatibility without authoring panels > late plugin registration enables only plugins used by a legacy graph [0.49ms]
+
+ 3 pass
+ 0 fail
+ 11 expect() calls
+Ran 3 tests across 1 file. [860.00ms]
+TEST_EXIT=0
+Finished: 2026-09-10T01:41:14.7483515+08:00

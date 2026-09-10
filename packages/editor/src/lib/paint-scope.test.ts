@@ -72,7 +72,7 @@ describe('paintScopeLabel', () => {
   })
   it('matching / room are kind-agnostic', () => {
     expect(paintScopeLabel('matching', info({}))).toBe('全部匹配项')
-    expect(paintScopeLabel('room', info({}))).toBe('房间')
+    expect(paintScopeLabel('room', info({}))).toBe('闭合表演区')
   })
 })
 

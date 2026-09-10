@@ -5,11 +5,12 @@ import { X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { getFloorplanNodeExtension } from '../../lib/floorplan/floorplan-extension'
 import { isFloorplanToolAvailableInMode } from '../../lib/floorplan/floorplan-mode'
+import { getTheatreNodeLabel } from '../../lib/theatre-presentation'
 import useEditor from '../../store/use-editor'
 import useFloorplanMode from '../../store/use-floorplan-mode'
 
 function getToolLabel(tool: string): string {
-  return nodeRegistry.get(tool)?.presentation?.label ?? tool
+  return getTheatreNodeLabel(tool)
 }
 
 export function FloorplanModeCoordinator() {

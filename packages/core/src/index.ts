@@ -312,6 +312,12 @@ export {
   subscribeSceneCommits,
 } from './store/history-control'
 export {
+  installSceneMutationHandler,
+  type NodeChanges,
+  SceneMutationError,
+  type SceneMutationHandler,
+} from './store/scene-mutation'
+export {
   type ControlValue,
   type DoorAnimationState,
   type DoorInteractiveState,

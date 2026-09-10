@@ -1,0 +1,16 @@
+{
+  "projects": [
+    "20cb2f5c-fbbd-4f98-8efd-5006db9aa084",
+    "54f298b8-3814-43b0-bf0d-b53159dfdbc9"
+  ],
+  "checks": [
+    "Legacy DOC gives conversion guidance; scanned PDF returns a real server error and no empty-stage success",
+    "PDF produces three editable proposals with verified evidence, explicit defaults and selection switches",
+    "PDF confirmed nodes and evidence persist together, undo/redo as one batch, and retain IDs after reload",
+    "DOCX produces three editable proposals with verified evidence, explicit defaults and selection switches",
+    "DOCX confirmed nodes and evidence persist together, undo/redo as one batch, and retain IDs after reload",
+    "PDF and DOCX produce identical deterministic three-item coordinates"
+  ],
+  "errors": [],
+  "failed": []
+}
