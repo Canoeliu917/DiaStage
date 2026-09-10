@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
+import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import type { VoiceState } from './command-input'
 import {
   microphoneError,
@@ -83,7 +84,7 @@ export function VoiceRecorder({
         result.audio.type.includes('mp4') ? 'stage-voice.m4a' : 'stage-voice.webm',
       )
       form.set('locale', 'zh-CN')
-      const response = await fetch(callbacks.current.transcribeEndpoint, {
+      const { response } = await fetchAiWithBudgetConsent(callbacks.current.transcribeEndpoint, {
         method: 'POST',
         headers: callbacks.current.requestHeaders,
         body: form,
@@ -242,7 +243,7 @@ export function VoiceRecorder({
             ? '请在浏览器提示中允许使用麦克风。'
             : state === 'transcribing'
               ? '正在把录音转为文字，完成后请先检查内容。'
-              : '录音最长90秒；也可以直接输入文字。原始录音仅暂存于本页。'}
+              : '录音最长90秒，会发送至模型服务转写，不写入舞台项目；转写后请校对文字。'}
       </p>
     </div>
   )

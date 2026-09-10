@@ -4,6 +4,7 @@ import { type StagePlan, StagePlanSchema } from '@pascal-app/core/stage'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
+import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import { currentStageContext } from '@/lib/stage/context'
 import {
   confirmedScriptImport,
@@ -67,7 +68,7 @@ export function ScriptStageInput({ sceneId }: { sceneId?: string }) {
       body.set('file', file)
       body.set('sceneContext', JSON.stringify(current))
       body.set('priorAnswers', JSON.stringify(priorAnswers))
-      const response = await fetch('/api/script/stage-plan', {
+      const { response } = await fetchAiWithBudgetConsent('/api/script/stage-plan', {
         method: 'POST',
         body,
         signal: controller.signal,

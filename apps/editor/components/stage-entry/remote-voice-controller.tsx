@@ -28,6 +28,8 @@ export function RemoteVoiceController() {
   const [draft, setDraft] = useState('')
   const [sentSequence, setSentSequence] = useState<number | null>(null)
   const [receipt, setReceipt] = useState<RemoteVoiceDisposition | null>(null)
+  const [summary, setSummary] = useState<string | null>(null)
+  const [mode, setMode] = useState<'suggest' | 'create' | 'draft'>('suggest')
   const [voiceState, setVoiceState] = useState<VoiceState>('idle')
   const [joining, setJoining] = useState(false)
   const [sending, setSending] = useState(false)
@@ -61,6 +63,20 @@ export function RemoteVoiceController() {
     if (!session) return
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ session, draft, sentSequence }))
   }, [session, draft, sentSequence])
+  useEffect(() => {
+    if (!session) return
+    const revoke = () => {
+      void fetch(`/api/remote-voice/sessions/${session.id}`, {
+        method: 'DELETE',
+        keepalive: true,
+        headers: { 'x-diastage-remote-token': session.remoteToken },
+      }).catch(() => {})
+    }
+    window.addEventListener('pagehide', revoke)
+    return () => {
+      window.removeEventListener('pagehide', revoke)
+    }
+  }, [session])
 
   useEffect(() => {
     if (!session) return
@@ -81,12 +97,14 @@ export function RemoteVoiceController() {
           '无法读取舞台端状态，请重新配对。',
         )
         if (stopped) return
+        setMode(result.status.mode)
         if (
           sentSequence !== null &&
           result.status.lastAcknowledgedSequence >= sentSequence &&
           result.status.lastAcknowledgedDisposition
         ) {
           setReceipt(result.status.lastAcknowledgedDisposition)
+          setSummary(result.status.summary)
         }
       } catch (failure) {
         if (stopped || controller.signal.aborted) return
@@ -160,6 +178,12 @@ export function RemoteVoiceController() {
   }
 
   const disconnect = () => {
+    if (session)
+      void fetch(`/api/remote-voice/sessions/${session.id}`, {
+        method: 'DELETE',
+        keepalive: true,
+        headers: { 'x-diastage-remote-token': session.remoteToken },
+      }).catch(() => {})
     sessionStorage.removeItem(STORAGE_KEY)
     setSession(null)
     setDraft('')
@@ -216,6 +240,16 @@ export function RemoteVoiceController() {
           断开
         </button>
       </header>
+      <p role="status">
+        当前模式：
+        {
+          {
+            suggest: '建议模式 · 桌面确认后落位',
+            create: '连续制景 · 安全口令自动落位',
+            draft: '方案草台 · 暂不写入正式舞台',
+          }[mode]
+        }
+      </p>
       {!secureContext && (
         <p className="stage-entry-warning" role="note">
           当前不是 HTTPS，iPhone 浏览器不会开放麦克风；你仍可输入文字发送。
@@ -251,6 +285,7 @@ export function RemoteVoiceController() {
         <div className="remote-voice-receipt" role="status">
           <h2>{receipt === 'loaded' ? '舞台端已载入口令' : '舞台端已忽略这条口令'}</h2>
           <blockquote>{draft}</blockquote>
+          {summary && <p>{summary}</p>}
           <button
             type="button"
             onClick={() => {
@@ -267,7 +302,7 @@ export function RemoteVoiceController() {
         <div className="remote-voice-receipt" role="status">
           <h2>已发送，等待舞台端载入</h2>
           <blockquote>{draft}</blockquote>
-          <p>电脑端确认载入后，仍会先显示舞台方案，不会直接移动任何布景。</p>
+          <p>电脑端按当前授权处理：建议模式先预览，已授权连续制景只执行通过校验的安全操作。</p>
         </div>
       )}
       {error && <p role="alert">{error}</p>}

@@ -5,7 +5,7 @@ const DEFAULT_RATE_LIMIT_PER_MINUTE = 120
 const WINDOW_MS = 60_000
 const ALLOWED_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
 const ALLOWED_HEADERS =
-  'authorization, content-type, if-match, last-event-id, x-pascal-scene-token, x-diastage-owner-token, x-diastage-remote-token'
+  'authorization, content-type, if-match, last-event-id, x-pascal-scene-token, x-diastage-owner-token, x-diastage-remote-token, x-diastage-budget-consent'
 
 type RateBucket = {
   resetAt: number
@@ -64,6 +64,8 @@ function validateOrigin(request: Request): NextResponse | null {
 }
 
 function validateAuth(request: Request): NextResponse | null {
+  if (request.headers.has('x-diastage-remote-token'))
+    return sceneApiJson(request, { error: 'phone_scene_access_forbidden' }, { status: 403 })
   const token = process.env.PASCAL_SCENE_API_TOKEN
   if (!token) {
     if (isLoopbackRequest(request)) return null

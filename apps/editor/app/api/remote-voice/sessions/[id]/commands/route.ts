@@ -20,6 +20,7 @@ const commandSchema = z.strictObject({
 const acknowledgementSchema = z.strictObject({
   sequence: z.number().int().positive(),
   disposition: z.enum(['loaded', 'dismissed']),
+  summary: z.string().max(300).optional(),
 })
 
 export function POST(request: Request, { params }: RouteParams): Promise<Response> {
@@ -40,6 +41,7 @@ export function PATCH(request: Request, { params }: RouteParams): Promise<Respon
       ownerToken(request),
       input.sequence,
       input.disposition,
+      input.summary,
     )
     return { body: { acknowledged: input.sequence, disposition: input.disposition } }
   })

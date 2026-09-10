@@ -1,6 +1,7 @@
 import type { SceneContextObject, SceneContextSummary } from '@pascal-app/core/stage'
 
 export const MAX_DETAILED_OBJECTS = 100
+export class SceneContextTooLargeError extends Error {}
 
 export function buildRelevantSceneContext(context: SceneContextSummary, input: string) {
   const text = input.normalize('NFKC')
@@ -18,7 +19,7 @@ export function buildRelevantSceneContext(context: SceneContextSummary, input: s
   )
   const required = ordered.filter((object) => priority(object) < 3)
   if (required.length > MAX_DETAILED_OBJECTS)
-    throw new Error('相关对象超过100个，请缩小选区或指定具体对象。')
+    throw new SceneContextTooLargeError('相关对象超过100个，请缩小选区或指定具体对象。')
   const distance = (object: SceneContextObject) => {
     const p = object.transform.position
     const targets = required.length

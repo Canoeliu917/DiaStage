@@ -44,20 +44,22 @@ export async function generateStagePlan(
   signal: AbortSignal,
 ): Promise<unknown> {
   const context = buildRelevantSceneContext(request.sceneContext, request.input)
+  const client = createOpenAIClient()
+  const payload = JSON.stringify({ ...request, sceneContext: context })
   const response = await trackAiCall(
     'stage-command',
     AI_MODELS.command,
     signal,
     () =>
-      createOpenAIClient()
-        .responses.parse(
+      client.responses
+        .parse(
           {
             model: AI_MODELS.command,
             store: false,
             max_output_tokens: AI_TOKEN_LIMITS.commandOutput,
             input: [
               { role: 'system', content: instructions },
-              { role: 'user', content: JSON.stringify({ ...request, sceneContext: context }) },
+              { role: 'user', content: payload },
             ],
             text: { format: zodTextFormat(StagePlanSchema, 'stage_plan') },
           },
@@ -74,6 +76,8 @@ export async function generateStagePlan(
           throw error
         }),
     (result) => result.usage,
+    null,
+    instructions + payload + JSON.stringify(zodTextFormat(StagePlanSchema, 'stage_plan')),
   )
   if (response.status !== 'completed' || response.output_parsed === null)
     throw new AiError('PLAN_INVALID', '服务未能完成这条口令，请调整描述后重试。', 422, true)
@@ -84,13 +88,14 @@ export async function transcribeAudio(
   audio: ValidatedAudio,
   signal: AbortSignal,
 ): Promise<unknown> {
+  const client = createOpenAIClient()
   return trackAiCall(
     'voice-transcription',
     AI_MODELS.transcribe,
     signal,
     () =>
-      createOpenAIClient()
-        .audio.transcriptions.create(
+      client.audio.transcriptions
+        .create(
           {
             model: AI_MODELS.transcribe,
             file: new File([audio.bytes], `recording.${audio.extension}`, { type: audio.mime }),
@@ -112,5 +117,6 @@ export async function transcribeAudio(
         }),
     () => null,
     audio.durationSeconds,
+    '',
   )
 }

@@ -1,6 +1,7 @@
 import type { SceneStore } from './types'
 
 export * from './slug'
+export { openSqliteDatabase, type SqliteDatabase } from './sqlite-driver'
 export * from './sqlite-scene-store'
 export * from './types'
 

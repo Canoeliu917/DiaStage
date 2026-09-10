@@ -25,6 +25,9 @@ type RemoteVoiceSession = {
   createdAt: number
   expiresAt: number
   connectedAt: number | null
+  lastSeenAt: number | null
+  mode: 'suggest' | 'create' | 'draft'
+  summary: string | null
   nextSequence: number
   lastAcknowledgedSequence: number
   lastAcknowledgedDisposition: RemoteVoiceDisposition | null
@@ -55,6 +58,8 @@ export type OwnerRemoteVoiceStatus = {
 }
 
 export type RemoteRemoteVoiceStatus = {
+  mode: 'suggest' | 'create' | 'draft'
+  summary: string | null
   expiresAt: string
   pendingSequence: number | null
   lastAcknowledgedSequence: number
@@ -109,6 +114,9 @@ export class RemoteVoiceSessionStore {
       createdAt,
       expiresAt: createdAt + REMOTE_VOICE_LIMITS.sessionTtlMs,
       connectedAt: null,
+      lastSeenAt: null,
+      mode: 'suggest',
+      summary: null,
       nextSequence: 1,
       lastAcknowledgedSequence: 0,
       lastAcknowledgedDisposition: null,
@@ -145,6 +153,7 @@ export class RemoteVoiceSessionStore {
     }
     session.remoteToken = token()
     session.connectedAt = this.now()
+    session.lastSeenAt = this.now()
     this.sessionsByPairingCode.delete(normalized)
     session.pairingCode = null
     return {
@@ -158,7 +167,10 @@ export class RemoteVoiceSessionStore {
   ownerStatus(id: string, suppliedToken: string | null): OwnerRemoteVoiceStatus {
     const session = this.authorizeOwner(id, suppliedToken)
     return {
-      paired: session.remoteToken !== null,
+      paired:
+        session.remoteToken !== null &&
+        session.lastSeenAt !== null &&
+        this.now() - session.lastSeenAt <= 6000,
       connectedAt: session.connectedAt === null ? null : iso(session.connectedAt),
       expiresAt: iso(session.expiresAt),
       pendingCommand: session.pendingCommand ? { ...session.pendingCommand } : null,
@@ -169,7 +181,10 @@ export class RemoteVoiceSessionStore {
 
   remoteStatus(id: string, suppliedToken: string | null): RemoteRemoteVoiceStatus {
     const session = this.authorizeRemote(id, suppliedToken)
+    session.lastSeenAt = this.now()
     return {
+      mode: session.mode,
+      summary: session.summary,
       expiresAt: iso(session.expiresAt),
       pendingSequence: session.pendingCommand?.sequence ?? null,
       lastAcknowledgedSequence: session.lastAcknowledgedSequence,
@@ -204,6 +219,7 @@ export class RemoteVoiceSessionStore {
     suppliedToken: string | null,
     sequence: number,
     disposition: RemoteVoiceDisposition,
+    summary?: string,
   ): void {
     const session = this.authorizeOwner(id, suppliedToken)
     if (session.lastAcknowledgedSequence >= sequence) return
@@ -217,11 +233,19 @@ export class RemoteVoiceSessionStore {
     session.pendingCommand = null
     session.lastAcknowledgedSequence = sequence
     session.lastAcknowledgedDisposition = disposition
+    session.summary = summary?.slice(0, 300) ?? null
+  }
+
+  setMode(id: string, suppliedToken: string | null, mode: RemoteVoiceSession['mode']) {
+    this.authorizeOwner(id, suppliedToken).mode = mode
   }
 
   revoke(id: string, suppliedToken: string | null): void {
     const session = this.authorizeOwner(id, suppliedToken)
     this.deleteSession(session)
+  }
+  revokeRemote(id: string, suppliedToken: string | null): void {
+    this.deleteSession(this.authorizeRemote(id, suppliedToken))
   }
 
   authorizeRemoteRequest(id: string, suppliedToken: string | null): void {

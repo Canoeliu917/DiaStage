@@ -44,6 +44,8 @@ export const OwnerRemoteVoiceResponseSchema = z.strictObject({
 export const RemoteRemoteVoiceResponseSchema = z.strictObject({
   role: z.literal('remote'),
   status: z.strictObject({
+    mode: z.enum(['suggest', 'create', 'draft']),
+    summary: z.string().max(300).nullable(),
     expiresAt: z.string().min(1),
     pendingSequence: z.number().int().positive().nullable(),
     lastAcknowledgedSequence: z.number().int().nonnegative(),

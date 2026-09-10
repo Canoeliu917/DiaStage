@@ -1,4 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
+import { estimateCall, reserveModelCall } from './model-budget'
+import { estimateTextCostCny, usdCnyReference } from './model-pricing'
+import { usageLedger } from './usage-ledger'
 
 export interface AiUsageRecord {
   requestId: string
@@ -17,7 +20,7 @@ export interface AiUsageRecord {
   errorClass: string | null
 }
 
-export const aiRequestContext = new AsyncLocalStorage<{ requestId: string }>()
+export const aiRequestContext = new AsyncLocalStorage<{ requestId: string; approvedCny?: number }>()
 const records: AiUsageRecord[] = []
 
 export function recordAiUsage(record: AiUsageRecord) {
@@ -59,6 +62,7 @@ export async function trackAiCall<T>(
   operation: () => Promise<T>,
   usage: (result: T) => ProviderUsage | null | undefined,
   audioSeconds: number | null = null,
+  payload?: string,
 ): Promise<T> {
   const start = performance.now()
   const record: AiUsageRecord = {
@@ -77,13 +81,36 @@ export async function trackAiCall<T>(
     createdAt: new Date().toISOString(),
     errorClass: null,
   }
+  const reservationId = crypto.randomUUID()
+  const budgeted = model !== 'local-parser' && payload !== undefined
+  let reserved = false
   try {
+    signal.throwIfAborted()
+    if (budgeted) {
+      record.estimatedCostCny = estimateCall(feature, model, payload, audioSeconds)
+      await reserveModelCall(
+        reservationId,
+        record.requestId,
+        feature,
+        record.estimatedCostCny,
+        aiRequestContext.getStore()?.approvedCny ?? 0,
+      )
+      reserved = true
+    }
+    signal.throwIfAborted()
     const result = await operation()
     const actual = usage(result)
     if (actual) {
       record.inputTokens = actual.input_tokens
       record.cachedInputTokens = actual.input_tokens_details?.cached_tokens ?? 0
       record.outputTokens = actual.output_tokens
+      record.estimatedCostCny = estimateTextCostCny(
+        model,
+        actual.input_tokens,
+        actual.input_tokens_details?.cached_tokens ?? 0,
+        actual.output_tokens,
+        usdCnyReference(),
+      )
     }
     signal.throwIfAborted()
     return result
@@ -95,5 +122,11 @@ export async function trackAiCall<T>(
     record.latencyMs = Math.round(performance.now() - start)
     if (record.path === 'local-parser') record.estimatedCostCny = 0
     recordAiUsage(record)
+    if (reserved)
+      await usageLedger().reconcile(
+        reservationId,
+        record.estimatedCostCny,
+        JSON.stringify(readAiUsage().at(-1)),
+      )
   }
 }

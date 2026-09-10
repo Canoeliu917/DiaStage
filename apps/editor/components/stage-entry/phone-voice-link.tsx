@@ -16,6 +16,7 @@ import { localControl } from '@/lib/stage/ai-controls'
 type HandledCommand = {
   sequence: number
   disposition: RemoteVoiceDisposition
+  summary: string
 }
 
 export function PhoneVoiceLink({
@@ -24,12 +25,14 @@ export function PhoneVoiceLink({
   canLoad,
   onTranscript,
   onDisconnect,
+  mode = 'suggest',
 }: {
   sceneLabel: string
   storageKey: string
   canLoad: boolean
-  onTranscript: (transcript: string) => void
+  onTranscript: (transcript: string) => Promise<string>
   onDisconnect?: () => void
+  mode?: 'suggest' | 'create' | 'draft'
 }) {
   const [session, setSession] = useState<CreatedRemoteVoiceSession | null>(null)
   const [paired, setPaired] = useState(false)
@@ -42,9 +45,22 @@ export function PhoneVoiceLink({
   const [localOnly, setLocalOnly] = useState(false)
   const [insecureAddress, setInsecureAddress] = useState(false)
   const details = useRef<HTMLDetailsElement>(null)
+  const completedSequence = useRef(0)
   const disconnectCallback = useRef(onDisconnect)
   disconnectCallback.current = onDisconnect
   const ownerStorageKey = `diastage:remote-voice-owner:${storageKey}`
+  useEffect(() => {
+    if (!session) return
+    void fetch(`/api/remote-voice/sessions/${session.id}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', 'x-diastage-owner-token': session.ownerToken },
+      body: JSON.stringify({ mode }),
+    })
+      .then((response) => {
+        if (!response.ok) disconnectCallback.current?.()
+      })
+      .catch(() => disconnectCallback.current?.())
+  }, [session, mode])
 
   useEffect(() => {
     const configured = process.env.NEXT_PUBLIC_DIASTAGE_REMOTE_URL?.trim()
@@ -97,6 +113,7 @@ export function PhoneVoiceLink({
           '无法读取手机连接状态，请重新连接。',
         )
         if (stopped) return
+        if (!result.status.paired && result.status.connectedAt) disconnectCallback.current?.()
         setPaired(result.status.paired)
         setIncoming(result.status.pendingCommand)
         if (!result.status.pendingCommand) setHandled(null)
@@ -146,20 +163,28 @@ export function PhoneVoiceLink({
 
   const acknowledge = async (command: RemoteVoiceCommand, disposition: RemoteVoiceDisposition) => {
     if (!session || state !== 'idle') return
-    if (disposition === 'loaded' && handled?.sequence !== command.sequence) {
-      onTranscript(command.transcript)
-    }
-    setHandled({ sequence: command.sequence, disposition })
     setState('acknowledging')
     setError('')
     try {
+      const summary =
+        handled?.sequence === command.sequence
+          ? handled.summary
+          : disposition === 'loaded'
+            ? await onTranscript(command.transcript)
+            : '已忽略，没有修改舞台'
+      setHandled({ sequence: command.sequence, disposition, summary })
+      completedSequence.current = command.sequence
       const response = await fetch(`/api/remote-voice/sessions/${session.id}/commands`, {
         method: 'PATCH',
         headers: {
           'content-type': 'application/json',
           'x-diastage-owner-token': session.ownerToken,
         },
-        body: JSON.stringify({ sequence: command.sequence, disposition }),
+        body: JSON.stringify({
+          sequence: command.sequence,
+          disposition,
+          summary: summary.slice(0, 300),
+        }),
       })
       await readRemoteVoiceResponse(
         response,
@@ -174,6 +199,20 @@ export function PhoneVoiceLink({
       setState('idle')
     }
   }
+
+  const acknowledgeRef = useRef(acknowledge)
+  acknowledgeRef.current = acknowledge
+  useEffect(() => {
+    if (
+      incoming &&
+      incoming.sequence > completedSequence.current &&
+      canLoad &&
+      mode !== 'suggest' &&
+      state === 'idle' &&
+      !handled
+    )
+      void acknowledgeRef.current(incoming, 'loaded')
+  }, [incoming, canLoad, mode, state, handled])
 
   const disconnect = async () => {
     disconnectCallback.current?.()
@@ -197,7 +236,9 @@ export function PhoneVoiceLink({
       <summary>用 iPhone 说口令</summary>
       {!session ? (
         <div className="phone-voice-link__body">
-          <p>手机只负责录音和校对文字；舞台端仍会预演方案，确认后才修改场景。</p>
+          <p>
+            手机负责录音和校对。建议模式逐次预览；桌面授权连续制景后，安全口令自动处理并返回结果。
+          </p>
           <button type="button" disabled={state !== 'idle'} onClick={() => void createSession()}>
             {state === 'creating' ? '正在生成配对码…' : '连接 iPhone'}
           </button>

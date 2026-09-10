@@ -78,6 +78,39 @@ test('expired or revoked sessions reject both devices', () => {
   )
 })
 
+test('heartbeat, mode and execution receipt remain owner controlled and phone can revoke only itself', () => {
+  let now = 0
+  const store = new RemoteVoiceSessionStore(() => now)
+  const owner = store.create()
+  const phone = store.join(owner.pairingCode)
+  expectSessionError(
+    () => store.setMode(owner.id, phone.remoteToken, 'create'),
+    'UNAUTHORIZED',
+    401,
+  )
+  store.setMode(owner.id, owner.ownerToken, 'create')
+  const command = store.sendCommand(owner.id, phone.remoteToken, '合成测试口令')
+  store.acknowledgeCommand(
+    owner.id,
+    owner.ownerToken,
+    command.sequence,
+    'loaded',
+    '安全操作已完成，可撤销',
+  )
+  expect(store.remoteStatus(owner.id, phone.remoteToken)).toMatchObject({
+    mode: 'create',
+    summary: '安全操作已完成，可撤销',
+  })
+  now += 6001
+  expect(store.ownerStatus(owner.id, owner.ownerToken).paired).toBe(false)
+  store.remoteStatus(owner.id, phone.remoteToken)
+  expect(store.ownerStatus(owner.id, owner.ownerToken).paired).toBe(true)
+  const other = store.create()
+  expectSessionError(() => store.revokeRemote(other.id, phone.remoteToken), 'PHONE_NOT_PAIRED', 409)
+  store.revokeRemote(owner.id, phone.remoteToken)
+  expectSessionError(() => store.ownerStatus(owner.id, owner.ownerToken), 'SESSION_EXPIRED', 410)
+})
+
 test('pairing guesses are independently rate limited', () => {
   const key = crypto.randomUUID()
   const now = Date.now() + 120_000
