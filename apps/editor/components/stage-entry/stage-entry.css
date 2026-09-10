@@ -45,6 +45,7 @@
 .phone-voice-link { border-block:1px solid #999;padding:4px 0; }
 .phone-voice-link > summary { min-height:44px;display:flex;align-items:center;cursor:pointer;font-weight:600; }
 .phone-voice-link__body { display:flex;flex-direction:column;gap:12px;padding:8px 0 16px; }
+.phone-voice-link__pairing { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px; }
 .phone-voice-link__code { font-size:clamp(24px,6vw,36px);font-weight:700;letter-spacing:.14em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere; }
 .phone-voice-link__incoming { display:flex;flex-direction:column;gap:10px;border:1px solid #777;padding:14px; }
 .phone-voice-link__incoming blockquote,.remote-voice-receipt blockquote { border-left:2px solid currentColor;padding-left:12px;overflow-wrap:anywhere;white-space:pre-wrap; }

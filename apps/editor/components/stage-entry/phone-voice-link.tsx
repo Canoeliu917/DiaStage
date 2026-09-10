@@ -202,6 +202,45 @@ export function PhoneVoiceLink({
     }
   }
 
+  const createPairingCode = async () => {
+    if (busy || !sceneId) return
+    const previous = session
+    setBusy(true)
+    setError('')
+    try {
+      const response = await fetch('/api/remote-voice/sessions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ label: sceneLabel, sceneId }),
+        signal: AbortSignal.timeout(10_000),
+      })
+      const result = await readRemoteVoiceResponse(
+        response,
+        CreatedRemoteVoiceResponseSchema,
+        '无法生成配对码。',
+      )
+      sessionStorage.setItem(key, JSON.stringify(result.session))
+      sessionStorage.removeItem(`${key}:receipt`)
+      setSession(result.session)
+      setIncoming(null)
+      completed.current = null
+      setHandled(null)
+      setConnection('等待配对')
+      if (previous) {
+        callback.current?.()
+        void fetch(`/api/remote-voice/sessions/${previous.id}`, {
+          method: 'DELETE',
+          headers: { 'x-diastage-owner-token': previous.ownerToken },
+          signal: AbortSignal.timeout(10_000),
+        }).catch(() => {})
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '连接失败')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const disconnect = async () => {
     if (!session) return
     setBusy(true)
@@ -237,33 +276,7 @@ export function PhoneVoiceLink({
             <button
               type="button"
               disabled={busy || !sceneId}
-              onClick={async () => {
-                setBusy(true)
-                setError('')
-                try {
-                  const response = await fetch('/api/remote-voice/sessions', {
-                    method: 'POST',
-                    headers: { 'content-type': 'application/json' },
-                    body: JSON.stringify({ label: sceneLabel, sceneId }),
-                    signal: AbortSignal.timeout(10_000),
-                  })
-                  const result = await readRemoteVoiceResponse(
-                    response,
-                    CreatedRemoteVoiceResponseSchema,
-                    '无法生成配对码。',
-                  )
-                  sessionStorage.setItem(key, JSON.stringify(result.session))
-                  sessionStorage.removeItem(`${key}:receipt`)
-                  setSession(result.session)
-                  completed.current = null
-                  setHandled(null)
-                  setConnection('等待配对')
-                } catch (error) {
-                  setError(error instanceof Error ? error.message : '连接失败')
-                } finally {
-                  setBusy(false)
-                }
-              }}
+              onClick={() => void createPairingCode()}
             >
               {busy ? '正在连接…' : '生成配对码'}
             </button>
@@ -271,7 +284,12 @@ export function PhoneVoiceLink({
         ) : (
           <>
             <p role="status">手机 · {connection}</p>
-            <p className="phone-voice-link__code">{session.pairingCode}</p>
+            <div className="phone-voice-link__pairing">
+              <p className="phone-voice-link__code">{session.pairingCode}</p>
+              <button type="button" disabled={busy} onClick={() => void createPairingCode()}>
+                {busy ? '正在生成…' : '重新生成配对码'}
+              </button>
+            </div>
             <label>
               手机打开此地址
               <input readOnly value={address} onFocus={(e) => e.currentTarget.select()} />
