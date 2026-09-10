@@ -1,4 +1,4 @@
-import { resolveStagePlan } from './plan'
+import { resolveStagePlan, stageObjectBounds } from './plan'
 import {
   type ClarificationAnswer,
   type SceneContextSummary,
@@ -199,6 +199,72 @@ export function parseStageText(
       '舞台口令只处理舞台空间、布景、人物标记和摄影机。请移除这条口令中的其他功能要求。',
     )
     return plan
+  }
+  const align = text.match(
+    /^(?:把|将)?(?:选中(?:的)?(?:布景|对象)|这组)(?:沿)?(台口|台后|台左|台右)(?:边缘)?对齐[。]?$/,
+  )
+  const distribute = text.match(
+    new RegExp(
+      `^(?:把|将)?(?:选中(?:的)?(?:布景|对象)|这组)(?:沿)?(横向|纵向)(?:按)?(${lengthPattern})净距(?:等距)?分布[。]?$`,
+    ),
+  )
+  const scale = text.match(
+    new RegExp(
+      `^(?:把|将)?(?:选中(?:的)?(?:布景|对象)|这组)(?:缩放到|放大到|缩小到)(${numberPattern})倍[。]?$`,
+    ),
+  )
+  if (align || distribute || scale) {
+    const selected = context.objects.filter((object) =>
+      context.selectedObjectIds.includes(object.id),
+    )
+    if (selected.length < (scale ? 1 : 2)) {
+      ask('select-layout', scale ? '请先选中布景。' : '请先选中至少两个布景。')
+      return plan
+    }
+    const axis =
+      distribute?.[1] === '横向' || (align && ['台左', '台右'].includes(align[1]!)) ? 'x' : 'z'
+    const low = axis === 'x' ? 'minX' : 'minZ',
+      high = axis === 'x' ? 'maxX' : 'maxZ'
+    const ordered = [...selected].sort(
+      (a, b) => stageObjectBounds(a)[low] - stageObjectBounds(b)[low] || a.id.localeCompare(b.id),
+    )
+    const far = align && ['台后', '台右'].includes(align[1]!)
+    const edge = far
+      ? Math.max(...ordered.map((object) => stageObjectBounds(object)[high]))
+      : Math.min(...ordered.map((object) => stageObjectBounds(object)[low]))
+    const spacing = distribute ? parseStageLength(distribute[2]!) : 0
+    const factor = scale ? parseStageNumber(scale[1]!) : 1
+    if (spacing === null || spacing < 0 || factor === null || factor <= 0) {
+      ask('layout-value', '请输入有效的非负净距或正数缩放倍数。')
+      return plan
+    }
+    let cursor = edge
+    plan.items = ordered.map((object, index) => {
+      const transform = structuredClone(object.transform)
+      const bounds = stageObjectBounds(object)
+      if (align) transform.position[axis] += edge - bounds[far ? high : low]
+      if (distribute) {
+        transform.position[axis] += cursor - bounds[low]
+        cursor += bounds[high] - bounds[low] + spacing
+      }
+      return {
+        proposalId: `layout-${index}`,
+        existingNodeId: object.id,
+        kind: object.kind,
+        displayName: object.name,
+        libraryAssetId: null,
+        transform,
+        dimensionsMeters: {
+          width: object.dimensionsMeters.width * factor,
+          height: object.dimensionsMeters.height * factor,
+          depth: object.dimensionsMeters.depth * factor,
+        },
+        certainty: 'stated',
+        assumptionIds: [],
+        evidenceIds: [],
+      }
+    })
+    return StagePlanSchema.parse(plan)
   }
   const clauses = text.split(/[。！？；;\n，,]/).filter(Boolean)
   for (let i = 0; i < clauses.length - 1; i++) {

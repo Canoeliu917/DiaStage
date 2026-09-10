@@ -141,6 +141,7 @@ export function currentStageContext(
     })
   for (const camera of cameraProject().shots) objects.push(cameraContextObject(camera, frame))
   return SceneContextSummarySchema.parse({
+    doorClearanceMeters: stageSite().metadata.stageDoorClearanceMeters ?? 0.6,
     documentVersion: stageRevision(),
     venue: {
       type: doc.venue.type === 'arena' ? 'other' : doc.venue.type,

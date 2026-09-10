@@ -10,6 +10,7 @@ const LeaseSchema = z.strictObject({
   sessionId: z.string().uuid(),
   mode: z.enum(['create', 'draft']),
   expiresAt: z.number().finite().positive(),
+  maxNodes: z.number().int().min(1).max(20).optional(),
 })
 
 export async function requestCreationPermission(
@@ -47,12 +48,16 @@ export function CreationModeControl({
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   return (
-    <section aria-label="AI 制景授权">
+    <section
+      aria-label="AI 制景授权"
+      style={
+        lease
+          ? { position: 'sticky', top: 0, zIndex: 3, background: '#111', padding: 12 }
+          : undefined
+      }
+    >
       {lease ? (
-        <div
-          role="status"
-          style={{ position: 'sticky', top: 0, zIndex: 2, background: '#111', padding: 12 }}
-        >
+        <div role="status">
           {lease.mode === 'create' ? 'AI 连续制景已开启' : '方案草台已开启 · 尚未写入正式舞台'}
           <button type="button" onClick={onStop}>
             停止并退回建议模式

@@ -13,6 +13,7 @@ export interface CreationLease {
   sessionId: string
   mode: Exclude<CreationMode, 'suggest'>
   expiresAt: number
+  maxNodes?: number
 }
 
 export function creationDecision(
@@ -33,15 +34,18 @@ export function creationDecision(
     'DuplicateObject',
     'AddCamera',
     'SetCamera',
+    'GroupObjects',
+    'ReplaceScenery',
   ])
   const affected = new Set<string>()
   for (const command of parsed.data) {
     if (!safe.has(command.type)) return 'confirm'
     if ('nodeId' in command) affected.add(command.nodeId)
+    if ('nodeIds' in command) for (const id of command.nodeIds) affected.add(id)
     if ('newNodeId' in command) affected.add(command.newNodeId)
     if (command.type === 'AddScenery' && command.libraryAssetId !== null) return 'confirm'
   }
-  if (affected.size > maxNodes) return 'confirm'
+  if (affected.size > Math.min(20, maxNodes, lease.maxNodes ?? 20)) return 'confirm'
   return lease.mode === 'draft' ? 'draft' : 'execute'
 }
 

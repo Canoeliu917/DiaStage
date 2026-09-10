@@ -130,6 +130,7 @@ export const SceneContextObjectSchema = z.strictObject({
 })
 export type SceneContextObject = z.infer<typeof SceneContextObjectSchema>
 export const SceneContextSummarySchema = z.strictObject({
+  doorClearanceMeters: z.number().finite().min(0.6).max(10).optional(),
   documentVersion: z.number().int().nonnegative(),
   venue: VenueProposalSchema.nullable(),
   objects: z.array(SceneContextObjectSchema).max(1000),
@@ -153,6 +154,18 @@ const camera = {
   fieldOfViewDegrees: z.number().finite().min(5).max(120),
 }
 export const StageCommandSchema = z.discriminatedUnion('type', [
+  z.strictObject({
+    type: z.literal('SetDoorClearance'),
+    ...meta,
+    meters: z.number().finite().min(0.6).max(10),
+  }),
+  z.strictObject({
+    type: z.literal('GroupObjects'),
+    ...meta,
+    nodeIds: z.array(IdSchema).min(2).max(200),
+    name: NameSchema,
+  }),
+  z.strictObject({ type: z.literal('ReplaceScenery'), ...node, libraryAssetId: IdSchema }),
   z.strictObject({ type: z.literal('CreateStage'), ...meta, venue: VenueProposalSchema }),
   z.strictObject({
     type: z.literal('AddScenery'),

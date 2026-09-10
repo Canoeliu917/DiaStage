@@ -26,12 +26,16 @@ export function handleCreationPermission(
   input: z.infer<typeof CreationRequestSchema>,
   now = Date.now(),
 ) {
-  const url = new URL(request.url)
+  const internalUrl = new URL(request.url)
+  // Next may use an internal host in request.url; validate the browser-facing Host and Origin.
+  const url = new URL(`${internalUrl.protocol}//${request.headers.get('host') ?? internalUrl.host}`)
   const origin = request.headers.get('origin')
   // The repository has no multi-user owner identity. Never treat a shared API token as ownership.
   if (
     !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) ||
     origin !== url.origin ||
+    (request.headers.has('x-forwarded-host') &&
+      request.headers.get('x-forwarded-host') !== url.host) ||
     request.headers.has('x-diastage-remote-token')
   )
     return {
@@ -74,6 +78,13 @@ export function handleCreationPermission(
       sessionId: crypto.randomUUID(),
       mode: input.mode,
       expiresAt: now + ttl,
+      maxNodes: Math.max(
+        1,
+        Math.min(
+          20,
+          Math.floor(Number(process.env.DIASTAGE_AI_CREATE_MODE_MAX_NODES_PER_TRANSACTION) || 20),
+        ),
+      ),
     }
     leases.set(id, lease)
     return {
@@ -94,5 +105,9 @@ export function handleCreationPermission(
       },
     }
   lease.expiresAt = now + ttl
-  return { status: 200, body: { lease: { ...lease } } }
+  return {
+    status: 200,
+    body: { lease: { ...lease } },
+    cookie: `${COOKIE}=${session}; Path=/api; HttpOnly; SameSite=Strict; Max-Age=${Math.ceil(ttl / 1000)}${url.protocol === 'https:' ? '; Secure' : ''}`,
+  }
 }

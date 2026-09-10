@@ -4,7 +4,7 @@ import {
   type BlockNode,
   GROUND_SUPPORT_ID,
   getFloorPlacedElevation,
-  type ItemNode,
+  ItemNode,
   installSceneMutationHandler,
   type NodeChanges,
   useScene,
@@ -46,7 +46,7 @@ import {
   stageSite,
 } from './context'
 import { ScriptImportSchema } from './import-metadata'
-import { makeScenery } from './scenery'
+import { makeScenery, SCENERY_LIBRARY } from './scenery'
 
 export const useStageCommandNotice = create<{ error: string }>(() => ({ error: '' }))
 export type StageExecutionResult = {
@@ -154,6 +154,19 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       throw new Error('命令批次不一致，请重新生成方案')
     const doc = structuredClone(readStageDocument())
     if (!doc) throw new Error('请先建立空舞台')
+    if (commands.some((command) => command.type === 'GroupObjects')) {
+      if (commands.length !== 1 || commands[0]!.type !== 'GroupObjects')
+        throw new Error('组合请作为独立的一轮操作提交')
+      const group = commands[0]!
+      const ids = [...new Set(group.nodeIds)]
+      if (ids.length !== group.nodeIds.length) throw new Error('组合对象编号不能重复')
+      for (const id of ids) positioned(state.nodes, id)
+      state.createCollection(group.name, ids as AnyNodeId[])
+      const result = { ok: true, nodeIds: ids, transactionId: meta.transactionId }
+      applied.set(cacheKey, result)
+      if (applied.size > 500) applied.delete(applied.keys().next().value!)
+      return result
+    }
     if (scriptImport !== undefined) {
       const record = ScriptImportSchema.parse(scriptImport)
       if (meta.source !== 'script' || record.id !== meta.transactionId)
@@ -170,6 +183,7 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       removed = new Set<AnyNodeId>()
     const resultIds: string[] = []
     let venueChanged = false,
+      clearanceMeters = context.doorClearanceMeters,
       cameraChanged = false,
       heightMeasured = false
     const actualId = (id: string) => aliases.get(id) ?? id
@@ -178,6 +192,15 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       changed.add(node.id)
     }
     for (const command of commands) {
+      if (command.type === 'SetDoorClearance') {
+        clearanceMeters = command.meters
+        for (const object of context.objects) {
+          const n = nodes[object.id as AnyNodeId]
+          if (n?.type === 'item' || n?.type === 'block') spatial.add(n.id)
+        }
+        continue
+      }
+      if (command.type === 'GroupObjects') throw new Error('组合必须独立提交')
       const frame = { origin: doc.venue.origin, depthMeters: doc.venue.depth }
       if (command.type === 'CreateStage') {
         const v = command.venue
@@ -312,7 +335,33 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       }
       const node = positioned(nodes, id)
       const pose = objectSnapshot(node, nodes)
-      if (command.type === 'RenameObject') update({ ...node, name: command.name })
+      if (command.type === 'ReplaceScenery') {
+        const replacement = SCENERY_LIBRARY.find(
+          (entry) => entry.asset.id === command.libraryAssetId,
+        )
+        if (!replacement || replacement.kind !== stageKind(node))
+          throw new Error('只能替换为登记库中的同类布景')
+        if (node.type !== 'item')
+          throw new Error('此对象是可编辑体块，请手动放入库模型；保留原编号以保护排演引用')
+        if (!replacement.asset.dimensions?.every((value) => Number.isFinite(value) && value > 0))
+          throw new Error('库模型缺少有效尺寸，不能保持原布景比例')
+        const asset = ItemNode.shape.asset.parse({
+          ...replacement.asset,
+          category: 'scenery',
+          tags: [replacement.kind],
+          attachTo: undefined,
+        })
+        update({
+          ...node,
+          asset,
+          scale: pose.dimensions.map((value, index) => value / asset.dimensions[index]!) as [
+            number,
+            number,
+            number,
+          ],
+        })
+        spatial.add(node.id)
+      } else if (command.type === 'RenameObject') update({ ...node, name: command.name })
       else if (command.type === 'DuplicateObject') {
         if (node.children.length) throw new Error('请先将挂接物件拆分后复制')
         const made =
@@ -457,6 +506,7 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
     }
     const validation = validateStagePlan(plan, {
       ...context,
+      doorClearanceMeters: clearanceMeters,
       objects: context.objects.filter((n) => !removed.has(n.id as AnyNodeId)),
     })
     if (!validation.valid)
@@ -478,6 +528,7 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       data: {
         metadata: {
           ...site.metadata,
+          stageDoorClearanceMeters: clearanceMeters,
           ...(heightMeasured ? { stageHeightMeasured: true } : {}),
           [THEATRE_METADATA_KEY]: data,
           ...(cameraChanged ? { [CAMERA_METADATA]: validateCameraProject(cameras) } : {}),

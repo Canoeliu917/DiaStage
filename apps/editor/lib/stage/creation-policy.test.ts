@@ -64,6 +64,40 @@ test('draft accumulates changes without mutating original and compiles one final
   expect(final.ok).toBe(true)
   expect(new Set(final.commands.map((command) => command.meta.transactionId)).size).toBe(1)
 })
+test('selected layout commands use actual rotated edges and retain strict bounds checks', () => {
+  const objects: SceneContextSummary['objects'] = [0, 1].map((n) => ({
+    id: `scenery-${n}`,
+    name: `景片${n}`,
+    kind: 'scenic-flat',
+    dimensionsMeters: { width: 1, height: 2, depth: 0.2 },
+    transform: {
+      position: { x: -2 + n * 2, y: 0, z: 2 + n },
+      rotationDegrees: { x: 0, y: n * 90, z: 0 },
+    },
+  }))
+  const selected = { ...context, objects, selectedObjectIds: objects.map((object) => object.id) }
+  for (const text of [
+    '选中布景沿台口对齐',
+    '选中布景横向按30厘米净距分布',
+    '选中布景缩放到0.5倍',
+  ]) {
+    const result = parseStageText(text, selected)
+    expect(result?.items).toHaveLength(2)
+    expect(
+      compileStagePlan(result, selected, {
+        transactionId: 'layout',
+        issuedAt: new Date().toISOString(),
+      }).ok,
+    ).toBe(true)
+  }
+  const large = parseStageText('选中布景放大到100倍', selected)
+  expect(
+    compileStagePlan(large, selected, {
+      transactionId: 'large',
+      issuedAt: new Date().toISOString(),
+    }).ok,
+  ).toBe(false)
+})
 function request(
   cookie?: string,
   url = 'http://127.0.0.1/api/ai/creation-permission',
@@ -96,6 +130,24 @@ test('explicit local desktop grant is HttpOnly, scoped, revocable, inactivity-li
     handleCreationPermission(request(), { ...input, explainedAndConfirmed: undefined }).status,
   ).toBe(403)
   const grant = handleCreationPermission(request(), input, 0)
+  expect(
+    handleCreationPermission(
+      new Request('http://localhost:4320/api/ai/creation-permission', {
+        headers: { host: '127.0.0.1:4320', origin: 'http://127.0.0.1:4320' },
+      }),
+      input,
+      0,
+    ).status,
+  ).toBe(200)
+  expect(
+    handleCreationPermission(
+      new Request('http://localhost:4320/api/ai/creation-permission', {
+        headers: { host: 'stage.example', origin: 'https://stage.example' },
+      }),
+      input,
+      0,
+    ).status,
+  ).toBe(403)
   expect(grant.cookie).toContain('HttpOnly')
   const cookie = grant.cookie!.split(';')[0]!
   expect(

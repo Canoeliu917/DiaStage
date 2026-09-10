@@ -53,7 +53,7 @@ function spatialItem(item: StageItemProposal): SpatialItem {
   return { ...item, id: item.proposalId, name: item.displayName }
 }
 
-function extents(item: SpatialItem) {
+export function stageObjectBounds(item: SpatialItem) {
   const corners = getObjectCorners(asObject(item))
   return {
     minX: Math.min(...corners.map((p) => p[0])),
@@ -170,8 +170,8 @@ export function resolveStagePlan(input: unknown, sceneContext: SceneContextSumma
         )
         continue
       }
-      const target = extents(anchor)
-      const bounds = extents(spatialItem(item))
+      const target = stageObjectBounds(anchor)
+      const bounds = stageObjectBounds(spatialItem(item))
       const p = item.transform.position
       const old = { ...p }
       const anchorP = anchor.transform.position
@@ -333,7 +333,7 @@ export function validateStagePlan(
     const obstacle = door === a ? b : a
     if (door && !['door-flat', 'window-flat', 'scenic-flat', 'curtain'].includes(obstacle.kind)) {
       const passage = asObject(door)
-      passage.dimensions[2] += 1.2
+      passage.dimensions[2] += 2 * (context.doorClearanceMeters ?? 0.6)
       if (objectSeparation(passage, asObject(obstacle)).intersects) {
         warnings.push(
           warning(
@@ -440,6 +440,8 @@ export function compileStagePlan(
             },
       )
     } else if (item.existingNodeId) {
+      if (item.libraryAssetId)
+        add({ type: 'ReplaceScenery', meta: meta(), nodeId, libraryAssetId: item.libraryAssetId })
       add({ type: 'MoveObject', meta: meta(), nodeId, position: item.transform.position })
       add({
         type: 'RotateObject',
