@@ -59,16 +59,18 @@ if (!process.env.REMOUNT_PREVIEW_RUNTIME_TEST) {
       if (cleanup) cleanups.push(cleanup)
     },
   }))
+  const registryState = { nodes: registry, revision: 0 }
   mock.module('@pascal-app/core', () => ({
     emitter: { emit() {} },
-    sceneRegistry: { nodes: registry },
-    useScene: hook(scene),
+    sceneRegistry: registryState,
+    useScene: Object.assign(hook(scene), { getState: () => scene }),
   }))
   mock.module('@pascal-app/editor', () => ({
     useEditor: hook(editor),
     useInteractionScope: hook(interaction),
   }))
   mock.module('@pascal-app/viewer', () => ({
+    useIsolatedFrame: (frame: () => void) => frames.push(frame),
     OVERLAY_LAYER: 1,
     useViewer: hook({ renderPaused: false, isExporting: false }),
   }))
@@ -109,6 +111,12 @@ if (!process.env.REMOUNT_PREVIEW_RUNTIME_TEST) {
   assert.equal(wire.renderOrder, 1000)
   assert.equal(wire.geometry.getAttribute('position').count, 24)
   const source = new Group()
+  const traverse = source.traverseVisible.bind(source)
+  let walks = 0
+  source.traverseVisible = (callback) => {
+    walks++
+    traverse(callback)
+  }
   source.position.set(3, 2, -4)
   source.rotation.y = 0.7
   source.scale.setScalar(1.4)
@@ -138,10 +146,13 @@ if (!process.env.REMOUNT_PREVIEW_RUNTIME_TEST) {
   assert.deepEqual(proxy.matrixWorld.elements, mesh.matrixWorld.elements)
   assert.equal(mesh.material, originalMaterial)
   assert.equal(display.props.dispose, null)
+  for (let i = 0; i < 100; i++) frame()
+  assert.equal(walks, 1, 'unchanged frames do not traverse the scan hierarchy')
 
   const replacementGeometry = new BoxGeometry()
   replacementGeometry.addEventListener('dispose', () => geometryDisposals++)
   mesh.geometry = replacementGeometry
+  registryState.revision++
   frame()
   assert.equal(proxy.geometry, replacementGeometry)
   source.remove(mesh)

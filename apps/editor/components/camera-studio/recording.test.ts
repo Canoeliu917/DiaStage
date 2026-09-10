@@ -36,6 +36,7 @@ test('canvas recording preserves framing, chooses the real format, and releases 
     onerror: (() => void) | null = null
     constructor(input: unknown, config: MediaRecorderOptions) {
       assert.equal(input, stream)
+      assert.equal(config.videoBitsPerSecond, 4_000_000)
       this.mimeType = config.mimeType || 'video/webm'
       Recorder.last = this
     }
@@ -157,6 +158,11 @@ test('canvas recording preserves framing, chooses the real format, and releases 
     const finalDraws = draws
     tick()
     assert.equal(draws, finalDraws)
+    const defaults = startCanvasRecording(source)
+    assert.equal(outputSize.width, 1280)
+    assert.equal(outputSize.height, 720)
+    tick()
+    await defaults.stop()
   } finally {
     Object.assign(globalThis, original)
   }

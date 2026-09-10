@@ -1,0 +1,10 @@
+{
+  "durationMs": 1806523,
+  "operations": 572,
+  "puts": 572,
+  "maxInflight": 1,
+  "errors": [],
+  "nodes": 1004,
+  "sceneId": "102d6b807d79",
+  "environment": "Windows headless Chrome with SwiftShader, not target hardware"
+}

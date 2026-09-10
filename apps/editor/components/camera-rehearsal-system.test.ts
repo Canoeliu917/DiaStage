@@ -154,6 +154,8 @@ if (!process.env.CAMERA_REHEARSAL_RUNTIME_TEST) {
     sceneRegistry: { nodes: new Map() },
   }))
   mock.module('@pascal-app/viewer', () => ({
+    useIsolatedFrame: (callback: (state: unknown, delta: number) => void, priority = 0) =>
+      frames.push({ callback, priority }),
     GRID_LAYER: 2,
     useViewer: { getState: () => viewer },
   }))
@@ -390,7 +392,7 @@ if (!process.env.CAMERA_REHEARSAL_RUNTIME_TEST) {
   const framed = mount(true)
   assert.ok(framed.element)
   const frameStyle = framed.element.props.children.props.children.props.children.props.style
-  assert.equal(frameStyle.width, `${(1080 / 1920 / (1280 / 720)) * 100}%`)
+  assert.equal(frameStyle.width, '100%')
   assert.equal(
     frameStyle.height,
     '100%',

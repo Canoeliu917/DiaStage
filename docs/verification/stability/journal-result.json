@@ -1,0 +1,9 @@
+{
+  "nativeIndexedDB": true,
+  "orderedCommits": 100,
+  "partialAcknowledgement": true,
+  "quotaInjection": true,
+  "staleWindowRejected": true,
+  "conflictRetained": true,
+  "lostAckIdempotent": true
+}

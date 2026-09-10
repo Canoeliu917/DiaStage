@@ -56,7 +56,11 @@ if (!process.env.CAMERA_STUDIO_RUNTIME_TEST) {
       getState: () => state,
     })
   mock.module('@pascal-app/editor', () => ({ useEditor: hook(editorState) }))
-  mock.module('@pascal-app/viewer', () => ({ useViewer: hook(viewerState) }))
+  mock.module('@pascal-app/viewer', () => ({
+    useViewer: hook(viewerState),
+    useIsolatedFrame: (callback: (state: unknown, delta: number) => void, priority = 0) =>
+      frames.push({ callback, priority }),
+  }))
   const reactHooks = {
     ...React,
     useRef: <T>(value: T) => ({ current: value }),
