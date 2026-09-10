@@ -8,6 +8,7 @@ import {
 } from '@pascal-app/core/stage'
 import { z } from 'zod'
 import { AiError } from './api'
+import { trackAiCall } from './usage'
 
 export const PlanRequestSchema = z.strictObject({
   source: z.enum(['voice', 'typed-command']),
@@ -34,7 +35,14 @@ export async function planStageRequest(
   signal.throwIfAborted()
   const { source, sceneContext, priorAnswers } = request.data
   const localPlan = parseStageText(request.data.input, sceneContext, priorAnswers, source)
-  if (localPlan) return validateStagePlan(localPlan, sceneContext).plan
+  if (localPlan)
+    return trackAiCall(
+      'stage-command',
+      'local-parser',
+      signal,
+      async () => validateStagePlan(localPlan, sceneContext).plan,
+      () => null,
+    )
   for (let attempt = 0; attempt < 2; attempt++) {
     signal.throwIfAborted()
     let raw: unknown

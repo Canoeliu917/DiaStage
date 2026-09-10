@@ -1,4 +1,5 @@
 import { guardSceneApiRequest, sceneApiJson, withSceneApiHeaders } from '../scene-api-security'
+import { aiRequestContext } from './usage'
 
 export const AI_LIMITS = {
   jsonBytes: 1024 * 1024,
@@ -176,7 +177,10 @@ export async function handleAiRequest(
   const signal = AbortSignal.any([request.signal, timeout.signal])
   try {
     signal.throwIfAborted()
-    const result = await withAbort(operation({ requestId, signal }), signal)
+    const result = await withAbort(
+      aiRequestContext.run({ requestId }, () => operation({ requestId, signal })),
+      signal,
+    )
     signal.throwIfAborted()
     return sceneApiJson(request, { ...result, requestId })
   } catch (error) {
