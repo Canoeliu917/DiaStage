@@ -4,15 +4,30 @@ import {
   compileStagePlan,
   parseStageText,
   type SceneContextSummary,
+  type StageCommand,
   type StagePlan,
   StagePlanSchema,
+  validateStagePlan,
 } from '@pascal-app/core/stage'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  deleteRecentlyAdded,
+  localControl,
+  rememberAiTransaction,
+  undoLastAiTransaction,
+} from '@/lib/stage/ai-controls'
 import { executeStageCommands } from '@/lib/stage/command-executor'
 import { currentStageContext } from '@/lib/stage/context'
+import {
+  type CreationLease,
+  creationDecision,
+  draftContext,
+  mergeDraftPlan,
+} from '@/lib/stage/creation-policy'
 import type { ScriptImport } from '@/lib/stage/import-metadata'
 import { createManualStageGraph } from '@/lib/stage/initial-stage'
+import { CreationModeControl, requestCreationPermission } from './creation-mode'
 import { PhoneVoiceLink } from './phone-voice-link'
 import { EMPTY_STAGE_CONTEXT, StagePlanReview, useStagePlanPreview } from './plan-review'
 import { VoiceRecorder } from './voice-recorder'
@@ -53,6 +68,12 @@ export async function applyReviewedPlan(
       )
     const result = executeStageCommands(compiled.commands, scriptImport)
     if (!result.ok) throw new Error(result.error)
+    if (plan.source === 'voice' || plan.source === 'typed-command')
+      rememberAiTransaction(
+        result,
+        context.objects.map((object) => object.id),
+        '舞台方案已应用，可撤销',
+      )
     return null
   }
   if (!plan.venue) throw new Error('请先填写舞台宽度与深度')
@@ -85,9 +106,34 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
   const [plan, setPlan] = useState<StagePlan | null>(null)
   const [answers, setAnswers] = useState<ClarificationAnswer[]>([])
   const [context, setContext] = useState(EMPTY_STAGE_CONTEXT)
+  const [deletion, setDeletion] = useState<StageCommand[] | null>(null)
+  const [lease, setLease] = useState<CreationLease | null>(null)
+  const draft = useRef<{ plan: StagePlan; context: SceneContextSummary } | null>(null)
   const requestId = useRef(''),
     abort = useRef<AbortController | null>(null)
   const mounted = useRef(true)
+  const stopCreation = useCallback(() => {
+    abort.current?.abort()
+    setLease(null)
+    setState('idle')
+    if (sceneId) void requestCreationPermission(sceneId, 'revoke').catch(() => {})
+  }, [sceneId])
+  useEffect(() => {
+    const stop = () => {
+      abort.current?.abort()
+      if (sceneId) void requestCreationPermission(sceneId, 'revoke').catch(() => {})
+    }
+    window.addEventListener('pagehide', stop)
+    return () => {
+      window.removeEventListener('pagehide', stop)
+      stop()
+    }
+  }, [sceneId])
+  useEffect(() => {
+    if (!lease) return
+    const timer = setTimeout(stopCreation, Math.max(0, lease.expiresAt - Date.now()))
+    return () => clearTimeout(timer)
+  }, [lease, stopCreation])
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -103,7 +149,28 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
     'planning',
     'applying',
   ].includes(state)
+  const handleControl = (input: string) => {
+    const control = localControl(input)
+    if (!control) return false
+    if (control === 'stop') stopCreation()
+    abort.current?.abort()
+    setPlan(null)
+    setDeletion(null)
+    draft.current = null
+    useStagePlanPreview.setState({ plan: null })
+    setState('idle')
+    setError('')
+    if (control === 'undo') {
+      try {
+        undoLastAiTransaction()
+      } catch (failure) {
+        setError(failure instanceof Error ? failure.message : '撤销失败')
+      }
+    }
+    return true
+  }
   const generate = async (priorAnswers = answers) => {
+    if (handleControl(text)) return
     if (!text.trim() || busy) return
     abort.current?.abort()
     const controller = new AbortController()
@@ -111,7 +178,21 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
     setState('planning')
     setError('')
     try {
-      const current = sceneId ? currentStageContext() : EMPTY_STAGE_CONTEXT
+      if (sceneId) {
+        const commands = deleteRecentlyAdded(text)
+        if (commands) {
+          setDeletion(commands)
+          setState('review')
+          return
+        }
+      }
+      const full = sceneId ? currentStageContext() : EMPTY_STAGE_CONTEXT
+      if (draft.current && draft.current.context.documentVersion !== full.documentVersion)
+        throw new Error('正式舞台已改变，请先取消草台并重新生成。')
+      const current =
+        lease?.mode === 'draft' && draft.current
+          ? draftContext(draft.current.context, draft.current.plan)
+          : full
       const local = parseStageText(text, current, priorAnswers, source)
       const response = local
         ? null
@@ -135,6 +216,50 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
       if (controller.signal.aborted || !mounted.current) return
       requestId.current = result.requestId
       setContext(current)
+      if (sceneId && lease && !next.questions.length) {
+        const compiled = compileStagePlan(next, current, {
+          transactionId: result.requestId,
+          issuedAt: new Date().toISOString(),
+        })
+        if (compiled.ok) {
+          let renewed: CreationLease | null = null
+          try {
+            renewed = await requestCreationPermission(sceneId, 'check')
+          } catch (failure) {
+            setLease(null)
+            setError(failure instanceof Error ? failure.message : '授权已失效，方案等待确认')
+          }
+          if (controller.signal.aborted || !mounted.current) return
+          if (renewed) setLease(renewed)
+          const decision = creationDecision(renewed, sceneId, compiled.commands)
+          if (decision === 'execute') {
+            const execution = executeStageCommands(compiled.commands)
+            if (!execution.ok) throw new Error(execution.error)
+            rememberAiTransaction(
+              execution,
+              current.objects.map((object) => object.id),
+              '连续制景已完成，可撤销',
+            )
+            setPlan(null)
+            setAnswers([])
+            setState('complete')
+            return
+          }
+          if (decision === 'draft') {
+            const base = draft.current?.context ?? full
+            const merged = mergeDraftPlan(
+              draft.current?.plan ?? null,
+              validateStagePlan(next, current).plan,
+              base,
+            )
+            draft.current = { plan: merged, context: base }
+            setContext(base)
+            setPlan(merged)
+            setState('review')
+            return
+          }
+        }
+      }
       setPlan(next)
       setState(next.questions.length ? 'needs-clarification' : 'review')
     } catch (failure) {
@@ -162,6 +287,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
       if (controller.signal.aborted || !mounted.current) return
       useStagePlanPreview.setState({ plan: null })
       setPlan(null)
+      draft.current = null
       setState('complete')
       setAnswers([])
       if (path) router.push(path)
@@ -174,11 +300,23 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
   }
   return (
     <div className="stage-input" aria-busy={busy}>
+      {sceneId && (
+        <CreationModeControl
+          sceneId={sceneId}
+          lease={lease}
+          onChange={setLease}
+          onStop={stopCreation}
+        />
+      )}
       <PhoneVoiceLink
+        onDisconnect={() => {
+          if (lease) stopCreation()
+        }}
         sceneLabel={sceneId ? '当前剧目 · 舞台口令' : '新舞台 · 语音开台'}
         storageKey={sceneId ?? 'new-stage'}
         canLoad={!busy && !plan}
         onTranscript={(transcript) => {
+          if (handleControl(transcript)) return
           setText(transcript)
           setSource('voice')
           setAnswers([])
@@ -193,6 +331,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
             setState={setState}
             onError={setError}
             onTranscript={(transcript) => {
+              if (handleControl(transcript)) return
               setText(transcript)
               setSource('voice')
               setAnswers([])
@@ -204,7 +343,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
               maxLength={10000}
               placeholder={sceneId ? '例如：把选中的布景向台后移半米。' : STAGE_EXAMPLE}
               value={text}
-              disabled={busy}
+              disabled={state === 'applying'}
               onChange={(event) => {
                 setText(event.target.value)
                 setAnswers([])
@@ -223,7 +362,11 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
             >
               试用示例
             </button>
-            <button type="button" onClick={() => void generate()} disabled={busy || !text.trim()}>
+            <button
+              type="button"
+              onClick={() => void generate()}
+              disabled={(busy && !localControl(text)) || !text.trim()}
+            >
               {state === 'planning' ? '正在理解台位…' : '生成舞台方案'}
             </button>
           </div>
@@ -231,6 +374,20 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
       )}
       {plan && (
         <>
+          {draft.current && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                setPlan(null)
+                setText('')
+                setAnswers([])
+                setState('idle')
+              }}
+            >
+              继续调整草台（暂不落位）
+            </button>
+          )}
           <details>
             <summary>{source === 'voice' ? '我听到的内容' : '我输入的内容'}</summary>
             <p>{text}</p>
@@ -240,6 +397,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
             context={context}
             onChange={setPlan}
             onBack={() => {
+              draft.current = null
               setPlan(null)
               setState('idle')
             }}
@@ -256,6 +414,40 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
             error={error}
           />
         </>
+      )}
+      {deletion && (
+        <section aria-label="删除确认">
+          <p>将删除刚才添加的对象：{text}。删除需要单独确认，可撤销。</p>
+          <button
+            type="button"
+            onClick={() => {
+              const before = currentStageContext()
+              const result = executeStageCommands(deletion)
+              if (!result.ok) {
+                setError(result.error ?? '删除失败')
+                return
+              }
+              rememberAiTransaction(
+                result,
+                before.objects.map((object) => object.id),
+                '已删除对象，可撤销',
+              )
+              setDeletion(null)
+              setState('complete')
+            }}
+          >
+            确认删除
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setDeletion(null)
+              setState('idle')
+            }}
+          >
+            取消删除
+          </button>
+        </section>
       )}
       {['planning', 'applying'].includes(state) && (
         <button

@@ -11,6 +11,7 @@ import {
   type RemoteVoiceDisposition,
   readRemoteVoiceResponse,
 } from '@/lib/remote-voice/client'
+import { localControl } from '@/lib/stage/ai-controls'
 
 type HandledCommand = {
   sequence: number
@@ -22,11 +23,13 @@ export function PhoneVoiceLink({
   storageKey,
   canLoad,
   onTranscript,
+  onDisconnect,
 }: {
   sceneLabel: string
   storageKey: string
   canLoad: boolean
   onTranscript: (transcript: string) => void
+  onDisconnect?: () => void
 }) {
   const [session, setSession] = useState<CreatedRemoteVoiceSession | null>(null)
   const [paired, setPaired] = useState(false)
@@ -39,6 +42,8 @@ export function PhoneVoiceLink({
   const [localOnly, setLocalOnly] = useState(false)
   const [insecureAddress, setInsecureAddress] = useState(false)
   const details = useRef<HTMLDetailsElement>(null)
+  const disconnectCallback = useRef(onDisconnect)
+  disconnectCallback.current = onDisconnect
   const ownerStorageKey = `diastage:remote-voice-owner:${storageKey}`
 
   useEffect(() => {
@@ -97,6 +102,7 @@ export function PhoneVoiceLink({
         if (!result.status.pendingCommand) setHandled(null)
       } catch (failure) {
         if (stopped || controller.signal.aborted) return
+        disconnectCallback.current?.()
         setError(failure instanceof Error ? failure.message : '手机连接已中断，请重新连接。')
       } finally {
         if (!stopped) timer = setTimeout(poll, 1500)
@@ -170,6 +176,7 @@ export function PhoneVoiceLink({
   }
 
   const disconnect = async () => {
+    disconnectCallback.current?.()
     const current = session
     setSession(null)
     setPaired(false)
@@ -249,7 +256,7 @@ export function PhoneVoiceLink({
               <div className="stage-entry-actions">
                 <button
                   type="button"
-                  disabled={!canLoad || state !== 'idle'}
+                  disabled={(!canLoad && !localControl(incoming.transcript)) || state !== 'idle'}
                   onClick={() => void acknowledge(incoming, handled?.disposition ?? 'loaded')}
                 >
                   {handled?.sequence === incoming.sequence ? '重试回执' : '载入口令'}

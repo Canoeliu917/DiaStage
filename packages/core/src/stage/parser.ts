@@ -327,6 +327,8 @@ export function parseStageText(
   }
   for (let index = 0; index < clauses.length; index++) {
     let clause = clauses[index]!.replace(/^请/, '')
+      .replace(/^将/, '把')
+      .replace(/^在舞台中区/, '舞台中区')
     const directionId = `direction-${index}`
     const ambiguous = clause.match(/观众右|观众左|右边|左边|旁边|旁/)?.[0]
     if (ambiguous) {
