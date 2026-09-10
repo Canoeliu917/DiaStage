@@ -24,7 +24,8 @@ await mkdir(path.dirname(outputDirectory), { recursive: true })
 // recreating them needs link privileges and would point outside the packed runtime.
 await cp(standaloneDirectory, outputDirectory, {
   recursive: true,
-  dereference: process.platform === 'win32',
+  // Preserve POSIX relative links so copied packages resolve inside the new runtime.
+  ...(process.platform === 'win32' ? { dereference: true } : { verbatimSymlinks: true }),
   // Windows tracing can follow workspace links into the previous CLI output.
   // Never let a runtime copy contain its own previous distribution.
   filter: (source) =>
