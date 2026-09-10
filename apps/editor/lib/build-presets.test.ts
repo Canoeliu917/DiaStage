@@ -15,6 +15,7 @@ import {
 } from '@pascal-app/core'
 import {
   BUILD_PRESETS,
+  type BuildPreset,
   buildPresetLabel,
   buildPresetSnapshot,
   buildPresetToolDefaults,
@@ -22,6 +23,7 @@ import {
   insertBuildNodes,
   validateBuildSnapshot,
 } from './build-presets'
+import savedPresets from './build-presets.json'
 import { PASCAL_LIBRARY_MATERIALS } from './pascal-library-materials'
 
 globalThis.requestAnimationFrame ??= () => 0
@@ -60,9 +62,11 @@ afterEach(() => {
   useScene.temporal.getState().resume()
 })
 
-test('882 public presets are complete and one missing library material is explicitly rejected', () => {
-  expect(BUILD_PRESETS).toHaveLength(883)
-  expect(BUILD_PRESETS.filter((preset) => preset.source === 'library')).toHaveLength(88)
+test('stage catalog excludes roofs, ceilings and architectural stairs while validating available presets', () => {
+  expect(BUILD_PRESETS.length).toBeGreaterThan(0)
+  expect(
+    BUILD_PRESETS.some((p) => ['roof', 'roof-segment', 'ceiling', 'stair'].includes(p.rootKind)),
+  ).toBe(false)
   const unavailable: string[] = []
   for (const preset of BUILD_PRESETS) {
     try {
@@ -124,18 +128,14 @@ test('tool parameters retain finishes and shape while removing original IDs and 
   expect(params.openingShape).toBe('arch')
   for (const field of ['id', 'parentId', 'position', 'rotation', 'wallId', 'children'])
     expect(params[field]).toBeUndefined()
-  const roof = BUILD_PRESETS.find(
-    (preset) => preset.source === 'library' && preset.name === 'Gambrel roof',
-  )!
-  expect(buildPresetToolDefaults(roof).roofType).toBe('gambrel')
-  expect(buildPresetUsesTool(roof)).toBe(true)
+  expect(buildPresetUsesTool(arch)).toBe(true)
   expect(buildPresetLabel(arch)).toBe('拱形门洞')
   const community = BUILD_PRESETS.find((preset) => preset.source === 'community')!
   expect(buildPresetLabel(community)).toBe(community.name)
 })
 
-test('complex stairs insert a complete fresh subtree in one undo step', () => {
-  const stairs = BUILD_PRESETS.find(
+test('an explicitly imported old stair subtree retains shape without creating destination links', () => {
+  const stairs = (savedPresets as unknown as BuildPreset[]).find(
     (preset) => preset.source === 'library' && preset.name === 'Switchback stairs',
   )!
   expect(buildPresetUsesTool(stairs)).toBe(false)
@@ -152,7 +152,7 @@ test('complex stairs insert a complete fresh subtree in one undo step', () => {
   const added = nodes[ids[0]!]
   expect(added?.type).toBe('stair')
   if (added?.type === 'stair') {
-    expect(added.fromLevelId).toBe('level_presets')
+    expect(added.fromLevelId).toBeNull()
     expect(added.toLevelId).toBeNull()
     expect(added.deckSlabId).toBeUndefined()
   }

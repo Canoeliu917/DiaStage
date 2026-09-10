@@ -39,14 +39,6 @@ const SCENIC_FIELDS: Record<string, string[]> = {
   spawn: ['position'],
 }
 
-const STAIR_GROUPS = [
-  {
-    label: '台阶尺寸',
-    fields: [{ key: 'width', kind: 'number', unit: 'm', min: 0.1, max: 100, step: 0.05 }],
-  },
-  { label: '落位', fields: [{ key: 'position', kind: 'vec3' }] },
-] satisfies ParametricDescriptor<StairNode>['groups']
-
 const OPENING_GROUPS = [
   {
     label: '开合',
@@ -67,10 +59,10 @@ export function theatreParametrics(
   if (type === 'stair' || type === 'stair-segment')
     return {
       ...source,
-      customPanel: undefined,
+      customPanel: source.customPanel,
       trailingSection: undefined,
       actions: undefined,
-      groups: STAIR_GROUPS,
+      groups: [],
     }
   const keys = SCENIC_FIELDS[type] ?? []
   const groups: TheatreParametricDescriptor['groups'] = source.groups

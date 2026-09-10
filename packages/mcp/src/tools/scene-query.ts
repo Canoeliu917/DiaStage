@@ -375,46 +375,6 @@ function wallSamplePoints(wall: AnyNode & { type: 'wall' }): Vec2[] {
   ])
 }
 
-function getLevelNumber(
-  levelId: string | null | undefined,
-  nodes: Record<string, AnyNode>,
-): number | undefined {
-  if (!levelId) return undefined
-  const node = nodes[levelId as AnyNodeId]
-  return node?.type === 'level' ? node.level : undefined
-}
-
-function targetLevelIdsForStair(
-  bridge: SceneOperations,
-  stair: AnyNode & { type: 'stair' },
-): AnyNodeId[] {
-  const nodes = bridge.getNodes()
-  const parentLevelId = bridge.resolveLevelId(stair.id as AnyNodeId)
-  const fromLevelId = (stair.fromLevelId ?? parentLevelId) as string | null
-  const toLevelId = (stair.toLevelId ?? fromLevelId) as string | null
-  const fromLevel = getLevelNumber(fromLevelId, nodes)
-  const toLevel = getLevelNumber(toLevelId, nodes)
-
-  if (fromLevel === undefined || toLevel === undefined) {
-    return toLevelId ? [toLevelId as AnyNodeId] : []
-  }
-
-  const minLevel = Math.min(fromLevel, toLevel)
-  const maxLevel = Math.max(fromLevel, toLevel)
-  return getLevels(bridge)
-    .filter((level) => level.type === 'level' && level.level > minLevel && level.level <= maxLevel)
-    .map((level) => level.id as AnyNodeId)
-}
-
-function holeBelongsToStair(
-  surface: AnyNode & { type: 'slab' | 'ceiling' },
-  holeIndex: number,
-  stairId: string,
-) {
-  const metadata = surface.holeMetadata?.[holeIndex]
-  return metadata?.source === 'stair' && metadata.stairId === stairId
-}
-
 function parentListsChild(parent: AnyNode, childId: string): boolean {
   if (!('children' in parent && Array.isArray(parent.children))) return false
   return parent.children.some((child) => {
@@ -776,50 +736,6 @@ export function registerVerifyScene(server: McpServer, bridge: SceneOperations):
                 sourceLevel?.name ?? sourceLevelId
               }`,
             )
-          }
-        }
-
-        if ((stair.slabOpeningMode ?? 'none') === 'destination') {
-          const targetLevelIds = targetLevelIdsForStair(bridge, stair)
-          if (targetLevelIds.length === 0) {
-            issues.push(
-              `Stair ${stair.name ?? stair.id} requests a slab opening but has no target level`,
-            )
-          }
-
-          for (const targetLevelId of targetLevelIds) {
-            const targetLevel = bridge.getNode(targetLevelId)
-            const targetSlabs = nodesOnLevel(bridge, targetLevelId).filter(
-              (node): node is AnyNode & { type: 'slab' } => node.type === 'slab',
-            )
-            if (targetSlabs.length === 0) {
-              issues.push(
-                `Stair ${stair.name ?? stair.id} targets ${targetLevel?.name ?? targetLevelId} but it has no slab`,
-              )
-              continue
-            }
-
-            const matchingHoles = targetSlabs.flatMap((slab) =>
-              (slab.holes ?? [])
-                .map((hole, index) => ({ slab, hole, index }))
-                .filter((entry) => holeBelongsToStair(entry.slab, entry.index, stair.id)),
-            )
-            if (matchingHoles.length === 0) {
-              issues.push(
-                `Stair ${stair.name ?? stair.id} has no destination slab opening on ${
-                  targetLevel?.name ?? targetLevelId
-                }`,
-              )
-              continue
-            }
-
-            for (const { slab, hole } of matchingHoles) {
-              if (!polygonContainsPolygon(slab.polygon as Vec2[], hole as Vec2[])) {
-                issues.push(
-                  `Stair ${stair.name ?? stair.id} opening extends outside slab ${slab.name ?? slab.id}`,
-                )
-              }
-            }
           }
         }
       }

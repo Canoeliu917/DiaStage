@@ -100,7 +100,7 @@ export function createFreshPlacementSubtree(
       cloned.nodes.map((node, index) => (index === 0 && parentId ? { node, parentId } : { node })),
     )
 
-  return cloned.rootId
+  return useScene.getState().nodes[cloned.rootId] ? cloned.rootId : null
 }
 
 /**
@@ -143,5 +143,5 @@ export function commitFreshPlacementSubtree(
     )
   if (!wasTracking) temporal.pause()
 
-  return cloned.rootId
+  return useScene.getState().nodes[cloned.rootId] ? cloned.rootId : null
 }

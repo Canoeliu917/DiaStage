@@ -11,7 +11,19 @@ import {
   SiteNode,
   ZoneNode,
 } from '@pascal-app/core/schema'
+import { createStageStair } from '@pascal-app/core/stage'
 import { buildStageRows, getStageNodeSelection } from './stage-overview-data'
+
+test('simple stage steps appear as one movable object without exposing internal segments', () => {
+  const { stair, segment } = createStageStair({}, 'level_main')
+  const nodes = { [stair.id]: stair, [segment.id]: segment }
+  const before = JSON.stringify(nodes)
+  assert.deepEqual(
+    buildStageRows(nodes).map((row) => row.id),
+    [stair.id],
+  )
+  assert.equal(JSON.stringify(nodes), before)
+})
 
 function item(id: string, parentId: string | null, name = '物件'): AnyNode {
   return ItemNode.parse({

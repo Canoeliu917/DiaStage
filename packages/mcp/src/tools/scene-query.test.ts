@@ -343,7 +343,7 @@ describe('scene query tools', () => {
     )
   })
 
-  test('verify_scene reports stair wall obstructions and missing destination slab openings', async () => {
+  test('verify_scene reports stage step obstructions but ignores inactive legacy opening flags', async () => {
     const building = Object.values(bridge.getNodes()).find((n) => n.type === 'building')!
     const ground = Object.values(bridge.getNodes()).find((n) => n.type === 'level')!
     const upper = LevelNode.parse({ name: 'Upper Floor', level: 1 })
@@ -386,6 +386,6 @@ describe('scene query tools', () => {
     const parsed = JSON.parse((result.content as Array<{ type: string; text: string }>)[0]!.text)
     expect(parsed.hasIssues).toBe(true)
     expect(parsed.issues.join('\n')).toContain('obstructs stair Main Stair')
-    expect(parsed.issues.join('\n')).toContain('no destination slab opening')
+    expect(parsed.issues.join('\n')).not.toContain('slab opening')
   })
 })

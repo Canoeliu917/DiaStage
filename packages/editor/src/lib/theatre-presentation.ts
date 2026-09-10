@@ -31,7 +31,7 @@ const LABELS: Record<string, string> = {
   shelf: '置物架',
   door: '实用门',
   window: '实用窗',
-  stair: '台阶',
+  stair: '舞台台阶',
   'stair-segment': '台阶段',
   slab: '舞台地面',
   ceiling: '上空遮挡',

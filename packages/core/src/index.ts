@@ -408,10 +408,7 @@ export {
   type SlabElevationClamp,
 } from './systems/slab/slab-support'
 export { type StairFootprintAABB, stairFootprintAABB } from './systems/stair/stair-footprint'
-export { createSurfaceOpeningPreviewController } from './systems/stair/stair-opening-preview'
-export { syncAutoStairOpenings } from './systems/stair/stair-opening-sync'
-export { StairOpeningSystem } from './systems/stair/stair-opening-system'
-export { resolveStairTotalRise, syncStairRises } from './systems/stair/stair-rise'
+export { resolveStairTotalRise } from './systems/stair/stair-rise'
 export {
   constrainWallCurveOffsetToAvoidIntersections,
   getClampedWallCurveOffset,

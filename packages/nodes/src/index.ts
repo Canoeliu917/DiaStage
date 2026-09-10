@@ -1,27 +1,20 @@
 import type { AnyNodeDefinition, Plugin } from '@pascal-app/core'
+import { archivedArchitectureDefinitions } from './archived-architecture'
 import { blockDefinition } from './block/definition'
-import { boxVentDefinition } from './box-vent'
 import { buildingDefinition } from './building'
 import { cabinetDefinition, cabinetModuleDefinition } from './cabinet'
 import { ceilingDefinition } from './ceiling'
-import { chimneyDefinition } from './chimney'
 import { columnDefinition } from './column'
 import { constructionDimensionDefinition } from './construction-dimension'
-import { cupolaDefinition } from './cupola'
 import { doorDefinition } from './door'
-import { dormerDefinition } from './dormer'
-import { downspoutDefinition } from './downspout'
 import { ductFittingDefinition } from './duct-fitting'
 import { ductSegmentDefinition } from './duct-segment'
 import { ductTerminalDefinition } from './duct-terminal'
 import { elevatorDefinition } from './elevator'
-import { eyebrowVentDefinition } from './eyebrow-vent'
 import { fenceDefinition } from './fence'
 import { guideDefinition } from './guide'
-import { gutterDefinition } from './gutter'
 import { hvacEquipmentDefinition } from './hvac-equipment'
 import { itemDefinition } from './item'
-import { leanToExtensionDefinition } from './lean-to-extension'
 import { levelDefinition } from './level'
 import { linesetDefinition } from './lineset'
 import { liquidLineDefinition } from './liquid-line'
@@ -29,20 +22,16 @@ import { measurementDefinition } from './measurement'
 import { pipeFittingDefinition } from './pipe-fitting'
 import { pipeSegmentDefinition } from './pipe-segment'
 import { pipeTrapDefinition } from './pipe-trap'
-import { ridgeVentDefinition } from './ridge-vent'
 import { roofDefinition } from './roof'
 import { roofSegmentDefinition } from './roof-segment'
 import { scanDefinition } from './scan'
 import { shelfDefinition } from './shelf'
 import { siteDefinition } from './site'
-import { skylightDefinition } from './skylight'
 import { slabDefinition } from './slab'
-import { solarPanelDefinition } from './solar-panel'
 import { spawnDefinition } from './spawn'
 import { stairDefinition } from './stair'
 import { stairSegmentDefinition } from './stair-segment'
 import { structuralGridDefinition } from './structural-grid'
-import { turbineVentDefinition } from './turbine-vent'
 import { wallDefinition } from './wall'
 import { windowDefinition } from './window'
 import { zoneDefinition } from './zone'
@@ -67,12 +56,12 @@ export const builtinPlugin: Plugin = {
   id: 'pascal:core',
   apiVersion: 1,
   nodes: [
+    ...archivedArchitectureDefinitions,
     // Stage E-complete (full registry path)
     shelfDefinition as unknown as AnyNodeDefinition,
     blockDefinition as unknown as AnyNodeDefinition,
     spawnDefinition as unknown as AnyNodeDefinition,
     wallDefinition as unknown as AnyNodeDefinition,
-    leanToExtensionDefinition as unknown as AnyNodeDefinition,
     fenceDefinition as unknown as AnyNodeDefinition,
     slabDefinition as unknown as AnyNodeDefinition,
     ceilingDefinition as unknown as AnyNodeDefinition,
@@ -99,17 +88,6 @@ export const builtinPlugin: Plugin = {
     constructionDimensionDefinition as unknown as AnyNodeDefinition,
     structuralGridDefinition as unknown as AnyNodeDefinition,
     // Roof-mounted accessories (custom renderer + bespoke roof-event tool).
-    boxVentDefinition as unknown as AnyNodeDefinition,
-    ridgeVentDefinition as unknown as AnyNodeDefinition,
-    turbineVentDefinition as unknown as AnyNodeDefinition,
-    cupolaDefinition as unknown as AnyNodeDefinition,
-    eyebrowVentDefinition as unknown as AnyNodeDefinition,
-    chimneyDefinition as unknown as AnyNodeDefinition,
-    solarPanelDefinition as unknown as AnyNodeDefinition,
-    skylightDefinition as unknown as AnyNodeDefinition,
-    dormerDefinition as unknown as AnyNodeDefinition,
-    gutterDefinition as unknown as AnyNodeDefinition,
-    downspoutDefinition as unknown as AnyNodeDefinition,
     // HVAC — Phase 1: round duct segment polyline. Phase 2: fittings + ports.
     ductSegmentDefinition as unknown as AnyNodeDefinition,
     ductFittingDefinition as unknown as AnyNodeDefinition,
@@ -182,7 +160,7 @@ export { pipeFittingDefinition } from './pipe-fitting'
 export { pipeSegmentDefinition } from './pipe-segment'
 export { pipeTrapDefinition } from './pipe-trap'
 export { ridgeVentDefinition } from './ridge-vent'
-export { type RoofFootprintSourceChoice, roofDefinition, useRoofFootprintSource } from './roof'
+export { roofDefinition } from './roof'
 export { roofSegmentDefinition } from './roof-segment'
 export { scanDefinition } from './scan'
 export { shelfDefinition } from './shelf'

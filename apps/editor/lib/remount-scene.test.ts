@@ -444,3 +444,27 @@ describe('remount scene boundary', () => {
     expect(() => saveRemountConfig(SCENE)).not.toThrow()
   })
 })
+
+test('native stage stairs remount as one physical assembly and undo without changing treads', async () => {
+  const { createStageStair } = await import('@pascal-app/core/stage')
+  const { stair, segment } = createStageStair(
+    { position: [-2, 0, -1], rotation: Math.PI / 2, stepCount: 3 },
+    'level_test',
+  )
+  fixture([stair, segment])
+  const before = useScene.getState().nodes
+  captureProductionLayout(SCENE, [stair.id])
+  const plan = previewRemount(SCENE)
+  expect(plan.placements).toHaveLength(1)
+  expect(plan.scale).toBe(1)
+  expect(plan.conflicts.filter((c) => c.severity === 'error')).toEqual([])
+  applyRemount(SCENE)
+  expect(useScene.getState().nodes[stair.id]).toMatchObject({
+    position: [8, 0, -1],
+    rotation: Math.PI / 2,
+  })
+  expect(useScene.getState().nodes[segment.id]).toEqual(segment)
+  expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+  expect(undoLastRemount(SCENE)).toBe(true)
+  expect(useScene.getState().nodes).toEqual(before)
+})

@@ -111,7 +111,7 @@ describe('polygon delete-vertex floorplan affordance', () => {
   test('registers delete-vertex for every registry-driven polygon surface', () => {
     expect(zoneDefinition.floorplanAffordances?.['delete-vertex']).toBeDefined()
     expect(slabDefinition.floorplanAffordances?.['delete-vertex']).toBeDefined()
-    expect(ceilingDefinition.floorplanAffordances?.['delete-vertex']).toBeDefined()
+    expect(ceilingDefinition.floorplanAffordances).toBeUndefined()
   })
 
   test('applies kind-owned detachment data with a manual ring edit', () => {

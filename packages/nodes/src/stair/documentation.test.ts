@@ -1,141 +1,31 @@
-import { describe, expect, test } from 'bun:test'
-import {
-  type FloorplanGeometry,
-  type GeometryContext,
-  LevelNode,
-  StairNode,
-  StairSegmentNode,
-} from '@pascal-app/core'
-import {
-  buildFloorplanStairEntry,
-  createFloorplanContextExtensions,
-  readFloorplanGeometryMetadata,
-} from '@pascal-app/editor'
-import {
-  buildStairDocumentation,
-  resolveStairPlanDirection,
-  resolveStraightStairDirectionArrow,
-  stairPlanBreakStep,
-} from './documentation'
+import { expect, test } from 'bun:test'
+import type { GeometryContext } from '@pascal-app/core'
+import { createStageStair } from '@pascal-app/core/stage'
+import { buildFloorplanStairEntry, createFloorplanContextExtensions } from '@pascal-app/editor'
+import { buildStairDocumentation } from './documentation'
+import { buildStairFloorplan } from './floorplan'
 
-function context(levelId = 'level_ground', unit: 'metric' | 'imperial' = 'metric') {
-  return {
-    resolve: () => undefined,
-    children: [],
-    siblings: [],
-    parent: LevelNode.parse({ id: levelId }),
-    viewState: {
-      selected: false,
-      highlighted: false,
-      hovered: false,
-      moving: false,
-      unit,
-      palette: { measurementStroke: '#123456' } as NonNullable<
-        GeometryContext['viewState']
-      >['palette'],
-    },
-    extensions: createFloorplanContextExtensions({ purpose: 'edit' }),
-  } satisfies GeometryContext
-}
-
-function straightFixture() {
-  const segment = StairSegmentNode.parse({
-    id: 'sseg_flight',
-    segmentType: 'stair',
-    width: 1.2,
-    length: 3,
-    height: 2.5,
-    stepCount: 10,
-  })
-  const stair = StairNode.parse({
-    id: 'stair_main',
-    parentId: 'level_ground',
-    fromLevelId: 'level_ground',
-    toLevelId: 'level_upper',
-    stairType: 'straight',
-    railingMode: 'both',
-    railingHeight: 0.92,
-    children: [segment.id],
-  })
+test('stage plan shows every tread and simple step dimensions without a storey break', () => {
+  const { stair, segment } = createStageStair({}, 'level_test')
   const entry = buildFloorplanStairEntry(stair, [segment])!
-  return { entry, segment, stair }
-}
-
-function annotationTexts(geometry: FloorplanGeometry[]) {
-  return geometry.flatMap((entry) =>
-    entry.kind === 'text' &&
-    readFloorplanGeometryMetadata(entry).annotationRole === 'stair-annotation'
-      ? [entry.text]
-      : [],
+  const ctx: GeometryContext = {
+    resolve: () => undefined,
+    children: [segment],
+    siblings: [],
+    extensions: createFloorplanContextExtensions({ purpose: 'edit' }),
+  }
+  const notes = buildStairDocumentation(stair, entry, ctx)
+  expect(notes).toHaveLength(1)
+  expect(notes[0]).toMatchObject({
+    kind: 'text',
+    text: '3 级 · 步高 0.15m · 步深 0.3m · 总宽 1.2m',
+  })
+  const plan = buildStairFloorplan(stair, ctx)
+  if (plan?.kind !== 'group') throw new Error('missing stage stair plan')
+  expect(plan.children.filter((n) => n.kind === 'polygon' && n.fill === '#262626')).toHaveLength(
+    entry.segments[0]!.treadBars.length,
   )
-}
-
-describe('stair construction documentation', () => {
-  test('derives straight-flight direction, riser, tread, width, rail, and break annotations', () => {
-    const { entry, stair } = straightFixture()
-    const geometry = buildStairDocumentation(stair, entry, context())
-
-    expect(annotationTexts(geometry)).toEqual([
-      '上行',
-      '10 级 · 踢面 0.25m · 踏面 0.3m · 净宽 1.2m',
-      '两侧栏杆 · 高 0.92m',
-    ])
-    expect(
-      geometry.some(
-        (entry) =>
-          entry.kind === 'polyline' &&
-          readFloorplanGeometryMetadata(entry).annotationRole === 'stair-annotation',
-      ),
-    ).toBe(true)
-  })
-
-  test('uses DN and reverses the direction arrow on the destination level', () => {
-    const { entry, stair } = straightFixture()
-    const downArrow = resolveStraightStairDirectionArrow(entry, 'down')
-
-    expect(resolveStairPlanDirection(stair, 'level_ground')).toBe('up')
-    expect(resolveStairPlanDirection(stair, 'level_upper')).toBe('down')
-    expect(annotationTexts(buildStairDocumentation(stair, entry, context('level_upper')))[0]).toBe(
-      '下行',
-    )
-    expect(downArrow?.polyline.at(-1)).toEqual(entry.arrow?.polyline[0])
-    expect(downArrow?.head[0]).toEqual(entry.arrow?.polyline[0])
-  })
-
-  test('derives curved-stair tread depth at the walking line', () => {
-    const stair = StairNode.parse({
-      id: 'stair_curved',
-      parentId: 'level_ground',
-      stairType: 'curved',
-      width: 1.2,
-      innerRadius: 0.9,
-      sweepAngle: Math.PI / 2,
-      totalRise: 3,
-      stepCount: 12,
-      railingMode: 'left',
-      railingHeight: 1,
-    })
-    const entry = buildFloorplanStairEntry(stair, [])!
-
-    expect(annotationTexts(buildStairDocumentation(stair, entry, context()))).toEqual([
-      '12 级 · 踢面 0.25m · 踏面（行走线）0.2m · 净宽 1.2m',
-      '上行',
-      '左侧栏杆 · 高 1m',
-    ])
-  })
-
-  test('uses the same construction notation in imperial plans', () => {
-    const { entry, stair } = straightFixture()
-    const texts = annotationTexts(
-      buildStairDocumentation(stair, entry, context('level_ground', 'imperial')),
-    )
-
-    expect(texts[1]).toContain(`10 级 · 踢面 9 13/16"`)
-    expect(texts[1]).toContain(`净宽 3'-11 1/4"`)
-  })
-
-  test('aligns tread visibility with the documented break position', () => {
-    expect(stairPlanBreakStep(10)).toBe(7)
-    expect(stairPlanBreakStep(15)).toBe(11)
-  })
+  expect(JSON.stringify(plan)).not.toMatch(
+    /segment-width|segment-length|curved-sweep|楼层|上行|下行|踢面/,
+  )
 })

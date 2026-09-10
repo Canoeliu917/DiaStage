@@ -20,7 +20,7 @@ function textValues(geometry: FloorplanGeometry | null) {
 }
 
 describe('buildStairFloorplan documentation', () => {
-  test('integrates stair notes, break line, and visible treads below the break', () => {
+  test('preserves old step geometry while showing stage dimensions and all treads', () => {
     const segment = StairSegmentNode.parse({
       id: 'sseg_main',
       width: 1.2,
@@ -43,8 +43,7 @@ describe('buildStairFloorplan documentation', () => {
       parent: LevelNode.parse({ id: 'level_ground' }),
     } satisfies GeometryContext)
 
-    expect(textValues(geometry)[0]).toBe('上行')
-    expect(textValues(geometry)).toContain('10 级 · 踢面 0.25m · 踏面 0.3m · 净宽 1.2m')
+    expect(textValues(geometry)).toContain('10 级 · 步高 0.25m · 步深 0.3m · 总宽 1.2m')
     expect(geometry?.kind).toBe('group')
     if (geometry?.kind !== 'group') return
     expect(
@@ -56,7 +55,7 @@ describe('buildStairFloorplan documentation', () => {
     ).toBe(true)
     expect(
       geometry.children.filter((child) => child.kind === 'polygon' && child.fill === '#262626'),
-    ).toHaveLength(6)
+    ).toHaveLength(9)
     expect(geometry.children.some((child) => 'strokeDasharray' in child)).toBe(false)
   })
 })

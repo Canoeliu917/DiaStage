@@ -8,6 +8,7 @@ import {
   sceneRegistry,
   useScene,
 } from '@pascal-app/core'
+import { archiveArchitecture } from '@pascal-app/core/scene-migrations'
 import { useViewer } from '@pascal-app/viewer'
 import useEditor, {
   hasCustomPersistedEditorUiState,
@@ -422,7 +423,8 @@ export function syncLegacyScenePlugins(): void {
 export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
   const defaultInstalledPlugins = editorHostPanelRegistry.getDefaultInstalledPluginIds()
   if (hasUsableSceneGraph(sceneGraph)) {
-    const { nodes, rootNodeIds, collections, materials, installedPlugins } = sceneGraph
+    const { nodes, rootNodeIds, collections, materials, installedPlugins } =
+      archiveArchitecture(sceneGraph)
     useScene.getState().setScene(nodes as any, rootNodeIds as any, {
       collections: collections as any,
       materials: materials as any,

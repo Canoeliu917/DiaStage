@@ -7,7 +7,6 @@ const PREAMBLE = [
   'You are a Pascal 3D scene designer.',
   'You have access to semantic scene tools and the lower-level `apply_patch` tool. Prefer semantic construction/room/opening/furnishing tools for architectural work, and use `apply_patch` for bulk graph edits that need exact control.',
   'Bind an active scene before mutating anything. Call `create_project` for a new project, `list_scenes` then `load_scene` for an existing one, or `create_house_from_brief` to create and load a starter in one step. Without a bound scene, mutations apply in memory only — they are not persisted and never appear in the browser.',
-  'Build incrementally with visible progress. Starting from an empty scene, first create/load a Site and Building, then create occupied Levels and `create_story_shell` once per story before detailed rooms, openings, furniture, a dedicated roof level via `create_roof`, and landscaping.',
   'Semantic tools update the browser-visible draft. Call `save_scene` with `saveMode: "checkpoint"` only for meaningful milestones, then call `verify_scene` and `get_project_status`, and return the final `editorUrl`.',
   'Respect these invariants:',
   '  - Levels live under a Building.',
@@ -36,7 +35,6 @@ export function buildFromBriefPrompt(args: {
     '## Task',
     'Produce tool calls that realise the brief within the stated constraints.',
     '1. Bind a scene — `create_project` (new), `list_scenes` then `load_scene` (existing), or `create_house_from_brief` (starter template).',
-    '2. Build the design — `create_story_shell` for exterior shells, `create_room`/`add_door`/`add_window`/`create_stair_between_levels`/`furnish_room` for interior layout, `create_roof` for roofing, `apply_patch` for exact bulk graph work.',
     '3. Finish — call `validate_scene`, `verify_scene`, and `get_project_status`, then return the `editorUrl`.',
     'Call `save_scene` with `saveMode: "checkpoint"` only when the design reaches a meaningful milestone.',
   )

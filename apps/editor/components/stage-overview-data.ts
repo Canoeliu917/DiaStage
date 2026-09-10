@@ -57,7 +57,13 @@ const nameOrder = new Intl.Collator('zh-CN', { numeric: true })
 
 export function buildStageRows(nodes: Record<string, AnyNode>): StageNodeRow[] {
   return Object.values(nodes)
-    .filter((node) => !isContainer(node) && !isLegacyLight(node) && node.type !== 'zone')
+    .filter(
+      (node) =>
+        !isContainer(node) &&
+        !isLegacyLight(node) &&
+        node.type !== 'zone' &&
+        node.type !== 'stair-segment',
+    )
     .map((node): StageNodeRow => {
       const parents = ancestors(nodes, node)
       const label = typeLabel(node)

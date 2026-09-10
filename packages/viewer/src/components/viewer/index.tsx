@@ -1,12 +1,6 @@
 'use client'
 
-import {
-  type AnyNodeId,
-  nodeRegistry,
-  StairOpeningSystem,
-  sceneRegistry,
-  useScene,
-} from '@pascal-app/core'
+import { type AnyNodeId, nodeRegistry, sceneRegistry, useScene } from '@pascal-app/core'
 import { Canvas, extend, type ThreeElement, useFrame, useThree } from '@react-three/fiber'
 import {
   forwardRef,
@@ -87,17 +81,7 @@ extend(THREE as any)
 const WEBGPU_RENDERER_CACHE = new WeakMap<HTMLCanvasElement, Promise<THREE.WebGPURenderer>>()
 const SCENE_READY_SETTLED_FRAMES = 2
 const SCENE_READY_MAX_WAIT_FRAMES = 180
-const DIRTY_BUILD_KINDS = new Set([
-  'ceiling',
-  'door',
-  'item',
-  'roof',
-  'roof-segment',
-  'stair',
-  'stair-segment',
-  'wall',
-  'window',
-])
+const DIRTY_BUILD_KINDS = new Set(['door', 'item', 'stair', 'stair-segment', 'wall', 'window'])
 
 const warnedEmptyDraw = process.env.NODE_ENV === 'production' ? null : new WeakSet<object>()
 
@@ -311,13 +295,6 @@ function SceneReadyTracker({
   }, 10)
 
   return null
-}
-
-function PresentStairOpeningSystem() {
-  const hasStairs = useScene((state) =>
-    Object.values(state.nodes).some((node) => node.type === 'stair'),
-  )
-  return hasStairs ? <StairOpeningSystem /> : null
 }
 
 interface ViewerProps {
@@ -710,7 +687,6 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
           <GeometrySystem />
           {/* Automated stair opening sync — updates slab/ceiling cutouts
             whenever stairs, slabs, or levels change. */}
-          <PresentStairOpeningSystem />
           {/* Mounts systems contributed by registry-backed kinds. Each
             kind's `def.system` is loaded via lazy() and rendered here,
             ordered by `system.priority`. */}

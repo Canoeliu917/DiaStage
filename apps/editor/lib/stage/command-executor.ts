@@ -2,11 +2,13 @@ import {
   type AnyNode,
   type AnyNodeId,
   type BlockNode,
+  cloneNodesInto,
   GROUND_SUPPORT_ID,
   getFloorPlacedElevation,
   ItemNode,
   installSceneMutationHandler,
   type NodeChanges,
+  type StairNode,
   useScene,
 } from '@pascal-app/core'
 import {
@@ -21,8 +23,10 @@ import {
   StageCommandSchema,
   type StageItemProposal,
   type StagePlan,
+  stageStairBounds,
   stageToWorldPosition,
   stageToWorldRotation,
+  updateStageStair,
   validateStagePlan,
   worldToStagePosition,
   worldToStageRotation,
@@ -68,15 +72,15 @@ export function commandMeta(source: InputSource = 'manual'): CommandMeta {
   }
 }
 type Nodes = ReturnType<typeof useScene.getState>['nodes']
-function positioned(nodes: Nodes, id: string): ItemNode | BlockNode {
+function positioned(nodes: Nodes, id: string): ItemNode | BlockNode | StairNode {
   const node = nodes[id as AnyNodeId]
-  if (!node || (node.type !== 'block' && node.type !== 'item'))
+  if (!node || (node.type !== 'block' && node.type !== 'item' && node.type !== 'stair'))
     throw new Error('对象不存在，或需要通过原来的布景工具编辑')
   if (node.metadata.stageLocked) throw new Error(`「${node.name || '布景'}」已锁定，请先解锁`)
   return node
 }
 function localPose(
-  node: ItemNode | BlockNode,
+  node: ItemNode | BlockNode | StairNode,
   nodes: Nodes,
   position: [number, number, number],
   rotation: [number, number, number],
@@ -85,7 +89,7 @@ function localPose(
   const localPosition = inverseRotatePoint(subtract(position, parent.position), parent.rotation)
   const localRotation = relativeRotation(rotation, parent.rotation)
   if (
-    node.type === 'block' &&
+    node.type !== 'item' &&
     Math.hypot(...subtract(rotatePoint([0, 1, 0], localRotation), [0, 1, 0])) > 1e-7
   )
     throw new Error('台件暂只支持水平旋转')
@@ -95,15 +99,32 @@ function localPose(
     position: localPosition,
     rotation: localRotation,
   })
+  if (node.type === 'stair') {
+    const center = stageStairBounds(node, nodes).boundsCenter
+    const offset = rotatePoint([center[0], 0, center[2]], localRotation)
+    localPosition[0] -= offset[0]
+    localPosition[2] -= offset[2]
+  }
   const forward = rotatePoint([0, 0, 1], localRotation)
   return {
     position: localPosition,
-    rotation: node.type === 'block' ? Math.atan2(forward[0], forward[2]) : localRotation,
+    rotation: node.type === 'item' ? localRotation : Math.atan2(forward[0], forward[2]),
     supportSlabId: GROUND_SUPPORT_ID,
   }
 }
+function sceneryCenter(
+  node: ItemNode | BlockNode | StairNode,
+  snapshot: ReturnType<typeof objectSnapshot>,
+): [number, number, number] {
+  if (node.type !== 'stair') return snapshot.position
+  const offset = rotatePoint(
+    [snapshot.boundsCenter[0], 0, snapshot.boundsCenter[2]],
+    snapshot.rotation,
+  )
+  return snapshot.position.map((value, axis) => value + offset[axis]!) as [number, number, number]
+}
 function proposal(
-  node: ItemNode | BlockNode,
+  node: ItemNode | BlockNode | StairNode,
   nodes: Nodes,
   frame: ReturnType<typeof stageFrame>,
   existing: boolean,
@@ -121,7 +142,7 @@ function proposal(
       depth: snapshot.dimensions[2],
     },
     transform: {
-      position: worldToStagePosition(snapshot.position, frame),
+      position: worldToStagePosition(sceneryCenter(node, snapshot), frame),
       rotationDegrees: worldToStageRotation(snapshot.rotation),
     },
     certainty: 'stated',
@@ -222,8 +243,16 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
           (n) => n.type === 'slab' && n.metadata.theatreKind === 'stage-floor',
         )?.parentId
         if (!parentId) throw new Error('未找到舞台表演区')
-        const node = makeScenery(command, parentId as AnyNodeId, [0, 0, 0], [0, 0, 0])
-        if (node.type !== 'item' && node.type !== 'block') throw new Error('布景类型无效')
+        const [node, ...children] = makeScenery(
+          command,
+          parentId as AnyNodeId,
+          [0, 0, 0],
+          [0, 0, 0],
+        )
+        if (!node) throw new Error('布景为空')
+        for (const child of children) update(child)
+        if (node.type !== 'item' && node.type !== 'block' && node.type !== 'stair')
+          throw new Error('布景类型无效')
         const moved = {
           ...node,
           ...localPose(
@@ -363,6 +392,23 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
         spatial.add(node.id)
       } else if (command.type === 'RenameObject') update({ ...node, name: command.name })
       else if (command.type === 'DuplicateObject') {
+        if (node.type === 'stair') {
+          const graph = cloneNodesInto([node, ...node.children.map((id) => nodes[id]!)], {
+            rootId: node.id,
+            parentId: node.parentId as AnyNodeId,
+          })
+          for (const child of graph.nodes) update(child)
+          const made = positioned(nodes, graph.idMap.get(node.id)!)
+          update({
+            ...made,
+            name: command.name,
+            ...localPose(made, nodes, stageToWorldPosition(command.position, frame), pose.rotation),
+          } as AnyNode)
+          spatial.add(made.id)
+          aliases.set(command.newNodeId, made.id)
+          resultIds.push(made.id)
+          continue
+        }
         if (node.children.length) throw new Error('请先将挂接物件拆分后复制')
         const made =
           node.type === 'item'
@@ -395,7 +441,7 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
             nodes,
             command.type === 'MoveObject'
               ? stageToWorldPosition(command.position, frame)
-              : pose.position,
+              : sceneryCenter(node, pose),
             command.type === 'RotateObject'
               ? stageToWorldRotation(command.rotationDegrees)
               : pose.rotation,
@@ -405,7 +451,25 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
         spatial.add(node.id)
         const d = command.dimensionsMeters,
           target = [d.width, d.height, d.depth]
-        if (node.type === 'item')
+        if (node.type === 'stair') {
+          const count = command.stepCount ?? node.stepCount
+          // A pose-only plan must not reshape a legacy multi-flight stair.
+          if (
+            count !== node.stepCount ||
+            target.some((v, i) => Math.abs(v - pose.dimensions[i]!) > 1e-8)
+          ) {
+            const center = sceneryCenter(node, pose)
+            for (const op of updateStageStair(node, nodes, {
+              width: d.width,
+              stepHeight: d.height / count,
+              stepDepth: d.depth / count,
+              stepCount: count,
+            }))
+              update({ ...nodes[op.id], ...op.data } as AnyNode)
+            const resized = positioned(nodes, node.id)
+            update({ ...resized, ...localPose(resized, nodes, center, pose.rotation) } as AnyNode)
+          }
+        } else if (node.type === 'item')
           update({
             ...node,
             scale: target.map((v, i) => v / node.asset.dimensions[i]!) as [number, number, number],
@@ -486,7 +550,9 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
         ...virtualProposals,
         ...[...spatial].flatMap((id) => {
           const n = nodes[id]
-          return n && n.visible !== false && (n.type === 'item' || n.type === 'block')
+          return n &&
+            n.visible !== false &&
+            (n.type === 'item' || n.type === 'block' || n.type === 'stair')
             ? [
                 proposal(
                   n,
@@ -573,89 +639,111 @@ export function connectStageCommandExecutor() {
       commit()
       return
     }
-    const state = useScene.getState(),
-      frame = stageFrame(),
-      context = currentStageContext()
-    const locked = [...(changes.delete ?? []), ...(changes.update ?? []).map((op) => op.id)].find(
-      (id) => state.nodes[id]?.metadata.stageLocked,
-    )
-    if (locked) {
-      useStageCommandNotice.setState({
-        error: `「${state.nodes[locked]?.name || '布景'}」已锁定，请先解锁`,
-      })
-      return false
-    }
-    // Remount validates against the calibrated destination, not the original rehearsal venue.
-    if (
-      changes.update?.some(
-        (op) => op.id === stageSite().id && op.data.metadata?.remount !== undefined,
+    try {
+      const state = useScene.getState(),
+        frame = stageFrame(),
+        context = currentStageContext()
+      const locked = [...(changes.delete ?? []), ...(changes.update ?? []).map((op) => op.id)].find(
+        (id) => state.nodes[id]?.metadata.stageLocked,
       )
-    ) {
-      commit()
-      return
-    }
-    const nodes = { ...state.nodes },
-      ids: AnyNodeId[] = []
-    for (const op of changes.create ?? []) {
-      nodes[op.node.id] = op.node
-      ids.push(op.node.id)
-    }
-    for (const op of changes.update ?? []) {
-      const old = nodes[op.id]
-      if (old) {
-        nodes[op.id] = { ...old, ...op.data } as AnyNode
-        if (
-          ['position', 'rotation', 'scale', 'topology', 'asset', 'supportSlabId'].some(
-            (key) => key in op.data,
-          ) ||
-          op.data.visible === true
-        )
-          ids.push(op.id)
-      }
-    }
-    const items = ids.flatMap((id) => {
-      const n = nodes[id]
-      if (
-        !n?.metadata.stageKind ||
-        n.metadata.isTransient ||
-        n.metadata.isNew ||
-        n.visible === false ||
-        (n.type !== 'item' && n.type !== 'block')
-      )
-        return []
-      return [
-        proposal(
-          n,
-          nodes,
-          frame,
-          context.objects.some((o) => o.id === id),
-        ),
-      ]
-    })
-    if (items.length) {
-      const validation = validateStagePlan(
-        {
-          schemaVersion: 1,
-          source: 'manual',
-          venue: null,
-          items,
-          relations: [],
-          assumptions: [],
-          questions: [],
-          evidence: [],
-          warnings: [],
-        },
-        context,
-      )
-      if (!validation.valid) {
+      if (locked) {
         useStageCommandNotice.setState({
-          error: validation.warnings
-            .filter((w) => w.blocking)
-            .map((w) => w.message)
-            .join('；'),
+          error: `「${state.nodes[locked]?.name || '布景'}」已锁定，请先解锁`,
         })
         return false
       }
+      // Remount validates against the calibrated destination, not the original rehearsal venue.
+      if (
+        changes.update?.some(
+          (op) => op.id === stageSite().id && op.data.metadata?.remount !== undefined,
+        )
+      ) {
+        commit()
+        return
+      }
+      const nodes = { ...state.nodes },
+        ids: AnyNodeId[] = []
+      for (const op of changes.create ?? []) {
+        nodes[op.node.id] = op.node
+        ids.push(op.node.id)
+      }
+      for (const op of changes.update ?? []) {
+        const old = nodes[op.id]
+        if (old) {
+          nodes[op.id] = { ...old, ...op.data } as AnyNode
+          if (
+            [
+              'position',
+              'rotation',
+              'scale',
+              'topology',
+              'asset',
+              'supportSlabId',
+              'width',
+              'height',
+              'length',
+              'stepCount',
+              'totalRise',
+            ].some((key) => key in op.data) ||
+            op.data.visible === true
+          )
+            ids.push(op.id)
+        }
+      }
+      for (const id of [...ids]) {
+        const node = nodes[id]
+        if (node?.type === 'stair-segment' && node.parentId) ids.push(node.parentId as AnyNodeId)
+      }
+      const items = [...new Set(ids)].flatMap((id) => {
+        const n = nodes[id]
+        if (
+          !n ||
+          (!n.metadata.stageKind && n.type !== 'stair') ||
+          n.metadata.isTransient ||
+          n.metadata.isNew ||
+          n.visible === false ||
+          (n.type !== 'item' && n.type !== 'block' && n.type !== 'stair')
+        )
+          return []
+        return [
+          proposal(
+            n,
+            nodes,
+            frame,
+            context.objects.some((o) => o.id === id),
+          ),
+        ]
+      })
+      if (items.length) {
+        const validation = validateStagePlan(
+          {
+            schemaVersion: 1,
+            source: 'manual',
+            venue: null,
+            items,
+            relations: [],
+            assumptions: [],
+            questions: [],
+            evidence: [],
+            warnings: [],
+          },
+          context,
+        )
+        if (!validation.valid) {
+          useStageCommandNotice.setState({
+            error: validation.warnings
+              .filter((w) => w.blocking)
+              .map((w) => w.message)
+              .join('；'),
+          })
+          return false
+        }
+      }
+    } catch (cause) {
+      useStageCommandNotice.setState({
+        error: cause instanceof Error ? cause.message : '台件参数无效，未修改场景。',
+      })
+      return false
     }
     commit()
   })

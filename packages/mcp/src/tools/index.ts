@@ -2,7 +2,6 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { SceneOperations } from '../operations'
 import { registerApplyPatch } from './apply-patch'
 import { registerCheckCollisions } from './check-collisions'
-import { registerConstructionTools } from './construction-tools'
 import { registerCreateLevel } from './create-level'
 import { registerCreateWall } from './create-wall'
 import { registerCutOpening } from './cut-opening'
@@ -42,7 +41,6 @@ export function registerTools(server: McpServer, operations: SceneOperations): v
   registerFindNodes(server, operations)
   registerSceneQueryTools(server, operations)
   registerMeasure(server, operations)
-  registerConstructionTools(server, operations)
   registerRoomTools(server, operations)
   registerApplyPatch(server, operations)
   registerCreateLevel(server, operations)

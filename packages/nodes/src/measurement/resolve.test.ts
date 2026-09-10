@@ -148,7 +148,7 @@ describe('associative measurement resolution', () => {
     expect(resolved.anchorNormals[1]?.[2]).toBeCloseTo(-1)
   })
 
-  test('resolves roof ridge endpoints through segment and parent transforms', () => {
+  test('retains measurement fallback when its legacy roof feature is archived', () => {
     const roof = {
       id: 'roof_a',
       type: 'roof',
@@ -189,8 +189,11 @@ describe('associative measurement resolution', () => {
       resolveFrom([roof, segment]),
     )
 
-    expect(resolved.dangling).toEqual([])
-    expect(measurementDistance(...resolved.payload.points)).toBeCloseTo(8)
+    expect(resolved.dangling).toHaveLength(2)
+    expect(resolved.payload.points).toEqual([
+      [0, 0, 0],
+      [0, 0, 0],
+    ])
     expect(resolved.dependencies).toEqual([segment.id, roof.id])
   })
 

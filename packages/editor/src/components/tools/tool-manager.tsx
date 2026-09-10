@@ -2,7 +2,6 @@ import {
   type AnyNodeDefinition,
   type AnyNodeId,
   type BuildingNode,
-  type CeilingNode,
   createSceneApi,
   type FenceNode,
   nodeRegistry,
@@ -173,11 +172,6 @@ export const ToolManager: React.FC = () => {
     editingHole?.nodeId === selectedSlabId &&
     selectedSlab?.holeMetadata?.[editingHole.holeIndex]?.source === 'manual'
 
-  // Check if a ceiling is selected
-  const selectedCeilingId = selectedIds.find((id) => nodes[id as AnyNodeId]?.type === 'ceiling') as
-    | CeilingNode['id']
-    | undefined
-
   // Site boundary handles normally share one 2D/3D rule. Sculpt is the deliberate
   // 3D exception: the brush only owns this canvas, where PolygonEditor can hand
   // off its pointer before a boundary drag starts.
@@ -209,22 +203,6 @@ export const ToolManager: React.FC = () => {
     !isFloorplanDrivenReshape &&
     editingSlabHoleIsManual
 
-  // Show ceiling boundary editor when in structure/select mode with a ceiling selected (but not editing a hole)
-  const showCeilingBoundaryEditor =
-    phase === 'structure' &&
-    mode === 'select' &&
-    isSoleSelection &&
-    selectedCeilingId !== undefined &&
-    !isFloorplanDrivenReshape &&
-    (!editingHole || editingHole.nodeId !== selectedCeilingId)
-
-  // Show ceiling hole editor when editing a hole on the selected ceiling
-  const showCeilingHoleEditor =
-    selectedCeilingId !== undefined &&
-    editingHole !== null &&
-    editingHole.nodeId === selectedCeilingId &&
-    !isFloorplanDrivenReshape
-
   // Show zone boundary editor when in structure/select mode with a zone selected
   // Hide when editing a slab or ceiling to avoid overlapping handles
   const showZoneBoundaryEditor =
@@ -232,8 +210,7 @@ export const ToolManager: React.FC = () => {
     mode === 'select' &&
     selectedZoneId !== null &&
     !isFloorplanDrivenReshape &&
-    !showSlabBoundaryEditor &&
-    !showCeilingBoundaryEditor
+    !showSlabBoundaryEditor
 
   // Show build tools when in build mode
   const showBuildTool = mode === 'build' && tool !== null
@@ -311,27 +288,6 @@ export const ToolManager: React.FC = () => {
             return Registry ? (
               <Suspense fallback={null}>
                 <Registry holeIndex={editingHole.holeIndex} slabId={selectedSlabId} />
-              </Suspense>
-            ) : null
-          })()}
-        {showCeilingBoundaryEditor &&
-          selectedCeilingId &&
-          (() => {
-            const Registry = getRegistryAffordanceTool('ceiling', 'boundary-edit')
-            return Registry ? (
-              <Suspense fallback={null}>
-                <Registry ceilingId={selectedCeilingId} />
-              </Suspense>
-            ) : null
-          })()}
-        {showCeilingHoleEditor &&
-          selectedCeilingId &&
-          editingHole &&
-          (() => {
-            const Registry = getRegistryAffordanceTool('ceiling', 'hole-edit')
-            return Registry ? (
-              <Suspense fallback={null}>
-                <Registry ceilingId={selectedCeilingId} holeIndex={editingHole.holeIndex} />
               </Suspense>
             ) : null
           })()}

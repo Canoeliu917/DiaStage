@@ -42,9 +42,7 @@ export const StairNode = BaseNode.extend({
   stairType: StairType.default('straight'),
   fromLevelId: z.string().nullable().default(null),
   toLevelId: z.string().nullable().default(null),
-  // Destination deck (a slab id). When set, the stair's rise follows that
-  // slab's elevation live. An explicit `totalRise` still wins when BOTH are
-  // set (edge case — the panel clears the custom rise when attaching).
+  // Legacy references retained for round-trip compatibility; stage steps ignore them.
   deckSlabId: z.string().optional(),
   slabOpeningMode: StairSlabOpeningMode.default('none'),
   openingOffset: z.number().default(0),
@@ -71,10 +69,7 @@ export const StairNode = BaseNode.extend({
   - position: center position of the stair group
   - rotation: rotation around Y axis
   - stairType: straight (segment-based), curved (arc-based), or spiral
-  - fromLevelId / toLevelId: source and destination levels used for auto slab cutouts
-  - deckSlabId: destination deck (slab) — the rise derives from its elevation while set
-  - slabOpeningMode: whether a destination-level slab opening is generated for this stair
-  - openingOffset: extra opening expansion applied after the cutout polygon is computed
+  - fromLevelId / toLevelId / deckSlabId / slabOpeningMode / openingOffset: inactive legacy fields, preserved on load
   - width: stair width
   - totalRise: total stair height
   - stepCount: number of visible steps

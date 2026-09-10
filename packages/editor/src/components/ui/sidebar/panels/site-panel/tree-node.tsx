@@ -90,7 +90,6 @@ export function routeTreeSelectionToNode(node: AnyNode | null | undefined) {
 
 import { cn } from '../../../../../lib/utils'
 import { BuildingTreeNode } from './building-tree-node'
-import { CeilingTreeNode } from './ceiling-tree-node'
 import { ChimneyTreeNode } from './chimney-tree-node'
 import { ColumnTreeNode } from './column-tree-node'
 import { DoorTreeNode } from './door-tree-node'
@@ -101,7 +100,6 @@ import { GutterTreeNode } from './gutter-tree-node'
 import { ItemTreeNode } from './item-tree-node'
 import { LevelTreeNode } from './level-tree-node'
 import { RegistryTreeNode } from './registry-tree-node'
-import { RoofTreeNode } from './roof-tree-node'
 import { ShelfTreeNode } from './shelf-tree-node'
 import { SlabTreeNode } from './slab-tree-node'
 import { SolarPanelTreeNode } from './solar-panel-tree-node'
@@ -140,7 +138,6 @@ const treeNodeByType: Record<string, TreeNodeComponent> = {
   'cabinet-module': RegistryTreeNode,
   'box-vent': RegistryTreeNode,
   'block': RegistryTreeNode,
-  ceiling: CeilingTreeNode,
   chimney: ChimneyTreeNode,
   dormer: DormerTreeNode,
   downspout: RegistryTreeNode,
@@ -172,7 +169,6 @@ const treeNodeByType: Record<string, TreeNodeComponent> = {
   cupola: RegistryTreeNode,
   'eyebrow-vent': RegistryTreeNode,
   skylight: RegistryTreeNode,
-  roof: RoofTreeNode,
   scan: RegistryTreeNode,
   stair: StairTreeNode,
   door: DoorTreeNode,

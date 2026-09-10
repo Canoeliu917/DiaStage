@@ -123,7 +123,6 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
     nodeRegistry: { size: 1, get: () => undefined },
     sceneRegistry: { nodes: new Map() },
     useScene: { getState: () => ({ nodes: {}, rootNodeIds: [], dirtyNodes: new Set() }) },
-    StairOpeningSystem: () => null,
   }))
   const viewerState = {
     sceneTheme: 'studio',

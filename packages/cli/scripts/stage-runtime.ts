@@ -25,6 +25,12 @@ await mkdir(path.dirname(outputDirectory), { recursive: true })
 await cp(standaloneDirectory, outputDirectory, {
   recursive: true,
   dereference: process.platform === 'win32',
+  // Windows tracing can follow workspace links into the previous CLI output.
+  // Never let a runtime copy contain its own previous distribution.
+  filter: (source) =>
+    !/^(?:node_modules\/@pascal-app\/cli|packages\/cli)(?:\/|$)/.test(
+      path.relative(standaloneDirectory, source).split(path.sep).join('/'),
+    ),
 })
 
 await cp(path.join(appDirectory, 'public'), path.join(outputDirectory, 'apps/editor/public'), {

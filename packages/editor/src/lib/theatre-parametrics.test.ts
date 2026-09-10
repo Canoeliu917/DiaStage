@@ -60,8 +60,8 @@ describe('theatre inspector boundary', () => {
   test('provides stage stair placement and bounded opening controls without old panels', () => {
     for (const type of ['stair', 'stair-segment']) {
       const fields = theatreParametrics(type, descriptor)!.groups.flatMap((group) => group.fields)
-      expect(fields.map((field) => field.key)).toEqual(['width', 'position'])
-      expect(fields.map((field) => field.kind)).toEqual(['number', 'vec3'])
+      expect(fields).toEqual([])
+      expect(theatreParametrics(type, descriptor)?.customPanel).toBe(legacyPanel)
     }
     for (const type of ['door', 'window']) {
       const fields = theatreParametrics(type, descriptor)!.groups.flatMap((group) => group.fields)

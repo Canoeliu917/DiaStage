@@ -152,6 +152,18 @@ export function resolveStagePlan(input: unknown, sceneContext: SceneContextSumma
         }
         continue
       }
+      if (relation.referenceId === null && venue) {
+        const bounds = stageObjectBounds(spatialItem(item))
+        const p = item.transform.position
+        if (relation.direction === 'stage-right')
+          p.x += venue.widthMeters / 2 - relation.gapMeters - bounds.maxX
+        else if (relation.direction === 'stage-left')
+          p.x += -venue.widthMeters / 2 + relation.gapMeters - bounds.minX
+        else if (relation.direction === 'upstage')
+          p.z += venue.depthMeters - relation.gapMeters - bounds.maxZ
+        else p.z += relation.gapMeters - bounds.minZ
+        continue
+      }
       if (!relation.referenceId || relation.referenceId === id) {
         plan.warnings.push(
           warning('missing-reference', `${item.displayName} 缺少有效参照布景。`, [id]),
@@ -449,7 +461,13 @@ export function compileStagePlan(
         nodeId,
         rotationDegrees: item.transform.rotationDegrees,
       })
-      add({ type: 'ResizeObject', meta: meta(), nodeId, dimensionsMeters: item.dimensionsMeters })
+      add({
+        type: 'ResizeObject',
+        meta: meta(),
+        nodeId,
+        dimensionsMeters: item.dimensionsMeters,
+        stepCount: item.stepCount ?? undefined,
+      })
     } else {
       add({
         type: 'AddScenery',
@@ -459,6 +477,7 @@ export function compileStagePlan(
         kind: item.kind,
         libraryAssetId: item.libraryAssetId,
         dimensionsMeters: item.dimensionsMeters,
+        stepCount: item.stepCount ?? undefined,
       })
     }
   })

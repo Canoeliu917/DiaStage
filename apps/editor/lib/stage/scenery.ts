@@ -8,6 +8,7 @@ import {
   ItemNode,
 } from '@pascal-app/core'
 import {
+  createStageStair,
   type StageCommand,
   StageCommandSchema,
   type StageDimensions,
@@ -65,8 +66,6 @@ function proxyBoxes(kind: AddScenery['kind']): Box[] {
         [0.76, 0.32, 1, 0, 0, 0],
         [0.04, 0.53, 0.5, 0, 0.32, 0],
       ]
-    case 'stairs':
-      return Array.from({ length: 5 }, (_, i) => [1, (i + 1) / 5, 0.2, 0, 0, -0.4 + i * 0.2])
     case 'rail-or-divider':
       return [
         [0.08, 1, 1, -0.46, 0, 0],
@@ -161,7 +160,7 @@ export function makeScenery(
   parentId: AnyNodeId,
   worldPosition: Vec3,
   worldRotation: Vec3,
-): AnyNode {
+): AnyNode[] {
   const command = StageCommandSchema.parse(input)
   if (command.type !== 'AddScenery') throw new Error('该命令不是布景添加操作。')
   if (![...worldPosition, ...worldRotation].every(Number.isFinite))
@@ -175,29 +174,49 @@ export function makeScenery(
     const dimensions = entry.asset.dimensions
     if (!dimensions || dimensions.some((value) => !Number.isFinite(value) || value <= 0))
       throw new Error('舞台库布景缺少有效尺寸。')
-    return ItemNode.parse({
-      ...common,
-      rotation: worldRotation,
-      scale: [width / dimensions[0], height / dimensions[1], depth / dimensions[2]],
-      asset: {
-        ...entry.asset,
-        name: command.name,
-        category: 'scenery',
-        tags: [command.kind],
-        attachTo: undefined,
-      },
-      metadata: { stageKind: command.kind, representation: 'physical' },
-    })
+    return [
+      ItemNode.parse({
+        ...common,
+        rotation: worldRotation,
+        scale: [width / dimensions[0], height / dimensions[1], depth / dimensions[2]],
+        asset: {
+          ...entry.asset,
+          name: command.name,
+          category: 'scenery',
+          tags: [command.kind],
+          attachTo: undefined,
+        },
+        metadata: { stageKind: command.kind, representation: 'physical' },
+      }),
+    ]
   }
   if (Math.abs(worldRotation[0]) > 1e-8 || Math.abs(worldRotation[2]) > 1e-8)
     throw new Error('可编辑布景目前支持绕竖直轴旋转，请将俯仰和侧倾设为零。')
-  return BlockNode.parse({
-    ...common,
-    rotation: worldRotation[1],
-    topology: proxyTopology(command.kind, command.dimensionsMeters),
-    slotNames: { body: '布景表面' },
-    metadata: { stageKind: command.kind, representation: 'proxy' },
-  })
+  if (command.kind === 'stairs') {
+    const stepCount = command.stepCount ?? 3
+    const { stair, segment } = createStageStair(
+      {
+        width,
+        stepHeight: height / stepCount,
+        stepDepth: depth / stepCount,
+        stepCount,
+        position: worldPosition,
+        rotation: worldRotation[1],
+      },
+      parentId,
+      command.name,
+    )
+    return [stair, segment]
+  }
+  return [
+    BlockNode.parse({
+      ...common,
+      rotation: worldRotation[1],
+      topology: proxyTopology(command.kind, command.dimensionsMeters),
+      slotNames: { body: '布景表面' },
+      metadata: { stageKind: command.kind, representation: 'proxy' },
+    }),
+  ]
 }
 
 export function dimensionsOf(node: ItemNode | BlockNode): StageDimensions {

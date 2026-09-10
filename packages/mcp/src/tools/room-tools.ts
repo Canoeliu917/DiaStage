@@ -1,7 +1,6 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import type { AnyNode, AnyNodeId, AssetInput } from '@pascal-app/core/schema'
 import {
-  CeilingNode,
   DoorNode,
   ItemNode,
   SlabNode,
@@ -71,7 +70,6 @@ export const createRoomInput = {
 export const createRoomOutput = {
   zoneId: z.string(),
   slabId: z.string(),
-  ceilingId: z.string(),
   wallIds: z.array(z.string()),
   areaSqMeters: z.number(),
   ...liveSyncOutput,
@@ -433,7 +431,7 @@ export function registerCreateRoom(server: McpServer, bridge: SceneOperations): 
     {
       title: 'Create room',
       description:
-        'Create a room on a level: zone, slab, ceiling, and one wall per polygon edge. Returns wallIds in polygon edge order.',
+        'Create a room on a level: zone, slab, and one wall per polygon edge. Returns wallIds in polygon edge order.',
       inputSchema: createRoomInput,
       outputSchema: createRoomOutput,
     },
@@ -447,7 +445,6 @@ export function registerCreateRoom(server: McpServer, bridge: SceneOperations): 
         metadata: { mcpTool: 'create_room' },
       })
       const slab = SlabNode.parse({ polygon: points, metadata: { mcpTool: 'create_room' } })
-      const ceiling = CeilingNode.parse({ polygon: points, metadata: { mcpTool: 'create_room' } })
       const walls = points.map((start, index) =>
         WallNode.parse({
           name: `${name} wall ${index + 1}`,
@@ -462,7 +459,6 @@ export function registerCreateRoom(server: McpServer, bridge: SceneOperations): 
       bridge.applyPatch([
         { op: 'create', node: zone, parentId: levelId as AnyNodeId },
         { op: 'create', node: slab, parentId: levelId as AnyNodeId },
-        { op: 'create', node: ceiling, parentId: levelId as AnyNodeId },
         ...walls.map((wall) => ({
           op: 'create' as const,
           node: wall,
@@ -474,7 +470,6 @@ export function registerCreateRoom(server: McpServer, bridge: SceneOperations): 
       return textResult({
         zoneId: zone.id,
         slabId: slab.id,
-        ceilingId: ceiling.id,
         wallIds: walls.map((wall) => wall.id),
         areaSqMeters: Math.round(polygonArea(points) * 100) / 100,
         ...persistencePayload(persistence),

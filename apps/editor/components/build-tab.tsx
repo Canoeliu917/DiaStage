@@ -34,7 +34,7 @@ export const BASE_BUILD_TYPES: BuildType[] = [
   { id: 'shelf', label: '置物架', iconSrc: '/icons/shelf.webp', kind: 'shelf' },
   { id: 'door', label: '实用门', iconSrc: '/icons/door.webp', kind: 'door' },
   { id: 'window', label: '实用窗', iconSrc: '/icons/window.webp', kind: 'window' },
-  { id: 'stair', label: '台阶', iconSrc: '/icons/stairs.webp', kind: 'stair' },
+  { id: 'stair', label: '舞台台阶', iconSrc: '/icons/stairs.webp', kind: 'stair' },
   { id: 'painting', label: '表面处理', iconSrc: '/icons/paint.webp' },
 ]
 

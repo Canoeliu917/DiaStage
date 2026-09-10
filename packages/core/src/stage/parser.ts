@@ -123,7 +123,11 @@ const defaults: { aliases: string[]; kind: StageItemKind; dimensions: StageDimen
   },
   { aliases: ['椅子', '椅'], kind: 'chair', dimensions: { width: 0.5, height: 0.85, depth: 0.5 } },
   { aliases: ['平台', '台件'], kind: 'platform', dimensions: { width: 2, height: 0.3, depth: 1 } },
-  { aliases: ['台阶', '楼梯'], kind: 'stairs', dimensions: { width: 1, height: 0.6, depth: 1.2 } },
+  {
+    aliases: ['舞台台阶', '踏步', '台阶', '楼梯'],
+    kind: 'stairs',
+    dimensions: { width: 1.2, height: 0.45, depth: 0.9 },
+  },
   { aliases: ['屏风'], kind: 'screen', dimensions: { width: 1.5, height: 2, depth: 0.15 } },
   { aliases: ['幕', '幕布'], kind: 'curtain', dimensions: { width: 3, height: 2.5, depth: 0.05 } },
   {
@@ -157,6 +161,7 @@ type Candidate = {
   kind: StageItemKind
   dimensionsMeters: StageDimensions
   transform: StageTransform
+  stepCount?: number
   proposal: StageItemProposal | null
 }
 
@@ -280,6 +285,7 @@ export function parseStageText(
       id: proposal.proposalId,
       name: proposal.displayName,
       kind: proposal.kind,
+      stepCount: proposal.stepCount ?? undefined,
       dimensionsMeters: proposal.dimensionsMeters,
       transform: proposal.transform,
       proposal,
@@ -324,6 +330,7 @@ export function parseStageText(
       proposalId: `proposal-${plan.items.length + 1}`,
       existingNodeId: candidate.id,
       kind: candidate.kind,
+      stepCount: candidate.stepCount,
       displayName: candidate.name,
       libraryAssetId: null,
       dimensionsMeters: structuredClone(candidate.dimensionsMeters),
@@ -336,12 +343,22 @@ export function parseStageText(
     return proposal
   }
   const create = (noun: string): StageItemProposal | null => {
-    const name = noun.replace(/^(?:一个|一块|一张|一把|一台|一扇|一座|1个|1块|1张|1把|1台)/, '')
+    let name = noun.replace(/^(?:一个|一块|一张|一把|一台|一扇|一座|1个|1块|1张|1把|1台)/, '')
+    const steps = name.match(new RegExp(`^(${numberPattern})级(?:舞台)?(?:台阶|踏步)$`))
+    const count = steps ? parseStageNumber(steps[1]!) : 3
+    if (steps) name = '舞台台阶'
+    if (count === null || !Number.isInteger(count) || count < 1 || count > 200) {
+      ask('step-count', '台阶级数必须是 1 至 200 的整数。')
+      return null
+    }
     const definition = defaults.find((entry) => entry.aliases.includes(name))
     if (!definition) return null
     const id = `proposal-${plan.items.length + 1}`
     const assumptionId = `size-${id}`
-    const dimensions = { ...definition.dimensions }
+    const dimensions =
+      definition.kind === 'stairs'
+        ? { width: 1.2, height: count * 0.15, depth: count * 0.3 }
+        : { ...definition.dimensions }
     plan.assumptions.push({
       id: assumptionId,
       message: `${name} 未指定尺寸，暂按宽 ${dimensions.width}、高 ${dimensions.height}、深 ${dimensions.depth} 米。`,
@@ -350,6 +367,7 @@ export function parseStageText(
       proposalId: id,
       existingNodeId: null,
       kind: definition.kind,
+      ...(definition.kind === 'stairs' ? { stepCount: count } : {}),
       displayName: name,
       libraryAssetId: null,
       dimensionsMeters: dimensions,
@@ -395,6 +413,24 @@ export function parseStageText(
     let clause = clauses[index]!.replace(/^请/, '')
       .replace(/^将/, '把')
       .replace(/^在舞台中区/, '舞台中区')
+      .replace(/(平台)前方$/, '$1台前')
+    const atSide = clause.match(/^(?:在)?(台左|台右|台前|台后)(?:增加|添加|放置)(.+)$/)
+    if (atSide) {
+      const created = create(atSide[2]!)
+      if (!created) return plan.questions.length ? plan : null
+      plan.relations.push({
+        id: `relation-${plan.relations.length + 1}`,
+        subjectId: created.proposalId,
+        referenceId: null,
+        direction: directions[atSide[1] as DirectionName],
+        gapMeters: 0.3,
+      })
+      plan.assumptions.push({
+        id: `edge-${index}`,
+        message: '未指定台位净距，暂离舞台边界 0.3 米；台右按演员面向观众确定。',
+      })
+      continue
+    }
     const directionId = `direction-${index}`
     const ambiguous = clause.match(/观众右|观众左|右边|左边|旁边|旁/)?.[0]
     if (ambiguous) {
@@ -523,6 +559,7 @@ export function parseStageText(
           proposalId: `proposal-${plan.items.length + 1}`,
           existingNodeId: null,
           kind: original.kind,
+          stepCount: original.stepCount,
           displayName: `${original.name}副本`,
           libraryAssetId: original.proposal?.libraryAssetId ?? null,
           dimensionsMeters: structuredClone(original.dimensionsMeters),

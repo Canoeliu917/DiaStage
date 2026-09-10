@@ -194,7 +194,6 @@ export {
   type MetricNotation,
   type WallMode,
 } from './store/use-viewer'
-export { CeilingSystem } from './systems/ceiling/ceiling-system'
 export {
   createColumnBoxGeometry,
   createColumnCylinderGeometry,
@@ -242,7 +241,6 @@ export {
   getRoofSegmentBrushes,
   mapRoofGroupMaterialIndex,
   ROOF_MATERIAL_SLOT_COUNT,
-  RoofSystem,
   remapRoofShellFaces,
   roofCsgDummyMats,
   type SurfaceFrame,

@@ -32,7 +32,7 @@ describe('room tools', () => {
     expect(parsed.results.map((item: { id: string }) => item.id)).toContain('sofa')
   })
 
-  test('create_room creates a valid zone/slab/ceiling/wall bundle', async () => {
+  test('create_room creates a valid zone/slab/wall bundle without creating ceilings', async () => {
     const level = Object.values(bridge.getNodes()).find((n) => n.type === 'level')!
     const result = await client.callTool({
       name: 'create_room',
@@ -51,7 +51,7 @@ describe('room tools', () => {
     const parsed = JSON.parse((result.content as Array<{ type: string; text: string }>)[0]!.text)
     expect(parsed.zoneId).toMatch(/^zone_/)
     expect(parsed.slabId).toMatch(/^slab_/)
-    expect(parsed.ceilingId).toMatch(/^ceiling_/)
+    expect(Object.values(bridge.getNodes()).some((node) => node.type === 'ceiling')).toBe(false)
     expect(parsed.wallIds).toHaveLength(4)
     expect(parsed.areaSqMeters).toBe(12)
     expect(bridge.validateScene().valid).toBe(true)

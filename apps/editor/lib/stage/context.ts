@@ -1,4 +1,5 @@
 import { type AnyNode, useScene } from '@pascal-app/core'
+import { rotatePoint } from '@pascal-app/core/remount'
 import {
   type SceneContextObject,
   type SceneContextSummary,
@@ -51,6 +52,7 @@ export function stageKind(node: AnyNode): StageItemKind | null {
   if (isLegacyLight(node)) return null
   const kind = StageItemKindSchema.safeParse(node.metadata.stageKind)
   if (kind.success) return kind.data
+  if (node.type === 'stair') return 'stairs'
   if (node.type === 'block') return 'neutral-block'
   if (node.type !== 'item') return null
   const text = `${node.asset.id} ${node.name ?? node.asset.name}`
@@ -105,15 +107,24 @@ export function currentStageContext(
       node.visible === false ||
       node.metadata.isTransient ||
       node.metadata.isNew ||
-      (node.type !== 'item' && node.type !== 'block')
+      (node.type !== 'item' && node.type !== 'block' && node.type !== 'stair')
     )
       continue
     try {
       const pose = objectSnapshot(node, state.nodes)
+      if (node.type === 'stair') {
+        const offset = rotatePoint([pose.boundsCenter[0], 0, pose.boundsCenter[2]], pose.rotation)
+        pose.position = pose.position.map((value, axis) => value + offset[axis]!) as [
+          number,
+          number,
+          number,
+        ]
+      }
       objects.push({
         id: node.id,
         name: node.name || (node.type === 'item' ? node.asset.name : '台件'),
         kind,
+        ...(node.type === 'stair' ? { stepCount: node.stepCount } : {}),
         transform: {
           position: worldToStagePosition(pose.position, frame),
           rotationDegrees: worldToStageRotation(pose.rotation),

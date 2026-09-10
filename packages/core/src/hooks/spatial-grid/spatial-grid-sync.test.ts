@@ -210,7 +210,7 @@ describe('spatial-grid sync dirty rules (deck-attached stairs)', () => {
     stopSync = () => {}
   })
 
-  test('changing a deck elevation marks its attached stair dirty, not other stairs', () => {
+  test('changing a platform height ignores legacy destination links', () => {
     useScene.setState({
       nodes: {
         ...useScene.getState().nodes,
@@ -218,7 +218,7 @@ describe('spatial-grid sync dirty rules (deck-attached stairs)', () => {
       } as never,
     })
 
-    expect(useScene.getState().dirtyNodes.has('stair_deck' as AnyNodeId)).toBe(true)
+    expect(useScene.getState().dirtyNodes.has('stair_deck' as AnyNodeId)).toBe(false)
     expect(useScene.getState().dirtyNodes.has('stair_other' as AnyNodeId)).toBe(false)
   })
 
@@ -296,7 +296,7 @@ describe('sync dirty helpers (pure)', () => {
     expect(marked).toEqual([])
   })
 
-  test('markSlabChangeDependents covers top, deck, and underside consumers', () => {
+  test('markSlabChangeDependents covers surface consumers without destination-linked stairs', () => {
     const previous = makeSlab('slab_a', 'level_1', { elevation: 0.2, thickness: 0.2 })
     const next = { ...previous, elevation: 0.4, thickness: 0.4 } as AnyNode
     const sameLevelWall = makeChild('wall_same', 'wall', 'level_1')
@@ -319,12 +319,7 @@ describe('sync dirty helpers (pure)', () => {
     const { marked, markDirty } = collect()
     markSlabChangeDependents(previous as never, next as never, nodes, markDirty)
 
-    expect([...new Set(marked)].sort()).toEqual([
-      'ceiling_below',
-      'stair_a',
-      'wall_below',
-      'wall_same',
-    ])
+    expect([...new Set(marked)].sort()).toEqual(['ceiling_below', 'wall_below', 'wall_same'])
   })
 })
 

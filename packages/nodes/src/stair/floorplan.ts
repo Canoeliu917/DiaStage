@@ -20,12 +20,7 @@ import {
   floorplanGeometryMetadata,
   getArcPlanPoint,
 } from '@pascal-app/editor'
-import {
-  buildStairDocumentation,
-  resolveStairPlanDirection,
-  resolveStraightStairDirectionArrow,
-  stairPlanBreakStep,
-} from './documentation'
+import { buildStairDocumentation } from './documentation'
 
 /**
  * Stage C floor-plan emitter for stair. The stair is the parent; its
@@ -112,9 +107,7 @@ export function buildStairFloorplan(
       // Tread bars — one per visible step inside the segment.
       // `buildFloorplanStairEntry` already returns the thickened
       // polygons; we emit them as filled polygons.
-      const breakStep = stairPlanBreakStep(segmentEntry.segment.stepCount)
       for (let treadIndex = 0; treadIndex < segmentEntry.treadBars.length; treadIndex += 1) {
-        if (treadIndex + 1 >= breakStep) continue
         const treadBar = segmentEntry.treadBars[treadIndex]!
         children.push({
           kind: 'polygon',
@@ -123,73 +116,6 @@ export function buildStairFloorplan(
           stroke: 'none',
           opacity: showSelectedChrome ? 0.88 : 0.6,
         })
-      }
-
-      // Per-segment side + length resize arrows. Mirror of the 3D
-      // `StairSegmentSideArrow` / `StairSegmentLengthArrow` handles
-      // (~lines 235 / 375 of stair-segment-handles.tsx).
-      // Skip when the stair is being placed — placement-mode arrows would
-      // compete with the cursor follow.
-      if (isSelected && !view?.moving) {
-        const poly = segmentEntry.polygon
-        // Polygon corners (from `getFloorplanStairSegmentPolygon`):
-        //   0 back-left   1 back-right
-        //   3 front-left  2 front-right
-        const c0 = poly[0]
-        const c1 = poly[1]
-        const c2 = poly[2]
-        const c3 = poly[3]
-        if (c0 && c1 && c2 && c3) {
-          const width = segmentEntry.segment.width || 1
-          const length = segmentEntry.segment.length || 1
-          // Segment-local +X (width axis) and +Z (run axis) in plan coords,
-          // captured here so the affordance handler can project pointer
-          // deltas without re-walking the stair chain.
-          const axisX: readonly [number, number] = [(c1.x - c0.x) / width, (c1.y - c0.y) / width]
-          const axisZ: readonly [number, number] = [(c3.x - c0.x) / length, (c3.y - c0.y) / length]
-          const rightMid: [number, number] = [(c1.x + c2.x) / 2, (c1.y + c2.y) / 2]
-          const leftMid: [number, number] = [(c0.x + c3.x) / 2, (c0.y + c3.y) / 2]
-          const frontEdgeMid: [number, number] = [(c2.x + c3.x) / 2, (c2.y + c3.y) / 2]
-          // Offset the length arrow's base OUT past the front edge so the
-          // shaft+head sit entirely beyond the stair body. The arrow path's
-          // own `bi` inset is only 0.03 m — short enough that the head can
-          // still overlap the stair fill at common zooms, which reads as
-          // "the arrow is lying along the edge / pointing sideways" instead
-          // of clearly pointing forward off the run. Pushing the anchor
-          // along +axisZ removes that ambiguity.
-          const segmentLengthArrowOffset = 0.06
-          const frontArrowAnchor: [number, number] = [
-            frontEdgeMid[0] + axisZ[0] * segmentLengthArrowOffset,
-            frontEdgeMid[1] + axisZ[1] * segmentLengthArrowOffset,
-          ]
-          const segmentId = segmentEntry.segment.id
-          children.push({
-            kind: 'move-arrow',
-            point: rightMid,
-            angle: Math.atan2(axisX[1], axisX[0]),
-            affordance: 'segment-width',
-            payload: { segmentId, side: 'right', axisX },
-          })
-          children.push({
-            kind: 'move-arrow',
-            point: leftMid,
-            angle: Math.atan2(-axisX[1], -axisX[0]),
-            affordance: 'segment-width',
-            payload: { segmentId, side: 'left', axisX },
-          })
-          // Length arrow — anchored just past the front edge, pointing in
-          // the segment's run direction (axisZ = back-to-front). After the
-          // SVG `rotate(angle)`, the arrow's local +X (its tip) lines up
-          // with +axisZ, so the head clearly extends forward off the front
-          // edge instead of sideways across it.
-          children.push({
-            kind: 'move-arrow',
-            point: frontArrowAnchor,
-            angle: Math.atan2(axisZ[1], axisZ[0]),
-            affordance: 'segment-length',
-            payload: { segmentId, axisZ },
-          })
-        }
       }
     }
   } else {
@@ -266,9 +192,7 @@ export function buildStairFloorplan(
     const stepBase = stairType === 'spiral' ? 6 : 4
     const stepCount = Math.max(stepBase, Math.round(stair.stepCount ?? 10))
     const stepSweep = normalizedSweepAngle / stepCount
-    const breakStep = stairPlanBreakStep(stepCount)
     for (let index = 0; index <= stepCount; index += 1) {
-      if (index >= breakStep && index !== stepCount) continue
       const angle = sectorStartAngle + stepSweep * index
       const inner = getArcPlanPoint(stairCenter, innerRadius, angle)
       const outer = getArcPlanPoint(stairCenter, outerRadius, angle)
@@ -329,18 +253,10 @@ export function buildStairFloorplan(
     }
 
     // 6. Direction arrow — head only, at the upper end of the sweep.
-    const direction = resolveStairPlanDirection(
-      stair,
-      ctx.parent?.type === 'level' ? ctx.parent.id : stair.parentId,
-    )
-    const arrowAngle =
-      direction === 'up'
-        ? visualSectorEndAngle - stepSweep * 0.8
-        : sectorStartAngle + stepSweep * 0.8
+    const arrowAngle = visualSectorEndAngle - stepSweep * 0.8
     const arrowPoint = getArcPlanPoint(stairCenter, centerlineRadius, arrowAngle)
     const sweepDirection = normalizedSweepAngle >= 0 ? 1 : -1
-    const tangentAngle =
-      arrowAngle + sweepDirection * (direction === 'up' ? Math.PI / 2 : -Math.PI / 2)
+    const tangentAngle = arrowAngle + (sweepDirection * Math.PI) / 2
     const arrowSize = clamp(stair.width * (stairType === 'spiral' ? 0.18 : 0.16), 0.1, 0.18)
     const headPts = buildSvgArrowHeadPoints(arrowPoint, tangentAngle, arrowSize)
     children.push({
@@ -350,61 +266,6 @@ export function buildStairFloorplan(
       stroke: 'none',
       metadata: floorplanGeometryMetadata({ annotationRole: 'stair-annotation' }),
     })
-
-    // 7. Resize arrows — mirror of the 3D `CurvedStairWidthArrow`,
-    //    `CurvedStairInnerRadiusArrow`, and two `CurvedStairSweepArrow`s.
-    //    Hidden during placement (`view?.moving`) so they don't fight the
-    //    cursor follow.
-    if (isSelected && !view?.moving) {
-      const midAngle = (sectorStartAngle + sectorEndAngle) / 2
-      const sweepSign = Math.sign(normalizedSweepAngle) || 1
-      // Width arrow — radially outward at the sweep bisector, on the outer rim.
-      const widthAnchor = getArcPlanPoint(stairCenter, outerRadius, midAngle)
-      children.push({
-        kind: 'move-arrow',
-        point: [widthAnchor.x, widthAnchor.y],
-        angle: midAngle,
-        affordance: 'curved-width',
-        payload: { kind: 'width' },
-      })
-
-      // Inner-radius arrow — just inside the inner edge, chevron pointing
-      // toward the centre. Skip for very tight spirals where there's no
-      // room (chevron would tunnel through the central column).
-      if (innerRadius > 0.18) {
-        const innerArrowRadius = Math.max(innerRadius - 0.04, innerRadius * 0.45)
-        const innerAnchor = getArcPlanPoint(stairCenter, innerArrowRadius, midAngle)
-        children.push({
-          kind: 'move-arrow',
-          point: [innerAnchor.x, innerAnchor.y],
-          angle: midAngle + Math.PI,
-          affordance: 'curved-inner-radius',
-          payload: { kind: 'inner-radius' },
-        })
-      }
-
-      // Sweep arrows — anchored at the actual sweep ends on the outer rim,
-      // chevrons pointing tangentially in the grow direction. (3D clusters
-      // them next to the width arrow because the camera-facing rim is
-      // easier to grab; in plan we have the whole arc visible, so the
-      // ends are the natural placement.)
-      const sweepEndAnchor = getArcPlanPoint(stairCenter, outerRadius, sectorEndAngle)
-      children.push({
-        kind: 'move-arrow',
-        point: [sweepEndAnchor.x, sweepEndAnchor.y],
-        angle: sectorEndAngle + sweepSign * (Math.PI / 2),
-        affordance: 'curved-sweep',
-        payload: { end: 'end' },
-      })
-      const sweepStartAnchor = getArcPlanPoint(stairCenter, outerRadius, sectorStartAngle)
-      children.push({
-        kind: 'move-arrow',
-        point: [sweepStartAnchor.x, sweepStartAnchor.y],
-        angle: sectorStartAngle - sweepSign * (Math.PI / 2),
-        affordance: 'curved-sweep',
-        payload: { end: 'start' },
-      })
-    }
   }
 
   // Direction arrow — emitted by `buildFloorplanStairEntry` as a polyline
@@ -414,11 +275,7 @@ export function buildStairFloorplan(
   // the stair-segment chain in straight space and produces a malformed
   // polyline once the chain is laid around an arc.
   if (stairType === 'straight' && entry.arrow) {
-    const direction = resolveStairPlanDirection(
-      stair,
-      ctx.parent?.type === 'level' ? ctx.parent.id : stair.parentId,
-    )
-    const directionArrow = resolveStraightStairDirectionArrow(entry, direction)
+    const directionArrow = entry.arrow
     if (directionArrow && directionArrow.polyline.length >= 2) {
       children.push({
         kind: 'polyline',

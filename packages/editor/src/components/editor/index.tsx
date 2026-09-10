@@ -6,7 +6,6 @@ import {
   getCatalogMaterialById,
   getLibraryMaterialIdFromRef,
   getSceneMaterialIdFromRef,
-  initSpaceDetectionSync,
   initSpatialGridSync,
   spatialGridManager,
   useScene,
@@ -125,37 +124,13 @@ const EDITOR_HOVER_STYLES: HoverStyles = {
   },
 }
 const EDITOR_DEFAULT_RENDER = { shading: 'solid' } as const
-const CeilingSystem = lazy(() =>
-  import('../systems/ceiling/ceiling-system').then((m) => ({ default: m.CeilingSystem })),
-)
-const CeilingSelectionAffordanceSystem = lazy(() =>
-  import('../systems/ceiling/ceiling-selection-affordance-system').then((m) => ({
-    default: m.CeilingSelectionAffordanceSystem,
-  })),
-)
-const RoofEditSystem = lazy(() =>
-  import('../systems/roof/roof-edit-system').then((m) => ({ default: m.RoofEditSystem })),
-)
 const StairEditSystem = lazy(() =>
   import('../systems/stair/stair-edit-system').then((m) => ({ default: m.StairEditSystem })),
 )
-function LegacyEditingSystems() {
-  const hasCeiling = useScene((s) => Object.values(s.nodes).some((n) => n.type === 'ceiling'))
-  const hasRoof = useScene((s) => Object.values(s.nodes).some((n) => n.type === 'roof'))
+function StageStairEditingSystem() {
   const hasStair = useScene((s) => Object.values(s.nodes).some((n) => n.type === 'stair'))
   return (
     <>
-      {hasCeiling && (
-        <Suspense fallback={null}>
-          <CeilingSystem />
-          <CeilingSelectionAffordanceSystem />
-        </Suspense>
-      )}
-      {hasRoof && (
-        <Suspense fallback={null}>
-          <RoofEditSystem />
-        </Suspense>
-      )}
       {hasStair && (
         <Suspense fallback={null}>
           <StairEditSystem />
@@ -174,12 +149,10 @@ function LegacyEditingSystems() {
  */
 function initializeEditorRuntime(): () => void {
   const unsubscribeSpatialGrid = initSpatialGridSync()
-  const unsubscribeSpaceDetection = initSpaceDetectionSync(useScene, useEditor)
   initSFXBus()
 
   return () => {
     unsubscribeSpatialGrid()
-    unsubscribeSpaceDetection?.()
 
     spatialGridManager.clear()
     disposeSFXBus()
@@ -856,7 +829,7 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!isFirstPersonMode && <WallMeasurementLabel />}
       <ExportManager />
       {isFirstPersonMode ? <ViewerZoneSystem /> : <ZoneSystem />}
-      <LegacyEditingSystems />
+      <StageStairEditingSystem />
       {!noEditing && <SelectionAffordanceManager />}
       {!(isLoading || isFirstPersonMode) && <SnapAwareGrid />}
       {!(isLoading || noEditing) && <ToolManager />}
@@ -1541,7 +1514,7 @@ function EditorContent({
     >
       <ExportManager />
       <ViewerZoneSystem />
-      <LegacyEditingSystems />
+      <StageStairEditingSystem />
       {isFirstPersonMode && <FirstPersonControls />}
       <CustomCameraControls />
       <ThumbnailGenerator onThumbnailCapture={onThumbnailCapture} />

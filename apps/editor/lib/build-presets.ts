@@ -35,18 +35,17 @@ export type BuildSnapshot = {
 }
 
 // Public Pascal catalog snapshot fetched on 2026-09-09; no account data or live API dependency.
-export const BUILD_PRESETS = z.array(presetSchema).parse(savedPresets as unknown)
+export const BUILD_PRESETS = z
+  .array(presetSchema)
+  .parse(savedPresets as unknown)
+  .filter((preset) => !['roof', 'roof-segment', 'ceiling', 'stair'].includes(preset.rootKind))
 
-const DRAW_PRESET_KINDS = new Set(['wall', 'fence', 'slab', 'ceiling', 'roof', 'door', 'window'])
+const DRAW_PRESET_KINDS = new Set(['wall', 'fence', 'slab', 'door', 'window'])
 
 export function buildPresetUsesTool(preset: BuildPreset): boolean {
   return (
     preset.rootKind === 'cabinet' ||
-    (DRAW_PRESET_KINDS.has(preset.rootKind) &&
-      (preset.nodeData.descendants.length === 0 ||
-        (preset.rootKind === 'roof' &&
-          preset.nodeData.descendants.length === 1 &&
-          preset.nodeData.descendants[0]?.type === 'roof-segment')))
+    (DRAW_PRESET_KINDS.has(preset.rootKind) && preset.nodeData.descendants.length === 0)
   )
 }
 
@@ -56,7 +55,6 @@ export function buildPresetToolDefaults(preset: BuildPreset): Record<string, unk
   }
   const parameters = {
     ...preset.nodeData.root,
-    ...(preset.rootKind === 'roof' ? preset.nodeData.descendants[0] : undefined),
   }
   const definition = nodeRegistry.get(preset.rootKind)
   for (const field of [
@@ -213,8 +211,11 @@ export function insertBuildNodes(snapshot: BuildSnapshot, parentId: AnyNodeId): 
       } else node.parentId = parentId
     }
     if (node.type === 'stair') {
-      node.fromLevelId = level.id
-      node.toLevelId = nextLevel?.id ?? null
+      node.fromLevelId = null
+      node.toLevelId = null
+      node.deckSlabId = undefined
+      node.slabOpeningMode = 'none'
+      node.openingOffset = 0
     } else if (node.type === 'elevator') {
       node.fromLevelId = level.id
       node.toLevelId = nextLevel?.id ?? level.id

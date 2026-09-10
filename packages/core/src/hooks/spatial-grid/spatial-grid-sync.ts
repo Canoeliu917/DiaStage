@@ -257,23 +257,6 @@ export function markLevelHeightDependents(
 }
 
 /**
- * A deck slab's walking surface moved: stairs attached to it via
- * `deckSlabId` derive their rise from that elevation, so their geometry
- * (and rise-derived affordances) must rebuild.
- */
-export function markDeckAttachedStairs(
-  slabId: string,
-  nodes: Record<string, AnyNode>,
-  markDirty: (id: AnyNodeId) => void,
-) {
-  for (const node of Object.values(nodes)) {
-    if (node.type === 'stair' && node.deckSlabId === slabId) {
-      markDirty(node.id)
-    }
-  }
-}
-
-/**
  * Dirty every consumer of a slab's top or underside. Kept pure so committed
  * scene writes and live handle previews use the same dependency boundary.
  */
@@ -291,9 +274,6 @@ export function markSlabChangeDependents(
   if (supportChanged) {
     markNodesOverlappingSlab(previous, nodes, markDirty)
     markNodesOverlappingSlab(next, nodes, markDirty)
-  }
-  if (next.elevation !== previous.elevation) {
-    markDeckAttachedStairs(next.id, nodes, markDirty)
   }
   if (
     supportChanged ||

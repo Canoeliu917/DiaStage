@@ -8,7 +8,6 @@ import {
   pointInPolygon2D,
   type SceneApi,
   type SlabNode as SlabNodeType,
-  syncStairRises,
 } from '@pascal-app/core'
 import {
   clearStructuralElevationGuide,
@@ -127,17 +126,6 @@ function slabChangePreviewOverrides(
   const previews = new Map<AnyNodeId, Partial<AnyNode>>()
 
   markSlabChangeDependents(slab, next, nodes, (id) => previews.set(id, {}))
-  for (const update of syncStairRises(nodes)) {
-    const segment = nodes[update.id]
-    if (
-      segment?.type !== 'stair-segment' ||
-      !segment.parentId ||
-      !previews.has(segment.parentId as AnyNodeId)
-    ) {
-      continue
-    }
-    previews.set(update.id, update.data)
-  }
 
   return [...previews]
 }

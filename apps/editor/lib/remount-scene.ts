@@ -13,6 +13,7 @@ import {
   getWallPlanFootprint,
   type ItemNode,
   nodeRegistry,
+  type StairNode,
   useLiveNodeOverrides,
   useLiveTransforms,
   useScene,
@@ -42,6 +43,7 @@ import {
   type VenueProfile,
   VenueProfileSchema,
 } from '@pascal-app/core/remount'
+import { stageStairBounds } from '@pascal-app/core/stage'
 import { z } from 'zod'
 import { create } from 'zustand'
 import {
@@ -86,7 +88,7 @@ export const RemountMetadataSchema = z.object({
 type RemountMetadata = z.infer<typeof RemountMetadataSchema>
 type SceneState = ReturnType<typeof useScene.getState>
 type SceneNodes = SceneState['nodes']
-type MovableNode = ItemNode | BlockNode
+type MovableNode = ItemNode | BlockNode | StairNode
 type Pose = { position: Vec3; rotation: Vec3 }
 type RemountDraft = RemountMetadata & {
   sceneKey: string
@@ -233,8 +235,8 @@ function assertWritable(guardBlocked = false): void {
 }
 
 function movable(node: AnyNode | undefined): MovableNode {
-  if (!node || (node.type !== 'item' && node.type !== 'block'))
-    throw new Error('第一阶段只支持物件和块体。')
+  if (!node || (node.type !== 'item' && node.type !== 'block' && node.type !== 'stair'))
+    throw new Error('请选择物件、体块或舞台台阶。')
   if (node.metadata.isNew === true) throw new Error('请先完成物件放置。')
   if (
     node.type === 'item' &&
@@ -282,7 +284,7 @@ export function worldPose(id: string | null, nodes: SceneNodes, path = new Set<s
   } else {
     const object = movable(node)
     position = [...object.position]
-    rotation = object.type === 'block' ? [0, object.rotation, 0] : object.rotation
+    rotation = object.type === 'item' ? object.rotation : [0, object.rotation, 0]
     position[1] += getFloorPlacedElevation({ node: object, nodes, position, rotation })
   }
   return {
@@ -291,9 +293,12 @@ export function worldPose(id: string | null, nodes: SceneNodes, path = new Set<s
   }
 }
 
-function fingerprint(node: MovableNode): string {
+function fingerprint(node: MovableNode, nodes: SceneNodes): string {
   const { position: _position, rotation: _rotation, supportSlabId: _support, ...rest } = node
-  return JSON.stringify(rest)
+  return JSON.stringify({
+    ...rest,
+    ...(node.type === 'stair' ? { segments: node.children.map((id) => nodes[id]) } : {}),
+  })
 }
 
 function canonicalCameras(): CameraProject {
@@ -375,6 +380,9 @@ export function objectSnapshot(node: MovableNode, nodes: SceneNodes): SourceSnap
   if (node.type === 'item') {
     dimensions = getScaledDimensions(node)
     boundsCenter = [0, dimensions[1] / 2, 0]
+  } else if (node.type === 'stair') {
+    ;({ dimensions, boundsCenter } = stageStairBounds(node, nodes))
+    yawOf(worldPose(node.parentId, nodes).rotation)
   } else {
     const vertices = node.topology.vertices
     if (vertices.length === 0) throw new Error('块体没有可用的几何顶点。')
@@ -397,7 +405,7 @@ export function objectSnapshot(node: MovableNode, nodes: SceneNodes): SourceSnap
     ...pose,
     dimensions,
     boundsCenter,
-    fingerprint: fingerprint(node),
+    fingerprint: fingerprint(node, nodes),
   })
 }
 
@@ -412,6 +420,7 @@ function expandSelection(nodeIds: string[], nodes: SceneNodes): string[] {
     }
     const node = movable(nodes[id as AnyNodeId])
     result.add(id)
+    if (node.type === 'stair') return
     for (const child of node.children) visit(child)
     for (const child of Object.values(nodes)) if (child.parentId === id) visit(child.id)
   }
@@ -428,7 +437,11 @@ export function getRemountCandidates(): {
   const nodes = useScene.getState().nodes
   const candidates: { nodeId: string; name: string; eligible: boolean; reason?: string }[] =
     Object.values(nodes)
-      .filter((node) => (node.type === 'item' || node.type === 'block') && !isLegacyLight(node))
+      .filter(
+        (node) =>
+          (node.type === 'item' || node.type === 'block' || node.type === 'stair') &&
+          !isLegacyLight(node),
+      )
       .map((node) => {
         const name = node.name || (node.type === 'item' ? node.asset.name : '块体')
         try {
@@ -582,7 +595,8 @@ function obstacleSnapshot(
   nodes: SceneNodes,
   miters: Map<string | null, WallMiterData>,
 ): RemountObject | null {
-  if (node.type === 'item' || node.type === 'block') return objectSnapshot(movable(node), nodes)
+  if (node.type === 'item' || node.type === 'block' || node.type === 'stair')
+    return objectSnapshot(movable(node), nodes)
   if (node.type !== 'wall' && node.type !== 'column') return null
   const parent = worldPose(node.parentId, nodes)
   let position: Vec3
@@ -819,7 +833,7 @@ export function applyRemount(sceneId: string, guardBlocked = false): void {
     )
     const rotation = relativeRotation(placement.targetRotation, parent.rotation)
     const storedRotation =
-      node.type === 'block' ? yawOf(rotation) : stableVector(rotation, node.rotation)
+      node.type === 'item' ? stableVector(rotation, node.rotation) : yawOf(rotation)
     // Pin to the ground and subtract its lift; overlapping target slabs must not add a second translation.
     const supported = { ...node, supportSlabId: GROUND_SUPPORT_ID }
     position[1] -= getFloorPlacedElevation({

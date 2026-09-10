@@ -45,7 +45,7 @@ describe('apply_patch', () => {
     expect((stored as { thickness?: number }).thickness).toBe(0.2)
   })
 
-  test('syncs derived stair openings after stair patches', async () => {
+  test('never generates slab openings from legacy stair links', async () => {
     const building = Object.values(bridge.getNodes()).find((n) => n.type === 'building')!
     const ground = Object.values(bridge.getNodes()).find((n) => n.type === 'level')!
     const upper = LevelNode.parse({ name: 'Upper Floor', level: 1 })
@@ -90,8 +90,8 @@ describe('apply_patch', () => {
     const slab = bridge.getNode(upperSlab.id)
     expect(slab?.type).toBe('slab')
     if (slab?.type !== 'slab') return
-    expect(slab.holes).toHaveLength(1)
-    expect(slab.holeMetadata[0]).toEqual({ source: 'stair', stairId: stair.id })
+    expect(slab.holes).toHaveLength(0)
+    expect(slab.holeMetadata).toEqual([])
   })
 
   test('rejects update to a non-existent node', async () => {

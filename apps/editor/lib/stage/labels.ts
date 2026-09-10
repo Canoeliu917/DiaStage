@@ -5,7 +5,7 @@ export const stageKindLabels: Record<StageItemKind, string> = {
   'door-flat': '门景片',
   'window-flat': '窗景片',
   platform: '平台',
-  stairs: '台阶',
+  stairs: '舞台台阶',
   'rail-or-divider': '栏杆与隔断',
   screen: '屏风',
   curtain: '幕',

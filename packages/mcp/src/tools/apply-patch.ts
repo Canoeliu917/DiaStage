@@ -1,4 +1,5 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { ARCHIVED_ARCHITECTURE_TYPES } from '@pascal-app/core/scene-migrations'
 import type { AnyNode, AnyNodeId } from '@pascal-app/core/schema'
 import { z } from 'zod'
 import type { Patch as BridgePatch } from '../bridge/scene-bridge'
@@ -30,6 +31,14 @@ export function registerApplyPatch(server: McpServer, bridge: SceneOperations): 
     },
     async ({ patches }) => {
       const bridgePatches: BridgePatch[] = patches.map((p) => {
+        const type =
+          p.op === 'create'
+            ? p.node.type
+            : p.op === 'update'
+              ? (p.data.type ?? bridge.getNode(p.id as AnyNodeId)?.type)
+              : undefined
+        if (typeof type === 'string' && ARCHIVED_ARCHITECTURE_TYPES.has(type))
+          throwMcpError(ErrorCode.InvalidParams, '屋顶与天花板只保留旧项目归档，不能创建或编辑。')
         if (p.op === 'create') {
           return {
             op: 'create',

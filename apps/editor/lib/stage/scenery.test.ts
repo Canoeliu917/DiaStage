@@ -25,7 +25,9 @@ function command(kind: AddScenery['kind'], libraryAssetId: string | null = null)
 }
 
 function create(kind: AddScenery['kind']) {
-  return BlockNode.parse(makeScenery(command(kind), 'level_test', [1, 0, 2], [0, Math.PI / 2, 0]))
+  return BlockNode.parse(
+    makeScenery(command(kind), 'level_test', [1, 0, 2], [0, Math.PI / 2, 0])[0],
+  )
 }
 
 function occupied(node: BlockNode, point: [number, number, number]) {
@@ -46,7 +48,8 @@ function occupied(node: BlockNode, point: [number, number, number]) {
 
 describe('stage scenery adapter', () => {
   test('every allowed proxy is editable, finite, correctly sized and rests at y=0', () => {
-    for (const kind of StageItemKindSchema.exclude(['camera', 'performer-marker']).options) {
+    for (const kind of StageItemKindSchema.exclude(['camera', 'performer-marker', 'stairs'])
+      .options) {
       const node = create(kind)
       expect(AnyNode.safeParse(node).success).toBe(true)
       expect(inspectBlockTopology(node.topology)).toEqual([])
@@ -82,15 +85,18 @@ describe('stage scenery adapter', () => {
     expect(occupied(create('chair'), [0, 1.2, 0.35])).toBe(true)
     expect(occupied(create('sofa'), [0, 1.1, -0.2])).toBe(false)
     expect(occupied(create('sofa'), [0, 1.1, 0.35])).toBe(true)
-    expect(occupied(create('stairs'), [0, 1.5, -0.3])).toBe(false)
-    expect(occupied(create('stairs'), [0, 1.5, 0.3])).toBe(true)
     expect(occupied(create('shelf'), [0.2, 0.35, 0])).toBe(false)
   })
 
   test('catalog models retain normalization and use separate requested size scale', () => {
     for (const { kind, asset } of SCENERY_LIBRARY) {
       const before = JSON.stringify(asset)
-      const node = makeScenery(command(kind, asset.id), 'level_test', [2, 0, 3], [0.1, 0.2, 0.3])
+      const node = makeScenery(
+        command(kind, asset.id),
+        'level_test',
+        [2, 0, 3],
+        [0.1, 0.2, 0.3],
+      )[0]!
       expect(node.type).toBe('item')
       if (node.type !== 'item') throw new Error('Expected item')
       expect(node.asset.src).toBe(asset.src)

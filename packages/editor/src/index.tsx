@@ -566,14 +566,7 @@ export {
   type SnappingMode,
 } from './lib/snapping-mode'
 export { duplicateStairSubtree } from './lib/stair-duplication'
-export {
-  getBuildingLevelsForLevel,
-  getStairLevelOptions,
-  resolveStairDestinationLevel,
-  resolveStairFromLevelId,
-  resolveStairPlacementLevelId,
-  resolveStairToLevelId,
-} from './lib/stair-levels'
+export { resolveStairPlacementLevelId } from './lib/stair-levels'
 export {
   clearSurfacePlanSnapFeedback,
   resolveSurfacePlanPointSnap,

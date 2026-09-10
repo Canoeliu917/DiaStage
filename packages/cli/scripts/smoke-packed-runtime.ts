@@ -31,6 +31,10 @@ try {
   const artifact = Array.isArray(packResult) ? packResult[0] : Object.values(packResult)[0]
   if (!artifact) throw new Error('npm pack did not return an artifact')
   tarballPath = path.join(packageDirectory, artifact.filename)
+  if (
+    artifact.files.some((file) => /node_modules\/@pascal-app\/cli\/dist\/runtime\//.test(file.path))
+  )
+    throw new Error('packed runtime recursively includes a previous CLI build')
   enforceArtifactBudget(artifact)
 
   const installDirectory = path.join(smokeRoot, 'install')
@@ -185,6 +189,7 @@ async function close(server: http.Server): Promise<void> {
 
 interface PackedArtifact {
   filename: string
+  files: Array<{ path: string }>
   size: number
   unpackedSize: number
   entryCount: number

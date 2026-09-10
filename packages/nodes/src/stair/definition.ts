@@ -1,5 +1,4 @@
 import {
-  type AnyNodeId,
   type HandleDescriptor,
   type NodeDefinition,
   resolveStairTotalRise,
@@ -10,25 +9,13 @@ import {
   stairFootprintAABB,
   useScene,
 } from '@pascal-app/core'
-import type { FloorplanNodeExtension } from '@pascal-app/editor'
 
-const MIN_CURVED_RISE = 0.3
 const MIN_CURVED_WIDTH = 0.4
 const MIN_CURVED_INNER_RADIUS_SPIRAL = 0.05
 const MIN_CURVED_INNER_RADIUS_CURVED = 0.2
-const MIN_CURVED_SWEEP = Math.PI / 12
-const MAX_CURVED_SWEEP = Math.PI * 2 - 0.05
-const CURVED_RISE_OFFSET = 0.35
-const CURVED_WIDTH_HANDLE_OFFSET = 0.5
-const CURVED_RADIAL_OFFSET = 0.16
-const CURVED_SWEEP_RADIAL_OFFSET = 0.3
-const CURVED_SWEEP_LATERAL_OFFSET = 0.24
 // Guide rings — outer hugs just outside the rim, inner sits inside the
 // pillar. Clamp inner so a tiny innerRadius (spiral default 0.05) doesn't
 // push the ring through the axis.
-const CURVED_OUTER_RING_OFFSET = 0.2
-const CURVED_INNER_RING_OFFSET = 0.2
-const CURVED_INNER_RING_MIN = 0.05
 // Whole-stair rotation gizmo — curved two-headed arrow at a corner of
 // the footprint. Same pattern as elevator / column / shelf / roof-segment.
 const STAIR_ROTATE_CORNER_OFFSET = 0.4
@@ -163,140 +150,6 @@ function readStairMoveBounds(node: StairNodeType, sceneApi: SceneApi): StairMove
   }
 }
 
-function curvedRiseHandle(): HandleDescriptor<StairNodeType> {
-  return {
-    kind: 'linear-resize',
-    axis: 'y',
-    anchor: 'min',
-    min: MIN_CURVED_RISE,
-    currentValue: readTotalRise,
-    apply: (_n, newRise) => ({ totalRise: newRise }),
-    placement: {
-      position: (n) => {
-        const g = readCurvedStairGeometry(n)
-        // Spiral: over the central pillar. Curved: above the upper step's
-        // midline so the arrow sits where users read "top of the run".
-        const x = g.isSpiral ? 0 : g.midRadius * Math.cos(g.topAngle)
-        const z = g.isSpiral ? 0 : g.midRadius * Math.sin(g.topAngle)
-        return [x, g.totalRise + CURVED_RISE_OFFSET, z]
-      },
-    },
-  }
-}
-
-function curvedWidthHandle(): HandleDescriptor<StairNodeType> {
-  return {
-    kind: 'linear-resize',
-    axis: 'x',
-    anchor: 'min',
-    min: MIN_CURVED_WIDTH,
-    currentValue: (n) => Math.max(n.width ?? 1, MIN_CURVED_WIDTH),
-    apply: (_n, newWidth) => ({ width: newWidth }),
-    placement: {
-      position: (n) => {
-        const g = readCurvedStairGeometry(n)
-        return [g.outerRadius + CURVED_WIDTH_HANDLE_OFFSET, g.totalRise / 2, 0]
-      },
-    },
-    // Outer guide ring — traces the rim while the user interacts with the
-    // width arrow so it's obvious which edge the drag affects.
-    decoration: {
-      kind: 'ring',
-      radius: (n) => readCurvedStairGeometry(n).outerRadius + CURVED_OUTER_RING_OFFSET,
-      y: (n) => readCurvedStairGeometry(n).totalRise / 2,
-    },
-  }
-}
-
-function curvedInnerRadiusHandle(): HandleDescriptor<StairNodeType> {
-  return {
-    kind: 'linear-resize',
-    axis: 'x',
-    anchor: 'min',
-    min: (n) =>
-      n.stairType === 'spiral' ? MIN_CURVED_INNER_RADIUS_SPIRAL : MIN_CURVED_INNER_RADIUS_CURVED,
-    currentValue: (n) => {
-      const minIR =
-        n.stairType === 'spiral' ? MIN_CURVED_INNER_RADIUS_SPIRAL : MIN_CURVED_INNER_RADIUS_CURVED
-      return Math.max(minIR, n.innerRadius ?? 0.9)
-    },
-    // Adjusting innerRadius alone would also push outerRadius outward,
-    // visually moving the outside of the stair. Compensate by reducing
-    // width by the same amount so the outer rim stays put.
-    apply: (initial, newInner) => {
-      const g = readCurvedStairGeometry(initial)
-      const delta = newInner - g.innerRadius
-      return {
-        innerRadius: newInner,
-        width: Math.max(MIN_CURVED_WIDTH, g.width - delta),
-      }
-    },
-    placement: {
-      position: (n) => {
-        const g = readCurvedStairGeometry(n)
-        return [g.innerRadius - CURVED_RADIAL_OFFSET, g.totalRise / 2, 0]
-      },
-      rotationY: () => Math.PI,
-    },
-    // Inner guide ring — traces the central pillar. Clamped so a tiny
-    // innerRadius doesn't pull the ring through the axis.
-    decoration: {
-      kind: 'ring',
-      radius: (n) => {
-        const g = readCurvedStairGeometry(n)
-        return Math.max(g.innerRadius - CURVED_INNER_RING_OFFSET, CURVED_INNER_RING_MIN)
-      },
-      y: (n) => readCurvedStairGeometry(n).totalRise / 2,
-    },
-  }
-}
-
-function curvedSweepHandle(end: 'start' | 'end'): HandleDescriptor<StairNodeType> {
-  return {
-    kind: 'arc-resize',
-    axis: 'angular',
-    end,
-    apply: (initial, delta) => {
-      const initialSweep = initial.sweepAngle ?? Math.PI / 2
-      const initialRotation = (initial.rotation as number) ?? 0
-      const sweepSign = Math.sign(initialSweep) || 1
-      // END handle: cursor angle delta IS the sweep delta.
-      // START handle: cursor angle delta is the negation of the sweep delta.
-      const sweepDelta = end === 'end' ? delta : -delta
-      const targetSweep = initialSweep + sweepDelta
-      const clampedAbs = Math.min(
-        MAX_CURVED_SWEEP,
-        Math.max(MIN_CURVED_SWEEP, Math.abs(targetSweep)),
-      )
-      const newSweep = sweepSign * clampedAbs
-      const appliedDelta = newSweep - initialSweep
-      // Re-orient the stair so the OPPOSITE edge stays world-fixed:
-      //   END  fixed-start: ΔR = −ΔS / 2
-      //   START fixed-end : ΔR = +ΔS / 2
-      const rotationShift = end === 'end' ? -appliedDelta / 2 : appliedDelta / 2
-      return {
-        sweepAngle: newSweep,
-        rotation: initialRotation + rotationShift,
-      }
-    },
-    placement: {
-      position: (n) => {
-        const g = readCurvedStairGeometry(n)
-        const sweepSign = Math.sign(g.sweepAngle) || 1
-        const z =
-          end === 'end'
-            ? sweepSign * CURVED_SWEEP_LATERAL_OFFSET
-            : -sweepSign * CURVED_SWEEP_LATERAL_OFFSET
-        return [g.outerRadius + CURVED_SWEEP_RADIAL_OFFSET, g.totalRise / 2, z]
-      },
-      rotationY: (n) => {
-        const sweepSign = Math.sign(n.sweepAngle ?? Math.PI / 2) || 1
-        return end === 'end' ? -sweepSign * (Math.PI / 2) : sweepSign * (Math.PI / 2)
-      },
-    },
-  }
-}
-
 // Whole-stair rotation gizmo. Lives on the stair parent so it rotates
 // straight + curved + spiral kinds the same way. For straight stairs the
 // gizmo anchors just outside the +X corner of the run start (the stair's
@@ -360,7 +213,7 @@ function stairRotateHandle(): HandleDescriptor<StairNodeType> {
 
 function stairMoveHandle(): HandleDescriptor<StairNodeType> {
   return {
-    // Tap-to-engage: hand the stair to its `MoveRoofTool` (same path the
+    // Tap-to-engage: hand the stair to its `MoveStairTool` (same path the
     // floating action menu's Move button takes via `setMovingNode`) so the
     // 3D grip and the floating-UI button share one move flow — green
     // bounding box, alignment guides, R/T rotation, click-to-commit.
@@ -380,24 +233,8 @@ function stairMoveHandle(): HandleDescriptor<StairNodeType> {
   }
 }
 
-function stairHandles(node: StairNodeType): HandleDescriptor<StairNodeType>[] {
-  // Straight stairs have no parent-level shape arrows — the segment
-  // children each render their own (width / length / height). Curved +
-  // spiral stairs use 5 arrows directly on the parent (no segments).
-  // The whole-stair rotation gizmo is universal: every stair kind
-  // exposes the same curved-arrow rotate handle.
-  const handles: HandleDescriptor<StairNodeType>[] = []
-  if (isCurvedOrSpiral(node)) {
-    handles.push(
-      curvedRiseHandle(),
-      curvedWidthHandle(),
-      curvedInnerRadiusHandle(),
-      curvedSweepHandle('start'),
-      curvedSweepHandle('end'),
-    )
-  }
-  handles.push(stairRotateHandle(), stairMoveHandle())
-  return handles
+function stairHandles(): HandleDescriptor<StairNodeType>[] {
+  return [stairRotateHandle(), stairMoveHandle()]
 }
 
 import {
@@ -405,14 +242,7 @@ import {
   getStairFloorPlacedFootprints,
 } from './floor-stack'
 import { buildStairFloorplan } from './floorplan'
-import {
-  curvedStairInnerRadiusAffordance,
-  curvedStairSweepAffordance,
-  curvedStairWidthAffordance,
-  segmentLengthAffordance,
-  segmentWidthAffordance,
-  stairRotateAffordance,
-} from './floorplan-affordances'
+import { stairRotateAffordance } from './floorplan-affordances'
 import { stairFloorplanMoveTarget } from './floorplan-move'
 import { stairPaint } from './paint'
 import { stairParametrics } from './parametrics'
@@ -429,12 +259,6 @@ export const stairDefinition: NodeDefinition<typeof StairNode> = {
   schemaVersion: 1,
   schema: StairNode,
   category: 'structure',
-  extensions: {
-    'pascal:editor/floorplan': {
-      linkedLevelIds: (node) =>
-        node.toLevelId && node.toLevelId !== node.parentId ? [node.toLevelId as AnyNodeId] : [],
-    } satisfies FloorplanNodeExtension<StairNodeType>,
-  },
   snapProfile: 'structural',
   // A footprint with a clear front: you approach a stair from the low end,
   // which sits on the -Z side of the run (the run ascends along +Z). Show the
@@ -445,7 +269,7 @@ export const stairDefinition: NodeDefinition<typeof StairNode> = {
   // snapping chip shows during placement.
   snapDraftDirectional: false,
   toolHints: [
-    { key: '鼠标左键', label: '放置楼梯' },
+    { key: '鼠标左键', label: '放置舞台台阶' },
     { key: 'R / T', label: '旋转' },
     { key: 'Esc', label: '取消' },
   ],
@@ -471,6 +295,7 @@ export const stairDefinition: NodeDefinition<typeof StairNode> = {
     duplicable: { subtree: true },
     deletable: true,
     floorPlaced: {
+      collides: true,
       footprints: (node, ctx) =>
         ctx ? getStairFloorPlacedFootprints(node as StairNodeType, ctx.nodes) : [],
     },
@@ -478,11 +303,8 @@ export const stairDefinition: NodeDefinition<typeof StairNode> = {
     paint: stairPaint,
   },
 
-  // Bespoke move shared with roof / roof-segment / stair-segment via
-  // `shared/move-roof-tool` — routed through `MoveTool`'s registry-
-  // affordance lookup rather than a hardcoded dispatcher arm.
   affordanceTools: {
-    move: () => import('../shared/move-roof-tool'),
+    move: () => import('./move-tool'),
   },
 
   parametrics: stairParametrics,
@@ -505,34 +327,19 @@ export const stairDefinition: NodeDefinition<typeof StairNode> = {
   floorplan: buildStairFloorplan,
   floorplanMoveTarget: stairFloorplanMoveTarget,
 
-  // 2D drag affordances mirror the 3D in-world arrows on selected stairs:
-  //   - `segment-width` / `segment-length` drive per-segment side & length
-  //     arrows on straight stairs (sister to `StairSegmentSideArrow` /
-  //     `StairSegmentLengthArrow` in stair-segment-handles.tsx).
-  //   - `curved-width` / `curved-inner-radius` / `curved-sweep` drive the
-  //     parent-stair arrows for curved & spiral kinds (sister to
-  //     `CurvedStairWidthArrow` / `CurvedStairInnerRadiusArrow` /
-  //     `CurvedStairSweepArrow`).
-  // Height / rise arrows from the 3D set don't translate — no vertical axis
-  // in the plan view.
   floorplanAffordances: {
-    'segment-width': segmentWidthAffordance,
-    'segment-length': segmentLengthAffordance,
-    'curved-width': curvedStairWidthAffordance,
-    'curved-inner-radius': curvedStairInnerRadiusAffordance,
-    'curved-sweep': curvedStairSweepAffordance,
     'stair-rotate': stairRotateAffordance,
   },
 
   presentation: {
-    label: '楼梯',
-    description: '由一个或多个梯段组成的楼梯，可配置踏板、踢面与栏杆。',
+    label: '舞台台阶',
+    description: '舞台踏步，可调整总宽、步高、步深、级数、位置和朝向。',
     icon: { kind: 'url', src: '/icons/stairs.webp' },
     paletteSection: 'structure',
     paletteOrder: 110,
   },
 
   mcp: {
-    description: 'A multi-flight stair with segmented geometry.',
+    description: 'Stage steps with explicit tread size and count, independent of storey heights.',
   },
 }
