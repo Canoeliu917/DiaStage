@@ -175,7 +175,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     './stage-overview-panel': ['StageOverviewPanel'],
     './studio-navigation': ['StudioNavigation'],
     './theatre/runtime': ['RehearsalTransport', 'TheatreFloorplan', 'TheatreRuntime'],
-    './viewer-toolbar': ['CommunityViewerToolbarLeft', 'CommunityViewerToolbarRight'],
+    './viewer-toolbar': ['EditorViewerToolbarLeft', 'EditorViewerToolbarRight'],
   }
   for (const [path, names] of Object.entries(componentModules)) {
     mock.module(path, () => Object.fromEntries(names.map((name) => [name, empty])))

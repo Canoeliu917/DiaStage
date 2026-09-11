@@ -10,7 +10,6 @@ import {
   isSlotMaterialName,
   itemClipRegistry,
   LIBRARY_MATERIAL_REF_PREFIX,
-  type LightEffect,
   SCENE_MATERIAL_REF_PREFIX,
   sceneRegistry,
   toLibraryMaterialRef,
@@ -31,7 +30,6 @@ import {
   resolveCdnUrl,
   resolveMaterialRef,
   stampPascalTextureRef,
-  useItemLightPool,
   useNodeEvents,
   useViewer,
 } from '@pascal-app/viewer'
@@ -46,7 +44,6 @@ import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { positionLocal, smoothstep, time } from 'three/tsl'
 import { BlockFaceHostFrame } from '../shared/block-face-host'
-import { RoofFaceHostFrame } from '../shared/roof-face-host'
 import { cancelItemModelLoad, getUnavailableItemAsset, ItemGLTFLoader } from './model-loader'
 
 type MutableMaterial = Material & {
@@ -447,25 +444,13 @@ export const ItemRenderer = ({ node: storeNode }: { node: ItemNode }) => {
     () => (liveOverrides ? ({ ...storeNode, ...liveOverrides } as ItemNode) : storeNode),
     [storeNode, liveOverrides],
   )
-  const roomClearPreview =
-    (node as ItemNode & { roomClearPreview?: unknown }).roomClearPreview === true
-
-  useEffect(() => {
-    if (roomClearPreview) setSettled(true)
-  }, [roomClearPreview, setSettled])
 
   const content = (
     <group position={node.position} ref={ref} rotation={node.rotation} visible={node.visible}>
-      {roomClearPreview ? (
-        <ClearPreviewModel node={node} />
-      ) : (
-        <>
-          <ModelWithRetry key={node.asset.src ?? 'no-src'} node={node} setSettled={setSettled} />
-          {node.children?.map((childId) => (
-            <NodeRenderer key={childId} nodeId={childId} />
-          ))}
-        </>
-      )}
+      <ModelWithRetry key={node.asset.src ?? 'no-src'} node={node} setSettled={setSettled} />
+      {node.children?.map((childId) => (
+        <NodeRenderer key={childId} nodeId={childId} />
+      ))}
     </group>
   )
 
@@ -476,12 +461,7 @@ export const ItemRenderer = ({ node: storeNode }: { node: ItemNode }) => {
       </BlockFaceHostFrame>
     )
   }
-  if (!node.roofSegmentId) return content
-  return (
-    <RoofFaceHostFrame roofFace={node.roofFace} roofSegmentId={node.roofSegmentId}>
-      {content}
-    </RoofFaceHostFrame>
-  )
+  return content
 }
 
 const previewOpacity = smoothstep(0.42, 0.55, positionLocal.y.add(time.mul(-0.2)).mul(10).fract())
@@ -538,26 +518,6 @@ export const ItemPreview = ({ node }: { node: ItemNode }) => {
         <LoadedItemPreview node={node} />
       </ErrorBoundary>
     </Suspense>
-  )
-}
-
-const ClearPreviewModel = ({ node }: { node: ItemNode }) => {
-  const shading = useViewer((s) => s.shading)
-  const [w, h, d] = getScaledDimensions(node)
-  const material = useMemo(() => {
-    const next = createDefaultMaterial('#ef4444', 1, shading) as MutableMaterial
-    next.depthTest = false
-    next.opacity = 0.35
-    next.transparent = true
-    next.wireframe = true
-    next.needsUpdate = true
-    return next
-  }, [shading])
-
-  return (
-    <mesh material={material} position-y={h / 2}>
-      <boxGeometry args={[w, h, d]} />
-    </mesh>
   )
 }
 
@@ -677,8 +637,6 @@ const LoadedModelRenderer = ({
   const interactive = interactiveRef.current
   const animEffect =
     interactive?.effects.find((e): e is AnimationEffect => e.kind === 'animation') ?? null
-  const lightEffects =
-    interactive?.effects.filter((e): e is LightEffect => e.kind === 'light') ?? []
 
   // Expose this item's ambient clip (e.g. a fan's spin) to the GLB bake. The
   // catalog GLB owns the clip; it isn't in the scene graph, so the export can't
@@ -718,15 +676,6 @@ const LoadedModelRenderer = ({
           nodeId={node.id}
         />
       )}
-      {lightEffects.map((effect, i) => (
-        <ItemLightRegistrar
-          effect={effect}
-          index={i}
-          interactive={interactive!}
-          key={i}
-          nodeId={node.id}
-        />
-      ))}
     </>
   )
 }
@@ -799,26 +748,6 @@ const ItemAnimation = ({
       }
     }
   })
-
-  return null
-}
-
-const ItemLightRegistrar = ({
-  nodeId,
-  effect,
-  interactive,
-  index,
-}: {
-  nodeId: AnyNodeId
-  effect: LightEffect
-  interactive: Interactive
-  index: number
-}) => {
-  useEffect(() => {
-    const key = `${nodeId}:${index}`
-    useItemLightPool.getState().register(key, nodeId, effect, interactive)
-    return () => useItemLightPool.getState().unregister(key)
-  }, [nodeId, index, effect, interactive])
 
   return null
 }

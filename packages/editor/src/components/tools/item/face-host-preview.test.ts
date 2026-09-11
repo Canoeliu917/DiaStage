@@ -42,7 +42,6 @@ describe('shouldDetachFaceHostOnLeave', () => {
   test('detaches attached items when they leave a block face', () => {
     expect(shouldDetachFaceHostOnLeave('wall')).toBe(true)
     expect(shouldDetachFaceHostOnLeave('wall-side')).toBe(true)
-    expect(shouldDetachFaceHostOnLeave('ceiling')).toBe(true)
   })
 
   test('allows free floor items to leave a block face', () => {
@@ -65,7 +64,7 @@ describe('clampFaceHostPosition', () => {
 })
 
 describe('clampFaceHostCenterPosition', () => {
-  test('keeps a ceiling fixture footprint inside the face on both axes', () => {
+  test('keeps a stage prop footprint inside the face on both axes', () => {
     expect(
       clampFaceHostCenterPosition(
         [1.9, 1.9, 0.25],

@@ -2,6 +2,7 @@ import { test } from 'bun:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import type { AnyNode } from '@pascal-app/core'
 
 if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   test('stage overview exposes scenery without lights and protects scene edits', () => {
@@ -167,11 +168,14 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     }),
     core.ItemNode.parse({ id: 'item_lower', parentId: 'level_lower', name: '下层座椅', asset }),
     core.ItemNode.parse({ id: 'item_upper', parentId: 'level_upper', name: '上层座椅', asset }),
-    core.ItemNode.parse({
-      id: 'item_lamp',
-      parentId: 'level_upper',
-      name: '原生灯具',
-      visible: false,
+    {
+      ...core.ItemNode.parse({
+        id: 'item_lamp',
+        parentId: 'level_upper',
+        name: '原生灯具',
+        visible: false,
+        asset,
+      }),
       asset: {
         ...asset,
         interactive: {
@@ -179,7 +183,7 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
           effects: [{ kind: 'light', intensityRange: [0, 100] }],
         },
       },
-    }),
+    } as unknown as AnyNode,
   ]
   function reset() {
     scene.setState({

@@ -7,7 +7,6 @@ import {
   WallNode,
   WindowNode,
 } from '@pascal-app/core'
-import { columnResizeAffordance } from '../column/floorplan-affordances'
 import { doorWidthAffordance } from '../door/floorplan-affordances'
 import { spawnRotateAffordance } from '../spawn/floorplan-affordances'
 import { windowWidthAffordance } from '../window/floorplan-affordances'
@@ -80,37 +79,6 @@ describe('opening width floor-plan affordances', () => {
 })
 
 describe('floor-plan affordance preview policy', () => {
-  test('a parametric resize keeps scene data stable until commit', () => {
-    const column = {
-      id: 'column_live-resize',
-      type: 'column',
-      position: [0, 0, 0],
-      width: 1,
-      depth: 1,
-      radius: 0.5,
-    }
-    useScene.setState({ nodes: { [column.id]: column } } as never)
-    const session = columnResizeAffordance.start({
-      node: column as never,
-      payload: { dim: 'width', planAxis: [1, 0] },
-      nodes: useScene.getState().nodes,
-      initialPlanPoint: [0.5, 0],
-      gridSnapStep: 0.1,
-    })
-
-    session.apply({ planPoint: [0.75, 0], modifiers })
-
-    expect(useScene.getState().nodes[column.id]).toBe(column)
-    expect(useLiveNodeOverrides.getState().get(column.id as AnyNodeId)).toMatchObject({
-      width: 1.5,
-    })
-
-    session.commit?.()
-
-    expect(useLiveNodeOverrides.getState().get(column.id as AnyNodeId)).toBeUndefined()
-    expect(useScene.getState().nodes[column.id]).toMatchObject({ width: 1.5 })
-  })
-
   test('a rotation keeps scene data stable until commit', () => {
     const spawn = {
       id: 'spawn_live-rotate',

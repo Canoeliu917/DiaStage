@@ -1,1 +1,0 @@
-export { elevatorDefinition } from './definition'

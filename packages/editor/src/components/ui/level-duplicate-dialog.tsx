@@ -22,27 +22,27 @@ const DUPLICATE_PRESETS: Array<{
   {
     id: 'everything',
     label: '全部内容',
-    description: '结构、材质、家具和参考资源。',
+    description: '平台、布景、材质、物件和参考资源。',
   },
   {
     id: 'structure',
-    label: '仅结构',
-    description: '不含饰面的墙体、楼板、屋顶、楼梯、窗和门。',
+    label: '仅舞台基础',
+    description: '不含材质的墙体、平台、舞台台阶、窗和门。',
   },
   {
     id: 'structure-materials',
-    label: '结构与材质',
-    description: '包含当前材质与饰面的结构。',
+    label: '舞台基础与材质',
+    description: '包含当前材质的墙体、平台和舞台台阶。',
   },
   {
     id: 'structure-furniture',
-    label: '结构与家具',
-    description: '结构、饰面和已放置物体，不含参考资源。',
+    label: '舞台基础与物件',
+    description: '平台、布景、材质和已放置物件，不含参考资源。',
   },
 ]
 
 function getLevelLabel(level: LevelNode | null) {
-  if (!level) return '当前楼层'
+  if (!level) return '当前表演层'
   return getLevelDisplayName(level)
 }
 
@@ -69,7 +69,7 @@ export function LevelDuplicateDialog({
     <Dialog onOpenChange={onOpenChange} open={open}>
       <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>复制楼层</DialogTitle>
+          <DialogTitle>复制表演层</DialogTitle>
           <DialogDescription>选择复制内容，来源： {getLevelLabel(level)}.</DialogDescription>
         </DialogHeader>
 

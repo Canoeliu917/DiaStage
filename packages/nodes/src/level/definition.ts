@@ -38,9 +38,6 @@ export const levelDefinition: NodeDefinition<typeof LevelNode> = {
     // mirror that.
     duplicable: false,
     deletable: true,
-    // Container kind — saving a level as a standalone preset has no
-    // meaning (its contents make sense only inside a building).
-    presettable: false,
   },
 
   parametrics: levelParametrics,
@@ -57,14 +54,14 @@ export const levelDefinition: NodeDefinition<typeof LevelNode> = {
   },
 
   presentation: {
-    label: '楼层',
-    description: '建筑中的单个楼层，包含墙体、楼板、天花板和物件。',
+    label: '表演层',
+    description: '舞台空间中的独立布景层，包含墙体、平台、台阶和物件。',
     icon: { kind: 'url', src: '/icons/level.webp' },
     paletteSection: 'site',
     paletteOrder: 7,
   },
 
   mcp: {
-    description: 'A level (floor) container under a building.',
+    description: 'A performance layer inside a stage container.',
   },
 }

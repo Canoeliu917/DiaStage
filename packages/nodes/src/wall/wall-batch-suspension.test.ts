@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test'
-import type { WallMode } from '@pascal-app/viewer'
 import { canBatchWalls } from './wall-batch-system'
 
 /**
@@ -9,22 +8,15 @@ import { canBatchWalls } from './wall-batch-system'
  */
 describe('canBatchWalls', () => {
   test('merges in up mode', () => {
-    expect(canBatchWalls('up', false)).toBe(true)
+    expect(canBatchWalls('up')).toBe(true)
   })
 
   test('stays live in cutaway while hidden walls are released individually', () => {
-    expect(canBatchWalls('cutaway', false)).toBe(true)
+    expect(canBatchWalls('cutaway')).toBe(true)
   })
 
   test('stands down in the modes that make walls see-through', () => {
-    expect(canBatchWalls('down', false)).toBe(false)
-    expect(canBatchWalls('translucent', false)).toBe(false)
-  })
-
-  test('stands down under isolation whatever the wall mode', () => {
-    const modes: WallMode[] = ['up', 'cutaway', 'down', 'translucent']
-    for (const mode of modes) {
-      expect(canBatchWalls(mode, true)).toBe(false)
-    }
+    expect(canBatchWalls('down')).toBe(false)
+    expect(canBatchWalls('translucent')).toBe(false)
   })
 })

@@ -9,7 +9,6 @@ import {
   runAsSingleSceneHistoryStep,
   SceneMaterial,
   type SceneMaterialId,
-  type StairNode,
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
@@ -36,16 +35,11 @@ const COPYABLE_ROOT_TYPES = new Set<AnyNode['type']>([
   'fence',
   'door',
   'window',
-  'column',
   'item',
   'slab',
-  'ceiling',
-  'roof',
   'stair',
   'spawn',
   'zone',
-  'cabinet',
-  'cabinet-module',
   'measurement',
 ])
 
@@ -123,7 +117,7 @@ function isClipboardRoot(
   if (
     allowHostedOpening &&
     (node.type === 'door' || node.type === 'window') &&
-    (parent?.type === 'wall' || parent?.type === 'roof-segment')
+    parent?.type === 'wall'
   ) {
     return true
   }
@@ -136,30 +130,6 @@ function isCopyableRootType(node: AnyNode) {
   return !!definition && definition.capabilities?.duplicable !== false
 }
 
-function getPromotedCabinetRunId(
-  nodes: Record<AnyNodeId, AnyNode>,
-  node: AnyNode,
-  selectedIds: Set<AnyNodeId>,
-) {
-  if (node.type !== 'cabinet-module') return null
-
-  const parentId = node.parentId as AnyNodeId | null
-  const parent = parentId ? nodes[parentId] : null
-  if (parent?.type !== 'cabinet') return null
-  if (!parentId) return null
-  if (selectedIds.has(parentId)) return parentId
-
-  const siblingIds = Array.isArray(parent.children) ? (parent.children as AnyNodeId[]) : []
-  const hasOnlySelectedModules =
-    siblingIds.length > 0 &&
-    siblingIds.every((childId) => {
-      const child = nodes[childId]
-      return child?.type === 'cabinet-module' && selectedIds.has(childId)
-    })
-
-  return hasOnlySelectedModules ? parentId : null
-}
-
 function getPasteTargetLevel(targetLevelId?: AnyNodeId) {
   const scene = useScene.getState()
   const resolvedLevelId =
@@ -168,24 +138,6 @@ function getPasteTargetLevel(targetLevelId?: AnyNodeId) {
 
   const level = scene.nodes[resolvedLevelId]
   return level?.type === 'level' ? level : null
-}
-
-function getNextLevelId(level: LevelNode, nodes: Record<AnyNodeId, AnyNode>) {
-  const parentId = level.parentId as AnyNodeId | null
-  if (!parentId) return null
-
-  const building = nodes[parentId]
-  if (building?.type !== 'building') return null
-
-  const siblingLevels = building.children
-    .map((childId) => nodes[childId as AnyNodeId])
-    .filter((node): node is LevelNode => node?.type === 'level')
-
-  return (
-    siblingLevels
-      .filter((candidate) => candidate.level > level.level)
-      .sort((a, b) => a.level - b.level)[0]?.id ?? null
-  )
 }
 
 function remapNodeReferences(
@@ -211,10 +163,6 @@ function remapNodeReferences(
       nodes[buildingId]?.type === 'building'
         ? buildingId
         : targetLevel.id
-    if (clone.type === 'door' || clone.type === 'window') {
-      delete clone.roofSegmentId
-      delete clone.roofFace
-    }
   } else if (clone.parentId && typeof clone.parentId === 'string') {
     clone.parentId = idMap.get(clone.parentId as AnyNodeId) ?? clone.parentId
   }
@@ -232,12 +180,6 @@ function remapNodeReferences(
     } else {
       delete (clone as Record<string, unknown>).wallId
     }
-  }
-
-  if (clone.type === 'stair') {
-    const nextLevelId = getNextLevelId(targetLevel, nodes)
-    ;(clone as StairNode).fromLevelId = targetLevel.id
-    ;(clone as StairNode).toLevelId = nextLevelId
   }
 
   if (clone.type === 'measurement') {
@@ -324,13 +266,9 @@ function collectReferencedSceneMaterialIds(value: unknown, ids: Set<SceneMateria
 
 function buildClipboardPayload(ids: AnyNodeId[]): ClipboardPayload | null {
   const scene = useScene.getState()
-  const selectedIdSet = new Set(ids)
   const allowHostedOpening = ids.length === 1
-  const promotedIds = ids.map((id) => {
-    const node = scene.nodes[id]
-    return node ? (getPromotedCabinetRunId(scene.nodes, node, selectedIdSet) ?? id) : id
-  })
-  const rootIds = Array.from(new Set(promotedIds)).filter((id) => {
+  const selectedIdSet = new Set(ids)
+  const rootIds = Array.from(new Set(ids)).filter((id) => {
     const node = scene.nodes[id]
     return (
       node &&

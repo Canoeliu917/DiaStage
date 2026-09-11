@@ -99,9 +99,8 @@ mock.module('../store/use-audio', () => ({
   },
 }))
 
-const { disposeSFX, playSFX, preloadSFX, startLoopSFX, stopLoopSFX, updateSFXVolumes } =
-  await import('./sfx-player')
-const { disposeSFXBus, initSFXBus, sfxEmitter, triggerSFX } = await import('./sfx-bus')
+const { disposeSFX, playSFX, preloadSFX, updateSFXVolumes } = await import('./sfx-player')
+const { disposeSFXBus, initSFXBus, triggerSFX } = await import('./sfx-bus')
 
 beforeEach(() => {
   disposeSFXBus()
@@ -195,72 +194,5 @@ describe('SFX audio context lifecycle', () => {
     playSFX('itemDelete')
 
     expect(instances.reduce((total, sound) => total + sound.playCount, 0)).toBe(2)
-  })
-
-  test('keeps one faded terrain loop active and stops it on release', () => {
-    startLoopSFX('terrainRaise')
-    const raise = instances.find((sound) => sound.loop && sound.playCount === 1)
-
-    expect(raise?.volumeCalls[0]).toEqual([0, 1])
-    expect(raise?.fadeCalls).toEqual([[0, 0.2, 90, 1]])
-
-    startLoopSFX('terrainRaise')
-    expect(raise?.playCount).toBe(1)
-
-    stopLoopSFX()
-    expect(raise?.stopCount).toBe(1)
-    expect(raise?.fadeCalls.at(-1)).toEqual([0.2, 0, 90, 1])
-  })
-
-  test('maps each terrain verb to a distinct loop through the SFX bus', () => {
-    initSFXBus()
-
-    for (const verb of ['raise', 'lower', 'flatten', 'smooth'] as const) {
-      sfxEmitter.emit('sfx:terrain-sculpt-start', verb)
-      sfxEmitter.emit('sfx:terrain-sculpt-stop')
-    }
-
-    expect(
-      instances.filter((sound) => sound.loop && sound.playCount === 1).map((sound) => sound.src),
-    ).toEqual([
-      '/audios/sfx/terrain_raise.mp3',
-      '/audios/sfx/terrain_lower.mp3',
-      '/audios/sfx/terrain_flatten.mp3',
-      '/audios/sfx/terrain_smooth.mp3',
-    ])
-  })
-
-  test('fades an active terrain loop out when sound is muted', () => {
-    startLoopSFX('terrainLower')
-    const lower = instances.find((sound) => sound.loop && sound.playCount === 1)
-
-    muted = true
-    updateSFXVolumes()
-
-    expect(lower?.fadeCalls.at(-1)).toEqual([0.2, 0, 90, 1])
-    expect(lower?.stopCount).toBe(1)
-  })
-
-  test('starts a requested terrain loop when its asset finishes loading', () => {
-    initialState = 'loading'
-    startLoopSFX('terrainRaise')
-    const raise = instances.find((sound) => sound.src === '/audios/sfx/terrain_raise.mp3')
-
-    expect(raise?.playCount).toBe(0)
-
-    raise?.finishLoading()
-
-    expect(raise?.playCount).toBe(1)
-  })
-
-  test('does not start a terrain loop after the sculpt press was released', () => {
-    initialState = 'loading'
-    startLoopSFX('terrainLower')
-    const lower = instances.find((sound) => sound.src === '/audios/sfx/terrain_lower.mp3')
-
-    stopLoopSFX()
-    lower?.finishLoading()
-
-    expect(lower?.playCount).toBe(0)
   })
 })

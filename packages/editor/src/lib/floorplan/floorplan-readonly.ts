@@ -76,7 +76,6 @@ export function floorplanLayerRank(type: string): number {
     case 'zone':
       return 0
     case 'slab':
-    case 'ceiling':
       return 1
     default:
       return 2

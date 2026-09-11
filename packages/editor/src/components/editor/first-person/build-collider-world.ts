@@ -7,7 +7,6 @@ import {
   isOperationDoorType,
   nodeRegistry,
   sceneRegistry,
-  terrainFieldOf,
   useInteractive,
   useScene,
 } from '@pascal-app/core'
@@ -15,11 +14,9 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh'
 import { computeSceneBoundsXZ } from '../../../lib/scene-bounds'
-import { createTerrainColliderGeometry } from './terrain-collider'
 
 const SKIPPED_MESH_NAMES = new Set(['cutout', 'collision-mesh'])
 const COLLIDER_NODE_CATEGORIES = new Set(['structure', 'furnish'])
-const DEDICATED_COLLIDER_NODE_TYPES = new Set<AnyNode['type']>(['elevator'])
 const COLLIDER_MATERIAL = new THREE.MeshBasicMaterial()
 const DOWN = new THREE.Vector3(0, -1, 0)
 const UP = new THREE.Vector3(0, 1, 0)
@@ -75,12 +72,7 @@ function isColliderMaterialVisible(material: THREE.Material | THREE.Material[]) 
 
 function isGenericColliderNode(node: AnyNode) {
   if (node.visible === false) return false
-  if (DEDICATED_COLLIDER_NODE_TYPES.has(node.type)) return false
   const def = nodeRegistry.get(node.type)
-  // Ceilings are a transparent mount surface for fixtures (lights, fans), not a
-  // walkable or blocking structure — the walkthrough player must pass through
-  // them rather than be held up as if standing on a floor slab.
-  if (def?.surfaceRole === 'ceiling') return false
   return COLLIDER_NODE_CATEGORIES.has(def?.category ?? '')
 }
 
@@ -156,25 +148,11 @@ function collectLevelFallbackFloorGeometries(nodes: SceneNodes) {
 // keep holding the player up even after they step past the site boundary,
 // otherwise they fall below the ground plane into the void.
 //
-// A sculpted site takes the terrain path instead: the flat slab would hold the
-// player at the datum inside an excavation and bury them inside a hill. Derived
-// from the field rather than the rendered terrain mesh for the same
-// mount-timing reason as the flat slab.
 function createSiteGroundColliderGeometry(site: SiteNode, nodes: SceneNodes) {
   if (site.visible === false) return null
 
   const siteObject = sceneRegistry.nodes.get(site.id)
   if (!siteObject?.visible) return null
-
-  const field = terrainFieldOf(site)
-  if (field) {
-    const terrainGeometry = createTerrainColliderGeometry(field)
-    if (terrainGeometry) {
-      siteObject.updateWorldMatrix(true, false)
-      terrainGeometry.applyMatrix4(siteObject.matrixWorld)
-      return terrainGeometry
-    }
-  }
 
   const bounds = computeSceneBoundsXZ(nodes)
   const [centerX, centerZ] = bounds?.center ?? [0, 0]

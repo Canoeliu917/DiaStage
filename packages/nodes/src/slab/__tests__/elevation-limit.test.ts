@@ -119,14 +119,13 @@ describe('anchor-relative slab presets', () => {
   })
 
   test('sinks below the current anchor and returns to a solid without losing it', () => {
-    const raised = slab({ elevation: 0.8, thickness: 0.2, fillToTerrain: true })
+    const raised = slab({ elevation: 0.8, thickness: 0.2 })
     const recessedPatch = applySlabElevationPreset(raised, -0.15)
 
     expect(recessedPatch).toEqual({
       elevation: expect.any(Number),
       recessed: true,
       recessedRimElevation: expect.any(Number),
-      fillToTerrain: undefined,
     })
     expect(recessedPatch.elevation).toBeCloseTo(0.45)
     expect(recessedPatch.recessedRimElevation).toBeCloseTo(0.6)

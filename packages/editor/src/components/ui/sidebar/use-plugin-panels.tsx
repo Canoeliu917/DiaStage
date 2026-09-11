@@ -1,34 +1,21 @@
 'use client'
 
 import { Icon } from '@iconify/react'
-import { type IconRef, useRegistryVersion, useScene } from '@pascal-app/core'
-import { Plus } from 'lucide-react'
+import type { IconRef } from '@pascal-app/core'
 import {
   type ComponentType,
   lazy,
   type ReactNode,
   Suspense,
-  useEffect,
   useSyncExternalStore,
 } from 'react'
 import useEditor from '../../../store/use-editor'
-import { syncLegacyScenePlugins } from '../../../lib/scene'
 import {
   editorHostPanelRegistry,
   type EditorHostPanel,
-  managedPluginIds,
-  showsPluginManager,
 } from '../../../lib/plugin-panels'
 import { ErrorBoundary } from '../primitives/error-boundary'
 import type { ExtraPanel } from './icon-rail'
-import { PluginsPanel } from './panels/plugins-panel'
-
-const pluginsManagerPanel: ExtraPanel = {
-  id: 'plugins',
-  label: '插件',
-  icon: <Plus className="h-5 w-5" />,
-  component: PluginsPanel,
-}
 
 /** Resolve a plugin's {@link IconRef} into a rail-sized React node. Mirrors the
  * inspector's `renderIcon`, sized for the 24px icon-rail button. */
@@ -104,21 +91,14 @@ export function useHostPanels(hostPanels?: ExtraPanel[]): ExtraPanel[] {
     editorHostPanelRegistry.getSnapshot,
   )
   const workspaceMode = useEditor((s) => s.workspaceMode)
-  const registryVersion = useRegistryVersion()
-  const installedPlugins = useScene((s) => s.installedPlugins)
-  const readOnly = useScene((s) => s.readOnly)
   const hostIds = new Set(hostPanels?.map((p) => p.id))
-
-  useEffect(() => {
-    syncLegacyScenePlugins()
-  }, [registered, registryVersion])
 
   const fromRegistry = registered
     .filter(
       (p) =>
+        !p.pluginId &&
         !hostIds.has(p.id) &&
-        (p.workspaces ?? ['edit']).includes(workspaceMode) &&
-        (!p.pluginId || installedPlugins.includes(p.pluginId)),
+        (p.workspaces ?? ['edit']).includes(workspaceMode),
     )
     .map(
       (p): ExtraPanel => ({
@@ -126,19 +106,7 @@ export function useHostPanels(hostPanels?: ExtraPanel[]): ExtraPanel[] {
         label: p.label,
         icon: renderIconRef(p.icon),
         component: resolvePanelComponent(p),
-        pluginId: p.pluginId,
       }),
     )
-  // The manager tab is the one panel the editor contributes itself, so it is
-  // also the one that can be alone in the rail — see `showsPluginManager`.
-  const manager =
-    !hostIds.has(pluginsManagerPanel.id) &&
-    showsPluginManager({
-      managedPluginCount: managedPluginIds(registered).length,
-      readOnly,
-      workspaceMode,
-    })
-      ? [pluginsManagerPanel]
-      : []
-  return [...(hostPanels ?? []), ...fromRegistry, ...manager]
+  return [...(hostPanels ?? []), ...fromRegistry]
 }

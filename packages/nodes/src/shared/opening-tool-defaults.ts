@@ -12,16 +12,10 @@ const placementFields = {
   rotation: true,
   side: true,
   wallId: true,
-  roofSegmentId: true,
-  roofFace: true,
 } as const
 
 const doorParameters = DoorNode.omit(placementFields)
-const windowParameters = WindowNode.omit({
-  ...placementFields,
-  dormerId: true,
-  dormerFace: true,
-})
+const windowParameters = WindowNode.omit(placementFields)
 
 // A preset supplies geometry and finishes; the native tool owns IDs and hosts.
 export function doorToolParameters(value: unknown) {

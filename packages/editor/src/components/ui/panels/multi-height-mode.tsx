@@ -3,13 +3,9 @@
 import {
   type AnyNode,
   type AnyNodeId,
-  type CeilingNode,
   type ParametricDescriptor,
   GROUND_SUPPORT_ID,
-  getCeilingClampBound,
   getWallEffectiveHeightForNodes,
-  resolveCeilingHeight,
-  terrainSupportLift,
   useScene,
   type WallNode,
 } from '@pascal-app/core'
@@ -29,13 +25,10 @@ import {
 import { precisionForStep } from './parametric-field-utils'
 
 function wallFollowsLevelPatch(wall: WallNode, nodes: Record<string, AnyNode>): Partial<WallNode> {
-  const terrainSupported =
-    wall.parentId != null &&
-    terrainSupportLift(nodes, wall.parentId, wall.start[0], wall.start[1]) != null
   return {
     height: undefined,
     supportOffset: undefined,
-    ...(wall.supportSlabId === GROUND_SUPPORT_ID && !terrainSupported
+    ...(wall.supportSlabId === GROUND_SUPPORT_ID
       ? { supportSlabId: undefined }
       : {}),
   }
@@ -43,19 +36,8 @@ function wallFollowsLevelPatch(wall: WallNode, nodes: Record<string, AnyNode>): 
 
 function effectiveHeight(node: AnyNode, nodes: Record<string, AnyNode>): number {
   if (node.type === 'wall') return getWallEffectiveHeightForNodes(node, nodes)
-  if (node.type === 'ceiling') return resolveCeilingHeight(node, nodes)
   const height = (node as { height?: number }).height
   return typeof height === 'number' ? height : 0
-}
-
-function ceilingCustomHeight(node: CeilingNode, nodes: Record<string, AnyNode>): number {
-  const resolved = resolveCeilingHeight(node, nodes)
-  const parent = node.parentId ? nodes[node.parentId] : undefined
-  const max =
-    parent?.type === 'level'
-      ? getCeilingClampBound(parent.id, nodes as Record<AnyNodeId, AnyNode>, node.polygon ?? [])
-      : Number.POSITIVE_INFINITY
-  return Math.min(resolved, max)
 }
 
 export function MultiHeightModeField({
@@ -67,7 +49,7 @@ export function MultiHeightModeField({
   step = 0.05,
 }: {
   nodeIds: AnyNodeId[]
-  nodeType: 'wall' | 'ceiling'
+  nodeType: 'wall'
   parametrics: Pick<ParametricDescriptor<AnyNode>, 'derive' | 'reconcile'>
   min?: number
   max?: number
@@ -104,9 +86,6 @@ export function MultiHeightModeField({
           const isCustom = (node as { height?: number }).height != null
           if (next === 'custom') {
             if (isCustom) return {}
-            if (node.type === 'ceiling') {
-              return { height: ceilingCustomHeight(node, nodes) }
-            }
             if (node.type === 'wall') {
               return { height: Math.max(0.1, getWallEffectiveHeightForNodes(node, nodes)) }
             }

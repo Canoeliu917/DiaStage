@@ -41,7 +41,7 @@ import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { LevelOffsetGroup } from '../shared/level-offset-group'
-import { resolveWallOpeningCeiling } from '../shared/wall-opening-ceiling'
+import { resolveWallOpeningTop } from '../shared/wall-opening-top'
 
 /**
  * Wall endpoint move tool (kind-owned).
@@ -669,7 +669,7 @@ export const MoveWallEndpointTool: React.FC<{ target: MovingWallEndpoint }> = ({
     end: previewEnd,
     curveOffset: target.wall.curveOffset,
   })
-  const wallHeight = resolveWallOpeningCeiling(effectiveWall, nodes)
+  const wallHeight = resolveWallOpeningTop(effectiveWall, nodes)
   const dimMidX = (previewStart[0] + previewEnd[0]) / 2
   const dimMidZ = (previewStart[1] + previewEnd[1]) / 2
 

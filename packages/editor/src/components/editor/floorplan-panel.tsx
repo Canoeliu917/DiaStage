@@ -5,14 +5,10 @@ import {
   type AnyNode,
   type AnyNodeId,
   type BuildingNode,
-  type CeilingNode,
-  CeilingNode as CeilingNodeSchema,
-  type ColumnNode,
   calculateLevelMiters,
   DEFAULT_ANGLE_STEP,
   type DoorNode,
   DoorNode as DoorNodeSchema,
-  type ElevatorNode,
   emitter,
   type FenceNode,
   type FloorplanGeometry,
@@ -30,22 +26,14 @@ import {
   nodeRegistry,
   normalizeWallCurveOffset,
   type Point2D,
-  type RoofNode,
-  type RoofSegmentNode,
   resolveSlabPlacementElevation,
-  resolveTerrainWallConstructionOptions,
   type SiteNode,
   type SlabNode,
   SlabNode as SlabNodeSchema,
-  type StairNode,
-  StairNode as StairNodeSchema,
-  StairSegmentNode as StairSegmentNodeSchema,
   sampleWallCenterline,
   sceneRegistry,
   snapPointAlongAngleRay,
   spatialGridManager,
-  terrainSupportLift,
-  useInteractive,
   useLiveNodeOverrides,
   useLiveTransforms,
   useScene,
@@ -53,7 +41,6 @@ import {
   WallNode as WallNodeSchema,
   type WindowNode,
   WindowNode as WindowNodeSchema,
-  wallClosesRoom,
   ZoneNode as ZoneNodeSchema,
   type ZoneNode as ZoneNodeType,
 } from '@pascal-app/core'
@@ -74,13 +61,10 @@ import {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { Vector3 } from 'three'
 import { useShallow } from 'zustand/react/shallow'
-import { resolveCeilingPlanPointSnap } from '../../lib/ceiling-plan-snap'
 import {
   alignFloorplanDraftPoint,
   buildFloorplanItemEntry,
-  buildFloorplanStairEntry as buildSharedFloorplanStairEntry,
   collectLevelDescendants,
   FLOORPLAN_VIEW_ROTATION_DEG,
   floorplanLocalToWorldPoint,
@@ -90,7 +74,6 @@ import {
   worldToFloorplanLocalPoint,
 } from '../../lib/floorplan'
 import { resolveGenericFloorplanGridEventPoint } from '../../lib/floorplan-grid-event-point'
-import { groundHeightAt } from '../../lib/ground-surface'
 import { guideEmitter } from '../../lib/guide-events'
 import { measurementHint, parseMeasurement } from '../../lib/measurement-parser'
 import { formatLinearMeasurement, linearUnitToMeters } from '../../lib/measurements'
@@ -141,9 +124,8 @@ import {
   FloorplanRegistryLayer,
   RotationAngleOverlay,
 } from '../editor-2d/renderers/floorplan-registry-layer'
-import { FloorplanStairLayer } from '../editor-2d/renderers/floorplan-stair-layer'
 import { FloorplanVoronoiLayer } from '../editor-2d/renderers/floorplan-voronoi-layer'
-import { buildSvgPolylinePath, formatPolygonPath, getArcPlanPoint } from '../editor-2d/svg-paths'
+import { buildSvgPolylinePath, formatPolygonPath } from '../editor-2d/svg-paths'
 import { snapFenceDraftPoint } from '../tools/fence/fence-drafting'
 import { snapToHalf } from '../tools/item/placement-math'
 import {
@@ -174,12 +156,8 @@ import {
   getSegmentAngleReferenceAtPoint,
 } from '../tools/shared/segment-angle'
 import {
-  DEFAULT_STAIR_ATTACHMENT_SIDE,
-  DEFAULT_STAIR_FILL_TO_FLOOR,
-  DEFAULT_STAIR_HEIGHT,
   DEFAULT_STAIR_LENGTH,
   DEFAULT_STAIR_STEP_COUNT,
-  DEFAULT_STAIR_THICKNESS,
   DEFAULT_STAIR_WIDTH,
 } from '../tools/stair/stair-defaults'
 import {
@@ -267,7 +245,6 @@ const FLOORPLAN_HOVER_TRANSITION = 'opacity 180ms cubic-bezier(0.2, 0, 0, 1)'
 const FLOORPLAN_WALL_HIT_STROKE_WIDTH = 18
 const FLOORPLAN_WALL_STROKE_WIDTH = '1'
 const FLOORPLAN_OPENING_HIT_STROKE_WIDTH = 16
-const noopFloorplanStairHandler = () => {}
 const FLOORPLAN_OPENING_STROKE_WIDTH = 0.05
 const FLOORPLAN_ENDPOINT_HIT_STROKE_WIDTH = 18
 const FLOORPLAN_ENDPOINT_HOVER_GLOW_STROKE_WIDTH = 16
@@ -575,13 +552,6 @@ type SlabPolygonEntry = {
   path: string
 }
 
-type CeilingPolygonEntry = {
-  ceiling: CeilingNode
-  polygon: Point2D[]
-  holes: Point2D[][]
-  path: string
-}
-
 type SitePolygonEntry = {
   site: SiteNode
   polygon: Point2D[]
@@ -609,20 +579,12 @@ type FloorplanItemEntry = {
 }
 
 type ReferenceFloorData = {
-  ceilingPolygons: CeilingPolygonEntry[]
-  columnEntries: ReferenceFloorColumnEntry[]
   fenceEntries: FloorplanFenceEntry[]
   itemEntries: FloorplanItemEntry[]
   openingPolygons: OpeningPolygonEntry[]
   registryEntries: ReferenceFloorRegistryEntry[]
   slabPolygons: SlabPolygonEntry[]
   wallPolygons: WallPolygonEntry[]
-}
-
-type ReferenceFloorColumnEntry = {
-  column: ColumnNode
-  points: string
-  polygon: Point2D[]
 }
 
 type ReferenceFloorRegistryEntry = {
@@ -637,20 +599,13 @@ type ReferenceFloorRegistryEntry = {
 // that don't.
 //
 // This is a deliberate curation, NOT "every kind with a `def.floorplan`":
-// ~24 kinds expose one, including children (`roof-segment`, `stair-segment`),
-// containers (`level`, `building`), and surfaces (`ceiling`, `zone`) that
+// Several kinds expose one, including child and container nodes that
 // either render through a parent's builder or shouldn't appear as standalone
 // reference symbols — auto-deriving would double-draw or clutter the floor.
 // The list also can't live on `NodeDefinition`: "reference floor" is an
 // editor 2D-view concept that `packages/core` must stay unaware of (see
 // wiki/architecture/layers.md). New top-level structural kinds opt in here.
-const REFERENCE_REGISTRY_KINDS = new Set<AnyNode['type']>([
-  'stair',
-  'roof',
-  'shelf',
-  'spawn',
-  'elevator',
-])
+const REFERENCE_REGISTRY_KINDS = new Set<AnyNode['type']>(['stair', 'shelf', 'spawn'])
 
 type FloorplanPalette = {
   surface: string
@@ -662,10 +617,6 @@ type FloorplanPalette = {
   slabStroke: string
   selectedSlabFill: string
   selectedSlabStroke: string
-  ceilingFill: string
-  ceilingStroke: string
-  selectedCeilingFill: string
-  selectedCeilingStroke: string
   wallFill: string
   wallStroke: string
   wallInnerStroke: string
@@ -685,14 +636,6 @@ type FloorplanPalette = {
   openingFill: string
   openingStroke: string
   measurementStroke: string
-  roofFill: string
-  roofActiveFill: string
-  roofSelectedFill: string
-  roofStroke: string
-  roofActiveStroke: string
-  roofSelectedStroke: string
-  roofRidgeStroke: string
-  roofSelectedRidgeStroke: string
   stairFill: string
   stairSelectedFill: string
   stairStroke: string
@@ -1934,101 +1877,6 @@ function getRotatedRectanglePolygon(
   })
 }
 
-function getColumnPlanFootprint(column: ColumnNode): Point2D[] {
-  const center = { x: column.position[0], y: column.position[2] }
-
-  if (
-    column.supportStyle === 'a-frame' ||
-    column.supportStyle === 'y-frame' ||
-    column.supportStyle === 'v-frame' ||
-    column.supportStyle === 'x-brace' ||
-    column.supportStyle === 'k-brace' ||
-    column.supportStyle === 'single-strut' ||
-    column.supportStyle === 'tripod' ||
-    column.supportStyle === 'trestle' ||
-    column.supportStyle === 'portal-frame' ||
-    column.supportStyle === 'box-frame'
-  ) {
-    const width = Math.max(
-      column.supportStyle === 'a-frame' ||
-        column.supportStyle === 'x-brace' ||
-        column.supportStyle === 'k-brace' ||
-        column.supportStyle === 'single-strut' ||
-        column.supportStyle === 'tripod' ||
-        column.supportStyle === 'trestle' ||
-        column.supportStyle === 'portal-frame' ||
-        column.supportStyle === 'box-frame'
-        ? (column.braceBottomSpread ?? 1.2)
-        : 0,
-      column.braceTopSpread ??
-        (column.supportStyle === 'y-frame' ||
-        column.supportStyle === 'v-frame' ||
-        column.supportStyle === 'x-brace' ||
-        column.supportStyle === 'k-brace' ||
-        column.supportStyle === 'single-strut' ||
-        column.supportStyle === 'tripod' ||
-        column.supportStyle === 'trestle' ||
-        column.supportStyle === 'portal-frame' ||
-        column.supportStyle === 'box-frame'
-          ? 1
-          : 0),
-      (column.braceWidth ?? column.width) * 2,
-    )
-    const depth = Math.max(
-      column.supportStyle === 'tripod' ||
-        column.supportStyle === 'trestle' ||
-        column.supportStyle === 'box-frame'
-        ? (column.braceTopSpread ?? 1)
-        : 0,
-      column.braceDepth ?? column.depth,
-      0.08,
-    )
-    return getRotatedRectanglePolygon(center, width, depth, column.rotation)
-  }
-
-  const shaftWidth =
-    column.crossSection === 'round' ||
-    column.crossSection === 'octagonal' ||
-    column.crossSection === 'sixteen-sided'
-      ? column.radius * 2
-      : column.width
-  const shaftDepth =
-    column.crossSection === 'round' ||
-    column.crossSection === 'octagonal' ||
-    column.crossSection === 'sixteen-sided'
-      ? column.radius * 2
-      : column.depth
-  const width = Math.max(
-    shaftWidth,
-    column.width * column.baseWidthScale,
-    column.width * column.capitalWidthScale,
-  )
-  const depth = Math.max(
-    shaftDepth,
-    column.depth * column.baseDepthScale,
-    column.depth * column.capitalDepthScale,
-  )
-
-  if (column.crossSection === 'square' || column.crossSection === 'rectangular') {
-    return getRotatedRectanglePolygon(center, width, depth, column.rotation)
-  }
-
-  const segmentCount =
-    column.crossSection === 'octagonal' ? 8 : column.crossSection === 'sixteen-sided' ? 16 : 32
-
-  return Array.from({ length: segmentCount }, (_, index) => {
-    const angle = (index / segmentCount) * Math.PI * 2
-    const localX = Math.cos(angle) * (width / 2)
-    const localY = Math.sin(angle) * (depth / 2)
-    const [offsetX, offsetY] = rotatePlanVector(localX, localY, column.rotation)
-
-    return {
-      x: center.x + offsetX,
-      y: center.y + offsetY,
-    }
-  })
-}
-
 function interpolatePlanPoint(start: Point2D, end: Point2D, t: number): Point2D {
   return {
     x: start.x + (end.x - start.x) * t,
@@ -2105,68 +1953,6 @@ function movePlanPointTowards(start: Point2D, end: Point2D, distance: number): P
   }
 
   return interpolatePlanPoint(start, end, Math.min(1, distance / totalDistance))
-}
-
-function getNormalizedFloorplanStairSweepAngle(stair: StairNode) {
-  const stairType = stair.stairType ?? 'straight'
-  const baseSweepAngle = stair.sweepAngle ?? (stairType === 'spiral' ? Math.PI * 2 : Math.PI / 2)
-
-  if (Math.abs(baseSweepAngle) >= Math.PI * 2) {
-    return Math.sign(baseSweepAngle || 1) * (Math.PI * 2 - 0.001)
-  }
-
-  return baseSweepAngle
-}
-
-function getFloorplanSpiralLandingSweep(stair: StairNode, sweepAngle: number) {
-  if (
-    (stair.stairType ?? 'straight') !== 'spiral' ||
-    (stair.topLandingMode ?? 'none') !== 'integrated'
-  ) {
-    return 0
-  }
-
-  const innerRadius = Math.max(0.05, stair.innerRadius ?? 0.9)
-  const width = Math.max(stair.width ?? 1, 0.4)
-  const landingDepth = Math.max(0.3, stair.topLandingDepth ?? Math.max(width * 0.9, 0.8))
-
-  return (
-    Math.min(Math.PI * 0.75, landingDepth / Math.max(innerRadius + width / 2, 0.1)) *
-    Math.sign(sweepAngle || 1)
-  )
-}
-
-function getFloorplanCurvedStairHitPolygon(stair: StairNode): Point2D[] {
-  const stairType = stair.stairType ?? 'straight'
-  const sweepAngle = getNormalizedFloorplanStairSweepAngle(stair)
-  const startAngle = -stair.rotation - sweepAngle / 2
-  const endAngle = startAngle + sweepAngle + getFloorplanSpiralLandingSweep(stair, sweepAngle)
-  const center = {
-    x: stair.position[0],
-    y: stair.position[2],
-  }
-  const innerRadius = Math.max(
-    stairType === 'spiral' ? 0.05 : 0.2,
-    stair.innerRadius ?? (stairType === 'spiral' ? 0.2 : 0.9),
-  )
-  const outerRadius = innerRadius + stair.width
-  const outerArcLength = Math.abs(sweepAngle) * outerRadius
-  const segmentCount = Math.max(
-    24,
-    Math.ceil(Math.abs(sweepAngle) / (Math.PI / 24)),
-    Math.ceil(outerArcLength / 0.14),
-  )
-  const outerPoints: Point2D[] = []
-  const innerPoints: Point2D[] = []
-
-  for (let index = 0; index <= segmentCount; index += 1) {
-    const t = index / segmentCount
-    const angle = startAngle + (endAngle - startAngle) * t
-    outerPoints.push(getArcPlanPoint(center, outerRadius, angle))
-    innerPoints.push(getArcPlanPoint(center, innerRadius, angle))
-  }
-
-  return [...outerPoints, ...innerPoints.reverse()]
 }
 
 function isPointInsidePolygonWithHoles(
@@ -3179,91 +2965,6 @@ function worldToBuildingLocalPlanPoint(
   }
 }
 
-function getRoofSegmentCenter(
-  roof: RoofNode,
-  segment: RoofSegmentNode,
-  worldPositionOverride?: Point2D,
-): Point2D {
-  if (worldPositionOverride) {
-    return worldPositionOverride
-  }
-
-  const cos = Math.cos(roof.rotation)
-  const sin = Math.sin(roof.rotation)
-  const localX = segment.position[0]
-  const localZ = segment.position[2]
-
-  return {
-    x: roof.position[0] + localX * cos - localZ * sin,
-    y: roof.position[2] + localX * sin + localZ * cos,
-  }
-}
-
-function getRoofSegmentPolygon(
-  roof: RoofNode,
-  segment: RoofSegmentNode,
-  options?: {
-    localRotation?: number
-    worldPositionOverride?: Point2D
-  },
-): Point2D[] {
-  const center = getRoofSegmentCenter(roof, segment, options?.worldPositionOverride)
-  const rotation = roof.rotation + (options?.localRotation ?? segment.rotation)
-  const cos = Math.cos(rotation)
-  const sin = Math.sin(rotation)
-  const halfWidth = segment.width / 2
-  const halfDepth = segment.depth / 2
-
-  const corners: Array<[number, number]> = [
-    [-halfWidth, -halfDepth],
-    [halfWidth, -halfDepth],
-    [halfWidth, halfDepth],
-    [-halfWidth, halfDepth],
-  ]
-
-  return corners.map(([x, y]) => ({
-    x: center.x + x * cos - y * sin,
-    y: center.y + x * sin + y * cos,
-  }))
-}
-
-function getRoofSegmentRidgeLine(
-  roof: RoofNode,
-  segment: RoofSegmentNode,
-  options?: {
-    localRotation?: number
-    worldPositionOverride?: Point2D
-  },
-): FloorplanLineSegment | null {
-  if (segment.roofType === 'flat') {
-    return null
-  }
-
-  const center = getRoofSegmentCenter(roof, segment, options?.worldPositionOverride)
-  const rotation = roof.rotation + (options?.localRotation ?? segment.rotation)
-  const ridgeAxis =
-    segment.roofType === 'gable' || segment.roofType === 'gambrel'
-      ? 'x'
-      : segment.roofType === 'dutch'
-        ? segment.width >= segment.depth
-          ? 'x'
-          : 'z'
-        : 'z'
-  const axisAngle = ridgeAxis === 'x' ? rotation : rotation + Math.PI / 2
-  const halfSpan = ridgeAxis === 'x' ? segment.width / 2 : segment.depth / 2
-
-  return {
-    start: {
-      x: center.x - halfSpan * Math.cos(axisAngle),
-      y: center.y - halfSpan * Math.sin(axisAngle),
-    },
-    end: {
-      x: center.x + halfSpan * Math.cos(axisAngle),
-      y: center.y + halfSpan * Math.sin(axisAngle),
-    },
-  }
-}
-
 const FloorplanGridLayer = memo(function FloorplanGridLayer({
   majorGridPath,
   minorGridPath,
@@ -3749,19 +3450,6 @@ const FloorplanReferenceFloorLayer = memo(function FloorplanReferenceFloorLayer(
         />
       ))}
 
-      {data.ceilingPolygons.map(({ ceiling, path }) => (
-        <path
-          d={path}
-          fill="rgba(245, 158, 11, 0.06)"
-          fillRule="evenodd"
-          key={ceiling.id}
-          stroke="rgba(245, 158, 11, 0.28)"
-          strokeDasharray="6 4"
-          strokeWidth={1}
-          vectorEffect="non-scaling-stroke"
-        />
-      ))}
-
       {data.wallPolygons.map(({ polygon, points, wall }) =>
         polygon.length >= 3 ? (
           <polygon
@@ -3784,17 +3472,6 @@ const FloorplanReferenceFloorLayer = memo(function FloorplanReferenceFloorLayer(
           strokeDasharray="5 4"
           strokeLinecap="round"
           strokeWidth={1.5}
-          vectorEffect="non-scaling-stroke"
-        />
-      ))}
-
-      {data.columnEntries.map(({ column, points }) => (
-        <polygon
-          fill="rgba(124, 58, 237, 0.12)"
-          key={column.id}
-          points={points}
-          stroke="rgba(88, 28, 135, 0.55)"
-          strokeWidth={1.1}
           vectorEffect="non-scaling-stroke"
         />
       ))}
@@ -4371,41 +4048,7 @@ const FloorplanPolygonHandleLayer = memo(function FloorplanPolygonHandleLayer({
   )
 })
 
-// Static segment for the in-flight stair build preview. No per-render
-// dependency (the geometry only moves / rotates), so it lives at module scope
-// instead of a `useMemo`.
-const FLOORPLAN_PREVIEW_STAIR_SEGMENT = StairSegmentNodeSchema.parse({
-  id: 'sseg_floorplan_preview',
-  segmentType: 'stair',
-  width: DEFAULT_STAIR_WIDTH,
-  length: DEFAULT_STAIR_LENGTH,
-  height: DEFAULT_STAIR_HEIGHT,
-  stepCount: DEFAULT_STAIR_STEP_COUNT,
-  attachmentSide: DEFAULT_STAIR_ATTACHMENT_SIDE,
-  fillToFloor: DEFAULT_STAIR_FILL_TO_FLOOR,
-  thickness: DEFAULT_STAIR_THICKNESS,
-  position: [0, 0, 0],
-  metadata: { isTransient: true, isFloorplanPreview: true },
-})
-
-const EMPTY_FLOORPLAN_ID_SET: ReadonlySet<string> = new Set()
-
-type FloorplanStairLayerPalette = ComponentProps<typeof FloorplanStairLayer>['palette']
-
-// Leaf layer for the stair tool's in-flight 2D build preview. Subscribes to the
-// `useStairBuildPreview` store directly so a per-`grid:move` point update (or an
-// R/T rotation) re-renders ONLY this tiny layer — never the ~120-220ms
-// `FloorplanPanel`. This mirrors how column / elevator placement stays smooth by
-// routing preview state through a store + leaf. Committed stairs render through
-// `FloorplanRegistryLayer`; this layer is non-interactive (noop handlers, empty
-// hit sets), so it never participates in hover / select.
-function FloorplanStairBuildPreviewLayer({
-  palette,
-  isDeleteMode,
-}: {
-  palette: FloorplanStairLayerPalette
-  isDeleteMode: boolean
-}) {
+function FloorplanStairBuildPreviewLayer() {
   const phase = useEditor((s) => s.phase)
   const mode = useEditor((s) => s.mode)
   const tool = useEditor((s) => s.tool)
@@ -4413,65 +4056,43 @@ function FloorplanStairBuildPreviewLayer({
   const rotation = useStairBuildPreview((s) => s.rotation)
   const isActive = phase === 'structure' && mode === 'build' && tool === 'stair'
 
-  const previewEntry = useMemo(() => {
-    if (!(isActive && point)) {
-      return null
+  const geometry = useMemo<FloorplanGeometry | null>(() => {
+    if (!(isActive && point)) return null
+    const children: FloorplanGeometry[] = [
+      {
+        kind: 'rect',
+        x: -DEFAULT_STAIR_WIDTH / 2,
+        y: 0,
+        width: DEFAULT_STAIR_WIDTH,
+        height: DEFAULT_STAIR_LENGTH,
+        fill: 'rgba(59, 130, 246, 0.12)',
+        stroke: '#2563eb',
+        strokeWidth: 0.025,
+        opacity: 0.9,
+      },
+    ]
+    for (let index = 1; index < DEFAULT_STAIR_STEP_COUNT; index += 1) {
+      const z = (DEFAULT_STAIR_LENGTH * index) / DEFAULT_STAIR_STEP_COUNT
+      children.push({
+        kind: 'line',
+        x1: -DEFAULT_STAIR_WIDTH / 2,
+        y1: z,
+        x2: DEFAULT_STAIR_WIDTH / 2,
+        y2: z,
+        stroke: '#2563eb',
+        strokeWidth: 0.015,
+      })
     }
-    const previewStair = StairNodeSchema.parse({
-      id: 'stair_floorplan_preview',
-      name: 'Staircase preview',
-      position: [point[0], 0, point[1]],
-      rotation,
-      children: [FLOORPLAN_PREVIEW_STAIR_SEGMENT.id],
-      metadata: { isTransient: true, isFloorplanPreview: true },
-    })
-    const entry = buildSharedFloorplanStairEntry(previewStair, [FLOORPLAN_PREVIEW_STAIR_SEGMENT])
-    if (!entry) {
-      return null
-    }
-    const hitPolygons =
-      (previewStair.stairType ?? 'straight') === 'straight'
-        ? entry.segments.map((segmentEntry) => segmentEntry.polygon)
-        : [getFloorplanCurvedStairHitPolygon(previewStair)]
-
     return {
-      ...entry,
-      hitPolygons,
-      segments: entry.segments.map((segmentEntry) => ({
-        ...segmentEntry,
-        innerPoints: formatPolygonPoints(segmentEntry.innerPolygon),
-        points: formatPolygonPoints(segmentEntry.polygon),
-        treadBars: segmentEntry.treadBars.map((polygon) => ({
-          points: formatPolygonPoints(polygon),
-          polygon,
-        })),
-      })),
+      kind: 'group',
+      transform: { translate: point, rotate: -rotation },
+      children,
     }
   }, [isActive, point, rotation])
 
-  if (!previewEntry) {
-    return null
-  }
-
-  return (
-    <FloorplanStairLayer
-      canFocusStairs={false}
-      canSelectStairs={false}
-      cursor={EDITOR_CURSOR}
-      highlightedIdSet={EMPTY_FLOORPLAN_ID_SET}
-      hitStrokeWidth={FLOORPLAN_OPENING_HIT_STROKE_WIDTH}
-      hoveredStairId={null}
-      isDeleteMode={isDeleteMode}
-      onStairDoubleClick={noopFloorplanStairHandler}
-      onStairHoverChange={noopFloorplanStairHandler}
-      onStairHoverEnter={noopFloorplanStairHandler}
-      onStairPointerDown={noopFloorplanStairHandler}
-      onStairSelect={noopFloorplanStairHandler}
-      palette={palette}
-      selectedIdSet={EMPTY_FLOORPLAN_ID_SET}
-      stairEntries={[previewEntry]}
-    />
-  )
+  return geometry ? (
+    <FloorplanGeometryRenderer geometry={geometry} pointerEventsOverride="none" />
+  ) : null
 }
 
 // Leaf overlay for the cursor-following draft preview: the cursor crosshair plus
@@ -4630,20 +4251,18 @@ function FloorplanCursorIndicator(
   return <Editor2dFloorplanCursorIndicatorOverlay {...props} cursorPosition={cursorPosition} />
 }
 
-// Leaf overlay for the live wall / fence / roof draft segment (the directional
+// Leaf overlay for the live wall / fence draft segment (the directional
 // draws). It subscribes to the per-move END points in the draft store so a
 // `grid:move` re-renders ONLY this layer, not FloorplanPanel; the per-click
-// START points + render config arrive as props. Owns the draft polygon (wall +
-// roof rect), the fence segment line, and the wall length/angle measurement —
+// START points + render config arrive as props. Owns the wall polygon,
+// fence segment line, and wall length/angle measurement —
 // the cursor-following pieces the shared `FloorplanDraftLayer` no longer carries.
 function FloorplanLinearDraftLayer({
   levelId,
   wallDraftStart,
   fenceDraftStart,
-  roofDraftStart,
   isWallBuildActive,
   isFenceBuildActive,
-  isRoofBuildActive,
   walls,
   unit,
   draftFill,
@@ -4656,10 +4275,8 @@ function FloorplanLinearDraftLayer({
   levelId: string | null
   wallDraftStart: WallPlanPoint | null
   fenceDraftStart: WallPlanPoint | null
-  roofDraftStart: WallPlanPoint | null
   isWallBuildActive: boolean
   isFenceBuildActive: boolean
-  isRoofBuildActive: boolean
   walls: WallNode[]
   unit: 'metric' | 'imperial'
   draftFill: string
@@ -4672,8 +4289,6 @@ function FloorplanLinearDraftLayer({
   const metricNotation = useViewer((state) => state.metricNotation)
   const wallDraftEnd = useFloorplanDraftPreview((s) => s.wallDraftEnd)
   const fenceDraftEnd = useFloorplanDraftPreview((s) => s.fenceDraftEnd)
-  const roofDraftEnd = useFloorplanDraftPreview((s) => s.roofDraftEnd)
-  const roofDraftQuarterTurn = useFloorplanDraftPreview((s) => s.roofDraftQuarterTurn)
 
   const draftPolygon = useMemo(() => {
     if (
@@ -4691,39 +4306,7 @@ function FloorplanLinearDraftLayer({
     return getWallPlanFootprint(draftWall, EMPTY_WALL_MITER_DATA)
   }, [levelId, wallDraftStart, wallDraftEnd])
 
-  const draftPolygonPoints = useMemo(() => {
-    if (isRoofBuildActive && roofDraftStart && roofDraftEnd) {
-      const minX = Math.min(roofDraftStart[0], roofDraftEnd[0])
-      const maxX = Math.max(roofDraftStart[0], roofDraftEnd[0])
-      const minY = Math.min(roofDraftStart[1], roofDraftEnd[1])
-      const maxY = Math.max(roofDraftStart[1], roofDraftEnd[1])
-
-      if (Math.abs(maxX - minX) >= 1e-6 || Math.abs(maxY - minY) >= 1e-6) {
-        return formatPolygonPoints([
-          { x: minX, y: minY },
-          { x: maxX, y: minY },
-          { x: maxX, y: maxY },
-          { x: minX, y: maxY },
-        ])
-      }
-    }
-    return draftPolygon ? formatPolygonPoints(draftPolygon) : null
-  }, [draftPolygon, isRoofBuildActive, roofDraftEnd, roofDraftStart])
-
-  const roofDraftDirectionLine = useMemo(() => {
-    if (!(isRoofBuildActive && roofDraftStart && roofDraftEnd)) return null
-    const minX = Math.min(roofDraftStart[0], roofDraftEnd[0])
-    const maxX = Math.max(roofDraftStart[0], roofDraftEnd[0])
-    const minY = Math.min(roofDraftStart[1], roofDraftEnd[1])
-    const maxY = Math.max(roofDraftStart[1], roofDraftEnd[1])
-    if (maxX - minX < 1e-6 || maxY - minY < 1e-6) return null
-
-    const centerX = (minX + maxX) / 2
-    const centerY = (minY + maxY) / 2
-    return roofDraftQuarterTurn
-      ? { x1: centerX, y1: minY, x2: centerX, y2: maxY }
-      : { x1: minX, y1: centerY, x2: maxX, y2: centerY }
-  }, [isRoofBuildActive, roofDraftEnd, roofDraftQuarterTurn, roofDraftStart])
+  const draftPolygonPoints = draftPolygon ? formatPolygonPoints(draftPolygon) : null
 
   const fenceDraftSegment = useMemo(() => {
     if (!(isFenceBuildActive && fenceDraftStart && fenceDraftEnd)) {
@@ -4903,19 +4486,6 @@ function FloorplanLinearDraftLayer({
         unitsPerPixel={unitsPerPixel}
       />
 
-      {roofDraftDirectionLine && (
-        <line
-          pointerEvents="none"
-          stroke={draftStroke}
-          strokeLinecap="round"
-          strokeWidth={unitsPerPixel * 1.5}
-          x1={toSvgX(roofDraftDirectionLine.x1)}
-          x2={toSvgX(roofDraftDirectionLine.x2)}
-          y1={toSvgY(roofDraftDirectionLine.y1)}
-          y2={toSvgY(roofDraftDirectionLine.y2)}
-        />
-      )}
-
       {draftWallMeasurement && (
         <FloorplanDraftWallMeasurement
           labelBackground={isDark ? '#0f172a' : '#ffffff'}
@@ -5065,7 +4635,6 @@ export function FloorplanPanel({
   const {
     buildingPosition,
     buildingRotationY,
-    ceilings,
     currentBuildingId,
     fences,
     floorplanLevels,
@@ -5073,7 +4642,6 @@ export function FloorplanPanel({
     levelGuides,
     levelNode,
     openings,
-    roofs,
     site,
     slabs,
     spawns,
@@ -5104,19 +4672,6 @@ export function FloorplanPanel({
   // The studio workspace (renders / materials / item builder) is a clean
   // stage — editor viewport chrome, compass included, stays out of it.
   const isStudioWorkspace = useEditor((s) => s.workspaceMode === 'studio')
-  const elevators = useScene(
-    useShallow((state) => {
-      const building = currentBuildingId ? state.nodes[currentBuildingId] : null
-      if (building?.type !== 'building') {
-        return [] as ElevatorNode[]
-      }
-
-      return building.children.flatMap((childId) => {
-        const node = state.nodes[childId]
-        return node?.type === 'elevator' && node.visible !== false ? [node] : []
-      })
-    }),
-  )
   const [floorplanUserRotationDeg, setFloorplanUserRotationDeg] = useState(0)
   const buildingRotationDeg = (buildingRotationY * 180) / Math.PI
   const floorplanSceneRotationDeg =
@@ -5138,8 +4693,6 @@ export function FloorplanPanel({
   // Shims keep the `setXDraftEnd(value | prev => …)` call sites unchanged.
   const [draftStart, setDraftStart] = useState<WallPlanPoint | null>(null)
   const [wallChainFirstVertex, setWallChainFirstVertex] = useState<WallPlanPoint | null>(null)
-  const wallConstructionOptionsRef =
-    useRef<ReturnType<typeof resolveTerrainWallConstructionOptions>>(undefined)
   // Walls committed by the current 2D-only chain — exclusion set for the
   // T-junction chain-termination test (mirrors the 3D tool's `chainWallIds`).
   const wallChainWallIdsRef = useRef<string[]>([])
@@ -5158,15 +4711,6 @@ export function FloorplanPanel({
     },
     [],
   )
-  const [roofDraftStart, setRoofDraftStart] = useState<WallPlanPoint | null>(null)
-  const setRoofDraftEnd = useCallback(
-    (next: WallPlanPoint | null | ((prev: WallPlanPoint | null) => WallPlanPoint | null)) => {
-      const store = useFloorplanDraftPreview.getState()
-      store.setRoofDraftEnd(typeof next === 'function' ? next(store.roofDraftEnd) : next)
-    },
-    [],
-  )
-  const [ceilingDraftPoints, setCeilingDraftPoints] = useState<WallPlanPoint[]>([])
   const [slabDraftPoints, setSlabDraftPoints] = useState<WallPlanPoint[]>([])
   const slabPlacementBaseRef = useRef<number | null>(null)
   // Mirror the per-click draft START anchors into the shared draft store so
@@ -5178,9 +4722,6 @@ export function FloorplanPanel({
   useEffect(() => {
     useFloorplanDraftPreview.getState().setFenceDraftStart(fenceDraftStart)
   }, [fenceDraftStart])
-  useEffect(() => {
-    useFloorplanDraftPreview.getState().setRoofDraftStart(roofDraftStart)
-  }, [roofDraftStart])
   const [zoneDraftPoints, setZoneDraftPoints] = useState<WallPlanPoint[]>([])
   const [siteBoundaryDraft, setSiteBoundaryDraft] = useState<SiteBoundaryDraft | null>(null)
   const [siteVertexDragState, setSiteVertexDragState] = useState<SiteVertexDragState | null>(null)
@@ -5249,52 +4790,6 @@ export function FloorplanPanel({
   const [rotationModifierPressed, setRotationModifierPressed] = useState(false)
   const [movingFloorplanNodeRevision, setMovingFloorplanNodeRevision] = useState(0)
   const movingFloorplanNodeRefreshFrameRef = useRef<number | null>(null)
-  const elevatorIds = useMemo(() => elevators.map((elevator) => elevator.id), [elevators])
-  const elevatorRuntimeKey = useInteractive(
-    useCallback(
-      (state) =>
-        elevatorIds
-          .map((elevatorId) => {
-            const runtime = state.elevators[elevatorId]
-            if (!runtime) {
-              return `${elevatorId}:`
-            }
-
-            return [
-              elevatorId,
-              runtime.currentLevelId ?? '',
-              runtime.targetLevelId ?? '',
-              runtime.phase,
-              runtime.queue.join(','),
-            ].join(':')
-          })
-          .join('|'),
-      [elevatorIds],
-    ),
-  )
-  const elevatorLiveOverrideKey = useLiveNodeOverrides(
-    useCallback(
-      (state) =>
-        elevatorIds
-          .map((elevatorId) => {
-            const overrides = state.overrides.get(elevatorId)
-            if (!overrides) {
-              return `${elevatorId}:`
-            }
-
-            return [
-              elevatorId,
-              overrides.width ?? '',
-              overrides.depth ?? '',
-              overrides.shaftWidth ?? '',
-              overrides.shaftDepth ?? '',
-              overrides.shaftWallThickness ?? '',
-            ].join(':')
-          })
-          .join('|'),
-      [elevatorIds],
-    ),
-  )
   const siteLivePolygon = useLiveNodeOverrides(
     useCallback(
       (state) => {
@@ -5572,20 +5067,6 @@ export function FloorplanPanel({
 
     return hasPreviewWalls ? nextFloorplanWallById : floorplanWallById
   }, [displayWallById, floorplanWallById, wallCurveDraft, wallEndpointDraft])
-  // Ceilings on the active level, projected to 2D polygons for hit-testing
-  // ceiling-item placement clicks/moves. Committed ceilings render through
-  // the registry; this memo is placement data, not a rendering fallback.
-  const ceilingHitEntries = useMemo(
-    () =>
-      ceilings.map((ceiling) => ({
-        ceiling,
-        polygon: toFloorplanPolygon(ceiling.polygon),
-        holes: (ceiling.holes ?? [])
-          .map((hole) => toFloorplanPolygon(hole))
-          .filter((hole) => hole.length >= 3),
-      })),
-    [ceilings],
-  )
   const levelDescendantNodeById = useMemo(
     () => new Map(levelDescendantNodes.map((node) => [node.id, node] as const)),
     [levelDescendantNodes],
@@ -5598,13 +5079,6 @@ export function FloorplanPanel({
           node.visible !== false &&
           node.asset.category !== 'door' &&
           node.asset.category !== 'window',
-      ),
-    [levelDescendantNodes],
-  )
-  const floorplanStairs = useMemo(
-    () =>
-      levelDescendantNodes.filter(
-        (node): node is StairNode => node.type === 'stair' && node.visible !== false,
       ),
     [levelDescendantNodes],
   )
@@ -5641,11 +5115,7 @@ export function FloorplanPanel({
     )
     const referenceWalls = children.filter((node): node is WallNode => node.type === 'wall')
     const referenceFences = children.filter((node): node is FenceNode => node.type === 'fence')
-    const referenceColumns = children.filter((node): node is ColumnNode => node.type === 'column')
     const referenceSlabs = children.filter((node): node is SlabNode => node.type === 'slab')
-    const referenceCeilings = children.filter(
-      (node): node is CeilingNode => node.type === 'ceiling',
-    )
     const referenceDescendants = referenceFloorDescendants
     const referenceDescendantById = new Map(referenceDescendants.map((node) => [node.id, node]))
 
@@ -5715,26 +5185,6 @@ export function FloorplanPanel({
       ]
     })
 
-    const ceilingPolygons = referenceCeilings.flatMap((ceiling) => {
-      const polygon = toFloorplanPolygon(ceiling.polygon)
-      if (polygon.length < 3) {
-        return []
-      }
-
-      const holes = (ceiling.holes ?? [])
-        .map((hole) => toFloorplanPolygon(hole))
-        .filter((hole) => hole.length >= 3)
-
-      return [
-        {
-          ceiling,
-          polygon,
-          holes,
-          path: formatPolygonPath(polygon, holes),
-        },
-      ]
-    })
-
     const fenceEntries = referenceFences.flatMap((fence) => {
       const centerline = isCurvedWall(fence)
         ? sampleWallCenterline(fence, 24)
@@ -5750,25 +5200,8 @@ export function FloorplanPanel({
       return [{ fence, centerline, markerFrames: [], path }]
     })
 
-    const columnEntries = referenceColumns.flatMap((column) => {
-      const polygon = getColumnPlanFootprint(column)
-      if (polygon.length < 3) {
-        return []
-      }
-
-      return [
-        {
-          column,
-          points: formatPolygonPoints(polygon),
-          polygon,
-        },
-      ]
-    })
-
-    // Render reference-floor stairs and roofs through the SAME registry
-    // builders the active level uses (`def.floorplan` → `buildStairFloorplan`
-    // / `buildRoofFloorplan`), so the symbol is pixel-identical to a stair /
-    // roof on the current floor. These are the only registry-driven kinds
+    // Render reference-floor registry entries through the same builders the active
+    // level uses. These are the registry-driven kinds
     // the legacy reference layer doesn't already collect manually.
     // `viewState` is omitted so each builder emits its unselected appearance
     // (no selection chrome / resize handles). Both the reference layer and
@@ -5784,9 +5217,7 @@ export function FloorplanPanel({
         return []
       }
 
-      // Each builder walks its own segment children (stair-segment /
-      // roof-segment) and filters by type. Pass them in stored `children`
-      // order — stair-segment transforms are cumulative, so order matters.
+      // Pass children in stored order because stair segment transforms are cumulative.
       const childIds = (node as { children?: AnyNodeId[] }).children ?? []
       const children = childIds.flatMap((childId) => {
         const child = referenceDescendantById.get(childId)
@@ -5840,8 +5271,6 @@ export function FloorplanPanel({
     })
 
     return {
-      ceilingPolygons,
-      columnEntries,
       fenceEntries,
       itemEntries,
       openingPolygons,
@@ -5852,35 +5281,25 @@ export function FloorplanPanel({
   }, [referenceFloorDescendants, referenceFloorLevel])
   const slabById = useMemo(() => new Map(slabs.map((slab) => [slab.id, slab] as const)), [slabs])
   const zoneById = useMemo(() => new Map(zones.map((zone) => [zone.id, zone] as const)), [zones])
-  const ceilingById = useMemo(
-    () => new Map(ceilings.map((ceiling) => [ceiling.id, ceiling] as const)),
-    [ceilings],
-  )
-
   const isSiteEditActive = phase === 'site'
   const isWallBuildActive = phase === 'structure' && mode === 'build' && tool === 'wall'
   const isSlabBuildActive = phase === 'structure' && mode === 'build' && tool === 'slab'
-  const isCeilingBuildActive = phase === 'structure' && mode === 'build' && tool === 'ceiling'
   const isZoneBuildActive = phase === 'structure' && mode === 'build' && tool === 'zone'
   const isDoorBuildActive = phase === 'structure' && mode === 'build' && tool === 'door'
   const isWindowBuildActive = phase === 'structure' && mode === 'build' && tool === 'window'
   const isPolygonBuildActive = isSlabBuildActive || isZoneBuildActive
-  const isPolygonDraftBuildActive = isPolygonBuildActive || isCeilingBuildActive
+  const isPolygonDraftBuildActive = isPolygonBuildActive
   const isOpeningBuildActive = isDoorBuildActive || isWindowBuildActive
   const isOpeningMoveActive = movingOpeningType !== null
   const isOpeningPlacementActive = isOpeningBuildActive || isOpeningMoveActive
   const isFenceBuildActive = phase === 'structure' && mode === 'build' && tool === 'fence'
   const fenceContinuation = useEditor((state) => state.continuationByContext.fence)
-  const isRoofBuildActive = phase === 'structure' && mode === 'build' && tool === 'roof'
   const isStairBuildActive = phase === 'structure' && mode === 'build' && tool === 'stair'
   const isStairMoveActive = movingNode?.type === 'stair'
-  const isRoofMoveActive = movingNode?.type === 'roof' || movingNode?.type === 'roof-segment'
   const isSlabMoveActive = movingNode?.type === 'slab'
-  const isCeilingMoveActive = movingNode?.type === 'ceiling'
   const isFenceMoveActive = movingNode?.type === 'fence'
   const isWallMoveActive = movingNode?.type === 'wall'
   const isSpawnMoveActive = movingNode?.type === 'spawn'
-  const isElevatorMoveActive = movingNode?.type === 'elevator'
   const isWallCurveActive = isCurveReshape && reshapingNode?.type === 'wall'
   const isFenceCurveActive = isCurveReshape && reshapingNode?.type === 'fence'
   const isFenceEndpointMoveActive = endpointReshape !== null && reshapingNode?.type === 'fence'
@@ -5888,18 +5307,6 @@ export function FloorplanPanel({
     (mode === 'build' && tool === 'item') || movingNode?.type === 'item'
   const isFloorItemBuildActive = mode === 'build' && tool === 'item' && !selectedItem?.attachTo
   const isFloorItemMoveActive = movingNode?.type === 'item' && !movingNode.asset.attachTo
-  // Ceiling-attached items (lights, fans). The 3D viewer drives these via
-  // `ceiling:enter/move/click` raycast events on the ceiling mesh; the 2D
-  // floor plan has no such mesh, so we synthesise the same events when the
-  // cursor is over a ceiling polygon. Without this the placement system
-  // never transitions out of `surface: 'floor'` and the draft sits at floor
-  // height while the 2D cursor moves freely — what the user perceived as
-  // "2D and 3D positions are out of sync".
-  const isCeilingItemBuildActive =
-    mode === 'build' && tool === 'item' && selectedItem?.attachTo === 'ceiling'
-  const isCeilingItemMoveActive =
-    movingNode?.type === 'item' && movingNode.asset.attachTo === 'ceiling'
-  const isCeilingItemPlacementActive = isCeilingItemBuildActive || isCeilingItemMoveActive
   // Any registry-driven kind whose tool is currently active. Lets the floor
   // plan emit `grid:click` / `grid:move` events to that kind's placement tool
   // (shelf today; future Phase 5 kinds the moment they register a `tool`).
@@ -5908,17 +5315,12 @@ export function FloorplanPanel({
   const isRegistryToolBuildActive = mode === 'build' && tool != null && nodeRegistry.has(tool)
   const isFloorplanGridInteractionActive =
     isFenceBuildActive ||
-    isRoofBuildActive ||
-    isCeilingBuildActive ||
     isStairBuildActive ||
     isStairMoveActive ||
-    isRoofMoveActive ||
     isSlabMoveActive ||
-    isCeilingMoveActive ||
     isFenceMoveActive ||
     isWallMoveActive ||
     isSpawnMoveActive ||
-    isElevatorMoveActive ||
     isWallCurveActive ||
     isFenceCurveActive ||
     isFenceEndpointMoveActive ||
@@ -5964,8 +5366,6 @@ export function FloorplanPanel({
         ...base,
         parentId: wall.id,
         wallId: wall.id,
-        roofSegmentId: undefined,
-        roofFace: undefined,
         position: [half, floorplanOpeningLocalY, 0] as [number, number, number],
         rotation: [0, 0, 0] as [number, number, number],
       } as AnyNode
@@ -6029,7 +5429,6 @@ export function FloorplanPanel({
       !isFenceEndpointMoveActive &&
       isFloorplanStructureContextActive) ||
     isDeleteMode
-  const canSelectFloorplanElevators = canSelectFloorplanStairs
   const canSelectFloorplanSpawns = canSelectFloorplanStairs
   const canSelectFloorplanItems =
     (mode === 'select' &&
@@ -6111,15 +5510,11 @@ export function FloorplanPanel({
     })
   }, [canUseSiteBoundaryVertexHandles, siteVertexDragState, visibleSitePolygon])
 
-  // The live wall / fence / roof draft preview (polygon + fence segment + wall
+  // The live wall / fence draft preview (polygon + fence segment + wall
   // measurement) moved into `FloorplanLinearDraftLayer`, which reads the per-
   // move END points from the draft store so it re-renders per move without
   // re-rendering this panel.
   const activePolygonDraftPoints = useMemo(() => {
-    if (isCeilingBuildActive) {
-      return ceilingDraftPoints
-    }
-
     if (isZoneBuildActive) {
       return zoneDraftPoints
     }
@@ -6129,27 +5524,14 @@ export function FloorplanPanel({
     }
 
     return [] as WallPlanPoint[]
-  }, [
-    ceilingDraftPoints,
-    isCeilingBuildActive,
-    isSlabBuildActive,
-    isZoneBuildActive,
-    slabDraftPoints,
-    zoneDraftPoints,
-  ])
-  const activePolygonDraftType = isCeilingBuildActive
-    ? 'ceiling'
-    : isZoneBuildActive
-      ? 'zone'
-      : isSlabBuildActive
-        ? 'slab'
-        : null
+  }, [isSlabBuildActive, isZoneBuildActive, slabDraftPoints, zoneDraftPoints])
+  const activePolygonDraftType = isZoneBuildActive ? 'zone' : isSlabBuildActive ? 'slab' : null
   useEffect(() => {
     useFloorplanDraftPreview
       .getState()
       .setPolygonDraft(activePolygonDraftType, activePolygonDraftPoints)
   }, [activePolygonDraftPoints, activePolygonDraftType])
-  // The cursor-following polygon-draft preview (slab / zone / ceiling) moved into
+  // The cursor-following polygon-draft preview (slab / zone) moved into
   // `FloorplanDraftCursorLayer`, which reads the live cursor from the draft store
   // so it re-renders per move without re-rendering this panel.
 
@@ -6986,10 +6368,6 @@ export function FloorplanPanel({
             slabStroke: 'rgba(203, 213, 225, 0.82)',
             selectedSlabFill: 'rgba(59, 130, 246, 0.14)',
             selectedSlabStroke: '#93c5fd',
-            ceilingFill: 'rgba(15, 23, 42, 0.18)',
-            ceilingStroke: 'rgba(226, 232, 240, 0.74)',
-            selectedCeilingFill: 'rgba(59, 130, 246, 0.16)',
-            selectedCeilingStroke: '#93c5fd',
             wallFill: '#d8dee9',
             wallStroke: '#f8fafc',
             wallInnerStroke: 'rgba(148, 163, 184, 0.82)',
@@ -7009,14 +6387,6 @@ export function FloorplanPanel({
             anchor: '#818cf8',
             openingFill: '#0a0e1b',
             openingStroke: '#f8fafc',
-            roofFill: 'rgba(56, 189, 248, 0.16)',
-            roofActiveFill: 'rgba(56, 189, 248, 0.24)',
-            roofSelectedFill: 'rgba(147, 197, 253, 0.28)',
-            roofStroke: 'rgba(125, 211, 252, 0.82)',
-            roofActiveStroke: '#38bdf8',
-            roofSelectedStroke: '#93c5fd',
-            roofRidgeStroke: 'rgba(186, 230, 253, 0.84)',
-            roofSelectedRidgeStroke: '#eff6ff',
             stairFill: 'rgba(226, 232, 240, 0.12)',
             stairSelectedFill: 'rgba(96, 165, 250, 0.18)',
             stairStroke: '#e2e8f0',
@@ -7042,10 +6412,6 @@ export function FloorplanPanel({
             slabStroke: '#9e9e9e',
             selectedSlabFill: 'rgba(59, 130, 246, 0.14)',
             selectedSlabStroke: '#3b82f6',
-            ceilingFill: '#f6f6f6',
-            ceilingStroke: '#9e9e9e',
-            selectedCeilingFill: 'rgba(59, 130, 246, 0.16)',
-            selectedCeilingStroke: '#2563eb',
             wallFill: '#1f2937',
             wallStroke: 'rgba(31, 41, 55, 0.9)',
             wallInnerStroke: 'rgba(71, 85, 105, 0.58)',
@@ -7065,14 +6431,6 @@ export function FloorplanPanel({
             anchor: '#4338ca',
             openingFill: '#ffffff',
             openingStroke: '#171717',
-            roofFill: 'rgba(14, 165, 233, 0.08)',
-            roofActiveFill: 'rgba(14, 165, 233, 0.14)',
-            roofSelectedFill: 'rgba(14, 165, 233, 0.2)',
-            roofStroke: 'rgba(14, 165, 233, 0.65)',
-            roofActiveStroke: '#0ea5e9',
-            roofSelectedStroke: '#0369a1',
-            roofRidgeStroke: 'rgba(3, 105, 161, 0.75)',
-            roofSelectedRidgeStroke: '#0f172a',
             stairFill: 'rgba(255, 255, 255, 0.02)',
             stairSelectedFill: 'rgba(59, 130, 246, 0.08)',
             stairStroke: 'rgba(23, 23, 23, 0.88)',
@@ -7828,7 +7186,6 @@ export function FloorplanPanel({
   const clearWallPlacementDraft = useCallback(() => {
     setDraftStart(null)
     setWallChainFirstVertex(null)
-    wallConstructionOptionsRef.current = undefined
     wallChainWallIdsRef.current = []
     setDraftEnd(null)
     useSegmentDraftChain.getState().clear('wall')
@@ -7837,13 +7194,6 @@ export function FloorplanPanel({
     setFenceDraftStart(null)
     setFenceDraftEnd(null)
   }, [setFenceDraftEnd])
-  const clearRoofPlacementDraft = useCallback(() => {
-    setRoofDraftStart(null)
-    setRoofDraftEnd(null)
-  }, [setRoofDraftEnd])
-  const clearCeilingPlacementDraft = useCallback(() => {
-    setCeilingDraftPoints([])
-  }, [])
   const clearSlabPlacementDraft = useCallback(() => {
     setSlabDraftPoints([])
     slabPlacementBaseRef.current = null
@@ -7890,8 +7240,6 @@ export function FloorplanPanel({
   const clearDraft = useCallback(() => {
     clearWallPlacementDraft()
     clearFencePlacementDraft()
-    clearRoofPlacementDraft()
-    clearCeilingPlacementDraft()
     clearSlabPlacementDraft()
     clearZonePlacementDraft()
     clearWallEndpointDrag()
@@ -7904,8 +7252,6 @@ export function FloorplanPanel({
     useWallSnapIndicator.getState().clear()
   }, [
     clearFencePlacementDraft,
-    clearCeilingPlacementDraft,
-    clearRoofPlacementDraft,
     clearWallCurveDrag,
     clearSiteBoundaryInteraction,
     clearSlabPlacementDraft,
@@ -7916,18 +7262,12 @@ export function FloorplanPanel({
   ])
 
   useEffect(() => {
-    if (isWallBuildActive || isFenceBuildActive || isRoofBuildActive || isPolygonDraftBuildActive) {
+    if (isWallBuildActive || isFenceBuildActive || isPolygonDraftBuildActive) {
       return
     }
 
     clearDraft()
-  }, [
-    clearDraft,
-    isFenceBuildActive,
-    isPolygonDraftBuildActive,
-    isRoofBuildActive,
-    isWallBuildActive,
-  ])
+  }, [clearDraft, isFenceBuildActive, isPolygonDraftBuildActive, isWallBuildActive])
 
   useEffect(() => {
     const handleCancel = () => {
@@ -7962,11 +7302,11 @@ export function FloorplanPanel({
     [levelId, setSelection],
   )
 
-  // Slab / ceiling are normally committed by their 3D registry tools (which
+  // Slabs are normally committed by their 3D registry tools (which
   // accumulate the same `grid:click` vertices the panel emits). That path is
   // dead in 2D-only view — the 3D canvas is `display:none`, so the tool never
   // commits. These local committers (mirroring `createZoneOnCurrentLevel`, and
-  // the tools' own `commitSlab/CeilingDrawing`) are called ONLY in 2D-only view
+  // the slab tool's commit is called only in 2D-only view
   // so split / 3D keep their single-owner tool commit (no double-create).
   const createSlabOnCurrentLevel = useCallback(
     (points: WallPlanPoint[], baseElevation: number | null) => {
@@ -7989,27 +7329,6 @@ export function FloorplanPanel({
       sfxEmitter.emit('sfx:structure-build')
       setSelection({ selectedIds: [slab.id] })
       return slab.id
-    },
-    [levelId, setSelection],
-  )
-
-  const createCeilingOnCurrentLevel = useCallback(
-    (points: WallPlanPoint[]) => {
-      if (!levelId) {
-        return null
-      }
-      const { createNode, nodes } = useScene.getState()
-      const ceilingCount = Object.values(nodes).filter((node) => node.type === 'ceiling').length
-      const defaults = useEditor.getState().toolDefaults.ceiling ?? {}
-      const ceiling = CeilingNodeSchema.parse({
-        ...defaults,
-        name: `Ceiling ${ceilingCount + 1}`,
-        polygon: points.map(([x, z]) => [x, z] as [number, number]),
-      })
-      createNode(ceiling, levelId)
-      sfxEmitter.emit('sfx:structure-build')
-      setSelection({ selectedIds: [ceiling.id] })
-      return ceiling.id
     },
     [levelId, setSelection],
   )
@@ -8050,9 +7369,6 @@ export function FloorplanPanel({
     emitter.on('wall:enter', refreshFloorplanItemPreview as any)
     emitter.on('wall:move', refreshFloorplanItemPreview as any)
     emitter.on('wall:leave', refreshFloorplanItemPreview as any)
-    emitter.on('ceiling:enter', refreshFloorplanItemPreview as any)
-    emitter.on('ceiling:move', refreshFloorplanItemPreview as any)
-    emitter.on('ceiling:leave', refreshFloorplanItemPreview as any)
     emitter.on('item:enter', refreshFloorplanItemPreview as any)
     emitter.on('item:move', refreshFloorplanItemPreview as any)
     emitter.on('item:leave', refreshFloorplanItemPreview as any)
@@ -8062,9 +7378,6 @@ export function FloorplanPanel({
       emitter.off('wall:enter', refreshFloorplanItemPreview as any)
       emitter.off('wall:move', refreshFloorplanItemPreview as any)
       emitter.off('wall:leave', refreshFloorplanItemPreview as any)
-      emitter.off('ceiling:enter', refreshFloorplanItemPreview as any)
-      emitter.off('ceiling:move', refreshFloorplanItemPreview as any)
-      emitter.off('ceiling:leave', refreshFloorplanItemPreview as any)
       emitter.off('item:enter', refreshFloorplanItemPreview as any)
       emitter.off('item:move', refreshFloorplanItemPreview as any)
       emitter.off('item:leave', refreshFloorplanItemPreview as any)
@@ -8152,30 +7465,6 @@ export function FloorplanPanel({
 
     return unsubscribe
   }, [fences, movingNode, scheduleMovingFloorplanNodeRefresh])
-
-  useEffect(() => {
-    if (!(movingNode?.type === 'roof' || movingNode?.type === 'roof-segment')) {
-      return
-    }
-
-    const movingRoofNodeId = movingNode.id
-    const refreshRoofPreview = () => {
-      scheduleMovingFloorplanNodeRefresh()
-    }
-
-    refreshRoofPreview()
-
-    const unsubscribe = useLiveTransforms.subscribe((state, previousState) => {
-      const nextTransform = state.transforms.get(movingRoofNodeId)
-      const previousTransform = previousState.transforms.get(movingRoofNodeId)
-
-      if (nextTransform !== previousTransform) {
-        refreshRoofPreview()
-      }
-    })
-
-    return unsubscribe
-  }, [movingNode, scheduleMovingFloorplanNodeRefresh])
 
   useEffect(() => {
     if (movingNode?.type !== 'spawn') {
@@ -8919,16 +8208,11 @@ export function FloorplanPanel({
   )
 
   const hoveredWallIdRef = useRef<string | null>(null)
-  const hoveredCeilingIdRef = useRef<string | null>(null)
   const emitFloorplanWallLeave = useCallback((wallId: string | null) => {
-    if (!wallId) {
-      return
-    }
+    if (!wallId) return
 
     const wallNode = useScene.getState().nodes[wallId as AnyNodeId]
-    if (wallNode?.type !== 'wall') {
-      return
-    }
+    if (wallNode?.type !== 'wall') return
 
     emitter.emit('wall:leave', {
       node: wallNode,
@@ -8937,10 +8221,6 @@ export function FloorplanPanel({
       stopPropagation: () => {},
     } as any)
   }, [])
-  // Emits `planPoint` unchanged — callers own snapping. Re-quantizing here
-  // (the old behaviour) destroyed magnetic corner / midpoint snaps the draft
-  // branches had already resolved, desyncing the 2D pipeline from the 3D
-  // tools that subscribe to these grid events.
   const emitFloorplanGridEvent = useCallback(
     (
       eventType: 'move' | 'click' | 'double-click',
@@ -8951,16 +8231,8 @@ export function FloorplanPanel({
       const sin = Math.sin(buildingRotationY)
       const worldX = buildingPosition[0] + planPoint[0] * cos + planPoint[1] * sin
       const worldZ = buildingPosition[2] - planPoint[0] * sin + planPoint[1] * cos
-
-      // On sculpted ground the grid Y is the terrain height under the plan point,
-      // not the flat storey plane. There is no XZ correction to make here — the
-      // plan view's ray is vertical by construction, so the skew the 3D path has
-      // to march for cannot happen — but the Y still has to be the ground's, or a
-      // wall drafted in 2D lands at the datum while the same wall drafted in 3D
-      // lands on the hillside.
-      const groundY = groundHeightAt(worldX, worldZ, floorplanGridWorldY)
-      const worldY = groundY ?? floorplanGridWorldY
-      const localY = groundY === null ? floorplanGridLocalY : groundY - buildingPosition[1]
+      const worldY = floorplanGridWorldY
+      const localY = floorplanGridLocalY
 
       emitter.emit(`grid:${eventType}` as any, {
         nativeEvent: nativeEvent.nativeEvent as any,
@@ -8970,151 +8242,6 @@ export function FloorplanPanel({
     },
     [buildingPosition, buildingRotationY, floorplanGridLocalY, floorplanGridWorldY],
   )
-
-  // Build a synthetic `CeilingEvent` from a 2D plan point so the placement
-  // coordinator's existing ceiling handlers (which expect the same payload
-  // shape the 3D raycaster produces) can drive a ceiling-attached item
-  // placement from the floor plan. Returns null if the ceiling mesh isn't
-  // registered yet — the placement strategy needs `event.object` for the
-  // ceiling-local↔world transform.
-  const buildFloorplanCeilingEventPayload = useCallback(
-    (
-      ceiling: CeilingNode,
-      planPoint: WallPlanPoint,
-      nativeEvent?: ReactMouseEvent<SVGSVGElement> | ReactPointerEvent<SVGSVGElement>,
-    ) => {
-      const ceilingMesh = sceneRegistry.nodes.get(ceiling.id as AnyNodeId)
-      if (!ceilingMesh) return null
-
-      const cos = Math.cos(buildingRotationY)
-      const sin = Math.sin(buildingRotationY)
-      const worldX = buildingPosition[0] + planPoint[0] * cos + planPoint[1] * sin
-      const worldZ = buildingPosition[2] - planPoint[0] * sin + planPoint[1] * cos
-      const worldY = ceilingMesh.getWorldPosition(new Vector3()).y
-      const localVec = ceilingMesh.worldToLocal(new Vector3(worldX, worldY, worldZ))
-
-      return {
-        node: ceiling,
-        position: [worldX, worldY, worldZ] as [number, number, number],
-        localPosition: [localVec.x, localVec.y, localVec.z] as [number, number, number],
-        normal: [0, -1, 0] as [number, number, number],
-        object: ceilingMesh,
-        stopPropagation: () => {},
-        nativeEvent: nativeEvent?.nativeEvent,
-      }
-    },
-    [buildingPosition, buildingRotationY],
-  )
-
-  const emitFloorplanCeilingLeave = useCallback((ceilingId: string | null) => {
-    if (!ceilingId) return
-    const ceilingNode = useScene.getState().nodes[ceilingId as AnyNodeId]
-    if (ceilingNode?.type !== 'ceiling') return
-
-    emitter.emit('ceiling:leave', {
-      node: ceilingNode,
-      position: [0, 0, 0],
-      localPosition: [0, 0, 0],
-      normal: [0, -1, 0],
-      stopPropagation: () => {},
-    } as any)
-  }, [])
-
-  // Clear the hovered-ceiling tracker whenever placement mode ends, so we
-  // don't carry a stale ceiling id into the next placement session.
-  useEffect(() => {
-    if (!isCeilingItemPlacementActive && hoveredCeilingIdRef.current) {
-      hoveredCeilingIdRef.current = null
-    }
-  }, [isCeilingItemPlacementActive])
-
-  const findCeilingAtPlanPoint = useCallback(
-    (planPoint: WallPlanPoint): CeilingNode | null => {
-      if (ceilingHitEntries.length === 0) return null
-      const point: Point2D = { x: planPoint[0], y: planPoint[1] }
-      for (const entry of ceilingHitEntries) {
-        if (isPointInsidePolygonWithHoles(point, entry.polygon, entry.holes)) {
-          return entry.ceiling
-        }
-      }
-      return null
-    },
-    [ceilingHitEntries],
-  )
-
-  // Route a 2D plan point through ceiling enter/move/leave events when a
-  // ceiling-attached item is being placed. Returns true when the panel
-  // should stop further pointer-move processing (we either emitted a
-  // ceiling event or are between ceilings).
-  const handleCeilingItemPlacementMove = useCallback(
-    (planPoint: WallPlanPoint, nativeEvent: ReactPointerEvent<SVGSVGElement>): boolean => {
-      if (!isCeilingItemPlacementActive) return false
-
-      const ceiling = findCeilingAtPlanPoint(planPoint)
-      if (!ceiling) {
-        if (hoveredCeilingIdRef.current) {
-          emitFloorplanCeilingLeave(hoveredCeilingIdRef.current)
-          hoveredCeilingIdRef.current = null
-        }
-        return true
-      }
-
-      const payload = buildFloorplanCeilingEventPayload(ceiling, planPoint, nativeEvent)
-      if (!payload) return true
-
-      if (hoveredCeilingIdRef.current !== ceiling.id) {
-        if (hoveredCeilingIdRef.current) {
-          emitFloorplanCeilingLeave(hoveredCeilingIdRef.current)
-        }
-        hoveredCeilingIdRef.current = ceiling.id
-        emitter.emit('ceiling:enter', payload as any)
-      } else {
-        emitter.emit('ceiling:move', payload as any)
-      }
-      return true
-    },
-    [
-      buildFloorplanCeilingEventPayload,
-      emitFloorplanCeilingLeave,
-      findCeilingAtPlanPoint,
-      isCeilingItemPlacementActive,
-    ],
-  )
-
-  // Click counterpart — used by the background placement click handler.
-  // Returns true if the click was a valid ceiling-item placement.
-  const handleCeilingItemPlacementClick = useCallback(
-    (planPoint: WallPlanPoint, nativeEvent: ReactMouseEvent<SVGSVGElement>): boolean => {
-      if (!isCeilingItemPlacementActive) return false
-      const ceiling = findCeilingAtPlanPoint(planPoint)
-      if (!ceiling) return true
-
-      // Ensure the placement state has entered the ceiling surface; the
-      // user can click without a prior move (e.g. fresh placement after
-      // selecting the asset from the catalog).
-      if (hoveredCeilingIdRef.current !== ceiling.id) {
-        const enterPayload = buildFloorplanCeilingEventPayload(ceiling, planPoint, nativeEvent)
-        if (!enterPayload) return true
-        if (hoveredCeilingIdRef.current) {
-          emitFloorplanCeilingLeave(hoveredCeilingIdRef.current)
-        }
-        hoveredCeilingIdRef.current = ceiling.id
-        emitter.emit('ceiling:enter', enterPayload as any)
-      }
-
-      const clickPayload = buildFloorplanCeilingEventPayload(ceiling, planPoint, nativeEvent)
-      if (!clickPayload) return true
-      emitter.emit('ceiling:click', clickPayload as any)
-      return true
-    },
-    [
-      buildFloorplanCeilingEventPayload,
-      emitFloorplanCeilingLeave,
-      findCeilingAtPlanPoint,
-      isCeilingItemPlacementActive,
-    ],
-  )
-
   const handlePointerMove = useCallback(
     (event: ReactPointerEvent<SVGSVGElement>) => {
       const rotationState = floorplanRotationStateRef.current
@@ -9211,55 +8338,6 @@ export function FloorplanPanel({
         return
       }
 
-      if (isCeilingBuildActive) {
-        // Polygon vertex snapping is governed by the active snapping mode (the
-        // chip on the right): `grid` quantizes via `snapToHalf` (whose step is
-        // 0 — i.e. off — in any non-grid mode), `angles` locks to 15° rays from
-        // the previous vertex, `lines` pulls onto wall corners / alignment
-        // guides, `off` is free. Alignment follows the magnetic snap mode.
-        const angleSnap = ceilingDraftPoints.length > 0 && isAngleSnapActive()
-        const fallbackPoint = snapPolygonDraftPoint({
-          point: planPoint,
-          start: ceilingDraftPoints[ceilingDraftPoints.length - 1],
-          angleSnap,
-        })
-        const snappedPoint = resolveCeilingPlanPointSnap({
-          rawPoint: planPoint,
-          fallbackPoint,
-          levelId,
-          align: !angleSnap,
-        }).point
-
-        emitFloorplanGridEvent('move', snappedPoint, event)
-        setCursorPoint((previousPoint) =>
-          previousPoint && pointsEqual(previousPoint, snappedPoint) ? previousPoint : snappedPoint,
-        )
-        return
-      }
-
-      if (isRoofBuildActive) {
-        // Roof is placed as a footprint (no directional draw → polygon context:
-        // grid / lines / off, no angle lock). Mode-driven, matching the chip:
-        // `grid` quantizes via `getSnappedFloorplanPoint` (step 0 in non-grid
-        // modes), `lines` pulls onto alignment, `off` is free.
-        const snappedPoint = alignFloorplanDraftPoint(getSnappedFloorplanPoint(planPoint), {
-          applySnap: isMagneticSnapActive(),
-        })
-        emitFloorplanGridEvent('move', snappedPoint, event)
-        setCursorPoint((previousPoint) =>
-          previousPoint && pointsEqual(previousPoint, snappedPoint) ? previousPoint : snappedPoint,
-        )
-
-        if (roofDraftStart) {
-          setRoofDraftEnd((previousPoint) =>
-            previousPoint && pointsEqual(previousPoint, snappedPoint)
-              ? previousPoint
-              : snappedPoint,
-          )
-        }
-        return
-      }
-
       if (isFenceBuildActive) {
         // Fence draft: grid snap (+ existing-wall/fence endpoint snap), then
         // Figma alignment — same endpoint-wins precedence as the wall branch.
@@ -9351,8 +8429,8 @@ export function FloorplanPanel({
       //
       // Only the pure BUILD case (a door/window tool armed with no
       // `movingNode`) drives placement through these synthesized `wall:*`
-      // events. When a door/window `movingNode` is set — the community
-      // preset / catalog flow — `FloorplanRegistryMoveOverlay` owns 2D
+      // events. When a door/window `movingNode` is set, the catalog flow's
+      // `FloorplanRegistryMoveOverlay` owns 2D
       // placement end-to-end via `def.floorplanMoveTarget` (faithful symbol,
       // plan-space snap, single-undo commit, R-flip). Running both at once
       // made them fight (R-flip overwritten on the next move, click-commit
@@ -9404,27 +8482,13 @@ export function FloorplanPanel({
         return
       }
 
-      // Ceiling-attached item placement. Same shape as the opening branch
-      // above: synthesise the surface events the placement coordinator
-      // already listens for (ceiling:enter / move / leave) instead of
-      // routing through `grid:move`, which would otherwise be processed
-      // by the floor strategy and drop the item to floor height.
-      if (isCeilingItemPlacementActive) {
-        const snappedPoint = getSnappedFloorplanPoint(planPoint)
-        setCursorPoint((previousPoint) =>
-          previousPoint && pointsEqual(previousPoint, snappedPoint) ? previousPoint : snappedPoint,
-        )
-        handleCeilingItemPlacementMove(snappedPoint, event)
-        return
-      }
-
       // Registry-driven catch-all for kinds without bespoke 2D handling
       // (shelf, etc.). Must run AFTER the opening branch above (door /
       // window are also registered kinds, but need wall events — see
       // comment there). Wall build skips this so its own branch below
       // updates local `draftEnd` state alongside the registry tool.
       //
-      // A door/window MOVE (community preset) is owned by
+      // A door/window move from the catalog is owned by
       // `FloorplanRegistryMoveOverlay`; `isRegistryToolBuildActive` is true
       // for it (build mode + a registered `door`/`window` tool), so without
       // this exclusion the catch-all would emit `grid:move` and re-drive the
@@ -9514,7 +8578,6 @@ export function FloorplanPanel({
       applyFloorplanViewportImperatively,
       applyFloorplanRotationImperatively,
       draftStart,
-      ceilingDraftPoints,
       emitFloorplanWallLeave,
       emitFloorplanGridEvent,
       fences,
@@ -9522,9 +8585,6 @@ export function FloorplanPanel({
       floorplanOpeningLocalY,
       getPlanPointFromClientPoint,
       activePolygonDraftPoints,
-      handleCeilingItemPlacementMove,
-      isCeilingBuildActive,
-      isCeilingItemPlacementActive,
       isFenceBuildActive,
       isFloorplanGridInteractionActive,
       isMarqueeSelectionToolActive,
@@ -9538,12 +8598,10 @@ export function FloorplanPanel({
       showOpeningGhost,
       isPolygonBuildActive,
       isRegistryToolBuildActive,
-      isRoofBuildActive,
       isWallBuildActive,
       levelId,
       publishFloorplanNavigationPose,
       referenceScaleDraft,
-      roofDraftStart,
       siteVertexDragState,
       surfaceSize.height,
       surfaceSize.width,
@@ -9551,13 +8609,12 @@ export function FloorplanPanel({
       walls,
       setCursorPoint,
       setDraftEnd,
-      setRoofDraftEnd,
       setFenceDraftEnd,
     ],
   )
 
-  // Slab creation is owned by the registry-driven slab tool (parity with
-  // ceiling): the click/double-click that closes the polygon is forwarded as
+  // Slab creation is owned by the registry-driven slab tool: the click/double-click
+  // that closes the polygon is forwarded as
   // a grid event, and the 3D tool commits the node. These 2D handlers only
   // maintain the draft-preview state and clear it on close — they must NOT
   // create a node themselves, or every slab would be built twice.
@@ -9588,10 +8645,7 @@ export function FloorplanPanel({
             [point[0], 1_000_000, point[1]],
             [0, -1, 0],
           )
-          slabPlacementBaseRef.current =
-            support.slabId != null
-              ? support.elevation
-              : terrainSupportLift(useScene.getState().nodes, levelId, point[0], point[1])
+          slabPlacementBaseRef.current = support.slabId != null ? support.elevation : 0
         }
       }
       setSlabDraftPoints((currentPoints) => [...currentPoints, point])
@@ -9627,55 +8681,6 @@ export function FloorplanPanel({
       clearDraft()
     },
     [clearDraft, createSlabOnCurrentLevel, slabDraftPoints],
-  )
-  const handleCeilingPlacementPoint = useCallback(
-    (point: WallPlanPoint) => {
-      const lastPoint = ceilingDraftPoints[ceilingDraftPoints.length - 1]
-      if (lastPoint && pointsEqual(lastPoint, point)) {
-        return
-      }
-
-      const firstPoint = ceilingDraftPoints[0]
-      if (firstPoint && ceilingDraftPoints.length >= 3 && isPointNearPlanPoint(point, firstPoint)) {
-        if (useEditor.getState().viewMode === '2d') {
-          createCeilingOnCurrentLevel(ceilingDraftPoints)
-        }
-        clearCeilingPlacementDraft()
-        return
-      }
-
-      setCeilingDraftPoints((currentPoints) => [...currentPoints, point])
-      setCursorPoint(point)
-    },
-    [ceilingDraftPoints, clearCeilingPlacementDraft, createCeilingOnCurrentLevel, setCursorPoint],
-  )
-  const handleCeilingPlacementConfirm = useCallback(
-    (point?: WallPlanPoint) => {
-      const firstPoint = ceilingDraftPoints[0]
-      const lastPoint = ceilingDraftPoints[ceilingDraftPoints.length - 1]
-
-      let nextPoints = ceilingDraftPoints
-      if (point) {
-        const isClosingExistingPolygon = Boolean(
-          firstPoint && ceilingDraftPoints.length >= 3 && isPointNearPlanPoint(point, firstPoint),
-        )
-        const isDuplicatePoint = Boolean(lastPoint && pointsEqual(lastPoint, point))
-
-        if (!(isClosingExistingPolygon || isDuplicatePoint)) {
-          nextPoints = [...ceilingDraftPoints, point]
-        }
-      }
-
-      if (nextPoints.length < 3) {
-        return
-      }
-
-      if (useEditor.getState().viewMode === '2d') {
-        createCeilingOnCurrentLevel(nextPoints)
-      }
-      clearCeilingPlacementDraft()
-    },
-    [ceilingDraftPoints, clearCeilingPlacementDraft, createCeilingOnCurrentLevel],
   )
   const handleZonePlacementPoint = useCallback(
     (point: WallPlanPoint) => {
@@ -9729,14 +8734,6 @@ export function FloorplanPanel({
   const handleWallPlacementPoint = useCallback(
     (point: WallPlanPoint) => {
       if (!draftStart) {
-        wallConstructionOptionsRef.current = levelId
-          ? resolveTerrainWallConstructionOptions(
-              useScene.getState().nodes,
-              levelId,
-              point,
-              useEditor.getState().toolDefaults.wall,
-            )
-          : undefined
         setDraftStart(point)
         setWallChainFirstVertex(point)
         setDraftEnd(point)
@@ -9759,17 +8756,13 @@ export function FloorplanPanel({
       // check compares exact endpoints).
       //
       // That 3D path is dead in 2D-only view — the canvas is
-      // `display:none`, so the tool never commits. Mirror the slab /
-      // ceiling 2D-only committers: create locally here, gated on the
+      // `display:none`, so the tool never commits. Mirror the slab
+      // 2D-only committer: create locally here, gated on the
       // view, so split / 3D keep their single-owner tool commit.
       const viewIs2DOnly = useEditor.getState().viewMode === '2d'
       let createdWall: WallNode | null = null
       if (viewIs2DOnly) {
-        createdWall = createWallOnCurrentLevel(
-          draftStart,
-          point,
-          wallConstructionOptionsRef.current,
-        )
+        createdWall = createWallOnCurrentLevel(draftStart, point)
       }
       if (createdWall) {
         wallChainWallIdsRef.current.push(createdWall.id)
@@ -9794,10 +8787,7 @@ export function FloorplanPanel({
       }
 
       if (createdWall) {
-        // 2D-only committer: mirror the 3D tool's auto-close. Stop when the
-        // segment seals a room against the wall network, or when its resolved
-        // end tees into wall geometry outside the chain — continuing from a
-        // T-junction only drafts on top of existing walls.
+        // Stop when the resolved end reaches existing wall geometry.
         const levelWalls = Object.values(useScene.getState().nodes).filter(
           (node): node is WallNode => node?.type === 'wall' && node.parentId === levelId,
         )
@@ -9806,8 +8796,7 @@ export function FloorplanPanel({
             createdWall.end as WallPlanPoint,
             levelWalls,
             wallChainWallIdsRef.current,
-          ) ||
-          wallClosesRoom(levelWalls, createdWall)
+          )
         ) {
           clearWallPlacementDraft()
           setCursorPoint(null)
@@ -9855,9 +8844,7 @@ export function FloorplanPanel({
   )
   const { handleBackgroundPlacementClick } = useFloorplanBackgroundPlacement({
     activePolygonDraftPoints,
-    ceilingDraftPoints,
     clearFencePlacementDraft,
-    clearRoofPlacementDraft,
     clearWallPlacementDraft,
     emitFloorplanGridEvent,
     fenceDraftStart,
@@ -9865,13 +8852,9 @@ export function FloorplanPanel({
     findClosestWallPoint,
     floorplanOpeningLocalY,
     getSnappedFloorplanPoint,
-    handleCeilingItemPlacementClick,
-    handleCeilingPlacementPoint,
     handleSlabPlacementPoint,
     handleWallPlacementPoint,
     handleZonePlacementPoint,
-    isCeilingBuildActive,
-    isCeilingItemPlacementActive,
     isFenceBuildActive,
     // Exclude the door/window MOVE case: `isRegistryToolBuildActive` makes the
     // grid catch-all true for it, but the overlay owns its commit (its own
@@ -9879,21 +8862,17 @@ export function FloorplanPanel({
     // the commit click and fight the overlay.
     isFloorplanGridInteractionActive: isFloorplanGridInteractionActive && !isOpeningMoveActive,
     // Only the pure-build opening case (tool armed, no movingNode) commits via
-    // the synthesized `wall:click`; the move case (community preset) is owned
+    // the synthesized `wall:click`; the move case is owned
     // by FloorplanRegistryMoveOverlay, which commits on its own pointerup.
     isOpeningPlacementActive: isOpeningBuildActive && !isOpeningMoveActive,
     isPolygonBuildActive,
-    isRoofBuildActive,
     registryToolOwnsSnapping: isRegistryToolBuildActive,
     isWallBuildActive,
     isZoneBuildActive,
     levelId,
-    roofDraftStart,
     setCursorPoint,
     setFenceDraftEnd,
     setFenceDraftStart,
-    setRoofDraftEnd,
-    setRoofDraftStart,
     snapPolygonDraftPoint,
     snapWallDraftPoint: snapWallDraftPointMagnetic,
     toPoint2D,
@@ -10062,7 +9041,7 @@ export function FloorplanPanel({
   )
   const handleBackgroundDoubleClick = useCallback(
     (event: ReactMouseEvent<SVGSVGElement>) => {
-      if (!(isPolygonDraftBuildActive && !isRoofBuildActive)) {
+      if (!isPolygonDraftBuildActive) {
         return
       }
 
@@ -10077,18 +9056,6 @@ export function FloorplanPanel({
         start: activePolygonDraftPoints[activePolygonDraftPoints.length - 1],
         angleSnap,
       })
-
-      if (isCeilingBuildActive) {
-        const snappedPoint = resolveCeilingPlanPointSnap({
-          rawPoint: planPoint,
-          fallbackPoint,
-          levelId,
-          align: !angleSnap,
-        }).point
-        emitFloorplanGridEvent('double-click', snappedPoint, event)
-        handleCeilingPlacementConfirm(snappedPoint)
-        return
-      }
 
       const snappedPoint = resolveSlabPlanPointSnap({
         rawPoint: planPoint,
@@ -10108,13 +9075,10 @@ export function FloorplanPanel({
     [
       activePolygonDraftPoints,
       emitFloorplanGridEvent,
-      handleCeilingPlacementConfirm,
       getPlanPointFromClientPoint,
       handleSlabPlacementConfirm,
       handleZonePlacementConfirm,
-      isCeilingBuildActive,
       isPolygonDraftBuildActive,
-      isRoofBuildActive,
       isZoneBuildActive,
       levelId,
     ],
@@ -11071,7 +10035,6 @@ export function FloorplanPanel({
     referenceScaleDraft?.start ??
     draftStart ??
     fenceDraftStart ??
-    roofDraftStart ??
     activePolygonDraftPoints[0] ??
     null
   const floorplanCursorColor =
@@ -11285,7 +10248,7 @@ export function FloorplanPanel({
 
         {levelNode?.type !== 'level' && !hasAmbientBuildingLevel ? (
           <div className="flex h-full items-center justify-center px-6 text-center text-muted-foreground text-sm">
-            选择建筑楼层以查看和编辑平面图。
+            选择表演层以查看和编辑舞台平面图。
           </div>
         ) : isFloorplanOpen ? (
           // The panel stays mounted in 3D mode (display:none) to keep the
@@ -11405,7 +10368,7 @@ export function FloorplanPanel({
                   subscribes to the `useStairBuildPreview` store directly, so a
                   per-`grid:move` cursor update re-renders only that tiny layer
                   rather than this whole panel. */}
-              <FloorplanStairBuildPreviewLayer isDeleteMode={isDeleteMode} palette={palette} />
+              <FloorplanStairBuildPreviewLayer />
 
               <FloorplanReferenceScaleLayer
                 draft={referenceScaleDraft}
@@ -11533,7 +10496,7 @@ export function FloorplanPanel({
               {/* This shared layer now carries only the per-CLICK draft anchors
                   (reference-scale start + committed polygon vertices). The
                   cursor-following draft geometry moved to the leaves below
-                  (`FloorplanLinearDraftLayer` for wall/fence/roof,
+                  (`FloorplanLinearDraftLayer` for wall/fence,
                   `FloorplanDraftCursorLayer` for polygon previews), which read
                   the live END points from the draft store so a per-move update
                   never re-renders this panel. */}
@@ -11571,11 +10534,9 @@ export function FloorplanPanel({
                 fenceDraftStart={fenceDraftStart}
                 isDark={isDark}
                 isFenceBuildActive={isFenceBuildActive}
-                isRoofBuildActive={isRoofBuildActive}
                 isWallBuildActive={isWallBuildActive}
                 levelId={levelId}
                 measurementStroke={palette.measurementStroke}
-                roofDraftStart={roofDraftStart}
                 sceneRotationDeg={floorplanSceneRotationDeg}
                 unit={unit}
                 unitsPerPixel={floorplanUnitsPerPixel}
@@ -11614,9 +10575,7 @@ export function FloorplanPanel({
                 draftFill={palette.draftFill}
                 draftStroke={palette.draftStroke}
                 isPolygonDraftBuildActive={isPolygonDraftBuildActive}
-                polygonDraftStroke={
-                  isSlabBuildActive || isCeilingBuildActive ? palette.wallStroke : undefined
-                }
+                polygonDraftStroke={isSlabBuildActive ? palette.wallStroke : undefined}
                 unitsPerPixel={floorplanUnitsPerPixel}
               />
 

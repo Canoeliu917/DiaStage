@@ -7,7 +7,6 @@ import { Html } from '@react-three/drei'
 import { createPortal, useFrame, useThree } from '@react-three/fiber'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { type Camera, type Object3D, Vector3 } from 'three'
-import { groundHeightAt } from '../../lib/ground-surface'
 import { formatLinearMeasurement } from '../../lib/measurements'
 import { SITE_BOUNDARY_DRAG_LABEL } from '../../lib/site-boundary'
 import { useActiveHandleDrag } from '../../store/use-interaction-scope'
@@ -105,10 +104,7 @@ export function SiteEdgeLabels() {
       // slope distance would make the same lot appear to grow as it is sculpted.
       // Only the label's Y follows the ground.
       const dist = Math.sqrt((x2 - x1!) ** 2 + (z2 - z1!) ** 2)
-      // `?? 0` covers both no-terrain cases, and 0 *is* the datum, so this reduces
-      // to the flat constant it replaced whenever the lot is unsculpted.
-      const groundY = groundHeightAt(midX, midZ, 0) ?? 0
-      return { midX, midY: groundY + LABEL_LIFT, midZ, dist }
+      return { midX, midY: LABEL_LIFT, midZ, dist }
     })
   }, [polygon])
 

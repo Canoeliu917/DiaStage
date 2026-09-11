@@ -1,5 +1,4 @@
 import {
-  type AnyNode,
   getScaledDimensions,
   type HandleDescriptor,
   type ItemNode as ItemNodeType,
@@ -117,7 +116,7 @@ function itemWallRotateHandle(): HandleDescriptor<ItemNodeType> {
 
 // Move cross past the item's left edge on the wall face. Tap to hand the item
 // to its placement coordinator (`engageMove`) — same feedback as the floating
-// move button, and the coordinator handles the wall ↔ floor ↔ ceiling
+// move button, and the coordinator handles wall ↔ floor
 // transitions the generic translate drag couldn't. `plane: 'node-normal'`
 // stands the cross up against the wall face.
 function itemWallMoveHandle(): HandleDescriptor<ItemNodeType> {
@@ -148,7 +147,7 @@ function itemWallMoveHandle(): HandleDescriptor<ItemNodeType> {
  *
  * Capabilities:
  *  - **No `movable`**: item's move is bespoke `MoveItemContent` —
- *    handles attachTo transitions mid-drag (floor ↔ wall ↔ ceiling),
+ *    handles attachTo transitions mid-drag (floor ↔ wall),
  *    asset.attachTo lookups, scale-preserving Y math for surface
  *    placement. The smooth generic mover can't express that. Legacy
  *    mover keeps running via capability-driven dispatch.
@@ -217,22 +216,11 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
     duplicable: true,
     deletable: true,
     paint: itemPaint,
-    // Items participate in compositions — e.g. "table-with-plants",
-    // "shelf-with-books-on-top" — so they're presettable in their own
-    // right (and as descendants of presettable parents). The GLB-kind
-    // catalog still exists alongside; preset-flavoured items become
-    // siblings of GLB items inside the unified `items` table.
     //
-    // Items can be hosted on walls (assets with `attachTo: 'wall'`)
-    // via `wallId` + `wallT`, or on a roof-segment wall face via
-    // `roofSegmentId`. When a composition that includes a wall-hosted
-    // item is saved as a preset (a sconce, a hanging shelf, etc.), the
-    // host app strips these via `getHostRefFields(def)` so the
-    // descendant re-attaches against the new host geometry at
-    // placement time.
-    hostRefFields: ['wallId', 'wallT', 'roofSegmentId', 'roofFace', 'blockFaceId'],
-    // Floor items get lifted by slabs underneath via the generic
-    // `<FloorElevationSystem>`. Wall- / ceiling-attached items live in
+    // Wall-host references are stripped when items become reusable presets.
+    hostRefFields: ['wallId', 'wallT', 'blockFaceId'],
+    // Floor items get lifted by slabs underneath.
+    // `<FloorElevationSystem>`. Wall--attached items live in
     // their parent's local frame and skip the lift via `applies`.
     floorPlaced: {
       footprint: (node) => {
@@ -242,39 +230,6 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
       applies: (node) => !(node as ItemNodeType).asset.attachTo,
       collides: true,
     },
-    // Recessed ceiling fixtures cut a hole in their host ceiling. The viewer's
-    // CeilingSystem queries this capability on each child of a ceiling so it
-    // never needs to branch on `node.type`.
-    ceilingCut: {
-      buildCeilingHole(rawNode: AnyNode): Array<[number, number]> | null {
-        const node = rawNode as ItemNodeType
-        if (!node.asset.recessed || node.asset.attachTo !== 'ceiling') return null
-
-        // Inset slightly so the fixture's trim (widest part, sitting in the
-        // ceiling plane) overlaps the solid ceiling around the opening and hides
-        // the cut edge. Same constant the old ceiling-system used.
-        const INSET = 0.82
-        const [width, , depth] = getScaledDimensions(node)
-        const halfW = (width / 2) * INSET
-        const halfD = (depth / 2) * INSET
-        const cx = node.position[0]
-        const cz = node.position[2]
-        const yaw = node.rotation?.[1] ?? 0
-        const cos = Math.cos(yaw)
-        const sin = Math.sin(yaw)
-
-        // Rotate the (inset) footprint corners about Y and translate to the
-        // item's plan position. Y-rotation of (dx, dz): (dx·cos + dz·sin, −dx·sin + dz·cos).
-        return (
-          [
-            [-halfW, -halfD],
-            [halfW, -halfD],
-            [halfW, halfD],
-            [-halfW, halfD],
-          ] as Array<[number, number]>
-        ).map(([dx, dz]) => [cx + dx * cos + dz * sin, cz - dx * sin + dz * cos])
-      },
-    },
   },
 
   parametrics: itemParametrics,
@@ -283,7 +238,6 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
   //  - Floor items: world-Y rotate + free floor-plane move cross.
   //  - Wall items: wall-normal rotate (spin flat against the wall) + a move
   //    cross constrained to the wall face. Both ride the wall frame.
-  //  - Ceiling items: no gizmos yet (move via the move tool).
   handles: (node) => {
     const attachTo = (node as ItemNodeType).asset.attachTo
     if (attachTo === 'wall' || attachTo === 'wall-side') {
@@ -305,14 +259,13 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
   },
   // Catalog placement tool — mounted when `useEditor.tool === 'item'`.
   // Wraps the same placement coordinator the move-tool uses (surface
-  // strategies for floor / wall / ceiling / item-surface). Replaces
+  // strategies for floor / wall / item-surface). Replaces
   // the legacy `editor/src/components/tools/item/item-tool.tsx`.
   tool: () => import('./tool'),
 
   // Stage D — 3D move-tool (registry-driven). Adopts the moving node
   // and runs the placement coordinator with surface strategies for
-  // floor / wall / ceiling / item-surface, including attachTo
-  // *transitions* (drop a wall item on a ceiling and have it switch).
+  // floor / wall / item-surface, including attachTo transitions.
   // Replaces the legacy `MoveItemContent` in editor's dispatcher; the
   // `getRegistryAffordanceTool('item', 'move')` lookup picks this up.
   affordanceTools: {
@@ -323,10 +276,8 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
   // (wall / nested item / level) to compute the world-space transform.
   floorplan: buildItemFloorplan,
   // 2D move-on-floorplan handler. Branches on `asset.attachTo`:
-  // wall items snap to walls (like door / window), ceiling items
-  // snap to ceiling polygons, floor items snap to slabs. attachTo
-  // *transitions* (drop a wall item on a ceiling) remain canonical
-  // in the 3D path; 2D only re-anchors within the same family.
+  // wall items snap to walls (like door / window); floor items snap
+  // on the level plane.
   floorplanMoveTarget: itemFloorplanMoveTarget,
 
   toolHints: [
@@ -347,6 +298,6 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
 
   mcp: {
     description:
-      'A catalog-backed item with asset reference, transforms, and optional attachTo for wall/ceiling mounting.',
+      'A catalog-backed item with asset reference, transforms, and optional attachTo for wall mounting.',
   },
 }

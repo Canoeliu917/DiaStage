@@ -21,7 +21,6 @@ import {
   markToolCancelConsumed,
   publishHorizontalConstructionPlane,
   publishPlacementSurface,
-  resampleTerrainConstructionPlane,
   resolveEventConstructionPlane,
   resolveLevelConstructionPlane,
   resolvePointerSupportSurface,
@@ -174,12 +173,7 @@ export const SlabTool: React.FC = () => {
         fallbackPoint: orthoPoint,
         levelId: currentLevelId,
       }).point
-      const hoverPlane =
-        plane ??
-        resampleTerrainConstructionPlane(
-          resolveEventConstructionPlane(event, pointed),
-          displayPoint,
-        )
+      const hoverPlane = plane ?? resolveEventConstructionPlane(event, pointed)
       setLevelY(hoverPlane.localY)
       useFloorplanDraftPreview.getState().setCursorPoint(displayPoint)
       setSnappedCursorPosition(displayPoint)
@@ -218,10 +212,7 @@ export const SlabTool: React.FC = () => {
         if (points.length === 0) {
           const plane = isRecessed
             ? (resolveLevelConstructionPlane() ?? resolveEventConstructionPlane(event, null))
-            : resampleTerrainConstructionPlane(
-                resolveEventConstructionPlane(event, pointedSurfaceFor(event)),
-                clickPoint,
-              )
+            : resolveEventConstructionPlane(event, pointedSurfaceFor(event))
           constructionPlaneRef.current = plane
           setLevelY(plane.localY)
           publishHorizontalConstructionPlane(event, plane)

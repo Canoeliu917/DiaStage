@@ -8,7 +8,7 @@ import {
   useLiveNodeOverrides,
   useScene,
 } from '@pascal-app/core'
-import { isIsolationActive, publishPerfBatchStats, useViewer } from '@pascal-app/viewer'
+import { publishPerfBatchStats, useViewer } from '@pascal-app/viewer'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import type { Object3D } from 'three'
@@ -66,7 +66,6 @@ let knownNodeIds: ReadonlySet<string> | null = null
 // Probe-only counters (?perf sessions read them via __itemBatch).
 const waveDebug = { runs: 0, stale: 0, candidates: 0, joined: 0, nullCandidates: 0 }
 let lastNodeChangeAtMs = 0
-let batchingSuspended = false
 
 type AppearanceInputs = {
   shading: unknown
@@ -114,7 +113,6 @@ function resetModuleState() {
   leftoverNodes.clear()
   knownNodeIds = null
   lastNodeChangeAtMs = 0
-  batchingSuspended = false
   lastAppearance.shading = undefined
   lastAppearance.textures = undefined
   lastAppearance.colorPreset = undefined
@@ -269,22 +267,6 @@ function runBatchFrame(
     }
   }
   knownNodeIds = nodeIds
-
-  // Isolation hides everything outside the focused subtree; batches hang off
-  // level roots and would go dark with them, leaving members drawn by nobody
-  // when a batched node is the focus. Stand down entirely, re-sew after.
-  const suspended = isIsolationActive()
-  if (suspended !== batchingSuspended) {
-    batchingSuspended = suspended
-    releaseAll()
-    staleNodes.clear()
-    if (!suspended) for (const nodeId of nodeIds) staleNodes.add(nodeId)
-    changed = true
-  }
-  if (batchingSuspended) {
-    staleNodes.clear()
-    return
-  }
 
   const now = performance.now()
   if (changed) lastNodeChangeAtMs = now

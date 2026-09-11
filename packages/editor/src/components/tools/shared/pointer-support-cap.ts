@@ -1,6 +1,5 @@
 import {
   type AnyNodeId,
-  canHostOnTop,
   GROUND_SUPPORT_ID,
   type ItemNode,
   isLowProfileItemSurface,
@@ -11,7 +10,6 @@ import {
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { type Camera, Matrix3, type Object3D, Raycaster, Vector3 } from 'three'
-import { resolveTerrainGroundHit } from '../../../lib/ground-surface'
 import { scopeNodeId } from '../../../lib/interaction/scope'
 import useInteractionScope from '../../../store/use-interaction-scope'
 
@@ -118,36 +116,7 @@ export function resolvePointerSupportSurface(
     [hitScratch.x, hitScratch.y, hitScratch.z],
   )
   let elevation = pointed.elevation
-  let point = pointed.point
-
-  // The level base is the second flat plane terrain has to displace (the first is
-  // `useGridEvents`'). The manager solves `t = -oy / dy` for it — a plane — which
-  // is still right for every storey whose base is a built floor, and wrong for the
-  // storey sitting on the ground, where the base IS the terrain.
-  //
-  // Substituted here rather than inside the manager for two reasons: the
-  // discrimination ("is this plane the site ground?") needs the level's *world*
-  // height, and this function is what owns the world↔level conversion; and
-  // `ground-surface` is meant to hold that rule once, shared with `useGridEvents`,
-  // rather than have `core` grow a terrain dependency it cannot express.
-  //
-  // Only the no-slab branch is replaced. A ray that crossed a slab inside its
-  // rendered polygon is aimed at a built floor, and terrain does not compete with
-  // one — that is the flat-floor invariant.
-  if (pointed.slabId === null) {
-    const baseWorldY = levelMesh ? levelMesh.localToWorld(worldScratch.set(0, 0, 0)).y : 0
-    const groundHit = resolveTerrainGroundHit(
-      [worldRayOrigin.x, worldRayOrigin.y, worldRayOrigin.z],
-      [worldRayDirection.x, worldRayDirection.y, worldRayDirection.z],
-      baseWorldY,
-    )
-    if (groundHit) {
-      pointScratch.set(groundHit.x, groundHit.y, groundHit.z)
-      if (levelMesh) levelMesh.worldToLocal(pointScratch)
-      elevation = pointScratch.y
-      point = [pointScratch.x, pointScratch.z]
-    }
-  }
+  const point = pointed.point
 
   const worldY = levelMesh ? levelMesh.localToWorld(worldScratch.set(0, elevation, 0)).y : elevation
 
@@ -221,10 +190,7 @@ export function resolvePointerSupportSurface(
         const node = nodes[nodeId]
         const object = sceneRegistry.nodes.get(nodeId)
         if (!(node?.visible && object?.visible && isEligibleCandidate(nodeId))) continue
-        if (
-          node.type === 'item' &&
-          (!canHostOnTop(node) || isLowProfileItemSurface(node as ItemNode))
-        ) {
+        if (node.type === 'item' && isLowProfileItemSurface(node as ItemNode)) {
           continue
         }
 

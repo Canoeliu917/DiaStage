@@ -12,13 +12,9 @@ import { isBrushMode } from '../store/use-editor'
  * unreachable — that is what makes yielding one finger safe.
  *
  * Extracted from the component because the terms are not obviously exhaustive and
- * one was missing. A *brush mode* owns the drag exactly the way an armed tool
- * does, but none of the other terms notice it: entering paint or sculpt **clears**
- * `tool`, and the scope it holds is `painting`/`sculpting`, not `handle-drag`. So
- * on a tablet a one-finger drag over the ground orbited the camera instead of
- * sculpting — and set `cameraDragging`, which the sculpt tool gates pointer-down
- * on, so the stroke could not start either. The brush was simply inert on touch,
- * in both brush modes.
+ * one was missing. Paint mode owns the drag exactly the way an armed tool does,
+ * but none of the other terms notice it because entering paint clears `tool` and
+ * holds a `painting` scope rather than a transient handle drag.
  *
  * `activeGesture` is the OR of the transient signals the component already reads
  * (an armed tool, a moving node, an endpoint reshape, a handle drag, marquee

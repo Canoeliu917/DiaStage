@@ -81,17 +81,6 @@ if (!process.env.OPENING_PRESET_RUNTIME_TEST) {
     publishOpeningGuidesForWallEvent() {},
     resolveSillSnap: () => null,
   }))
-  mock.module('./roof-wall-opening-placement', () => ({
-    getRoofWallOpeningCursorPose() {},
-    resolveRoofWallOpeningTarget() {},
-    worldToSelectedBuildingLocal: (point: { toArray(): number[] }) => point.toArray(),
-  }))
-  mock.module('./dormer-wall-opening-placement', () => ({
-    dormerEventFromHostedWindow() {},
-    getDormerWindowWorldNormal() {},
-    getDormerWindowWorldYaw() {},
-    resolveDormerWindowTarget() {},
-  }))
   const { doorToolParameters, windowToolParameters } = await import('./opening-tool-defaults')
   const DoorTool = (await import('../door/tool')).default
   const WindowTool = (await import('../window/tool')).default

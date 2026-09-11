@@ -1,14 +1,6 @@
-import type { TerrainVerb } from '@pascal-app/core'
 import mitt from 'mitt'
 import useAudio from '../store/use-audio'
-import {
-  disposeSFX,
-  type LoopSFXName,
-  playSFX,
-  startLoopSFX,
-  stopLoopSFX,
-  updateSFXVolumes,
-} from './sfx-player'
+import { disposeSFX, playSFX, updateSFXVolumes } from './sfx-player'
 
 /**
  * SFX-specific events that tools can trigger
@@ -28,8 +20,6 @@ type SFXEvents = {
   'sfx:menu-click': undefined
   'sfx:paint-apply': undefined
   'sfx:success': undefined
-  'sfx:terrain-sculpt-start': TerrainVerb
-  'sfx:terrain-sculpt-stop': undefined
 }
 
 type TriggerSFXEvent = {
@@ -58,14 +48,6 @@ const handleMenuHover = () => playSFX('menuHover')
 const handleMenuClick = () => playSFX('menuClick')
 const handlePaintApply = () => playSFX('paintApply')
 const handleSuccess = () => playSFX('success')
-const TERRAIN_LOOP_BY_VERB = {
-  raise: 'terrainRaise',
-  lower: 'terrainLower',
-  flatten: 'terrainFlatten',
-  smooth: 'terrainSmooth',
-} as const satisfies Record<TerrainVerb, LoopSFXName>
-const handleTerrainSculptStart = (verb: TerrainVerb) => startLoopSFX(TERRAIN_LOOP_BY_VERB[verb])
-const handleTerrainSculptStop = () => stopLoopSFX()
 let unsubscribeAudio: (() => void) | null = null
 
 /**
@@ -89,8 +71,6 @@ export function initSFXBus() {
   sfxEmitter.on('sfx:menu-click', handleMenuClick)
   sfxEmitter.on('sfx:paint-apply', handlePaintApply)
   sfxEmitter.on('sfx:success', handleSuccess)
-  sfxEmitter.on('sfx:terrain-sculpt-start', handleTerrainSculptStart)
-  sfxEmitter.on('sfx:terrain-sculpt-stop', handleTerrainSculptStop)
   unsubscribeAudio = useAudio.subscribe(updateSFXVolumes)
 }
 
@@ -110,8 +90,6 @@ export function disposeSFXBus() {
     sfxEmitter.off('sfx:menu-click', handleMenuClick)
     sfxEmitter.off('sfx:paint-apply', handlePaintApply)
     sfxEmitter.off('sfx:success', handleSuccess)
-    sfxEmitter.off('sfx:terrain-sculpt-start', handleTerrainSculptStart)
-    sfxEmitter.off('sfx:terrain-sculpt-stop', handleTerrainSculptStop)
     unsubscribeAudio?.()
     unsubscribeAudio = null
     sfxBusInitialized = false

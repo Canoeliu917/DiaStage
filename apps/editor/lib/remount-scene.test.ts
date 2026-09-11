@@ -4,7 +4,6 @@ import {
   type AnyNodeId,
   BlockNode,
   BuildingNode,
-  ColumnNode,
   clearSceneHistory,
   getFloorPlacedElevation,
   getScaledDimensions,
@@ -356,7 +355,7 @@ describe('remount scene boundary', () => {
     expect(() => saveRemountConfig('another-scene')).toThrow('场景已切换')
   })
 
-  test('existing target walls and columns become collision proxies and block Apply', () => {
+  test('existing target walls and stage blocks become collision proxies and block Apply', () => {
     const wall = WallNode.parse({
       id: 'wall_target',
       parentId: 'level_test',
@@ -365,12 +364,12 @@ describe('remount scene boundary', () => {
       thickness: 0.4,
       height: 3,
     })
-    const column = ColumnNode.parse({
-      id: 'column_target',
+    const targetBlock = BlockNode.parse({
+      id: 'block_target',
       parentId: 'level_test',
       position: [8.5, 0, -1],
     })
-    fixture([item(0), item(1), wall, column])
+    fixture([item(0), item(1), wall, targetBlock])
     captureProductionLayout(SCENE, ['item_test_0', 'item_test_1'])
     const plan = previewRemount(SCENE)
     expect(
@@ -380,7 +379,7 @@ describe('remount scene boundary', () => {
     ).toBe(true)
     expect(
       plan.conflicts.some(
-        (conflict) => conflict.type === 'collision' && conflict.otherNodeId === column.id,
+        (conflict) => conflict.type === 'collision' && conflict.otherNodeId === targetBlock.id,
       ),
     ).toBe(true)
     expect(() => applyRemount(SCENE)).toThrow('物理冲突')

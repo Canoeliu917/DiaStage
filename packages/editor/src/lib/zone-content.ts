@@ -1,7 +1,6 @@
 import {
   type AnyNode,
   type AnyNodeId,
-  type CeilingNode,
   type ItemNode,
   pointInPolygon2D,
   pointOnSegment,
@@ -108,10 +107,7 @@ export function collectZoneContentIds(
     .filter((node): node is WallNode => node.type === 'wall' && node.parentId === levelId)
     .filter((wall) => wallLiesOnZoneBoundary(wall, footprint))
   const surfaces = Object.values(nodes)
-    .filter(
-      (node): node is SlabNode | CeilingNode =>
-        (node.type === 'slab' || node.type === 'ceiling') && node.parentId === levelId,
-    )
+    .filter((node): node is SlabNode => node.type === 'slab' && node.parentId === levelId)
     .filter((surface) => {
       const polygon = surface.polygon.map((point) => [point[0], point[1]] as Point2D)
       return polygonMatchesZoneFootprint(polygon, footprint)

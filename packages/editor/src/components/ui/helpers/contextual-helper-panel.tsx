@@ -299,7 +299,6 @@ const PAINT_SCOPE_ICONS: Record<PaintScope, string> = {
   single: 'lucide:square',
   object: 'lucide:box',
   matching: 'lucide:copy',
-  room: 'lucide:scan',
 }
 
 // The painter's application-scope chip. Driven entirely by the hovered node's

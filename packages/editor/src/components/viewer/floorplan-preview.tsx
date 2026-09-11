@@ -981,9 +981,9 @@ export function FloorplanPreview({
             fontWeight: 600,
           }}
         >
-          楼层
+          表演层
           <select
-            aria-label="楼层"
+            aria-label="表演层"
             onChange={(event) => chooseLevel(event.target.value)}
             style={{
               border: '1px solid rgba(148,163,184,.55)',

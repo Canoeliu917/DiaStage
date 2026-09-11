@@ -10,7 +10,6 @@ const EDITABLE_TYPES = new Set([
   'stair',
   'stair-segment',
   'item',
-  'column',
   'slab',
   'zone',
   'spawn',
@@ -35,8 +34,6 @@ const LABELS: Record<string, string> = {
   stair: '舞台台阶',
   'stair-segment': '台阶段',
   slab: '舞台地面',
-  ceiling: '上空遮挡',
-  column: '立柱',
   item: '道具与陈设',
   scan: '场地参考',
   guide: '平面参考',
@@ -52,9 +49,7 @@ export function getTheatreNodeName(node: AnyNode): string {
   // Imported display defaults are adapted without rewriting names in saved scenes.
   if (
     name &&
-    !/^(Site|Building|Level|Wall|Roof|Slab|Ceiling|Zone|Stair|建筑|楼层|墙体|屋顶|楼板|天花板)(\s*[\d.-]+)?$/i.test(
-      name,
-    )
+    !/^(Site|Building|Level|Wall|Slab|Zone|Stair|建筑|楼层|墙体|楼板)(\s*[\d.-]+)?$/i.test(name)
   )
     return name
   if (node.type === 'level') return `${getTheatreNodeLabel(node.type)} ${node.level}`

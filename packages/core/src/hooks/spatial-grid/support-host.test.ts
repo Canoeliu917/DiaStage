@@ -1,7 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { z } from 'zod'
-import { encodeTerrainField } from '../../lib/terrain-codec'
-import { applyHeightPatch, createTerrainField, flattenPatch } from '../../lib/terrain-field'
 import { nodeRegistry, registerNode } from '../../registry'
 import type { AnyNodeDefinition } from '../../registry/types'
 import type { AnyNode, AnyNodeId, SlabNode } from '../../schema'
@@ -9,11 +7,10 @@ import { WallNode } from '../../schema'
 import useScene, { clearSceneHistory } from '../../store/use-scene'
 import { resolveWallEffectiveHeight, resolveWallTop } from '../../systems/wall/wall-top'
 import { GROUND_SUPPORT_ID, getFloorPlacedElevation } from './floor-placed-elevation'
-import { getWallBaseElevationForNodes, spatialGridManager } from './spatial-grid-manager'
+import { spatialGridManager } from './spatial-grid-manager'
 import { initSpatialGridSync } from './spatial-grid-sync'
 import {
   resolveFrozenFloorPlacementPatch,
-  resolveMovedWallSupportSlabPatch,
   resolveSupportSlabPatch,
   resolveWallSupportSlabPatch,
 } from './support-host-patch'
@@ -439,58 +436,6 @@ describe('persisted support hosts (walls, via the manager)', () => {
     })
   })
 
-  test('ground host resolves sculpted terrain plus the construction-plane offset', () => {
-    const base = createTerrainField({ cols: 9, rows: 9, spacing: 1, origin: [-4, -4] })
-    const patch = flattenPatch(base, { minX: 0, minZ: 0, maxX: 2, maxZ: 2 }, 1.5)
-    const site = {
-      id: 'site_test',
-      type: 'site',
-      object: 'node',
-      parentId: null,
-      visible: true,
-      metadata: {},
-      children: ['building_test'],
-      terrain: encodeTerrainField(applyHeightPatch(base, patch as never)),
-    } as AnyNode
-    const building = {
-      id: 'building_test',
-      type: 'building',
-      object: 'node',
-      parentId: site.id,
-      visible: true,
-      metadata: {},
-      children: [LEVEL_ID],
-      position: [0, 0, 0],
-      rotation: [0, 0, 0],
-    } as AnyNode
-    const level = { ...makeLevel(), parentId: building.id, height: 3 } as AnyNode
-    useScene.setState({ nodes: nodesFor(site, building, level) })
-
-    const support = spatialGridManager.getSlabSupportForWall(
-      LEVEL_ID,
-      [1, 1],
-      [3, 1],
-      0,
-      0.1,
-      GROUND_SUPPORT_ID,
-      undefined,
-      0.25,
-    )
-
-    expect(support.elevation).toBeCloseTo(1.75, 6)
-    expect(support.baseSegments).toEqual([{ start: 0, end: 1, elevation: 1.75 }])
-
-    const wall = WallNode.parse({
-      id: 'wall_ground',
-      parentId: LEVEL_ID,
-      start: [1, 1],
-      end: [3, 1],
-      supportSlabId: GROUND_SUPPORT_ID,
-      supportOffset: 0.25,
-    })
-    expect(getWallBaseElevationForNodes(wall, useScene.getState().nodes)).toBeCloseTo(1.75, 6)
-  })
-
   test('an explicitly pointed ground source persists even without slab candidates', () => {
     const wall = WallNode.parse({
       id: 'wall_ground',
@@ -507,22 +452,6 @@ describe('persisted support hosts (walls, via the manager)', () => {
         preferredSlabId: GROUND_SUPPORT_ID,
       }),
     ).toEqual({ supportSlabId: GROUND_SUPPORT_ID })
-  })
-
-  test('moving a terrain-hosted wall preserves its explicit ground source', () => {
-    const wall = WallNode.parse({
-      id: 'wall_ground',
-      parentId: LEVEL_ID,
-      start: [0, 0],
-      end: [4, 0],
-      supportSlabId: GROUND_SUPPORT_ID,
-    })
-    const level = makeLevel([wall.id])
-    const nodes = nodesFor(level, wall as AnyNode)
-
-    expect(resolveMovedWallSupportSlabPatch(wall, nodes)).toEqual({
-      supportSlabId: GROUND_SUPPORT_ID,
-    })
   })
 
   test('resolveWallSupportSlabPatch persists the winner over two elevations', () => {
@@ -724,72 +653,5 @@ describe('deleteNodesAction strips supportSlabId references', () => {
         .supportSlabId,
     ).toBe('slab_low')
     expect(itemElevation()).toBeCloseTo(0.2)
-  })
-
-  test('deleting the destination deck strips deckSlabId from stairs; undo restores it', () => {
-    const stair = {
-      id: 'stair_test',
-      type: 'stair',
-      object: 'node',
-      parentId: LEVEL_ID,
-      visible: true,
-      metadata: {},
-      children: [],
-      position: [0, 0, 0],
-      rotation: 0,
-      deckSlabId: 'slab_low',
-    } as unknown as AnyNode
-
-    useScene.setState({
-      nodes: {
-        ...useScene.getState().nodes,
-        stair_test: stair,
-        [LEVEL_ID]: {
-          ...useScene.getState().nodes[LEVEL_ID as AnyNodeId]!,
-          children: ['slab_low', 'slab_high', 'item_test', 'stair_test'],
-        } as AnyNode,
-      } as never,
-    })
-    clearSceneHistory()
-
-    useScene.getState().deleteNodes(['slab_low' as AnyNodeId])
-
-    const afterDelete = useScene.getState().nodes
-    expect(
-      (afterDelete['stair_test' as AnyNodeId] as { deckSlabId?: string }).deckSlabId,
-    ).toBeUndefined()
-
-    useScene.temporal.getState().undo()
-
-    const afterUndo = useScene.getState().nodes
-    expect(afterUndo['slab_low' as AnyNodeId]).toBeDefined()
-    expect((afterUndo['stair_test' as AnyNodeId] as { deckSlabId?: string }).deckSlabId).toBe(
-      'slab_low',
-    )
-  })
-
-  test('deleting a slab that is not the destination deck leaves deckSlabId alone', () => {
-    const stair = {
-      id: 'stair_test',
-      type: 'stair',
-      object: 'node',
-      parentId: LEVEL_ID,
-      visible: true,
-      metadata: {},
-      children: [],
-      position: [0, 0, 0],
-      rotation: 0,
-      deckSlabId: 'slab_low',
-    } as unknown as AnyNode
-
-    useScene.setState({
-      nodes: { ...useScene.getState().nodes, stair_test: stair } as never,
-    })
-
-    useScene.getState().deleteNodes(['slab_high' as AnyNodeId])
-
-    expect(
-      (useScene.getState().nodes['stair_test' as AnyNodeId] as { deckSlabId?: string }).deckSlabId,
-    ).toBe('slab_low')
   })
 })

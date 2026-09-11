@@ -16,16 +16,8 @@ type SFXConfig = {
   minIntervalMs?: number
 }
 
-type LoopSFXConfig = {
-  src: string
-  volumeMultiplier: number
-  fadeInMs?: number
-  fadeOutMs?: number
-}
-
 const DEFAULT_MIN_INTERVAL_MS = 30
 const SFX_FAILURE_BACKOFF_MS = 5_000
-const DEFAULT_LOOP_FADE_MS = 90
 
 // SFX sound definitions
 export const SFX: Record<string, SFXConfig> = {
@@ -124,32 +116,6 @@ export const SFX: Record<string, SFXConfig> = {
 
 export type SFXName = keyof typeof SFX
 
-export const LOOP_SFX = {
-  terrainRaise: {
-    src: '/audios/sfx/terrain_raise.mp3',
-    volumeMultiplier: 0.2,
-  },
-  terrainLower: {
-    src: '/audios/sfx/terrain_lower.mp3',
-    volumeMultiplier: 0.2,
-  },
-  terrainFlatten: {
-    src: '/audios/sfx/terrain_flatten.mp3',
-    volumeMultiplier: 0.2,
-  },
-  terrainSmooth: {
-    src: '/audios/sfx/terrain_smooth.mp3',
-    volumeMultiplier: 0.2,
-  },
-} as const satisfies Record<string, LoopSFXConfig>
-
-export type LoopSFXName = keyof typeof LOOP_SFX
-type CachedSFXName = SFXName | LoopSFXName
-
-function loopConfig(name: LoopSFXName): LoopSFXConfig {
-  return LOOP_SFX[name]
-}
-
 export type SFXPlaybackOptions = {
   source?: 'local' | 'remote'
   stereo?: number
@@ -160,43 +126,12 @@ function randomInRange([min, max]: [number, number]): number {
   return min + Math.random() * (max - min)
 }
 
-let sfxCache = new Map<CachedSFXName, Howl[]>()
+let sfxCache = new Map<SFXName, Howl[]>()
 let sfxAudioContext: AudioContext | null = null
 let sfxRetryAfter = 0
 const lastPlayedAt = new Map<SFXName, number>()
 const lastVariation = new Map<SFXName, number>()
-let activeLoop: {
-  id: number
-  name: LoopSFXName
-  sound: Howl
-  volume: number
-} | null = null
-let pendingLoop: { name: LoopSFXName; sound: Howl } | null = null
-let requestedLoop: LoopSFXName | null = null
-
-function loopVolume(name: LoopSFXName): number {
-  const { masterVolume, sfxVolume } = useAudio.getState()
-  return (masterVolume / 100) * (sfxVolume / 100) * LOOP_SFX[name].volumeMultiplier
-}
-
-function stopActiveLoop(fadeMs: number) {
-  const active = activeLoop
-  if (!active) return
-  activeLoop = null
-
-  if (fadeMs <= 0) {
-    active.sound.stop(active.id)
-    return
-  }
-
-  active.sound.once('fade', () => active.sound.stop(active.id), active.id)
-  active.sound.fade(active.volume, 0, fadeMs, active.id)
-}
-
 function unloadCachedSounds(resetPlaybackState: boolean) {
-  requestedLoop = null
-  pendingLoop = null
-  stopActiveLoop(0)
   for (const sounds of sfxCache.values()) {
     for (const sound of sounds) {
       try {
@@ -226,15 +161,13 @@ export function preloadSFX() {
   if (!cacheNeedsRebuild()) return
   unloadCachedSounds(false)
 
-  const definitions = { ...SFX, ...LOOP_SFX }
-  for (const [name, config] of Object.entries(definitions)) {
+  for (const [name, config] of Object.entries(SFX)) {
     const sources = Array.isArray(config.src) ? config.src : [config.src]
     sfxCache.set(
-      name as CachedSFXName,
+      name as SFXName,
       sources.map(
         (src) =>
           new Howl({
-            loop: name in LOOP_SFX,
             src: [src],
             preload: true,
             volume: 0.5,
@@ -247,58 +180,6 @@ export function preloadSFX() {
 
 export function disposeSFX() {
   unloadCachedSounds(true)
-}
-
-export function startLoopSFX(name: LoopSFXName) {
-  const { muted } = useAudio.getState()
-  if (muted) {
-    stopLoopSFX()
-    return
-  }
-
-  requestedLoop = name
-  const current = activeLoop
-  if (current?.name === name && current.sound.playing(current.id)) return
-  if (current) stopActiveLoop(loopConfig(current.name).fadeOutMs ?? DEFAULT_LOOP_FADE_MS)
-
-  const now = performance.now()
-  if (now < sfxRetryAfter) return
-
-  try {
-    preloadSFX()
-    // A fresh Howler context rebuilds the cache and clears stale playback
-    // state. Restore this current press after that cleanup so a first-use loop
-    // can still begin when its asset finishes loading.
-    requestedLoop = name
-    const sound = sfxCache.get(name)?.[0]
-    if (!sound) return
-    if (sound.state() !== 'loaded') {
-      if (pendingLoop?.name === name && pendingLoop.sound === sound) return
-      pendingLoop = { name, sound }
-      sound.once('load', () => {
-        if (pendingLoop?.sound === sound) pendingLoop = null
-        if (requestedLoop === name) startLoopSFX(name)
-      })
-      return
-    }
-
-    const config = loopConfig(name)
-    const volume = loopVolume(name)
-    const id = sound.play()
-    sound.volume(0, id)
-    activeLoop = { id, name, sound, volume }
-    sound.fade(0, volume, config.fadeInMs ?? DEFAULT_LOOP_FADE_MS, id)
-  } catch {
-    unloadCachedSounds(false)
-    sfxRetryAfter = now + SFX_FAILURE_BACKOFF_MS
-  }
-}
-
-export function stopLoopSFX() {
-  requestedLoop = null
-  pendingLoop = null
-  const fadeMs = activeLoop ? (loopConfig(activeLoop.name).fadeOutMs ?? DEFAULT_LOOP_FADE_MS) : 0
-  stopActiveLoop(fadeMs)
 }
 
 /**
@@ -367,10 +248,7 @@ export function playSFX(name: SFXName, options: SFXPlaybackOptions = {}) {
  */
 export function updateSFXVolumes() {
   const { masterVolume, muted, sfxVolume } = useAudio.getState()
-  if (muted) {
-    stopLoopSFX()
-    return
-  }
+  if (muted) return
   const finalVolume = (masterVolume / 100) * (sfxVolume / 100)
 
   try {
@@ -381,10 +259,6 @@ export function updateSFXVolumes() {
         sound.volume(finalVolume)
       })
     })
-    if (activeLoop) {
-      activeLoop.volume = loopVolume(activeLoop.name)
-      activeLoop.sound.volume(activeLoop.volume, activeLoop.id)
-    }
   } catch {
     unloadCachedSounds(false)
     sfxRetryAfter = performance.now() + SFX_FAILURE_BACKOFF_MS

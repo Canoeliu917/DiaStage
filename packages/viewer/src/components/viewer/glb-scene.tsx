@@ -27,9 +27,6 @@ const ROLE_BY_KIND: Record<string, SurfaceRole> = {
   wall: 'wall',
   slab: 'floor',
   floor: 'floor',
-  ceiling: 'ceiling',
-  roof: 'roof',
-  'roof-segment': 'roof',
   window: 'glazing',
   door: 'joinery',
   item: 'furnishing',
@@ -340,7 +337,7 @@ export function GlbScene({
     })
   }, [gltf.scene, textures, sceneTheme])
 
-  // The baked scene isn't wrapped in <SceneBvh> (the community viewer runs with
+  // The baked scene isn't wrapped in <SceneBvh> (the standalone viewer runs with
   // useBvh={false}), so hover/pick raycasts against the baked building were
   // brute-force triangle tests — dozens of ms per pointer move on a dense scene,
   // and far worse once a `replace` forest is portaled in. Give each baked mesh a
@@ -382,13 +379,10 @@ export function GlbScene({
   // One pass over the artifact: identity objects (id → Object3D), ordered floors,
   // and zone polygons. Levels stay out of `sceneRegistry` so the parametric
   // LevelSystem never re-stacks them.
-  const { levels, identity, zoneEntries, occluders, rootNode, levelsWithZones } = useMemo(() => {
+  const { levels, identity, zoneEntries, rootNode } = useMemo(() => {
     const objects = new Map<string, THREE.Object3D>()
     const floors: GlbLevelEntry[] = []
     const zoneList: GlbZoneEntry[] = []
-    // Ceilings + roof are hidden when a floor is focused (dollhouse view) so the
-    // camera sees the rooms and the pointer ray reaches their contents.
-    const occluderNodes: THREE.Object3D[] = []
     // The building (or site) node anchors the building-view camera bookmark/fit.
     let buildingNode: THREE.Object3D | null = null
     let siteNode: THREE.Object3D | null = null
@@ -410,7 +404,6 @@ export function GlbScene({
       if (bakePolicyOf(extras.kind ?? '') === 'replace') object.visible = false
       if (extras.kind === 'building') buildingNode = object
       else if (extras.kind === 'site') siteNode = object
-      if (extras.kind === 'ceiling' || extras.kind === 'roof') occluderNodes.push(object)
       if (extras.kind === 'level') {
         floors.push({
           id: extras.pascalId as GlbLevel['id'],
@@ -440,35 +433,11 @@ export function GlbScene({
       levels: floors,
       identity: objects,
       zoneEntries: zoneList,
-      occluders: occluderNodes,
       rootNode: (buildingNode ?? siteNode) as THREE.Object3D | null,
-      // Levels that have rooms — only these trigger the dollhouse occluder strip.
-      levelsWithZones: new Set(zoneList.map((zone) => zone.levelId)),
     }
   }, [gltf.scene])
   const zoneById = useMemo(() => new Map(zoneEntries.map((zone) => [zone.id, zone])), [zoneEntries])
   // Level pascalIds bottom-to-top, for the interactive light pool's level factor.
-  const levelOrder = useMemo(() => levels.map((entry) => entry.id), [levels])
-
-  // The dollhouse hides ceilings/roof — but only their OWN geometry. Items hosted
-  // on a ceiling (lamps, fans, recessed lights) are child identity nodes; hiding
-  // the whole occluder node would hide them too, so collect just the occluder's
-  // own meshes (stop descending at any nested identity node) and toggle those.
-  const occluderOwnMeshes = useMemo(() => {
-    const meshes: THREE.Mesh[] = []
-    const walk = (node: THREE.Object3D) => {
-      for (const child of node.children) {
-        if ((child.userData as PascalExtras).pascalId) continue // hosted item — keep visible
-        if ((child as THREE.Mesh).isMesh) meshes.push(child as THREE.Mesh)
-        walk(child)
-      }
-    }
-    for (const occluder of occluders) {
-      if ((occluder as THREE.Mesh).isMesh) meshes.push(occluder as THREE.Mesh)
-      walk(occluder)
-    }
-    return meshes
-  }, [occluders])
 
   // Move the camera to match the drill depth: a saved bookmark (extras.camera)
   // wins; otherwise fit to the target's bounds (the object, the room's polygon
@@ -599,7 +568,9 @@ export function GlbScene({
       const targetY = baseY + (exploded ? index * EXPLODED_GAP : 0)
       // Snap (not lerp) in walkthrough so the first-person collider, built from
       // these world positions, matches the stacked building immediately.
-      node.position.y = walkthroughMode ? targetY : lerp(node.position.y, targetY, delta * 12)
+      node.position.y = walkthroughMode
+        ? targetY
+        : lerp(node.position.y, targetY, Math.min(1, delta * 12))
       // Solo: hidden levels above the soloed one keep casting shadows
       // (shadow-caster-only); below-levels can't block the sun, so plain-hide.
       const hidden =
@@ -822,21 +793,8 @@ export function GlbScene({
     const t = Math.min(1, delta * 8)
     const hoveredZoneId = hoveredTarget.current?.kind === 'zone' ? hoveredTarget.current.id : null
 
-    // Walkthrough is a first-person tour: no zone tints, no dollhouse cutaway,
-    // no selection outline — you're standing inside the real building.
+    // Walkthrough is a first-person tour: no zone tints or selection outline.
     const walk = state.walkthroughMode
-
-    // Dollhouse: hide ceilings + roof so the rooms (and their zone tint) are
-    // visible from above and the ray reaches their contents — but only when the
-    // focused level actually has rooms. Focusing a zone-less floor keeps the
-    // building intact (otherwise its roof would just vanish with nothing to show).
-    const revealing = !walk && selection.levelId != null && levelsWithZones.has(selection.levelId)
-    // Shadow-caster-only: hidden roof/ceiling meshes keep casting sun shadows
-    // so interiors show window light patches instead of uniform sun flood.
-    for (const mesh of occluderOwnMeshes) {
-      if (revealing) applyShadowOnly(mesh)
-      else clearShadowOnly(mesh)
-    }
 
     for (const { id, levelId, meshes, uniforms } of zoneFills.current) {
       const show =
@@ -1047,10 +1005,8 @@ export function GlbScene({
       outliner.selectedObjects.length = 0
       outliner.hoveredObjects.length = 0
       document.body.style.cursor = 'auto'
-      // Restore ceilings/roof — the GLB scene is cached by drei and may be reused.
-      for (const mesh of occluderOwnMeshes) clearShadowOnly(mesh)
     },
-    [occluderOwnMeshes],
+    [],
   )
 
   return (
@@ -1062,14 +1018,13 @@ export function GlbScene({
         onPointerMove={handlePointerMove}
         onPointerOut={handlePointerOut}
       />
-      {/* Re-light + re-animate the baked artifact from the DB scene graph,
+      {/* Re-animate the baked artifact from the DB scene graph,
           joined to the baked nodes by pascalId. */}
       {interactiveItems?.length ? (
         <GlbInteractive
           actions={actions}
           identity={identity}
           items={interactiveItems}
-          levelOrder={levelOrder}
           zones={zoneEntries}
         />
       ) : null}

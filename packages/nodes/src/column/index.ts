@@ -1,1 +1,0 @@
-export { columnDefinition } from './definition'

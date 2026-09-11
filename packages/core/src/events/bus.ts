@@ -3,50 +3,21 @@ import mitt from 'mitt'
 import type { Object3D } from 'three'
 import type {
   BlockNode,
-  BoxVentNode,
   BuildingNode,
-  CabinetModuleNode,
-  CabinetNode,
-  CeilingNode,
-  ChimneyNode,
-  ColumnNode,
   ConstructionDimensionNode,
-  CupolaNode,
   DoorNode,
-  DormerNode,
-  DownspoutNode,
-  DuctFittingNode,
-  DuctSegmentNode,
-  DuctTerminalNode,
-  ElevatorNode,
-  EyebrowVentNode,
   FenceNode,
   GuideNode,
-  GutterNode,
-  HvacEquipmentNode,
   ItemNode,
-  LeanToExtensionNode,
   LevelNode,
-  LinesetNode,
-  LiquidLineNode,
   MeasurementNode,
-  PipeFittingNode,
-  PipeSegmentNode,
-  PipeTrapNode,
-  RidgeVentNode,
-  RoofNode,
-  RoofSegmentNode,
   ScanNode,
   ShelfNode,
   SiteNode,
-  SkylightNode,
   SlabNode,
-  SolarPanelNode,
   SpawnNode,
   StairNode,
   StairSegmentNode,
-  StructuralGridNode,
-  TurbineVentNode,
   WallNode,
   WindowNode,
   ZoneNode,
@@ -96,48 +67,19 @@ export type FenceEvent = NodeEvent<FenceNode>
 export type ItemEvent = NodeEvent<ItemNode>
 export type SiteEvent = NodeEvent<SiteNode>
 export type BuildingEvent = NodeEvent<BuildingNode>
-export type CabinetEvent = NodeEvent<CabinetNode>
-export type CabinetModuleEvent = NodeEvent<CabinetModuleNode>
 export type LevelEvent = NodeEvent<LevelNode>
-export type LeanToExtensionEvent = NodeEvent<LeanToExtensionNode>
 export type ZoneEvent = NodeEvent<ZoneNode>
 export type ShelfEvent = NodeEvent<ShelfNode>
 export type SlabEvent = NodeEvent<SlabNode>
 export type SpawnEvent = NodeEvent<SpawnNode>
-export type CeilingEvent = NodeEvent<CeilingNode>
-export type ColumnEvent = NodeEvent<ColumnNode>
 export type ConstructionDimensionEvent = NodeEvent<ConstructionDimensionNode>
 export type BlockEvent = NodeEvent<BlockNode>
-export type RoofEvent = NodeEvent<RoofNode>
-export type RoofSegmentEvent = NodeEvent<RoofSegmentNode>
 export type StairEvent = NodeEvent<StairNode>
 export type StairSegmentEvent = NodeEvent<StairSegmentNode>
-export type StructuralGridEvent = NodeEvent<StructuralGridNode>
 export type WindowEvent = NodeEvent<WindowNode>
 export type DoorEvent = NodeEvent<DoorNode>
-export type ElevatorEvent = NodeEvent<ElevatorNode>
 export type ScanEvent = NodeEvent<ScanNode>
 export type GuideEvent = NodeEvent<GuideNode>
-export type BoxVentEvent = NodeEvent<BoxVentNode>
-export type RidgeVentEvent = NodeEvent<RidgeVentNode>
-export type TurbineVentEvent = NodeEvent<TurbineVentNode>
-export type CupolaEvent = NodeEvent<CupolaNode>
-export type EyebrowVentEvent = NodeEvent<EyebrowVentNode>
-export type GutterEvent = NodeEvent<GutterNode>
-export type ChimneyEvent = NodeEvent<ChimneyNode>
-export type SolarPanelEvent = NodeEvent<SolarPanelNode>
-export type SkylightEvent = NodeEvent<SkylightNode>
-export type DormerEvent = NodeEvent<DormerNode>
-export type DownspoutEvent = NodeEvent<DownspoutNode>
-export type DuctSegmentEvent = NodeEvent<DuctSegmentNode>
-export type DuctFittingEvent = NodeEvent<DuctFittingNode>
-export type DuctTerminalEvent = NodeEvent<DuctTerminalNode>
-export type HvacEquipmentEvent = NodeEvent<HvacEquipmentNode>
-export type PipeSegmentEvent = NodeEvent<PipeSegmentNode>
-export type PipeFittingEvent = NodeEvent<PipeFittingNode>
-export type PipeTrapEvent = NodeEvent<PipeTrapNode>
-export type LinesetEvent = NodeEvent<LinesetNode>
-export type LiquidLineEvent = NodeEvent<LiquidLineNode>
 export type MeasurementEvent = NodeEvent<MeasurementNode>
 
 // Event suffixes - exported for use in hooks
@@ -212,9 +154,7 @@ export interface ThumbnailGenerateEvent {
   snapLevels?: boolean
   /**
    * When true, keep the rendered alpha channel — emits a transparent PNG
-   * without baking the scene background into the output. Used by the
-   * preset capture flow so saved preset thumbnails composite cleanly on
-   * any palette background.
+   * without baking the scene background into the output.
    */
   transparent?: boolean
 }
@@ -298,14 +238,6 @@ type AIChatEvents = {
   }
 }
 
-export interface RoomPresetCreateEvent {
-  zoneId: ZoneNode['id']
-}
-
-type RoomPresetEvents = {
-  'room-preset:create': RoomPresetCreateEvent
-}
-
 type SelectionEvents = {
   /**
    * A node click accepted by an editor canvas selection path after proxy and
@@ -325,51 +257,22 @@ type EditorEvents = GridEvents &
   GenericNodeEvents &
   NodeEvents<'wall', WallEvent> &
   NodeEvents<'fence', FenceEvent> &
-  NodeEvents<'cabinet', CabinetEvent> &
-  NodeEvents<'cabinet-module', CabinetModuleEvent> &
   NodeEvents<'item', ItemEvent> &
   NodeEvents<'site', SiteEvent> &
   NodeEvents<'building', BuildingEvent> &
-  NodeEvents<'elevator', ElevatorEvent> &
   NodeEvents<'level', LevelEvent> &
-  NodeEvents<'lean-to-extension', LeanToExtensionEvent> &
   NodeEvents<'zone', ZoneEvent> &
   NodeEvents<'slab', SlabEvent> &
   NodeEvents<'shelf', ShelfEvent> &
   NodeEvents<'spawn', SpawnEvent> &
-  NodeEvents<'ceiling', CeilingEvent> &
-  NodeEvents<'column', ColumnEvent> &
   NodeEvents<'construction-dimension', ConstructionDimensionEvent> &
   NodeEvents<'block', BlockEvent> &
-  NodeEvents<'roof', RoofEvent> &
-  NodeEvents<'roof-segment', RoofSegmentEvent> &
   NodeEvents<'stair', StairEvent> &
   NodeEvents<'stair-segment', StairSegmentEvent> &
-  NodeEvents<'structural-grid', StructuralGridEvent> &
   NodeEvents<'window', WindowEvent> &
   NodeEvents<'door', DoorEvent> &
   NodeEvents<'scan', ScanEvent> &
   NodeEvents<'guide', GuideEvent> &
-  NodeEvents<'box-vent', BoxVentEvent> &
-  NodeEvents<'ridge-vent', RidgeVentEvent> &
-  NodeEvents<'turbine-vent', TurbineVentEvent> &
-  NodeEvents<'cupola', CupolaEvent> &
-  NodeEvents<'eyebrow-vent', EyebrowVentEvent> &
-  NodeEvents<'gutter', GutterEvent> &
-  NodeEvents<'chimney', ChimneyEvent> &
-  NodeEvents<'solar-panel', SolarPanelEvent> &
-  NodeEvents<'skylight', SkylightEvent> &
-  NodeEvents<'dormer', DormerEvent> &
-  NodeEvents<'downspout', DownspoutEvent> &
-  NodeEvents<'duct-segment', DuctSegmentEvent> &
-  NodeEvents<'duct-fitting', DuctFittingEvent> &
-  NodeEvents<'duct-terminal', DuctTerminalEvent> &
-  NodeEvents<'hvac-equipment', HvacEquipmentEvent> &
-  NodeEvents<'pipe-segment', PipeSegmentEvent> &
-  NodeEvents<'pipe-fitting', PipeFittingEvent> &
-  NodeEvents<'pipe-trap', PipeTrapEvent> &
-  NodeEvents<'lineset', LinesetEvent> &
-  NodeEvents<'liquid-line', LiquidLineEvent> &
   NodeEvents<'measurement', MeasurementEvent> &
   CameraControlEvents &
   ToolEvents &
@@ -379,7 +282,6 @@ type EditorEvents = GridEvents &
   ThumbnailEvents &
   SnapshotEvents &
   AIChatEvents &
-  RoomPresetEvents &
   SelectionEvents
 
 export const emitter = mitt<EditorEvents>()

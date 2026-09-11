@@ -56,7 +56,7 @@ export const RegistryTreeNode = memo(function RegistryTreeNode({
   const hasHostChildren = Boolean(node && hostChildren?.hasChildren(node))
   const HostChildren = hasHostChildren ? hostChildren?.component : undefined
   const icon = presentation?.icon
-  const iconSrc = icon?.kind === 'url' ? icon.src : '/icons/roof.webp'
+  const iconSrc = icon?.kind === 'url' ? icon.src : '/icons/select.webp'
   const iconElement =
     icon?.kind === 'iconify' ? (
       <IconifyIcon className="opacity-60" height={14} icon={icon.name} width={14} />

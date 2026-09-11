@@ -28,13 +28,6 @@ describe('wall support offset', () => {
       WallNode.safeParse({ start: [0, 0], end: [4, 0], supportOffset: Number.NaN }).success,
     ).toBe(false)
   })
-
-  test('stores terrain infill only when explicitly enabled', () => {
-    expect(WallNode.parse({ start: [0, 0], end: [4, 0] }).fillToTerrain).toBeUndefined()
-    expect(WallNode.parse({ start: [0, 0], end: [4, 0], fillToTerrain: true }).fillToTerrain).toBe(
-      true,
-    )
-  })
 })
 
 describe('wall face bands', () => {

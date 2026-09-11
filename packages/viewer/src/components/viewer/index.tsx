@@ -2,20 +2,11 @@
 
 import { type AnyNodeId, nodeRegistry, sceneRegistry, useScene } from '@pascal-app/core'
 import { Canvas, extend, type ThreeElement, useFrame, useThree } from '@react-three/fiber'
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import * as THREE from 'three/webgpu'
 import { hasDrawableGeometry } from '../../lib/drawable-geometry'
 import { PERF_OVERLAY_ENABLED } from '../../lib/gpu-perf'
-import { applyIsolation, clearIsolation } from '../../lib/isolation'
 import { ensureKtx2Support } from '../../lib/ktx2-loader'
 import type { ColorPreset, RenderShading } from '../../lib/materials'
 import { initializeGpuRenderer, type RendererPowerPreference } from '../../lib/renderer-capability'
@@ -311,15 +302,6 @@ interface ViewerProps {
     colorPreset?: ColorPreset
   }
   /**
-   * Visibility filter on the live canvas. When non-null, every registered
-   * node group whose id is not in `isolate` (or in the isolated set's
-   * ancestor / descendant closure) is hidden. Pass `null` (or omit) to
-   * clear. Powers the unified preset-capture flow (community modal sets
-   * this to the subtree it wants to thumbnail) and is the building block
-   * for a future focus-mode UX.
-   */
-  isolate?: AnyNodeId[] | null
-  /**
    * Host-controlled key for scene readiness. Change it whenever a new scene
    * graph is being loaded; the viewer will report not-ready until the graph is
    * mounted, build systems have had a frame to settle, and one rendered frame
@@ -359,37 +341,22 @@ interface ViewerProps {
   renderPaused?: boolean
 }
 
-/** Imperative handle exposed via `ref` on `<Viewer>`. */
-export type ViewerHandle = {
-  /**
-   * Apply / clear the same visibility filter as the `isolate` prop. Useful
-   * for transient cases (a temporary hover-to-isolate UX) where holding
-   * the value in React state would be over-engineering. Passing `null`
-   * clears.
-   */
-  setIsolated(ids: AnyNodeId[] | null): void
-}
-
-const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
-  {
-    children,
-    hoverStyles = DEFAULT_HOVER_STYLES,
-    selectionManager = 'default',
-    perf = false,
-    useBvh = true,
-    renderContext = 'editor',
-    transparent,
-    defaultRender,
-    isolate,
-    sceneReadyKey,
-    onSceneReadyChange,
-    sceneReadyMaxWaitMs,
-    maxFps = 50,
-    disablePostFx = false,
-    renderPaused = false,
-  },
-  ref,
-) {
+function Viewer({
+  children,
+  hoverStyles = DEFAULT_HOVER_STYLES,
+  selectionManager = 'default',
+  perf = false,
+  useBvh = true,
+  renderContext = 'editor',
+  transparent,
+  defaultRender,
+  sceneReadyKey,
+  onSceneReadyChange,
+  sceneReadyMaxWaitMs,
+  maxFps = 50,
+  disablePostFx = false,
+  renderPaused = false,
+}: ViewerProps) {
   const stable = useStableRenderMode()
   const neutral = useNeutralRenderEnvironment()
   const coarse = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
@@ -401,28 +368,6 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
       )
     }
   }, [])
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      setIsolated: (ids) => applyIsolation(ids),
-    }),
-    [],
-  )
-
-  // Track the most recently-applied isolation so the cleanup path can
-  // restore visibility even if the prop is removed while the component is
-  // still mounted. `clearIsolation()` is a no-op when nothing was applied.
-  const isolateRef = useRef<AnyNodeId[] | null | undefined>(undefined)
-  useEffect(() => {
-    isolateRef.current = isolate ?? null
-    applyIsolation(isolate ?? null)
-    return () => {
-      // Only clear if this effect was the one that applied — protects
-      // against a parent unmount racing with a setIsolated() consumer.
-      if (isolateRef.current === isolate) clearIsolation()
-    }
-  }, [isolate])
 
   const [rendererInitFailed, setRendererInitFailed] = useState(false)
   const [rendererGeneration, setRendererGeneration] = useState(0)
@@ -685,8 +630,6 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
             builder, swaps the registered group's children. See
             wiki/architecture/node-definitions.md. */}
           <GeometrySystem />
-          {/* Automated stair opening sync — updates slab/ceiling cutouts
-            whenever stairs, slabs, or levels change. */}
           {/* Mounts systems contributed by registry-backed kinds. Each
             kind's `def.system` is loaded via lazy() and rendered here,
             ordered by `system.priority`. */}
@@ -705,6 +648,6 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
       </Canvas>
     </>
   )
-})
+}
 
 export default Viewer

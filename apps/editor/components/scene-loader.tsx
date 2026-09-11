@@ -1,7 +1,7 @@
 'use client'
 
 // Node registry bootstrap is loaded once at the root via
-// `<ClientBootstrap>` in `app/layout.tsx` — no per-page side-effect
+// `<ClientBootstrap>` in the scene route — no per-component side-effect
 // import here.
 import { SiteNode, useScene } from '@pascal-app/core'
 import {
@@ -78,7 +78,7 @@ import { useStudioSidebar } from './studio-sidebar'
 import { RehearsalTransport, TheatreFloorplan, TheatreRuntime } from './theatre/runtime'
 import { useTheatreDocument } from './theatre/state'
 import { VersionViewSync } from './theatre/versions-panel'
-import { CommunityViewerToolbarLeft, CommunityViewerToolbarRight } from './viewer-toolbar'
+import { EditorViewerToolbarLeft, EditorViewerToolbarRight } from './viewer-toolbar'
 
 export interface SceneMeta {
   id: string
@@ -564,8 +564,8 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
               sidebarTopSlot={<StageOverviewPanel key={meta.id} sceneId={meta.id} />}
               showPluginPanels={false}
               showLevelSelector={false}
-              viewerToolbarLeft={<CommunityViewerToolbarLeft />}
-              viewerToolbarRight={<CommunityViewerToolbarRight />}
+              viewerToolbarLeft={<EditorViewerToolbarLeft />}
+              viewerToolbarRight={<EditorViewerToolbarRight />}
             />
             {cameraEnabled && (
               <ViewerErrorBoundary

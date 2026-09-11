@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { type AnyNode, CeilingNode, LevelNode, SlabNode } from '@pascal-app/core'
+import { type AnyNode, LevelNode, SlabNode } from '@pascal-app/core'
 import useElevationGuides from '../store/use-elevation-guides'
 import {
   clearStructuralElevationGuide,
@@ -23,27 +23,16 @@ function structuralScene() {
     elevation: 0.6,
     thickness: 0.2,
   })
-  const ceiling = CeilingNode.parse({
-    parentId: rawLevel.id,
-    polygon: [
-      [-4, -1],
-      [-2, -1],
-      [-2, 1],
-      [-4, 1],
-    ],
-    height: 2.4,
-  })
-  const level = { ...rawLevel, children: [slab.id, ceiling.id] }
+  const level = { ...rawLevel, children: [slab.id] }
   const nodes: Record<string, AnyNode> = {
     [level.id]: level,
     [slab.id]: slab,
-    [ceiling.id]: ceiling,
   }
-  return { ceiling, level, nodes, slab }
+  return { level, nodes, slab }
 }
 
 describe('elevation guides', () => {
-  test('collects the level, slab faces, and ceiling plane on the source level', () => {
+  test('collects the level and slab faces on the source level', () => {
     const { level, nodes, slab } = structuralScene()
     const targets = collectElevationSnapTargets(
       { nodeId: 'wall_moving', levelId: level.id, anchor: [0, 0] },
@@ -51,10 +40,9 @@ describe('elevation guides', () => {
     )
 
     expect(targets.map((target) => [target.label, target.elevation])).toEqual([
-      ['楼层', 0],
-      ['楼板顶面', 0.6],
-      ['楼板底面', 0.39999999999999997],
-      ['天花板', 2.4],
+      ['表演层', 0],
+      ['舞台平台顶面', 0.6],
+      ['舞台平台底面', 0.39999999999999997],
     ])
 
     const withoutSelf = collectElevationSnapTargets(
@@ -70,7 +58,6 @@ describe('elevation guides', () => {
 
     expect(resolveStructuralElevationSnap(source, 0.54, nodes)).toBe(0.6)
     expect(resolveStructuralElevationSnap(source, 0.49, nodes)).toBe(0.49)
-    expect(resolveStructuralElevationSnap(source, 2.34, nodes)).toBe(2.4)
   })
 
   test('uses plan distance to disambiguate datums at the same elevation', () => {
@@ -95,7 +82,7 @@ describe('elevation guides', () => {
     expect(useElevationGuides.getState().guide).toMatchObject({
       ownerId: 'wall_moving',
       elevation: 0.6,
-      label: '楼板顶面',
+      label: '舞台平台顶面',
       direction: [1, 0],
     })
 
@@ -111,9 +98,9 @@ describe('elevation guides', () => {
     useElevationGuides.setState({ guide: null })
 
     publishResolvedElevationGuide(
-      { nodeId: 'leanto_moving', levelId: level.id, anchor: [2, 1] },
+      { nodeId: 'platform_moving', levelId: level.id, anchor: [2, 1] },
       {
-        id: 'leanto_neighbor:high-edge',
+        id: 'platform_neighbor:high-edge',
         elevation: 3.4,
         anchor: [5, 1],
         label: 'Neighbor shed edge',
@@ -121,7 +108,7 @@ describe('elevation guides', () => {
     )
 
     expect(useElevationGuides.getState().guide).toMatchObject({
-      ownerId: 'leanto_moving',
+      ownerId: 'platform_moving',
       elevation: 3.4,
       direction: [1, 0],
       label: 'Neighbor shed edge',

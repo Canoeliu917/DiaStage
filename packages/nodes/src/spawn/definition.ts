@@ -70,8 +70,6 @@ export const spawnDefinition: NodeDefinition<typeof SpawnNode> = {
     duplicable: false, // singleton per level
     deletable: true,
     selectable: { hitVolume: 'bbox' },
-    // Spawn is a singleton anchor — no meaning as a reusable preset.
-    presettable: false,
     // Slab elevation lift via the generic `<FloorElevationSystem>`. The
     // spawn marker is a 1.8m-tall figure with a ~0.6m ring footprint.
     floorPlaced: {
@@ -107,7 +105,7 @@ export const spawnDefinition: NodeDefinition<typeof SpawnNode> = {
 
   presentation: {
     label: '出生点',
-    description: '楼层中角色或相机的初始位置，每层一个。',
+    description: '表演层中角色或观察机位的初始位置，每层一个。',
     icon: { kind: 'url', src: '/icons/spawn-point.webp' },
     paletteSection: 'structure',
     paletteOrder: 90, // bottom of structure list — matches legacy palette order

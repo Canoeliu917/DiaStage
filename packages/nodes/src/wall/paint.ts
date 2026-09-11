@@ -23,7 +23,7 @@ import {
   createSlotPaintCapability,
   previewSlotByUserData,
 } from '../shared/slot-paint'
-import { resolveWallOpeningCeiling } from '../shared/wall-opening-ceiling'
+import { resolveWallOpeningTop } from '../shared/wall-opening-top'
 
 const WALL_SLOT_IDS = new Set<string>(Object.keys(WALL_SURFACE_SLOT_DEFAULTS))
 const WALL_ARRAY_SLOT_INDEX: Partial<Record<WallSurfaceSlotId, number>> = {
@@ -105,7 +105,7 @@ export function resolveWallRole(args: {
   }
 
   if (sideFromIndex && localPosition) {
-    const effectiveWallHeight = resolveWallOpeningCeiling(node, useScene.getState().nodes)
+    const effectiveWallHeight = resolveWallOpeningTop(node, useScene.getState().nodes)
     const bands = getWallFaceBandConfig(node, effectiveWallHeight)
     if (!bands.enabled) return sideFromIndex
     return getWallBandSlotId(
@@ -133,7 +133,7 @@ export function resolveWallRole(args: {
   const semantic = hitFace === 'front' ? node.frontSide : node.backSide
 
   if (semantic === 'interior' || semantic === 'exterior') {
-    const effectiveWallHeight = resolveWallOpeningCeiling(node, useScene.getState().nodes)
+    const effectiveWallHeight = resolveWallOpeningTop(node, useScene.getState().nodes)
     const bands = getWallFaceBandConfig(node, effectiveWallHeight)
     if (!bands.enabled) return semantic
     return getWallBandSlotId(
@@ -143,7 +143,7 @@ export function resolveWallRole(args: {
   }
 
   const side = hitFace === 'front' ? 'interior' : 'exterior'
-  const effectiveWallHeight = resolveWallOpeningCeiling(node, useScene.getState().nodes)
+  const effectiveWallHeight = resolveWallOpeningTop(node, useScene.getState().nodes)
   const bands = getWallFaceBandConfig(node, effectiveWallHeight)
   if (!bands.enabled) return side
   return getWallBandSlotId(
@@ -194,7 +194,6 @@ function applyWallPreview(args: PaintPreviewArgs): (() => void) | null {
  * whole-side fallback so old scenes still show the current value.
  */
 export const wallPaint: PaintCapability = createSlotPaintCapability({
-  roomScope: true,
   resolveRole: ({ node, hitObject, materialIndex, normal, localPosition, ray }) =>
     resolveWallRole({
       node: node as WallNode,

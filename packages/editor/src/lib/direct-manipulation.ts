@@ -36,15 +36,6 @@ export function canDirectRotateNode(node: AnyNode): boolean {
   )
 }
 
-const BESPOKE_SELECTION_MOVE_KINDS = new Set([
-  'duct-segment',
-  'duct-fitting',
-  'pipe-segment',
-  'pipe-fitting',
-  'lineset',
-  'liquid-line',
-])
-
 export const EDITOR_HANDLE_HIT_AREA_USER_DATA_KEY = 'editorHandleHitArea'
 
 export function pointerEventHitsEditorHandle(event: unknown): boolean {
@@ -65,20 +56,13 @@ export function pointerEventHitsEditorHandle(event: unknown): boolean {
 }
 
 export function canDirectMoveNode(node: AnyNode): boolean {
-  // These MEP kinds own move through bespoke selection rigs (latch cubes,
-  // directional arrows, grid-driven previews). Sending body drags/clicks
-  // through the generic direct-move handoff conflicts with that path and can
-  // leave the editor appearing frozen while their mover waits for the wrong
-  // gesture stream.
-  if (BESPOKE_SELECTION_MOVE_KINDS.has(node.type)) return false
   // 3D direct move (Ctrl/Meta-drag, the move-cross grip) needs a move tool that
   // mounts in 3D — distinct from `isRegistryMovable`, which also accepts
   // floorplan-only movers (zone) for the 2D plan.
   if (!hasRegistry3DMoveTool(node.type)) return false
   // Bespoke movers (`affordanceTools.move`) own their constraints and often
   // deliberately omit `capabilities.movable` — only gate registry-movable
-  // kinds on `isMovable`, so a per-node `movable.override` (e.g. a cabinet
-  // run locked behind its selection proxy) can opt out of direct move.
+  // kinds on `isMovable`, so a per-node `movable.override` can opt out.
   if (nodeRegistry.get(node.type)?.affordanceTools?.move) return true
   return isMovable(node)
 }

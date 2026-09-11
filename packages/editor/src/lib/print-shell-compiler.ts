@@ -1,14 +1,12 @@
 import {
   type AnyNode,
   getWallEffectiveHeightForNodes,
-  type RoofSegmentNode,
   resolveLevelId,
   spatialGridManager,
   type WallNode,
 } from '@pascal-app/core'
 import { disposeObject3DResources } from '@pascal-app/viewer'
 import * as THREE from 'three'
-import { buildPrintableRoofSegmentSolids } from './print-roof-solids'
 import {
   compilePrintShellBaseline,
   type PrintShellCompileDiagnostic,
@@ -58,7 +56,7 @@ function replaceChild(parent: THREE.Object3D, target: THREE.Object3D, replacemen
 function copyPreparedTransform(
   source: THREE.Object3D,
   target: THREE.Object3D,
-  printSource: 'canonical-roof' | 'canonical-wall',
+  printSource: 'canonical-wall',
 ) {
   target.name = source.name
   target.position.copy(source.position)
@@ -173,26 +171,15 @@ export function prepareSemanticPrintShellSource(
   scene.add(source.clone(true))
 
   const includedNodeIds = exportedIdentityIds(scene)
-  const roofTargets: { node: RoofSegmentNode; object: THREE.Object3D }[] = []
   const wallTargets: { node: WallNode; object: THREE.Object3D }[] = []
   scene.traverse((object) => {
     const id = object.userData.pascalId
     const node = typeof id === 'string' ? nodes[id] : undefined
-    if (node?.type === 'roof-segment') roofTargets.push({ node, object })
     if (options.wallSolids && node?.type === 'wall') wallTargets.push({ node, object })
   })
 
   const diagnostics: PrintShellCompileDiagnostic[] = []
   const replacements: { target: THREE.Object3D; replacement: THREE.Group }[] = []
-  for (const { node, object } of roofTargets) {
-    const result = buildPrintableRoofSegmentSolids(node, nodes)
-    if (result.status === 'blocked') {
-      diagnostics.push(...result.diagnostics)
-      continue
-    }
-    copyPreparedTransform(object, result.object, 'canonical-roof')
-    replacements.push({ target: object, replacement: result.object })
-  }
   for (const { node, object } of wallTargets) {
     const prepared = preparedWallHeight(node, object, nodes)
     if (prepared.diagnostic) {
@@ -245,8 +232,7 @@ export function prepareSemanticPrintShellSource(
 
 /**
  * Compiles a semantic structural source instead of trusting display aggregates.
- * Roof segments are replaced as complete identity subtrees so their hosted
- * display CSG and accessory meshes cannot leak into the manufacturing shell.
+ * Walls are replaced with their canonical solids before export.
  */
 export function compileSemanticPrintShell(
   source: THREE.Object3D,

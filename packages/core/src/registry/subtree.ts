@@ -12,7 +12,7 @@ import type { AnyNode, AnyNodeId } from '../schema/types'
 //   - The editor exposes a *pure* live-scene walk + a generic clone-and-
 //     insert helper. It owns nothing about storage shape, position
 //     re-anchoring policy, or host-ref re-derivation.
-//   - The host (community-app, embedders, etc.) decides whether to
+//   - The host decides whether to
 //     persist the subtree as JSON, strip host fields before storage,
 //     stamp a placement position, re-attach to a wall on drop, etc.
 //

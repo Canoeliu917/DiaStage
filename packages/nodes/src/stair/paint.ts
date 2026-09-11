@@ -4,7 +4,7 @@ import { buildSlotPreviewMaterial, createSlotPaintCapability } from '../shared/s
 import type { StairSlotId } from './slots'
 
 function isStairSlotId(value: unknown): value is StairSlotId {
-  return value === 'treads' || value === 'body' || value === 'railing'
+  return value === 'treads' || value === 'body'
 }
 
 function resolveStairPaintRole(args: PaintResolveArgs): StairSlotId | null {
@@ -71,9 +71,7 @@ function legacyEffective(node: AnyNode, role: string) {
   const perSlot =
     role === 'treads'
       ? { material: stair.treadMaterial, materialPreset: stair.treadMaterialPreset }
-      : role === 'body'
-        ? { material: stair.sideMaterial, materialPreset: stair.sideMaterialPreset }
-        : { material: stair.railingMaterial, materialPreset: stair.railingMaterialPreset }
+      : { material: stair.sideMaterial, materialPreset: stair.sideMaterialPreset }
 
   if (perSlot.material !== undefined || typeof perSlot.materialPreset === 'string') {
     return {

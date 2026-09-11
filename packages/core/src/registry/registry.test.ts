@@ -2,18 +2,15 @@ import { beforeEach, describe, expect, test } from 'bun:test'
 import { z } from 'zod'
 import {
   getHostRefFields,
-  getInspectorExtensions,
   getNodePluginId,
   isDrawnViaTool,
   isDrawnViaToolKind,
   isNodeKindEnabled,
-  isPresettable,
-  isPresettableKind,
   loadPlugin,
   nodeRegistry,
   registerNode,
 } from './registry'
-import type { AnyNodeDefinition, InspectorExtension, Plugin } from './types'
+import type { AnyNodeDefinition, Plugin } from './types'
 
 // Re-registering a kind warns + replaces in dev (HMR) but throws in
 // production — see `registry._register`. `bun test` runs with
@@ -133,41 +130,6 @@ describe('nodeRegistry', () => {
     expect(nodeRegistry.get('kept')).toBe(kept)
     expect(getNodePluginId('kept-plugin-kind')).toBe('test:kept-plugin')
     expect(getNodePluginId('leaked-plugin-kind')).toBeUndefined()
-  })
-})
-
-describe('isPresettable', () => {
-  beforeEach(() => {
-    nodeRegistry._reset()
-  })
-
-  test('explicit true wins', () => {
-    const def = makeDefinition('explicit-true', { capabilities: { presettable: true } })
-    expect(isPresettable(def)).toBe(true)
-  })
-
-  test('explicit false wins even with parametrics', () => {
-    const def = makeDefinition('explicit-false', {
-      capabilities: { presettable: false },
-      parametrics: { groups: [] } as any,
-    })
-    expect(isPresettable(def)).toBe(false)
-  })
-
-  test('defaults to true when parametrics exists', () => {
-    const def = makeDefinition('param', { parametrics: { groups: [] } as any })
-    expect(isPresettable(def)).toBe(true)
-  })
-
-  test('defaults to false without parametrics', () => {
-    const def = makeDefinition('no-param')
-    expect(isPresettable(def)).toBe(false)
-  })
-
-  test('isPresettableKind looks up the registry', () => {
-    registerNode(makeDefinition('shelfy', { parametrics: { groups: [] } as any }))
-    expect(isPresettableKind('shelfy')).toBe(true)
-    expect(isPresettableKind('unknown')).toBe(false)
   })
 })
 
@@ -312,86 +274,5 @@ describe('loadPlugin', () => {
       nodes: [makeDefinition('pack:a'), makeDefinition('pack:b')],
     })
     expect(getRegistryVersion()).toBe(before + 2)
-  })
-})
-
-describe('inspector extensions', () => {
-  beforeEach(() => {
-    nodeRegistry._reset()
-  })
-
-  function makeExtension(
-    id: string,
-    kinds: string[],
-    overrides: Partial<InspectorExtension> = {},
-  ): InspectorExtension {
-    return {
-      id,
-      pluginId: 'test:plugin',
-      kinds,
-      icon: { kind: 'url', src: '/icons/test.png' },
-      title: 'Engineering',
-      component: async () => ({ default: () => null }),
-      ...overrides,
-    }
-  }
-
-  test('starts empty for any kind', () => {
-    expect(getInspectorExtensions('wall')).toEqual([])
-  })
-
-  test('loadPlugin registers extensions under each declared kind', async () => {
-    const extension = makeExtension('test:plugin:eng', ['wall', 'slab'])
-    await loadPlugin({ id: 'test:plugin', apiVersion: 1, inspectorExtensions: [extension] })
-
-    expect(getInspectorExtensions('wall')).toEqual([extension])
-    expect(getInspectorExtensions('slab')).toEqual([extension])
-    expect(getInspectorExtensions('roof')).toEqual([])
-  })
-
-  test('extensions from separate plugins accumulate in load order', async () => {
-    const a = makeExtension('a:eng', ['wall'], { pluginId: 'a' })
-    const b = makeExtension('b:eng', ['wall'], { pluginId: 'b' })
-    await loadPlugin({ id: 'a', apiVersion: 1, inspectorExtensions: [a] })
-    await loadPlugin({ id: 'b', apiVersion: 1, inspectorExtensions: [b] })
-
-    expect(getInspectorExtensions('wall')).toEqual([a, b])
-  })
-
-  test('re-registering the same extension id replaces in place (HMR)', async () => {
-    const first = makeExtension('test:plugin:eng', ['wall'])
-    const second = makeExtension('test:plugin:eng', ['wall'], { title: 'Engineering v2' })
-    await loadPlugin({ id: 'test:plugin', apiVersion: 1, inspectorExtensions: [first] })
-    await loadPlugin({ id: 'test:plugin', apiVersion: 1, inspectorExtensions: [second] })
-
-    const registered = getInspectorExtensions('wall')
-    expect(registered).toHaveLength(1)
-    expect(registered[0]?.title).toBe('Engineering v2')
-  })
-
-  // GATE (late-plugin inspector sections): the inspector card derives its
-  // extension list at render time — without a version bump for a plugin
-  // that ships ONLY extensions (no node kinds), a late load would never
-  // re-render the open card and the section would silently not appear.
-  test('registering extensions bumps the registry version', async () => {
-    const { getRegistryVersion } = await import('./registry')
-    const before = getRegistryVersion()
-    await loadPlugin({
-      id: 'test:plugin',
-      apiVersion: 1,
-      inspectorExtensions: [makeExtension('test:plugin:eng', ['wall'])],
-    })
-    expect(getRegistryVersion()).toBeGreaterThan(before)
-  })
-
-  test('_reset clears registered extensions', async () => {
-    await loadPlugin({
-      id: 'test:plugin',
-      apiVersion: 1,
-      inspectorExtensions: [makeExtension('test:plugin:eng', ['wall'])],
-    })
-    expect(getInspectorExtensions('wall')).toHaveLength(1)
-    nodeRegistry._reset()
-    expect(getInspectorExtensions('wall')).toEqual([])
   })
 })

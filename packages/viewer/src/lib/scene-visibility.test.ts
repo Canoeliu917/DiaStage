@@ -18,16 +18,14 @@ function sceneObject(): THREE.Object3D {
 }
 
 describe('scene visibility', () => {
-  test('shot capture restores solo geometry without admitting overlays, isolation, or batched sources', () => {
+  test('shot capture restores solo geometry without admitting overlays or batched sources', () => {
     const root = new THREE.Group()
     const geometry = sceneObject()
     const overlay = new THREE.Object3D()
     overlay.layers.set(1)
-    const isolated = sceneObject()
     const batched = sceneObject()
-    root.add(geometry, overlay, isolated, batched)
+    root.add(geometry, overlay, batched)
     for (const obj of root.children) hideFromScene(obj, 'shadow-only')
-    hideFromScene(isolated, 'isolated')
     hideFromScene(batched, 'batched')
     const original = root.children.map((obj) => obj.layers.mask)
     const captureLayers = new THREE.Layers()
@@ -36,7 +34,6 @@ describe('scene visibility', () => {
     expect(geometry.layers.test(captureLayers)).toBe(true)
     expect(overlay.layers.test(captureLayers)).toBe(false)
     expect(overlay.layers.mask).toBe(1 << 1)
-    expect(isolated.layers.test(captureLayers)).toBe(false)
     expect(batched.layers.test(captureLayers)).toBe(false)
     expect(batched.layers.isEnabled(BATCHED_LAYER)).toBe(true)
     restore()
@@ -44,8 +41,6 @@ describe('scene visibility', () => {
     expect(root.children.map((obj) => obj.layers.mask)).toEqual(original)
     showInScene(geometry, 'shadow-only')
     expect(geometry.layers.isEnabled(SCENE_LAYER)).toBe(true)
-    showInScene(isolated, 'shadow-only')
-    expect(isolated.layers.isEnabled(SCENE_LAYER)).toBe(false)
   })
 
   test('one reason hides and gives the exact mask back', () => {
@@ -53,39 +48,12 @@ describe('scene visibility', () => {
     obj.layers.enable(OVERLAY_LAYER)
     const original = obj.layers.mask
 
-    hideFromScene(obj, 'isolated')
+    hideFromScene(obj, 'shadow-only')
     expect(obj.layers.isEnabled(SCENE_LAYER)).toBe(false)
     expect(obj.layers.isEnabled(OVERLAY_LAYER)).toBe(true)
 
-    showInScene(obj, 'isolated')
-    expect(obj.layers.mask).toBe(original)
-  })
-
-  test('the reason still standing decides the mask, whatever the order', () => {
-    const obj = sceneObject()
-
-    hideFromScene(obj, 'shadow-only')
-    hideFromScene(obj, 'isolated')
-
-    // Leaving solo first must not hand the scene layer back while the
-    // isolation filter is still up.
     showInScene(obj, 'shadow-only')
-    expect(obj.layers.isEnabled(SCENE_LAYER)).toBe(false)
-    expect(obj.layers.isEnabled(SHADOW_ONLY_LAYER)).toBe(false)
-
-    showInScene(obj, 'isolated')
-    expect(obj.layers.isEnabled(SCENE_LAYER)).toBe(true)
-  })
-
-  test('dropping isolation under solo leaves the object casting shadows', () => {
-    const obj = sceneObject()
-
-    hideFromScene(obj, 'isolated')
-    hideFromScene(obj, 'shadow-only')
-    showInScene(obj, 'isolated')
-
-    expect(obj.layers.isEnabled(SHADOW_ONLY_LAYER)).toBe(true)
-    expect(obj.layers.isEnabled(SCENE_LAYER)).toBe(false)
+    expect(obj.layers.mask).toBe(original)
   })
 
   test('the batch outranks solo, and leaving solo does not un-sew the wall', () => {
@@ -132,11 +100,11 @@ describe('scene visibility', () => {
     const obj = sceneObject()
     const original = obj.layers.mask
 
-    showInScene(obj, 'isolated')
+    showInScene(obj, 'wall-batched')
     expect(obj.layers.mask).toBe(original)
 
     hideFromScene(obj, 'shadow-only')
-    showInScene(obj, 'isolated')
+    showInScene(obj, 'wall-batched')
     expect(obj.layers.isEnabled(SHADOW_ONLY_LAYER)).toBe(true)
     expect(obj.layers.isEnabled(SCENE_LAYER)).toBe(false)
   })
@@ -146,8 +114,8 @@ describe('scene visibility', () => {
     obj.layers.set(OVERLAY_LAYER)
     const original = obj.layers.mask
 
-    hideFromScene(obj, 'isolated')
-    showInScene(obj, 'isolated')
+    hideFromScene(obj, 'shadow-only')
+    showInScene(obj, 'shadow-only')
     expect(obj.layers.mask).toBe(original)
     expect(obj.layers.isEnabled(SCENE_LAYER)).toBe(false)
   })

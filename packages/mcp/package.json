@@ -1,7 +1,7 @@
 {
   "name": "@pascal-app/mcp",
   "version": "1.0.0-beta.6",
-  "description": "Model Context Protocol server for Pascal 3D editor",
+  "description": "Read-only Model Context Protocol server for DiaStage scenes",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -71,18 +71,18 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "pascal",
+    "diastage",
     "3d",
-    "building",
-    "editor",
+    "theatre",
+    "stage-previs",
     "ai"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/pascalorg/editor.git",
+    "url": "https://github.com/Canoeliu917/DiaStage.git",
     "directory": "packages/mcp"
   },
   "license": "MIT",
-  "homepage": "https://github.com/pascalorg/editor/tree/main/packages/mcp#readme",
-  "bugs": "https://github.com/pascalorg/editor/issues"
+  "homepage": "https://github.com/Canoeliu917/DiaStage/tree/codex/mobile-voice-stage-link/packages/mcp#readme",
+  "bugs": "https://github.com/Canoeliu917/DiaStage/issues"
 }

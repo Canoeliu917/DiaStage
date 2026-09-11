@@ -5,16 +5,7 @@ import type { MaterialSchema as MaterialSchemaType } from '../material'
 import { MaterialSchema } from '../material'
 import { StairSegmentNode } from './stair-segment'
 
-export const StairRailingMode = z.enum(['none', 'left', 'right', 'both'])
-export const StairType = z.enum(['straight', 'curved', 'spiral'])
-export const StairTopLandingMode = z.enum(['none', 'integrated'])
-export const StairSlabOpeningMode = z.enum(['none', 'destination'])
-
-export type StairRailingMode = z.infer<typeof StairRailingMode>
-export type StairType = z.infer<typeof StairType>
-export type StairTopLandingMode = z.infer<typeof StairTopLandingMode>
-export type StairSlabOpeningMode = z.infer<typeof StairSlabOpeningMode>
-export type StairSurfaceMaterialRole = 'railing' | 'tread' | 'side'
+export type StairSurfaceMaterialRole = 'tread' | 'side'
 export type StairSurfaceMaterialSpec = {
   material?: MaterialSchemaType
   materialPreset?: string
@@ -25,145 +16,51 @@ export const StairNode = BaseNode.extend({
   type: nodeType('stair'),
   material: MaterialSchema.optional(),
   materialPreset: z.string().optional(),
-  railingMaterial: MaterialSchema.optional(),
-  railingMaterialPreset: z.string().optional(),
   treadMaterial: MaterialSchema.optional(),
   treadMaterialPreset: z.string().optional(),
   sideMaterial: MaterialSchema.optional(),
   sideMaterialPreset: z.string().optional(),
-  // Unified paint-slot refs (`scene:`/`library:` MaterialRef per slot id),
-  // matching the slot model items/slab/shelf use. Absent = declared default.
   slots: z.record(z.string(), z.string()).optional(),
   position: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
-  // Rotation around Y axis in radians
   rotation: z.number().default(0),
-  // Persisted slab-support host — see ItemNode.supportSlabId for the rules.
   supportSlabId: z.string().optional(),
-  stairType: StairType.default('straight'),
-  fromLevelId: z.string().nullable().default(null),
-  toLevelId: z.string().nullable().default(null),
-  // Legacy references retained for round-trip compatibility; stage steps ignore them.
-  deckSlabId: z.string().optional(),
-  slabOpeningMode: StairSlabOpeningMode.default('none'),
-  openingOffset: z.number().default(0),
-  width: z.number().default(1.0),
-  totalRise: z.number().optional(),
-  stepCount: z.number().default(10),
-  thickness: z.number().default(0.25),
-  fillToFloor: z.boolean().default(true),
-  innerRadius: z.number().default(0.9),
-  sweepAngle: z.number().default(Math.PI / 2),
-  topLandingMode: StairTopLandingMode.default('none'),
-  topLandingDepth: z.number().default(0.9),
-  showCenterColumn: z.boolean().default(true),
-  showStepSupports: z.boolean().default(true),
-  railingMode: StairRailingMode.default('none'),
-  railingHeight: z.number().default(0.92),
-  // Child stair segment IDs
+  width: z.number().positive().default(1.2),
+  totalRise: z.number().positive().optional(),
+  stepCount: z.number().int().positive().default(3),
   children: z.array(StairSegmentNode.shape.id).default([]),
 }).describe(
   dedent`
-  Stair node - a container for stair segments.
-  Acts as a group that either holds one or more StairSegmentNodes (straight stairs)
-  or stores stair-level geometry properties for curved stairs.
-  - position: center position of the stair group
-  - rotation: rotation around Y axis
-  - stairType: straight (segment-based), curved (arc-based), or spiral
-  - fromLevelId / toLevelId / deckSlabId / slabOpeningMode / openingOffset: inactive legacy fields, preserved on load
-  - width: stair width
-  - totalRise: total stair height
-  - stepCount: number of visible steps
-  - thickness: stair slab / tread thickness
-  - fillToFloor: whether the stair mass fills down to the floor or uses tread thickness only
-  - innerRadius: inner curve radius for curved stairs
-  - sweepAngle: total curved stair sweep in radians
-  - topLandingMode: optional integrated top landing for spiral stairs
-  - topLandingDepth: depth used to size the integrated spiral top landing
-  - showCenterColumn: whether spiral stairs render a center column
-  - showStepSupports: whether spiral stairs render step support brackets
-  - railingMode: whether to render railings and on which side(s)
-  - railingHeight: top height of the railing above the stair surface
-  - children: array of StairSegmentNode IDs for straight stairs
+  A straight set of stage steps.
+  - position: base-center position in meters
+  - rotation: Y-axis rotation in radians
+  - width, totalRise, stepCount: summary dimensions mirrored from its one child
+  - children: one StairSegmentNode containing tread depth and rise
   `,
 )
 
 export type StairNode = z.infer<typeof StairNode>
 
-function getLegacyStairSurfaceMaterial(node: StairNode): StairSurfaceMaterialSpec {
-  return {
-    material: node.material,
-    materialPreset: node.materialPreset,
-  }
+function legacyMaterial(node: StairNode): StairSurfaceMaterialSpec {
+  return { material: node.material, materialPreset: node.materialPreset }
 }
 
 export function getEffectiveStairSurfaceMaterial(
   node: StairNode,
   role: StairSurfaceMaterialRole,
 ): StairSurfaceMaterialSpec {
-  if (role === 'railing') {
-    if (node.railingMaterial !== undefined || typeof node.railingMaterialPreset === 'string') {
-      return {
-        material: node.railingMaterial,
-        materialPreset:
-          typeof node.railingMaterialPreset === 'string' ? node.railingMaterialPreset : undefined,
-      }
-    }
+  const preferred =
+    role === 'tread'
+      ? { material: node.treadMaterial, materialPreset: node.treadMaterialPreset }
+      : { material: node.sideMaterial, materialPreset: node.sideMaterialPreset }
+  if (preferred.material !== undefined || typeof preferred.materialPreset === 'string') {
+    return preferred
   }
-
-  if (role === 'tread') {
-    if (node.treadMaterial !== undefined || typeof node.treadMaterialPreset === 'string') {
-      return {
-        material: node.treadMaterial,
-        materialPreset:
-          typeof node.treadMaterialPreset === 'string' ? node.treadMaterialPreset : undefined,
-      }
-    }
+  const alternate =
+    role === 'tread'
+      ? { material: node.sideMaterial, materialPreset: node.sideMaterialPreset }
+      : { material: node.treadMaterial, materialPreset: node.treadMaterialPreset }
+  if (alternate.material !== undefined || typeof alternate.materialPreset === 'string') {
+    return alternate
   }
-
-  if (role === 'side') {
-    if (node.sideMaterial !== undefined || typeof node.sideMaterialPreset === 'string') {
-      return {
-        material: node.sideMaterial,
-        materialPreset:
-          typeof node.sideMaterialPreset === 'string' ? node.sideMaterialPreset : undefined,
-      }
-    }
-  }
-
-  const treadFallback = {
-    material: node.treadMaterial,
-    materialPreset:
-      typeof node.treadMaterialPreset === 'string' ? node.treadMaterialPreset : undefined,
-  }
-  const sideFallback = {
-    material: node.sideMaterial,
-    materialPreset:
-      typeof node.sideMaterialPreset === 'string' ? node.sideMaterialPreset : undefined,
-  }
-
-  if (
-    role === 'tread' &&
-    (sideFallback.material !== undefined || sideFallback.materialPreset !== undefined)
-  ) {
-    return sideFallback
-  }
-
-  if (
-    role === 'side' &&
-    (treadFallback.material !== undefined || treadFallback.materialPreset !== undefined)
-  ) {
-    return treadFallback
-  }
-
-  if (role === 'railing') {
-    if (treadFallback.material !== undefined || treadFallback.materialPreset !== undefined) {
-      return treadFallback
-    }
-
-    if (sideFallback.material !== undefined || sideFallback.materialPreset !== undefined) {
-      return sideFallback
-    }
-  }
-
-  return getLegacyStairSurfaceMaterial(node)
+  return legacyMaterial(node)
 }

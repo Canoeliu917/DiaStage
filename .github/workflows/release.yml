@@ -15,7 +15,6 @@ on:
           - editor
           - nodes
           - mcp
-          - ifc-converter
           - cli
           - all
       bump:
@@ -130,7 +129,7 @@ jobs:
           # peerDeps sync below must use shell vars, not env indirection.
           declare -A NEW_VERSIONS
 
-          for pkg in capture-protocol core viewer capture-viewer editor nodes mcp ifc-converter cli; do
+          for pkg in capture-protocol core viewer capture-viewer editor nodes mcp cli; do
             if [ "$TARGET" = "$pkg" ] || [ "$TARGET" = "all" ]; then
               CUR=$(jq -r '.version' packages/$pkg/package.json)
               NEW=$(bump_version "$CUR")
@@ -145,9 +144,9 @@ jobs:
 
           # Sync inter-package references in dependencies, peerDependencies, and devDependencies.
           # Anything that references a bumped @pascal-app/* package is updated to ^NEW.
-          for pkg in capture-protocol core viewer capture-viewer editor nodes mcp ifc-converter cli; do
+          for pkg in capture-protocol core viewer capture-viewer editor nodes mcp cli; do
             FILE=packages/$pkg/package.json
-            for dep in capture-protocol core viewer capture-viewer editor nodes mcp ifc-converter cli; do
+            for dep in capture-protocol core viewer capture-viewer editor nodes mcp cli; do
               VAL="${NEW_VERSIONS[$dep]}"
               [ -z "$VAL" ] && continue
               jq --arg name "@pascal-app/$dep" --arg v "^$VAL" '
@@ -159,7 +158,7 @@ jobs:
           done
 
           echo "=== @pascal-app/* refs after sync ==="
-          for pkg in capture-protocol core viewer capture-viewer editor nodes mcp ifc-converter cli; do
+          for pkg in capture-protocol core viewer capture-viewer editor nodes mcp cli; do
             echo "--- packages/$pkg/package.json ---"
             jq '{ dependencies: (.dependencies // {} | with_entries(select(.key | startswith("@pascal-app/")))), peerDependencies: (.peerDependencies // {} | with_entries(select(.key | startswith("@pascal-app/")))), devDependencies: (.devDependencies // {} | with_entries(select(.key | startswith("@pascal-app/")))) }' packages/$pkg/package.json
           done
@@ -171,7 +170,7 @@ jobs:
           # A single-package release may depend on another package introduced
           # by this monorepo. Refuse to publish an uninstallable package when
           # that dependency is not part of this run and is absent from npm.
-          RELEASE_PACKAGES="capture-protocol core viewer capture-viewer editor nodes mcp ifc-converter cli"
+          RELEASE_PACKAGES="capture-protocol core viewer capture-viewer editor nodes mcp cli"
           if [ "$TARGET" != "all" ]; then
             FILE="packages/$TARGET/package.json"
             while IFS=$'\t' read -r DEP RANGE; do
@@ -326,25 +325,6 @@ jobs:
             echo "📦 Published @pascal-app/mcp@$MCP_VERSION"
           fi
 
-      - name: Build & publish ifc-converter
-        if: inputs.package == 'ifc-converter' || inputs.package == 'all'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          # ifc-converter depends on @pascal-app/core (workspace) — build it first
-          bun run build --filter @pascal-app/core 2>/dev/null || (cd packages/core && bun run build)
-          cd packages/ifc-converter
-          bun run build
-          if [ "${{ inputs.dry-run }}" = "true" ]; then
-            echo "🏜️ Dry run — would publish @pascal-app/ifc-converter@$IFC_CONVERTER_VERSION"
-            npm publish --dry-run --access public --tag "$NPM_TAG"
-          elif npm view "@pascal-app/ifc-converter@$IFC_CONVERTER_VERSION" version >/dev/null 2>&1; then
-            echo "📦 @pascal-app/ifc-converter@$IFC_CONVERTER_VERSION is already published; continuing release recovery"
-          else
-            npm publish --access public --tag "$NPM_TAG"
-            echo "📦 Published @pascal-app/ifc-converter@$IFC_CONVERTER_VERSION"
-          fi
-
       - name: Publish CLI
         if: inputs.package == 'cli' || inputs.package == 'all'
         env:
@@ -395,10 +375,6 @@ jobs:
           if [ -n "$MCP_VERSION" ]; then
             PKGS="$PKGS @pascal-app/mcp@$MCP_VERSION"
             TAGS="$TAGS @pascal-app/mcp@$MCP_VERSION"
-          fi
-          if [ -n "$IFC_CONVERTER_VERSION" ]; then
-            PKGS="$PKGS @pascal-app/ifc-converter@$IFC_CONVERTER_VERSION"
-            TAGS="$TAGS @pascal-app/ifc-converter@$IFC_CONVERTER_VERSION"
           fi
           if [ -n "$CLI_VERSION" ]; then
             PKGS="$PKGS @pascal-app/cli@$CLI_VERSION"

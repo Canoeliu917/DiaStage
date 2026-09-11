@@ -119,7 +119,7 @@ test('own visibility remains distinct from visibility inherited from an ancestor
 test('legacy light effects are absent from the overview without filtering by user names', () => {
   const nodes = graph()
   nodes.item_named = item('item_named', 'level_2', '点光灯 Light 灯光')
-  nodes.item_light = ItemNode.parse({
+  nodes.item_light = {
     ...item('item_light', 'level_10', '舞台照明'),
     asset: {
       id: 'light-asset',
@@ -129,7 +129,7 @@ test('legacy light effects are absent from the overview without filtering by use
       src: '/assets/light.glb',
       interactive: { effects: [{ kind: 'light', intensityRange: [0, 100] }] },
     },
-  })
+  } as unknown as AnyNode
   const rows = buildStageRows(nodes)
   assert.equal(
     rows.some((row) => row.id === 'item_light'),

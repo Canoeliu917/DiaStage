@@ -30,7 +30,6 @@ export const measurementDefinition: NodeDefinition<typeof MeasurementNode> = {
     selectable: { hitVolume: 'bbox' },
     deletable: true,
     duplicable: true,
-    presettable: false,
   },
 
   dirtyTracking: false,

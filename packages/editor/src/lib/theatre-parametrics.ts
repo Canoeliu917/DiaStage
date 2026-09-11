@@ -33,7 +33,6 @@ const SCENIC_FIELDS: Record<string, string[]> = {
     'groundClearance',
   ],
   shelf: ['style', 'rows', 'columns', 'width', 'depth', 'height', 'thickness', 'position'],
-  column: ['width', 'depth', 'height', 'radius', 'position'],
   slab: ['thickness', 'elevation'],
   zone: ['name', 'color'],
   spawn: ['position'],

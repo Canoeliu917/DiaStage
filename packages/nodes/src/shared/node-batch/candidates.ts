@@ -18,7 +18,7 @@ import type { BatchCandidate, BatchEntry } from './types'
  */
 
 /** Kinds the batch system manages. Walls keep their merged-geometry batch. */
-export const BATCH_KINDS: ReadonlySet<string> = new Set(['item', 'column', 'door', 'window'])
+export const BATCH_KINDS: ReadonlySet<string> = new Set(['item', 'door', 'window'])
 
 const rootInverse = new Matrix4()
 
@@ -52,7 +52,7 @@ function collectMeshes(object: Object3D, out: Mesh[], hostedRoots: ReadonlySet<O
 function resolveLevelId(node: AnyNode, nodes: Record<string, AnyNode | undefined>): string | null {
   const parent = node.parentId ? nodes[node.parentId] : undefined
   if (!parent) return null
-  if (node.type === 'item' || node.type === 'column') {
+  if (node.type === 'item') {
     return parent.type === 'level' ? (parent.id as string) : null
   }
   // door / window: host wall → its level. A hidden wall hides its openings

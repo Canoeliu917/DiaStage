@@ -143,7 +143,6 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
   mock.module('../../lib/scene-themes', () => ({
     getSceneTheme: () => ({ appearance: 'dark', toneMappingExposure: 1 }),
   }))
-  mock.module('../../lib/isolation', () => ({ applyIsolation: () => {}, clearIsolation: () => {} }))
   mock.module('../../lib/ktx2-loader', () => ({ ensureKtx2Support: () => {} }))
   mock.module('../../lib/gpu-perf', () => ({ PERF_OVERLAY_ENABLED: false }))
   mock.module('../../lib/texture-node-guard', () => ({ installTextureNodeNullGuard: () => {} }))

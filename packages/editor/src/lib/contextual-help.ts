@@ -48,18 +48,12 @@ export type SelectModeHelpContext = {
   hasRotatableSelection: boolean
   commandPressed: boolean
   shiftPressed: boolean
-  // When a single MEP node is selected its in-world handle rig (click a dot to
-  // reveal move arrows) is the real editing path, so the panel leads with the
-  // handle-specific hints instead of just the generic Cmd-drag tips.
-  mepSelection?: 'run' | 'fitting' | null
 }
 
 const COMMAND_KEY = 'Cmd/Ctrl'
 const LEFT_CLICK = 'Left click'
 const RIGHT_CLICK = 'Right click'
 const SHIFT_KEY = 'Shift'
-const CLICK = 'Click'
-const ALT_KEY = 'Alt'
 const ROTATE_KEYS = 'R / T'
 const ESC_KEY = 'Esc'
 
@@ -69,7 +63,6 @@ export function resolveSelectModeHelpHints({
   hasRotatableSelection,
   commandPressed,
   shiftPressed,
-  mepSelection = null,
 }: SelectModeHelpContext): ContextualShortcutHint[] {
   const hints: ContextualShortcutHint[] = []
 
@@ -108,20 +101,6 @@ export function resolveSelectModeHelpHints({
     })
     hints.push({ keys: [ESC_KEY], label: '取消选择（或点击空白处）' })
     return hints
-  }
-
-  // MEP handle workflow — duct/pipe runs and fittings are edited through the
-  // in-world arrow rig that a click on the handle dot reveals, so surface those
-  // hints first. A run endpoint's side / up-down arrows swing the run and Alt
-  // detaches the joint mid-drag; a fitting's cluster adds rotate arcs, with
-  // R / T (and Alt to switch axis) for keyboard rotation.
-  if (mepSelection === 'run') {
-    hints.push({ keys: [CLICK], label: '点击控制点以显示移动箭头' })
-    hints.push({ keys: [ALT_KEY], label: '拖动箭头时断开连接' })
-  } else if (mepSelection === 'fitting') {
-    hints.push({ keys: [CLICK], label: '点击控制点以显示移动和旋转控制柄' })
-    hints.push({ keys: [ROTATE_KEYS], label: '旋转 ±45°' })
-    hints.push({ keys: [ALT_KEY], label: '切换旋转轴（Y → X → Z）' })
   }
 
   // The rows are the same whatever modifier is held — guides/snapping are

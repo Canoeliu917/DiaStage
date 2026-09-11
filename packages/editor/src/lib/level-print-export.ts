@@ -125,15 +125,6 @@ function levelAncestors(levelId: string, nodes: Record<string, AnyNode>): Set<st
   return ancestors
 }
 
-function isSpanningNode(node: AnyNode, ownerLevelId: string | null): boolean {
-  if (node.type === 'elevator') return true
-  if (node.type !== 'stair') return false
-
-  const fromLevelId = node.fromLevelId ?? ownerLevelId
-  const toLevelId = node.toLevelId
-  return Boolean(fromLevelId && toLevelId && fromLevelId !== toLevelId)
-}
-
 function hasExcludedAncestor(
   id: string,
   excludedIds: ReadonlySet<string>,
@@ -275,17 +266,6 @@ export async function exportSceneLevelsForPrint(
 
   const excludedIds = new Set<string>()
   const diagnostics: PrintExportDiagnostic[] = []
-  for (const id of exportedIds) {
-    const node = nodes[id]
-    if (!node || !isSpanningNode(node, ownerByNodeId.get(id) ?? null)) continue
-    excludedIds.add(id)
-    diagnostics.push({
-      severity: 'error',
-      code: 'unsplit_spanning_node',
-      message: `${node.type} ${id} spans levels and was omitted. Hide it or define a deterministic split before downloading level parts.`,
-    })
-  }
-
   if (levels.length === 0) {
     diagnostics.push({
       severity: 'error',

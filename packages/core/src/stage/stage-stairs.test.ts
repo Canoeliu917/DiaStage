@@ -16,15 +16,11 @@ const context: SceneContextSummary = {
   selectedObjectIds: [],
 }
 
-test('stage stair parameters generate three physical treads without level links', () => {
+test('stage stair parameters generate three physical treads', () => {
   const { stair, segment } = createStageStair({ stepCount: 3 }, 'level_test')
   expect(segment.stepCount).toBe(3)
   expect(segment.height).toBeCloseTo(0.45)
   expect(segment.length).toBeCloseTo(0.9)
-  expect(stair.fromLevelId).toBeNull()
-  expect(stair.toLevelId).toBeNull()
-  expect(stair.slabOpeningMode).toBe('none')
-  expect(stair.deckSlabId).toBeUndefined()
   const nodes = { [stair.id]: stair, [segment.id]: segment }
   const updates = updateStageStair(stair, nodes, {
     stepCount: 4,

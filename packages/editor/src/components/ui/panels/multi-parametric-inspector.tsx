@@ -32,7 +32,7 @@ import { ParametricFieldControl } from './parametric-field-control'
 import { PanelWrapper } from './panel-wrapper'
 import { formatSelectionBreakdown } from './selection-breakdown'
 
-export function MultiParametricInspector({ footer }: { footer?: React.ReactNode }) {
+export function MultiParametricInspector() {
   const selectedIds = useViewer((s) => s.selection.selectedIds)
   const setSelection = useViewer((s) => s.setSelection)
   const nodeIds = useScene(useShallow((s) => resolveUniqueSelectionIds(selectedIds, s.nodes)))
@@ -62,13 +62,7 @@ export function MultiParametricInspector({ footer }: { footer?: React.ReactNode 
   const title = matchedGroup ? `${matchedGroup.label} · ${breakdown}` : breakdown || display.label
 
   return (
-    <PanelWrapper
-      footer={footer}
-      icon={display.icon}
-      onClose={handleClose}
-      title={title}
-      width={320}
-    >
+    <PanelWrapper icon={display.icon} onClose={handleClose} title={title} width={320}>
       {matchedGroup && (
         <div className="border-border/50 border-b px-3 py-2 text-muted-foreground text-xs">
           {matchedGroup.label} （仅当前会话）。普通点击会重新选中全部成员，不随项目保存。
@@ -121,7 +115,7 @@ function MultiGroupFields({
       {genericFields.map((field, fi) => {
         if (
           String(field.key) === 'height' &&
-          (nodeType === 'wall' || nodeType === 'ceiling') &&
+          nodeType === 'wall' &&
           field.kind === 'number'
         ) {
           return (

@@ -9,9 +9,7 @@ import {
   type FloorplanGeometry,
   type FloorplanPalette,
   pauseSceneHistory,
-  pauseSpaceDetection,
   resumeSceneHistory,
-  resumeSpaceDetection,
   useLiveNodeOverrides,
   useLiveTransforms,
   useScene,
@@ -326,13 +324,8 @@ export function startFloorplanGroupMove(
     // Resume before the commit so the single batched `updateNodes` is the one
     // tracked set — collapsing the whole group move into one undo step.
     // Group transforms move existing structure rigidly — the wall-driven room
-    // auto-detection must not re-create floors/ceilings for the walls' new
-    // positions (that belongs to wall building/editing). Paused around the
-    // commit; the sync rolls its baseline forward for paused changes.
-    pauseSpaceDetection()
     resumeSceneHistory(useScene)
     if (updates.length > 0) useScene.getState().updateNodes(updates)
-    resumeSpaceDetection()
     clearLivePreviews(session)
     session = null
     teardown()
@@ -516,12 +509,9 @@ export function startFloorplanGroupRotate(event: {
       const patch = overrides.get(id)
       if (patch) updates.push({ id, data: patch as Partial<AnyNode> })
     }
-    // One tracked set = one undo step; rigid rotations must not re-create
-    // the room's auto floors/ceilings (see the move sessions).
-    pauseSpaceDetection()
+    // One tracked set keeps the rigid rotation in one undo step.
     resumeSceneHistory(useScene)
     if (updates.length > 0) useScene.getState().updateNodes(updates)
-    resumeSpaceDetection()
     clearLivePreviews()
     teardown()
   }

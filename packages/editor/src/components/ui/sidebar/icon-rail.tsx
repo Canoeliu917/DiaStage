@@ -1,6 +1,5 @@
 'use client'
 
-import { Plus } from 'lucide-react'
 import type { ComponentType, ReactNode } from 'react'
 import {
   Tooltip,
@@ -48,12 +47,6 @@ export function IconRail({
   extraPanels,
   className,
 }: IconRailProps) {
-  const regularExtraPanels = extraPanels?.filter(
-    (panel) => !panel.pluginId && panel.id !== 'plugins',
-  )
-  const pluginPanels = extraPanels?.filter((panel) => panel.pluginId)
-  const pluginsPanel = extraPanels?.find((panel) => panel.id === 'plugins')
-
   const renderExtraPanel = (panel: ExtraPanel) => {
     const isActive = activePanel === panel.id
     return (
@@ -73,7 +66,7 @@ export function IconRail({
                 !isActive && 'opacity-50',
               )}
             >
-              {panel.id === 'plugins' ? <Plus className="h-5 w-5" /> : panel.icon}
+              {panel.icon}
             </span>
           </button>
         </TooltipTrigger>
@@ -124,7 +117,7 @@ export function IconRail({
         )
       })}
 
-      {regularExtraPanels?.map(renderExtraPanel)}
+      {extraPanels?.map(renderExtraPanel)}
 
       {/* Settings panel */}
       {[settingsPanel].map((panel) => {
@@ -155,12 +148,6 @@ export function IconRail({
         )
       })}
 
-      {(pluginPanels?.length || pluginsPanel) && (
-        <div className="mt-1 flex w-9 flex-col items-center gap-1 border-border/70 border-t pt-2">
-          {pluginPanels?.map(renderExtraPanel)}
-          {pluginsPanel && renderExtraPanel(pluginsPanel)}
-        </div>
-      )}
     </div>
   )
 }

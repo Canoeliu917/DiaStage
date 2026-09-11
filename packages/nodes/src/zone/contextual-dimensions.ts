@@ -1,17 +1,11 @@
-import {
-  type FloorplanGeometry,
-  type FloorplanPoint,
-  type GeometryContext,
-  resolveAutoZonePolygon,
-  type ZoneNode,
-} from '@pascal-app/core'
+import type { FloorplanGeometry, FloorplanPoint, GeometryContext, ZoneNode } from '@pascal-app/core'
 import { formatAreaLabel } from '@pascal-app/editor'
 
 export function buildZoneContextualDimensions(
   node: ZoneNode,
   ctx: GeometryContext,
 ): FloorplanGeometry | null {
-  const polygon = resolveAutoZonePolygon(node, ctx.resolve)
+  const polygon = node.polygon
   if (polygon.length < 3) return null
   const { area, centroid } = polygonAreaAndCentroid(polygon)
   if (area <= 1e-6) return null

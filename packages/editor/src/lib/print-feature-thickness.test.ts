@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test'
-import { type AnyNode, RoofSegmentNode, SlabNode, WallNode } from '@pascal-app/core'
+import { type AnyNode, SlabNode, WallNode } from '@pascal-app/core'
 import type { PrintExportReport } from './print-export'
 import {
   applySemanticPrintFeatureThickness,
@@ -23,13 +23,6 @@ const nodes = {
       [4, 3],
     ],
     thickness: 0.25,
-  }),
-  rseg_test: RoofSegmentNode.parse({
-    id: 'rseg_test',
-    parentId: 'level_test',
-    wallThickness: 0.15,
-    deckThickness: 0.12,
-    shingleThickness: 0.03,
   }),
 } satisfies Record<string, AnyNode>
 
@@ -61,16 +54,11 @@ const report: PrintExportReport = {
 }
 
 describe('print feature thickness', () => {
-  test('measures semantic wall, slab, and roof dimensions at print scale', () => {
-    const measurement = measureSemanticPrintFeatureThickness(
-      nodes,
-      ['slab_test', 'rseg_test', 'wall_test'],
-      100,
-    )
+  test('measures semantic wall and slab dimensions at print scale', () => {
+    const measurement = measureSemanticPrintFeatureThickness(nodes, ['slab_test', 'wall_test'], 100)
 
     expect(measurement).toEqual({
       features: [
-        { nodeId: 'rseg_test', thicknessMm: 1.5 },
         { nodeId: 'slab_test', thicknessMm: 2.5 },
         { nodeId: 'wall_test', thicknessMm: 2 },
       ],
@@ -79,38 +67,22 @@ describe('print feature thickness', () => {
   })
 
   test('blocks located semantic features below a custom target', () => {
-    const measured = applySemanticPrintFeatureThickness(report, nodes, Object.keys(nodes), 1.8)
+    const measured = applySemanticPrintFeatureThickness(report, nodes, Object.keys(nodes), 2.2)
 
     expect(measured.status).toBe('blocked')
-    expect(measured.minimumFeatureThicknessMm).toBeCloseTo(1.5)
+    expect(measured.minimumFeatureThicknessMm).toBeCloseTo(2)
     expect(measured.diagnostics).toContainEqual(
       expect.objectContaining({
         code: 'feature_below_target',
-        nodeIds: ['rseg_test'],
+        nodeIds: ['wall_test'],
       }),
     )
     expect(measured.diagnostics).toContainEqual(
       expect.objectContaining({
         code: 'minimum_feature_thickness',
-        nodeIds: ['rseg_test'],
+        nodeIds: ['wall_test'],
       }),
     )
-  })
-
-  test('includes the canonical Dutch top-rake slab in roof measurement', () => {
-    const dutch = RoofSegmentNode.parse({
-      id: 'rseg_dutch-test',
-      parentId: 'level_test',
-      roofType: 'dutch',
-      wallThickness: 0.2,
-      deckThickness: 0.12,
-      shingleThickness: 0.03,
-      dutchTopRakeThickness: 0.05,
-    })
-
-    expect(
-      measureSemanticPrintFeatureThickness({ [dutch.id]: dutch }, [dutch.id], 100).features,
-    ).toEqual([{ nodeId: dutch.id, thicknessMm: 0.5 }])
   })
 
   test('does not certify a custom target when source-node coverage is incomplete', () => {

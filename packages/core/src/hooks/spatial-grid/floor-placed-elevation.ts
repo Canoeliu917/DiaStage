@@ -1,4 +1,3 @@
-import { levelBaseElevationAt } from '../../lib/terrain-support'
 import { nodeRegistry } from '../../registry'
 import type {
   FloorPlacedConfig,
@@ -89,28 +88,7 @@ export function getFloorPlacedElevation({
 
   const footprints = getFloorPlacedFootprints(floorPlaced, effectiveNode, { nodes })
 
-  /**
-   * What "the level base" evaluates to: the sculpted ground under this node, or 0
-   * when the scene has no terrain / this storey is not at grade.
-   *
-   * Sampled once at the node's own XZ — not per footprint, and not averaged over
-   * the footprint. One sample per node is what keeps a row of columns individually
-   * correct on a slope while a composite node (a cabinet run, an L-shaped desk)
-   * stays rigid instead of shearing across its own parts. Kinds that need a level
-   * pad (stairs, a building's ground slab) get one by flattening the terrain under
-   * them, which is a scene edit and therefore visible and undoable — not by
-   * silently disagreeing with the ground here.
-   *
-   * Deliberately called only where level-base support is asserted. The six
-   * `0`-returns above mean "do not touch this node's Y" — an attached item, a
-   * non-`level` parent, a broken graph — and lifting those would pull wall sconces
-   * and cabinet interiors off their hosts.
-   */
-  let groundLiftCache: number | null = null
-  const groundLift = (): number => {
-    groundLiftCache ??= levelBaseElevationAt(nodes, resolvedLevelId, position[0], position[2])
-    return groundLiftCache
-  }
+  const groundLift = () => 0
 
   // A persisted support host pins the elevation while it still exists and
   // overlaps a footprint — deterministic across stacked slabs. A stale

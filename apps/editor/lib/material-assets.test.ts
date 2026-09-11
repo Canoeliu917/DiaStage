@@ -1,18 +1,13 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
-import {
-  getMaterialPresetByRef,
-  MATERIAL_CATALOG,
-  registerLibraryMaterials,
-  unregisterLibraryMaterials,
-} from '@pascal-app/core'
-import { PASCAL_LIBRARY_MATERIALS } from './pascal-library-materials'
+import { MATERIAL_CATALOG } from '@pascal-app/core'
 
 test('every bundled material thumbnail and texture is a real local image', () => {
   const urls = new Set(
-    [...MATERIAL_CATALOG, ...PASCAL_LIBRARY_MATERIALS]
-      .flatMap((item) => [item.previewThumbnailUrl, ...Object.values(item.preset.maps)])
-      .filter((url): url is string => typeof url === 'string' && url.startsWith('/material/')),
+    MATERIAL_CATALOG.flatMap((item) => [
+      item.previewThumbnailUrl,
+      ...Object.values(item.preset.maps),
+    ]).filter((url): url is string => typeof url === 'string' && url.startsWith('/material/')),
   )
 
   expect(urls.size).toBeGreaterThan(0)
@@ -29,22 +24,12 @@ test('every bundled material thumbnail and texture is a real local image', () =>
   }
 })
 
-test('the public material snapshot retains both sources and fills wallpaper and other', () => {
-  expect(PASCAL_LIBRARY_MATERIALS).toHaveLength(16)
-  expect(PASCAL_LIBRARY_MATERIALS.filter((item) => item.source === 'pascal')).toHaveLength(3)
-  expect(PASCAL_LIBRARY_MATERIALS.filter((item) => item.source === 'community')).toHaveLength(13)
-  expect(PASCAL_LIBRARY_MATERIALS.filter((item) => item.category === 'wallpaper')).toHaveLength(2)
-  expect(PASCAL_LIBRARY_MATERIALS.filter((item) => item.category === 'other')).toHaveLength(6)
-})
-
-test('saved library references resolve again when the host reloads the public catalog', () => {
-  const ids = PASCAL_LIBRARY_MATERIALS.map((item) => item.id)
-  registerLibraryMaterials(PASCAL_LIBRARY_MATERIALS)
-  try {
-    for (const item of PASCAL_LIBRARY_MATERIALS) {
-      expect(getMaterialPresetByRef(`library:${item.id}`)).toEqual(item.preset)
+test('the bundled stage material library has no remote or building-only assets', () => {
+  for (const item of MATERIAL_CATALOG) {
+    expect(['library', 'mine']).toContain(item.source ?? 'library')
+    expect(item.category).not.toBe('roofing')
+    for (const url of [item.previewThumbnailUrl, ...Object.values(item.preset.maps)]) {
+      if (url) expect(url.startsWith('/material/')).toBe(true)
     }
-  } finally {
-    unregisterLibraryMaterials(ids)
   }
 })

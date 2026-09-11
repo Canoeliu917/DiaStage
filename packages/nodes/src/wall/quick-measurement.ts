@@ -6,11 +6,11 @@ import {
   useScene,
   type WallNode,
 } from '@pascal-app/core'
-import { resolveWallOpeningCeiling } from '../shared/wall-opening-ceiling'
+import { resolveWallOpeningTop } from '../shared/wall-opening-top'
 
 export function wallQuickMeasurement(node: WallNode): QuickMeasurementReport {
   const length = getWallCurveLength(node)
-  const height = resolveWallOpeningCeiling(node, useScene.getState().nodes)
+  const height = resolveWallOpeningTop(node, useScene.getState().nodes)
   const frame = getWallCurveFrameAt(node, 0.5)
 
   return {

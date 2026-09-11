@@ -90,19 +90,13 @@ export function routeTreeSelectionToNode(node: AnyNode | null | undefined) {
 
 import { cn } from '../../../../../lib/utils'
 import { BuildingTreeNode } from './building-tree-node'
-import { ChimneyTreeNode } from './chimney-tree-node'
-import { ColumnTreeNode } from './column-tree-node'
 import { DoorTreeNode } from './door-tree-node'
-import { DormerTreeNode } from './dormer-tree-node'
-import { ElevatorTreeNode } from './elevator-tree-node'
 import { FenceTreeNode } from './fence-tree-node'
-import { GutterTreeNode } from './gutter-tree-node'
 import { ItemTreeNode } from './item-tree-node'
 import { LevelTreeNode } from './level-tree-node'
 import { RegistryTreeNode } from './registry-tree-node'
 import { ShelfTreeNode } from './shelf-tree-node'
 import { SlabTreeNode } from './slab-tree-node'
-import { SolarPanelTreeNode } from './solar-panel-tree-node'
 import { SpawnTreeNode } from './spawn-tree-node'
 import { StairTreeNode } from './stair-tree-node'
 import { WallTreeNode } from './wall-tree-node'
@@ -134,16 +128,7 @@ const treeNodeByType: Record<string, TreeNodeComponent> = {
     isLast?: boolean
     nodeId: AnyNodeId
   }>,
-  cabinet: RegistryTreeNode,
-  'cabinet-module': RegistryTreeNode,
-  'box-vent': RegistryTreeNode,
   'block': RegistryTreeNode,
-  chimney: ChimneyTreeNode,
-  dormer: DormerTreeNode,
-  downspout: RegistryTreeNode,
-  'solar-panel': SolarPanelTreeNode,
-  column: ColumnTreeNode,
-  elevator: ElevatorTreeNode,
   level: LevelTreeNode as React.ComponentType<{
     depth: number
     isLast?: boolean
@@ -162,13 +147,7 @@ const treeNodeByType: Record<string, TreeNodeComponent> = {
   }>,
   wall: WallTreeNode,
   fence: FenceTreeNode,
-  gutter: GutterTreeNode,
   measurement: RegistryTreeNode,
-  'ridge-vent': RegistryTreeNode,
-  'turbine-vent': RegistryTreeNode,
-  cupola: RegistryTreeNode,
-  'eyebrow-vent': RegistryTreeNode,
-  skylight: RegistryTreeNode,
   scan: RegistryTreeNode,
   stair: StairTreeNode,
   door: DoorTreeNode,

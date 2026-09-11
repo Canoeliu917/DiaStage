@@ -25,8 +25,6 @@ export type ColorPreset = 'clay' | 'white' | 'mono' | 'blueprint'
 export const CLAY_PALETTE: Record<SurfaceRole, string> = {
   wall: '#dcd6c7',
   floor: '#cfc8b6',
-  ceiling: '#e4ded0',
-  roof: '#b8ad96',
   joinery: '#c4bba6',
   glazing: '#c8d4dc',
   furnishing: '#d2ccbe',
@@ -37,8 +35,6 @@ export const CLAY_PALETTE: Record<SurfaceRole, string> = {
 export const WHITE_PALETTE: Record<SurfaceRole, string> = {
   wall: '#ebeae6',
   floor: '#e7e4dd',
-  ceiling: '#ebeae6',
-  roof: '#dedbd2',
   joinery: '#e5e2d9',
   glazing: '#dbe8ee',
   furnishing: '#e9e7e1',
@@ -47,8 +43,6 @@ export const WHITE_PALETTE: Record<SurfaceRole, string> = {
 export const MONO_PALETTE: Record<SurfaceRole, string> = {
   wall: '#c8c8c8',
   floor: '#b8b8b8',
-  ceiling: '#d8d8d8',
-  roof: '#9a9a9a',
   joinery: '#adadad',
   glazing: '#c2cbd0',
   furnishing: '#c0c0c0',
@@ -57,8 +51,6 @@ export const MONO_PALETTE: Record<SurfaceRole, string> = {
 export const BLUEPRINT_PALETTE: Record<SurfaceRole, string> = {
   wall: '#90a9c7',
   floor: '#7f98ba',
-  ceiling: '#aec0d8',
-  roof: '#5f789b',
   joinery: '#6f86a8',
   glazing: '#b6d7ea',
   furnishing: '#8ba2bf',
@@ -770,14 +762,6 @@ export function DEFAULT_WINDOW_MATERIAL(shading: RenderShading = 'rendered'): TH
   maybeApplyGlassFresnel(material)
   defaultMaterialCache.set(cacheKey, material)
   return material
-}
-
-export function DEFAULT_CEILING_MATERIAL(shading: RenderShading = 'rendered'): THREE.Material {
-  return cachedDefaultMaterial('ceiling', '#ebebd3', 0.95, shading)
-}
-
-export function DEFAULT_ROOF_MATERIAL(shading: RenderShading = 'rendered'): THREE.Material {
-  return cachedDefaultMaterial('roof', '#808080', 0.85, shading)
 }
 
 export function DEFAULT_SHELF_MATERIAL(shading: RenderShading = 'rendered'): THREE.Material {

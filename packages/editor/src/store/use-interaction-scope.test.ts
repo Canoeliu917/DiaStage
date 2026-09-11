@@ -214,7 +214,6 @@ describe('derived flag views are leak-free (no parallel flags)', () => {
       { kind: 'mesh-editing', nodeId: 'mesh_1', phase: 'selecting' },
       { kind: 'box-select' },
       { kind: 'painting' },
-      { kind: 'sculpting' },
     ]
     for (const k of kinds) {
       s.begin(k)

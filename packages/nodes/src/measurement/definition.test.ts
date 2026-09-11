@@ -13,7 +13,6 @@ describe('measurementDefinition', () => {
       selectable: { hitVolume: 'bbox' },
       deletable: true,
       duplicable: true,
-      presettable: false,
     })
     expect(typeof measurementDefinition.tool).toBe('function')
     expect(typeof measurementDefinition.affordanceTools?.selection).toBe('function')

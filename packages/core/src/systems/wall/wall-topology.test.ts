@@ -1,7 +1,4 @@
 import { describe, expect, test } from 'bun:test'
-import { GROUND_SUPPORT_ID } from '../../hooks/spatial-grid/support-host-id'
-import { encodeTerrainField } from '../../lib/terrain-codec'
-import { applyHeightPatch, createTerrainField, flattenPatch } from '../../lib/terrain-field'
 import { type AnyNode, type AnyNodeId, DoorNode, WallNode } from '../../schema'
 import { getWallArcData, getWallCurveFrameAt } from './wall-curve'
 import { planWallInsertion, planWallSplitAtPoint } from './wall-topology'
@@ -10,50 +7,6 @@ const LEVEL_ID = 'level_topology' as AnyNodeId
 
 function nodeMap(nodes: AnyNode[]) {
   return Object.fromEntries(nodes.map((node) => [node.id, node])) as Record<AnyNodeId, AnyNode>
-}
-
-function terrainSceneNodes() {
-  const base = createTerrainField({ cols: 17, rows: 17, spacing: 1, origin: [-8, -8] })
-  const terrain = encodeTerrainField(
-    applyHeightPatch(
-      base,
-      flattenPatch(base, { minX: 2, minZ: 2, maxX: 5, maxZ: 5 }, 2.5) as never,
-    ),
-  )
-  return [
-    {
-      id: 'site_topology',
-      type: 'site',
-      object: 'node',
-      parentId: null,
-      visible: true,
-      metadata: {},
-      children: ['building_topology'],
-      terrain,
-    },
-    {
-      id: 'building_topology',
-      type: 'building',
-      object: 'node',
-      parentId: 'site_topology',
-      visible: true,
-      metadata: {},
-      children: [LEVEL_ID],
-      position: [0, 0, 0],
-      rotation: [0, 0, 0],
-    },
-    {
-      id: LEVEL_ID,
-      type: 'level',
-      object: 'node',
-      parentId: 'building_topology',
-      visible: true,
-      metadata: {},
-      children: [],
-      level: 0,
-      height: 3,
-    },
-  ] as unknown as AnyNode[]
 }
 
 describe('planWallInsertion', () => {
@@ -274,30 +227,6 @@ describe('planWallInsertion', () => {
     expect(result.plan.changes.delete).not.toContain(host.id)
     expect(result.plan.insertedWalls[0]?.end).toEqual(host.start)
     expect(result.plan.insertedWalls[1]?.start).toEqual(host.start)
-  })
-
-  test('rebases ground-hosted replacement walls to preserve the original construction plane', () => {
-    const host = WallNode.parse({
-      id: 'wall_terrain_host',
-      parentId: LEVEL_ID,
-      supportSlabId: GROUND_SUPPORT_ID,
-      start: [-3, 3],
-      end: [4, 3],
-    })
-
-    const result = planWallInsertion(nodeMap([...terrainSceneNodes(), host]), {
-      levelId: LEVEL_ID,
-      start: [3, 0],
-      end: [3, 6],
-      joinRadius: 0.05,
-    })
-
-    expect(result.ok).toBe(true)
-    if (!result.ok) return
-    const terrainReplacement = result.plan.changes.create
-      .map(({ node }) => node)
-      .find((node) => node.type === 'wall' && node.start[0] === 3 && node.start[1] === 3)
-    expect(terrainReplacement?.type === 'wall' ? terrainReplacement.supportOffset : null).toBe(-2.5)
   })
 
   test('joins a draft endpoint to a curved host without creating a zero-length segment', () => {

@@ -4,7 +4,6 @@ import { type DoorNode, useLiveNodeOverrides, useRegistry, useScene } from '@pas
 import { useNodeEvents } from '@pascal-app/viewer'
 import { useLayoutEffect, useRef } from 'react'
 import { type Mesh, MeshBasicMaterial } from 'three'
-import { RoofFaceHostFrame } from '../shared/roof-face-host'
 
 const doorHitboxMaterial = new MeshBasicMaterial({ visible: false })
 
@@ -37,12 +36,7 @@ export const DoorRenderer = ({ node }: { node: DoorNode }) => {
     </mesh>
   )
 
-  if (!node.roofSegmentId) return mesh
-  return (
-    <RoofFaceHostFrame roofFace={node.roofFace} roofSegmentId={node.roofSegmentId}>
-      {mesh}
-    </RoofFaceHostFrame>
-  )
+  return mesh
 }
 
 export default DoorRenderer

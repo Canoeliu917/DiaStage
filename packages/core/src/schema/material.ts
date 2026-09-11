@@ -42,28 +42,13 @@ export type MaterialSchema = z.infer<typeof MaterialSchema>
 
 export const MaterialTarget = z.enum([
   'wall',
-  'roof',
-  'roof-segment',
   'stair',
   'stair-segment',
   'fence',
-  'column',
   'slab',
-  'ceiling',
   'door',
   'window',
   'shelf',
-  'cabinet',
-  'chimney',
-  'skylight',
-  'dormer',
-  'box-vent',
-  'ridge-vent',
-  'turbine-vent',
-  'cupola',
-  'eyebrow-vent',
-  'gutter',
-  'downspout',
 ])
 export type MaterialTarget = z.infer<typeof MaterialTarget>
 

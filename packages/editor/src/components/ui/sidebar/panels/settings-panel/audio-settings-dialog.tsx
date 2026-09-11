@@ -15,11 +15,9 @@ export function AudioSettingsDialog() {
   const {
     masterVolume,
     sfxVolume,
-    radioVolume,
     muted,
     setMasterVolume,
     setSfxVolume,
-    setRadioVolume,
     toggleMute,
   } = useAudio()
 
@@ -49,21 +47,6 @@ export function AudioSettingsDialog() {
               onValueChange={(value) => value[0] !== undefined && setMasterVolume(value[0])}
               step={1}
               value={[masterVolume]}
-            />
-          </div>
-
-          {/* Radio Volume */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label className="font-medium text-sm">电台音量</label>
-              <span className="text-muted-foreground text-sm">{radioVolume}%</span>
-            </div>
-            <Slider
-              disabled={muted}
-              max={100}
-              onValueChange={(value) => value[0] !== undefined && setRadioVolume(value[0])}
-              step={1}
-              value={[radioVolume]}
             />
           </div>
 

@@ -64,7 +64,7 @@ export const BuildingTreeNode = memo(function BuildingTreeNode({
                 <Plus className="h-3 w-3" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">添加楼层</TooltipContent>
+            <TooltipContent side="right">添加表演层</TooltipContent>
           </Tooltip>
         </div>
       }
@@ -76,7 +76,7 @@ export const BuildingTreeNode = memo(function BuildingTreeNode({
       isLast={isLast}
       isSelected={isSelected}
       isVisible={isVisible}
-      label={name || '建筑'}
+      label={name || '舞台空间'}
       onClick={handleClick}
       onDoubleClick={() => focusTreeNode(nodeId)}
       onToggle={() => setExpanded(!expanded)}

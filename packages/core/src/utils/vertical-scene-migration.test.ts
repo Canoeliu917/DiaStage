@@ -11,9 +11,9 @@ function baseNode(id: string, type: string, parentId: string | null, extra: RawN
  * A canonical (already-migrated) flat scene: level carries `height`, slab
  * carries `thickness` — so only the ground-pin heal can report a change.
  */
-function flatScene(wallExtra: RawNode, slabExtra: RawNode | null, siteExtra: RawNode = {}) {
+function flatScene(wallExtra: RawNode, slabExtra: RawNode | null) {
   const nodes: Record<string, RawNode> = {
-    site_a: baseNode('site_a', 'site', null, { children: ['building_a'], ...siteExtra }),
+    site_a: baseNode('site_a', 'site', null, { children: ['building_a'] }),
     building_a: baseNode('building_a', 'building', 'site_a', {
       children: ['level_a'],
       position: [0, 0, 0],
@@ -72,18 +72,6 @@ describe('ground-pin heal', () => {
   test('keeps the pin when no slab supports the wall', () => {
     const result = migrateVerticalSceneNodes(
       flatScene({ height: 3, supportSlabId: 'ground' }, null),
-    )
-    expect(result.changed).toBe(false)
-    expect((result.nodes.wall_a as RawNode).supportSlabId).toBe('ground')
-  })
-
-  test('keeps the pin when the site carries sculpted terrain', () => {
-    const result = migrateVerticalSceneNodes(
-      flatScene(
-        { height: 3, supportSlabId: 'ground' },
-        { elevation: 0.15, thickness: 0.15 },
-        { terrain: { encoded: 'opaque' } },
-      ),
     )
     expect(result.changed).toBe(false)
     expect((result.nodes.wall_a as RawNode).supportSlabId).toBe('ground')

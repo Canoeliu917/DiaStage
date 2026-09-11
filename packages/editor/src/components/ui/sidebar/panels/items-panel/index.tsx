@@ -12,7 +12,7 @@ import { THEATRE_CATALOG_ITEMS, theatreCatalogItems } from '../../../item-catalo
 import { ItemCatalog } from '../../../item-catalog/item-catalog'
 import { type FunctionTreeNode, FunctionTreePanel } from './function-tree-panel'
 
-const PLACEMENT_TAGS = new Set(['floor', 'wall', 'ceiling', 'countertop'])
+const PLACEMENT_TAGS = new Set(['floor', 'wall'])
 
 export function ItemsPanel({
   items,
@@ -26,14 +26,11 @@ export function ItemsPanel({
   initialCategory,
 }: {
   items?: AssetInput[]
-  /** Called when the search query changes (community edition uses this for server-side search) */
+  /** Called when the search query changes for server-side catalogs. */
   onSearchChange?: (query: string) => void
   /** When non-null and search is active, these results bypass local filtering (server search results) */
   searchResults?: AssetInput[] | null
-  /**
-   * Optional node rendered as the first grid cell, always visible. Used by the
-   * community edition to inject a "+ Generate with AI" tile.
-   */
+  /** Optional node rendered as the first grid cell. */
   leadingTile?: React.ReactNode
   /**
    * Optional node rendered when the grid has no items to show (empty category
@@ -46,8 +43,7 @@ export function ItemsPanel({
    */
   functionTree?: FunctionTreeNode[]
   /**
-   * Library/Community/Mine source chips. The open-source editor has no
-   * uploaded items (only the built-in catalog), so it hides these.
+   * Resource-library/personal source chips.
    */
   showSourceFilter?: boolean
   /**
@@ -113,7 +109,7 @@ function LegacyItemsPanel({
 
   const [activePlacementTag, setActivePlacementTag] = useState<string | null>(null)
   const [activeFunctionalTag, setActiveFunctionalTag] = useState<string | null>(null)
-  // Library / Community / Mine. Default to Library so first-time users see
+  // Library / Mine. Default to Library so first-time users see
   // the curated catalog rather than every uploaded item; clicking the chip
   // again clears the filter (`null` = show everything). With the chips hidden
   // there is nothing to filter by, so start unfiltered.
@@ -150,23 +146,15 @@ function LegacyItemsPanel({
 
   // Compute tags for the current category (for filter chips)
   const baseItems = items ? theatreCatalogItems(items) : THEATRE_CATALOG_ITEMS
-  // Apply the Library/Community/Mine filter before any category/tag work.
+  // Apply the built-in/personal filter before any category/tag work.
   // Items that don't carry a source field (e.g. seeded built-in catalog
   // entries from `CATALOG_ITEMS`) fall under "library".
   //
-  // Community is broader than just other users' uploads: my own *published*
-  // items show up there too so I can preview my catalog the way other users
-  // see it. My drafts only appear under Mine.
   const matchesSource = (item: AssetInput) => {
     if (!activeSource) return true
     const itemSource = item.source ?? 'library'
     if (activeSource === 'mine') return itemSource === 'mine'
     if (activeSource === 'library') return itemSource === 'library'
-    if (activeSource === 'community') {
-      if (itemSource === 'community') return true
-      if (itemSource === 'mine') return !item.isDraft
-      return false
-    }
     return true
   }
   const sourceItems = baseItems.filter(matchesSource)
@@ -174,12 +162,8 @@ function LegacyItemsPanel({
     (item) => item.category === activeCategory.catalogCategory,
   )
 
-  // The three source chips are always shown so users can discover the
-  // filter even before they own any items. Selecting "Mine" with no
-  // matching items falls through to the empty/no-results state.
   const sourceChips: Array<{ id: AssetInput['source']; label: string }> = [
     { id: 'library', label: '资源库' },
-    { id: 'community', label: '社区' },
     { id: 'mine', label: '我的' },
   ]
   const allTags = Array.from(new Set(categoryItems.flatMap((item) => item.tags ?? [])))

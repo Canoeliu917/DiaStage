@@ -1,9 +1,4 @@
-import {
-  type GeometryContext,
-  type QuickMeasurementReport,
-  resolveAutoZonePolygon,
-  type ZoneNode,
-} from '@pascal-app/core'
+import type { GeometryContext, QuickMeasurementReport, ZoneNode } from '@pascal-app/core'
 import {
   polygonBoundaryLength,
   polygonReportAnchor,
@@ -14,7 +9,7 @@ export function zoneQuickMeasurement(
   node: ZoneNode,
   context?: GeometryContext,
 ): QuickMeasurementReport | null {
-  const polygon = context ? resolveAutoZonePolygon(node, context.resolve) : node.polygon
+  const polygon = node.polygon
   if (polygon.length < 3) return null
 
   return {

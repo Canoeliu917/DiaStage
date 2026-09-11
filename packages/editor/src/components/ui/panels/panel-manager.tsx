@@ -4,16 +4,9 @@ import {
   type AnyNode,
   type AnyNodeId,
   type BuildingNode,
-  type CeilingNode,
-  type ChimneyNode,
-  type ColumnNode,
   type DoorNode,
-  type DormerNode,
-  type ElevatorNode,
   type FenceNode,
   type ItemNode,
-  type RoofNode,
-  type RoofSegmentNode,
   type SlabNode,
   type StairNode,
   type StairSegmentNode,
@@ -47,16 +40,9 @@ type MovableNode =
   | ItemNode
   | WindowNode
   | DoorNode
-  | ElevatorNode
-  | CeilingNode
-  | ChimneyNode
-  | ColumnNode
-  | DormerNode
   | SlabNode
   | WallNode
   | FenceNode
-  | RoofNode
-  | RoofSegmentNode
   | StairNode
   | StairSegmentNode
   | BuildingNode
@@ -65,16 +51,9 @@ const MOVABLE_TYPES = new Set<string>([
   'item',
   'window',
   'door',
-  'elevator',
-  'ceiling',
-  'chimney',
-  'column',
-  'dormer',
   'slab',
   'wall',
   'fence',
-  'roof',
-  'roof-segment',
   'stair',
   'stair-segment',
   'building',
@@ -84,7 +63,7 @@ function isMovableNode(node: AnyNode | null): node is MovableNode {
   return !!node && MOVABLE_TYPES.has(node.type)
 }
 
-function panelForType(type: string | null, footer?: React.ReactNode) {
+function panelForType(type: string | null) {
   if (!type) return null
   // Every kind now renders through `<ParametricInspector>`, which either
   // composes auto-derived editors from `parametrics.groups` or lazy-
@@ -94,7 +73,7 @@ function panelForType(type: string | null, footer?: React.ReactNode) {
   // future cases where we might want a non-registry fallback (e.g.
   // reference scale, paint mode); leave the function shape intact.
   void type
-  return <ParametricInspector footer={footer} />
+  return <ParametricInspector />
 }
 
 function MobilePanelLayer({
@@ -218,13 +197,7 @@ function MobileMultiPanelLayer({
   )
 }
 
-export function PanelManager({
-  inspectorFooter,
-  multiSelectionFooter,
-}: {
-  inspectorFooter?: React.ReactNode
-  multiSelectionFooter?: React.ReactNode
-}) {
+export function PanelManager() {
   const isMobile = useIsMobile()
   const selectedIds = useViewer((s) => s.selection.selectedIds)
   const selectedZoneId = useViewer((s) => s.selection.zoneId)
@@ -286,9 +259,9 @@ export function PanelManager({
           breakdown={multiBreakdown}
           panel={
             homogeneousType ? (
-              <MultiParametricInspector footer={multiSelectionFooter} />
+              <MultiParametricInspector />
             ) : (
-              <MultiSelectionPanel footer={multiSelectionFooter} />
+              <MultiSelectionPanel />
             )
           }
           type={homogeneousType}
@@ -312,7 +285,6 @@ export function PanelManager({
   if (selectedZoneId && selectedIds.length === 0) {
     return (
       <ParametricInspector
-        footer={inspectorFooter}
         key={selectedZoneId}
         nodeId={selectedZoneId as AnyNodeId}
         onClose={() => setSelection({ zoneId: null })}
@@ -324,10 +296,10 @@ export function PanelManager({
   // otherwise the actions-only panel. Mobile uses the same panels in a sheet.
   if (selectedIds.length > 1) {
     if (homogeneousType) {
-      return <MultiParametricInspector footer={multiSelectionFooter} />
+      return <MultiParametricInspector />
     }
-    return <MultiSelectionPanel footer={multiSelectionFooter} />
+    return <MultiSelectionPanel />
   }
 
-  return panelForType(selectedNodeType, inspectorFooter)
+  return panelForType(selectedNodeType)
 }

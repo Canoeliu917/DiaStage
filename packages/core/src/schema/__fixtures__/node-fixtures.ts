@@ -11,19 +11,6 @@ import { AnyNode, type AnyNodeType, nodeKindOf } from '../types'
 
 /** Fields a kind requires beyond the defaults its own schema fills in. */
 export const NODE_REQUIRED_FIELDS: Record<string, Record<string, unknown>> = {
-  ceiling: {
-    polygon: [
-      [0, 0],
-      [4, 0],
-      [4, 4],
-    ],
-  },
-  'duct-segment': {
-    path: [
-      [0, 0, 0],
-      [1, 0, 0],
-    ],
-  },
   fence: { start: [0, 0], end: [4, 0] },
   guide: { url: 'asset://guide.png' },
   item: {
@@ -35,18 +22,6 @@ export const NODE_REQUIRED_FIELDS: Record<string, Record<string, unknown>> = {
       src: 'asset://chair.glb',
     },
   },
-  lineset: {
-    path: [
-      [0, 0, 0],
-      [1, 0, 0],
-    ],
-  },
-  'liquid-line': {
-    path: [
-      [0, 0, 0],
-      [1, 0, 0],
-    ],
-  },
   measurement: {
     measurement: {
       kind: 'distance',
@@ -55,12 +30,6 @@ export const NODE_REQUIRED_FIELDS: Record<string, Record<string, unknown>> = {
         [1, 0, 0],
       ],
     },
-  },
-  'pipe-segment': {
-    path: [
-      [0, 0, 0],
-      [1, 0, 0],
-    ],
   },
   slab: {
     polygon: [
@@ -71,7 +40,7 @@ export const NODE_REQUIRED_FIELDS: Record<string, Record<string, unknown>> = {
   },
   wall: { start: [0, 0], end: [4, 0] },
   zone: {
-    name: 'Kitchen',
+    name: '排演区',
     polygon: [
       [0, 0],
       [4, 0],

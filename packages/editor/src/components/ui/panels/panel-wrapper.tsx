@@ -1,37 +1,15 @@
 'use client'
 
-import { Icon } from '@iconify/react'
-import {
-  type AnyNode,
-  type AnyNodeId,
-  type IconRef,
-  type InspectorExtension,
-  useScene,
-} from '@pascal-app/core'
-import { useViewer } from '@pascal-app/viewer'
 import { ChevronDown, ChevronLeft, GripHorizontal, RotateCcw, X } from 'lucide-react'
 import Image from 'next/image'
 import {
-  type ComponentType,
-  createContext,
-  lazy,
-  Suspense,
   useCallback,
-  useContext,
-  useEffect,
   useLayoutEffect,
   useRef,
   useState,
 } from 'react'
 import { useIsMobile } from '../../../hooks/use-mobile'
-import {
-  resolveActiveExtension,
-  toggleCard,
-  toggleExtension,
-} from '../../../lib/inspector-card-mode'
 import { cn } from '../../../lib/utils'
-import { PanelSection } from '../controls/panel-section'
-import { ErrorBoundary } from '../primitives/error-boundary'
 
 const DRAG_MARGIN = 8
 // Pointer travel (px) below which a header press is treated as a click
@@ -69,15 +47,6 @@ function getDragBounds(el: HTMLElement | null): {
   return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom }
 }
 
-/**
- * Host-supplied inspector footer (e.g. community's "Save as preset"). The
- * `PanelManager` provides it so every panel — including kind-owned
- * `customPanel`s that render their own `<PanelWrapper>` without threading a
- * `footer` prop — picks it up without per-kind wiring. An explicit `footer`
- * prop still wins over the context.
- */
-export const InspectorFooterContext = createContext<React.ReactNode>(null)
-
 interface PanelWrapperProps {
   title: string
   /** Either a URL path (legacy panels pass `/icons/floor.webp` etc.,
@@ -89,8 +58,6 @@ interface PanelWrapperProps {
   onReset?: () => void
   onBack?: () => void
   children: React.ReactNode
-  /** Pinned below the scrollable body, inside the panel card. */
-  footer?: React.ReactNode
   className?: string
   width?: number | string
 }
@@ -102,36 +69,11 @@ export function PanelWrapper({
   onReset,
   onBack,
   children,
-  footer,
   className,
   width = 320, // default width
 }: PanelWrapperProps) {
   const isMobile = useIsMobile()
-  const contextFooter = useContext(InspectorFooterContext)
-  const resolvedFooter = footer ?? contextFooter
-
   const panelRef = useRef<HTMLDivElement>(null)
-
-  // ── Plugin inspector extensions ────────────────────────────────────
-  // The wrapper self-resolves the selected node instead of taking a prop:
-  // kind-owned `customPanel`s (wall, slab, …) render their own
-  // <PanelWrapper>, so this is the one spot every inspector card flows
-  // through. Extensions only apply to a single-node selection.
-  const selectedId = useViewer((s) =>
-    s.selection.selectedIds.length === 1 ? s.selection.selectedIds[0] : undefined,
-  ) as AnyNodeId | undefined
-  // Subscribe to the selected node's *type* only — a string primitive that
-  // doesn't change as fields are edited (same trick as ParametricInspector).
-  // Keep loaded plugin data available without exposing specialist inspector extensions.
-  const extensions: InspectorExtension[] = []
-
-  // Which extension's content fills the card body (extension mode). The two
-  // expanded modes are EITHER/OR: extension mode replaces the regular
-  // controls; null shows the regular controls with no extension sections.
-  // See `lib/inspector-card-mode.ts` for the transition table.
-  const [activeExtensionId, setActiveExtensionId] = useState<string | null>(null)
-  // Stale ids (kind changed, plugin gated off) fall back to regular mode.
-  const activeExtension = resolveActiveExtension(activeExtensionId, extensions)
 
   // The whole panel is collapsed to just its header by default; the chevron
   // expands it to reveal the inspector body. Keep the desktop value shared
@@ -147,25 +89,10 @@ export function PanelWrapper({
     })
   }, [])
 
-  const applyMode = useCallback(
-    (next: { collapsed: boolean; activeExtensionId: string | null }) => {
-      setCollapsed(next.collapsed)
-      setActiveExtensionId(next.activeExtensionId)
-    },
-    [setCollapsed],
-  )
-
-  // Chevron / header press — collapsed → regular, regular → collapsed,
-  // extension mode → regular (exit the extension first, stay expanded).
+  // Chevron / header press toggles the card body.
   const handleCardToggle = useCallback(() => {
-    applyMode(toggleCard({ collapsed, activeExtensionId }))
-  }, [applyMode, collapsed, activeExtensionId])
-
-  // Folding the card forgets the active extension — extension mode is a
-  // one-shot affordance of the header icon, not sticky panel state.
-  useEffect(() => {
-    if (collapsed) setActiveExtensionId(null)
-  }, [collapsed])
+    setCollapsed((previous) => !previous)
+  }, [setCollapsed])
 
   // Drag-to-reposition from the header. `offset` is a translation applied on
   // top of the default `top-20 right-4` anchor; null until first dragged.
@@ -344,34 +271,6 @@ export function PanelWrapper({
                 <RotateCcw className="h-4 w-4" />
               </button>
             )}
-            {/* Extension mode buttons — one icon per registered inspector
-                extension, left of the chevron. Click swaps the card body to
-                ONLY that extension's content (either/or with the regular
-                controls); the active icon (highlighted) or the chevron
-                returns to the regular controls. */}
-            {extensions.map((extension) => {
-              const isActive = !collapsed && activeExtensionId === extension.id
-              return (
-                <button
-                  aria-label={isActive ? `关闭${extension.title}` : `打开${extension.title}`}
-                  aria-pressed={isActive}
-                  className={cn(
-                    'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                    isActive
-                      ? 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30'
-                      : 'bg-[#2C2C2E] text-muted-foreground hover:bg-[#3e3e3e] hover:text-foreground',
-                  )}
-                  key={extension.id}
-                  onClick={() =>
-                    applyMode(toggleExtension({ collapsed, activeExtensionId }, extension.id))
-                  }
-                  title={extension.title}
-                  type="button"
-                >
-                  {renderExtensionIcon(extension.icon)}
-                </button>
-              )
-            })}
             <button
               aria-expanded={!collapsed}
               aria-label={collapsed ? '展开面板' : '折叠面板'}
@@ -396,125 +295,12 @@ export function PanelWrapper({
         </div>
       )}
 
-      {/* Content — hidden while the panel is collapsed (desktop). The two
-          expanded modes are EITHER/OR: extension mode renders ONLY that
-          extension's content; regular mode renders ONLY the kind's own
-          controls (`children`). A stale extension id falls back to regular
-          via `resolveActiveExtension`. */}
+      {/* Content — hidden while the panel is collapsed on desktop. */}
       {!(collapsed && !isMobile) && (
         <div className="no-scrollbar flex min-h-0 flex-1 flex-col overflow-y-auto">
-          {!isMobile && selectedId && activeExtension ? (
-            <InspectorExtensionSection
-              extension={activeExtension}
-              key={activeExtension.id}
-              nodeId={selectedId}
-            />
-          ) : (
-            <>
-              {children}
-              {/* Mobile sheet has no header icons to swap modes — keep the
-                  plugin sections appended after the kind's controls there. */}
-              {isMobile &&
-                selectedId &&
-                extensions.map((extension) => (
-                  <InspectorExtensionSection
-                    defaultExpanded={false}
-                    extension={extension}
-                    key={extension.id}
-                    nodeId={selectedId}
-                  />
-                ))}
-            </>
-          )}
+          {children}
         </div>
       )}
-
-      {resolvedFooter && !(collapsed && !isMobile) && (
-        <div className="shrink-0 border-border/50 border-t p-3">{resolvedFooter}</div>
-      )}
     </div>
-  )
-}
-
-// ─── Plugin inspector extensions ──────────────────────────────────────
-
-/** 16px icon for an extension's header button — mirrors the parametric
- *  inspector's `renderIcon` (plain <img> so no next/image server deps). */
-function renderExtensionIcon(ref: IconRef): React.ReactNode {
-  if (ref.kind === 'url') {
-    return <img alt="" className="h-4 w-4 shrink-0 object-contain" src={ref.src} />
-  }
-  if (ref.kind === 'iconify') {
-    return <Icon height={16} icon={ref.name} width={16} />
-  }
-  if (ref.kind === 'svg') {
-    return (
-      <svg height={16} viewBox={ref.viewBox} width={16}>
-        <path d={ref.path} fill="currentColor" />
-      </svg>
-    )
-  }
-  const LazyIcon = lazy(ref.module)
-  return (
-    <Suspense fallback={null}>
-      <LazyIcon />
-    </Suspense>
-  )
-}
-
-// `React.lazy` once per loader so the resolved component keeps a stable
-// identity across renders — same WeakMap pattern as `resolveCustomPanel`
-// in parametric-inspector.tsx.
-const extensionComponentCache = new WeakMap<
-  InspectorExtension['component'],
-  ComponentType<{ node: AnyNode }>
->()
-
-function resolveExtensionComponent(
-  extension: InspectorExtension,
-): ComponentType<{ node: AnyNode }> {
-  const cached = extensionComponentCache.get(extension.component)
-  if (cached) return cached
-  // `LazyComponent` is prop-agnostic; the inspector-extension contract is
-  // that the default export accepts `{ node }` (see the type's docs).
-  const Comp = lazy(extension.component) as unknown as ComponentType<{ node: AnyNode }>
-  extensionComponentCache.set(extension.component, Comp)
-  return Comp
-}
-
-/**
- * One plugin-contributed inspector section. Subscribes to the full node —
- * the section body reflects any edit — and hands it to the extension's
- * lazy component inside its own error boundary so a crashing plugin
- * section can't take down the inspector card. On desktop this is the
- * card's SOLE body while its extension is active (either/or with the
- * regular controls); the mobile sheet appends it after them instead.
- */
-function InspectorExtensionSection({
-  defaultExpanded = true,
-  extension,
-  nodeId,
-}: {
-  defaultExpanded?: boolean
-  extension: InspectorExtension
-  nodeId: AnyNodeId
-}) {
-  const node = useScene((s) => s.nodes[nodeId])
-  if (!node) return null
-  const Extension = resolveExtensionComponent(extension)
-  return (
-    <PanelSection defaultExpanded={defaultExpanded} title={extension.title}>
-      <ErrorBoundary
-        fallback={
-          <p className="p-1 text-muted-foreground text-xs">
-            “{extension.title}”发生错误，已在本次会话中卸载。
-          </p>
-        }
-      >
-        <Suspense fallback={null}>
-          <Extension node={node} />
-        </Suspense>
-      </ErrorBoundary>
-    </PanelSection>
   )
 }

@@ -161,12 +161,7 @@ function getEditorUiStateForRestoredSelection(
     return {
       ...fallbackUiState,
       phase: 'site',
-      toolMode:
-        mode === 'build'
-          ? { mode, tool: 'property-line' }
-          : mode === 'terrain-sculpt'
-            ? { mode }
-            : { mode: 'select' },
+      toolMode: mode === 'build' ? { mode, tool: 'property-line' } : { mode: 'select' },
       mode,
       tool: mode === 'build' ? 'property-line' : null,
       structureLayer: 'elements',
@@ -383,7 +378,6 @@ function resetEditorInteractionState() {
     catalogCategory: null,
     selectedItem: null,
     selectedReferenceId: null,
-    spaces: {},
     hoveredHole: null,
     isPreviewMode: false,
   })

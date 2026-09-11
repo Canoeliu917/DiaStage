@@ -6,10 +6,6 @@ import { persist } from 'zustand/middleware'
 
 export const DRAWING_TYPE_OPTIONS = [
   { id: 'floor-plan', label: '平面图' },
-  { id: 'foundation-plan', label: '基础平面图' },
-  { id: 'reflected-ceiling-plan', label: '天花反射平面图' },
-  { id: 'roof-plan', label: '屋顶平面图' },
-  { id: 'site-plan', label: '总平面图' },
 ] as const satisfies readonly { id: ConstructionDrawingType; label: string }[]
 
 export type DrawingAnnotationLayoutOverride = {

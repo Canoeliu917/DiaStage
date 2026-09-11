@@ -78,26 +78,4 @@ describe('duplicateStairSubtree', () => {
     expect(nodes[SEGMENT_ID]).toBeDefined()
     expect(useScene.temporal.getState().isTracking).toBe(false)
   })
-
-  test('keeps childless curved stairs on the same real draft path', () => {
-    const curved = StairNode.parse({
-      ...(useScene.getState().nodes[STAIR_ID] as AnyNode),
-      children: [],
-      stairType: 'curved',
-    })
-    useScene.setState((state) => ({
-      nodes: {
-        ...state.nodes,
-        [LEVEL_ID]: { ...state.nodes[LEVEL_ID], children: [STAIR_ID] } as AnyNode,
-        [STAIR_ID]: curved as AnyNode,
-      },
-    }))
-
-    const result = duplicateStairSubtree(STAIR_ID, { mode: 'move', offset: [0, 0, 0] })
-
-    expect(result.segmentIds).toEqual([])
-    expect(useScene.getState().nodes[result.stair.id as AnyNodeId]).toBe(result.stair)
-    expect(getMovingNode()?.id).toBe(result.stair.id)
-    expect((result.stair.metadata as Record<string, unknown>)?.isNew).toBe(true)
-  })
 })

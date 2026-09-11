@@ -28,9 +28,6 @@ export const scanDefinition: NodeDefinition<typeof ScanNode> = {
     scalable: { axes: ['x', 'y', 'z'], min: 0.01, max: 10 },
     duplicable: false,
     deletable: true,
-    // Scans carry user-uploaded imagery — cataloging them as
-    // reusable presets is out of scope.
-    presettable: false,
   },
 
   parametrics: scanParametrics,

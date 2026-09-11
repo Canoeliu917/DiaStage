@@ -1,6 +1,5 @@
 import {
   type AnyNode,
-  type ColumnNode,
   type DoorNode,
   type FloorplanGeometry,
   type FloorplanPoint,
@@ -13,7 +12,6 @@ import {
   type WallNode,
   type WindowNode,
 } from '@pascal-app/core'
-import { getColumnFloorplanFootprint } from '../column/floorplan'
 import {
   type ConstructionDimensionDrawingStandard,
   DEFAULT_CONSTRUCTION_DIMENSION_STANDARD,
@@ -31,7 +29,6 @@ export { formatConstructionLength } from '../shared/construction-length'
 const MIN_SEGMENT_LENGTH = 0.02
 const FACADE_LINE_TOLERANCE = 0.03
 const FACADE_DIRECTION_TOLERANCE = 0.001
-const COLUMN_ROW_TOLERANCE = 0.05
 const EXTERIOR_CORNER_DATUM_POLICY = 'structural-face' as const
 
 type OpeningNode = DoorNode | WindowNode
@@ -110,19 +107,9 @@ export function buildLevelWallConstructionDimensionPlan(
     if (isFacadeOccluded(wall, normal, network)) return []
     return [{ wall, normal, tangent: [cleanZero(normal[1]), cleanZero(-normal[0])] }]
   })
-  const columns = Object.values(nodes).filter(
-    (node): node is ColumnNode => node.type === 'column' && node.visible !== false,
-  )
-
   const components = splitConnectedFacadeComponents(exteriorMembers)
   for (const component of components) {
     const directionGroups = groupFacadeMembersByDirection(component)
-    const componentColumns = columns.filter(
-      (column) =>
-        column.parentId === component[0]?.wall.parentId &&
-        nearestFacadeComponent(column, components) === component,
-    )
-
     for (const directionMembers of directionGroups.values()) {
       const representative = [...directionMembers].sort((left, right) =>
         String(left.wall.id).localeCompare(String(right.wall.id)),
@@ -181,21 +168,6 @@ export function buildLevelWallConstructionDimensionPlan(
         )
       }
 
-      const exteriorColumns = componentColumns.filter(
-        (column) =>
-          dot(columnPlanPoint(column), normal) + columnNormalHalfExtent(column, normal) >=
-          outerFaceCoordinate - FACADE_LINE_TOLERANCE,
-      )
-      const structureRow = outermostColumnRow(exteriorColumns, component, normal, tangent)
-      if (structureRow.length >= 2) {
-        const projections = uniqueSorted(
-          structureRow.map((column) => dot(columnPlanPoint(column), tangent)),
-        )
-        appendProjectedChain(pending, projections, 'structure', (projection) =>
-          columnOriginAtProjection(structureRow, projection, tangent),
-        )
-      }
-
       pending.push({
         tier: 'overall',
         start: exteriorOriginAtProjection(
@@ -216,52 +188,9 @@ export function buildLevelWallConstructionDimensionPlan(
         endProjection: extentEnd,
       })
 
-      const structuralProjections = structureRow.map((column) =>
-        dot(columnPlanPoint(column), tangent),
-      )
-      const structuralStart = Math.min(extentStart, ...structuralProjections)
-      const structuralEnd = Math.max(extentEnd, ...structuralProjections)
-      if (
-        structureRow.length >= 2 &&
-        (structuralStart < extentStart - MIN_SEGMENT_LENGTH ||
-          structuralEnd > extentEnd + MIN_SEGMENT_LENGTH)
-      ) {
-        pending.push({
-          tier: 'structural-overall',
-          start:
-            structuralStart < extentStart - MIN_SEGMENT_LENGTH
-              ? columnOriginAtProjection(structureRow, structuralStart, tangent)
-              : exteriorOriginAtProjection(
-                  directionMembers,
-                  extentStart,
-                  tangent,
-                  normal,
-                  EXTERIOR_CORNER_DATUM_POLICY,
-                ),
-          end:
-            structuralEnd > extentEnd + MIN_SEGMENT_LENGTH
-              ? columnOriginAtProjection(structureRow, structuralEnd, tangent)
-              : exteriorOriginAtProjection(
-                  directionMembers,
-                  extentEnd,
-                  tangent,
-                  normal,
-                  EXTERIOR_CORNER_DATUM_POLICY,
-                ),
-          startProjection: structuralStart,
-          endProjection: structuralEnd,
-        })
-      }
-
-      const structuralFaceCoordinate = Math.max(
-        outerFaceCoordinate,
-        ...structureRow.map(
-          (column) => dot(columnPlanPoint(column), normal) + columnNormalHalfExtent(column, normal),
-        ),
-      )
       dimensionsByWallId.set(
         representative.wall.id,
-        finalizeDimensionTiers(pending, tangent, normal, structuralFaceCoordinate, standard),
+        finalizeDimensionTiers(pending, tangent, normal, outerFaceCoordinate, standard),
       )
     }
   }
@@ -1351,84 +1280,6 @@ function exteriorOriginAtProjection(
     tangent,
     normal,
   )
-}
-
-function outermostColumnRow(
-  columns: readonly ColumnNode[],
-  component: readonly FacadeMember[],
-  normal: FloorplanPoint,
-  tangent: FloorplanPoint,
-): ColumnNode[] {
-  if (columns.length < 2) return []
-  const centroid = facadeCentroid(component)
-  const outwardColumns = columns.filter(
-    (column) => dot(subtract(columnPlanPoint(column), centroid), normal) >= -COLUMN_ROW_TOLERANCE,
-  )
-  const sorted = [...outwardColumns].sort(
-    (left, right) => dot(columnPlanPoint(right), normal) - dot(columnPlanPoint(left), normal),
-  )
-  const outerCoordinate = sorted[0] ? dot(columnPlanPoint(sorted[0]), normal) : 0
-  return sorted
-    .filter(
-      (column) =>
-        Math.abs(dot(columnPlanPoint(column), normal) - outerCoordinate) <= COLUMN_ROW_TOLERANCE,
-    )
-    .sort(
-      (left, right) => dot(columnPlanPoint(left), tangent) - dot(columnPlanPoint(right), tangent),
-    )
-}
-
-function columnOriginAtProjection(
-  columns: readonly ColumnNode[],
-  projection: number,
-  tangent: FloorplanPoint,
-): FloorplanPoint {
-  return columnPlanPoint(
-    [...columns].sort(
-      (left, right) =>
-        Math.abs(dot(columnPlanPoint(left), tangent) - projection) -
-        Math.abs(dot(columnPlanPoint(right), tangent) - projection),
-    )[0]!,
-  )
-}
-
-function columnPlanPoint(column: ColumnNode): FloorplanPoint {
-  return [column.position[0], column.position[2]]
-}
-
-function columnNormalHalfExtent(column: ColumnNode, normal: FloorplanPoint): number {
-  const center = columnPlanPoint(column)
-  return Math.max(
-    ...getColumnFloorplanFootprint(column).map((point) => dot(subtract(point, center), normal)),
-  )
-}
-
-function nearestFacadeComponent(
-  column: ColumnNode,
-  components: readonly FacadeMember[][],
-): FacadeMember[] | undefined {
-  const point = columnPlanPoint(column)
-  return [...components]
-    .filter((component) => component[0]?.wall.parentId === column.parentId)
-    .sort(
-      (left, right) =>
-        distanceToFacadeComponent(point, left) - distanceToFacadeComponent(point, right),
-    )[0]
-}
-
-function distanceToFacadeComponent(
-  point: FloorplanPoint,
-  component: readonly FacadeMember[],
-): number {
-  return Math.min(...component.map(({ wall }) => pointSegmentDistance(point, wall.start, wall.end)))
-}
-
-function facadeCentroid(component: readonly FacadeMember[]): FloorplanPoint {
-  const points = component.flatMap(({ wall }) => [wall.start, wall.end])
-  return [
-    points.reduce((sum, point) => sum + point[0], 0) / points.length,
-    points.reduce((sum, point) => sum + point[1], 0) / points.length,
-  ]
 }
 
 function pointFromCoordinates(

@@ -27,9 +27,6 @@ export const guideDefinition: NodeDefinition<typeof GuideNode> = {
     selectable: { hitVolume: 'bbox' },
     duplicable: false,
     deletable: true,
-    // Guides are scene-specific measurement annotations — saving them
-    // as reusable catalog items has no meaning.
-    presettable: false,
   },
 
   parametrics: guideParametrics,

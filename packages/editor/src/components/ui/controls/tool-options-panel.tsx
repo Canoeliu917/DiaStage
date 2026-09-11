@@ -67,10 +67,8 @@ function ToolOptionRow({
 }
 
 /**
- * The pick-one option rows a kind declares via `def.toolOptions` (e.g. the
- * roof's 'Create from: Draw / Room'), for whichever sidebar the host mounts
- * it in — the standalone Build tab and the community Build sidebar both get
- * every kind's options with no per-kind wiring. Renders nothing for kinds
+ * The pick-one option rows a kind declares via `def.toolOptions`, for whichever
+ * sidebar the host mounts it in. Renders nothing for kinds
  * without options. Selecting a choice only writes the kind's own state;
  * hosts that want selection to also arm the tool pass `onSelect`.
  */

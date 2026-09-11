@@ -133,7 +133,7 @@ export const apiGraphSchema = z
     }
 
     // Ids of foreign nodes in this graph. Builtin container schemas name the
-    // child kinds they accept (`BuildingNode.children`, `RoofNode.children`),
+    // child kinds they accept (for example, parent `children` schemas),
     // so a container holding a plugin child fails against `AnyNode` even
     // though the relationship is legitimate. Those ids are dropped from a
     // *copy* handed to `AnyNode`; the stored graph keeps them, and each

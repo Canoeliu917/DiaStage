@@ -3,12 +3,10 @@
 import {
   type AnyNode,
   type BuildingNode,
-  type CeilingNode,
   type DoorNode,
   type FenceNode,
   type GuideNode,
   type LevelNode,
-  type RoofNode,
   type SiteNode,
   type SlabNode,
   type SpawnNode,
@@ -119,29 +117,9 @@ export function useFloorplanSceneData({
   const walls = useLevelChildren(levelId, (node): node is WallNode => node?.type === 'wall')
   const fences = useLevelChildren(levelId, (node): node is FenceNode => node?.type === 'fence')
   const slabs = useLevelChildren(levelId, (node): node is SlabNode => node?.type === 'slab')
-  const ceilings = useLevelChildren(
-    levelId,
-    (node): node is CeilingNode => node?.type === 'ceiling',
-  )
   const levelGuides = useLevelChildren(levelId, (node): node is GuideNode => node?.type === 'guide')
   const zones = useLevelChildren(levelId, (node): node is ZoneNodeType => node?.type === 'zone')
   const spawns = useLevelChildren(levelId, (node): node is SpawnNode => node?.type === 'spawn')
-  const roofs = useScene(
-    useShallow((state) => {
-      if (!levelId) {
-        return [] as RoofNode[]
-      }
-
-      const nextLevelNode = state.nodes[levelId]
-      if (nextLevelNode?.type !== 'level') {
-        return [] as RoofNode[]
-      }
-
-      return nextLevelNode.children
-        .map((childId) => state.nodes[childId])
-        .filter((node): node is RoofNode => node?.type === 'roof' && node.visible !== false)
-    }),
-  )
   const openings = useScene(
     useShallow((state) => {
       if (!levelId) {
@@ -184,14 +162,12 @@ export function useFloorplanSceneData({
     committedBuildingPosition,
     buildingRotationY,
     currentBuildingId,
-    ceilings,
     fences,
     floorplanLevels,
     levelDescendantNodes,
     levelGuides,
     levelNode,
     openings,
-    roofs,
     site,
     slabs,
     spawns,

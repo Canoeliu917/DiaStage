@@ -280,7 +280,7 @@ describe('measurement surface visibility', () => {
     useScene.setState({
       nodes: {
         surface_0: { type: 'wall' },
-        surface_1: { type: 'ceiling' },
+        surface_1: { type: 'slab' },
         surface_2: { type: 'wall' },
       },
     } as never)

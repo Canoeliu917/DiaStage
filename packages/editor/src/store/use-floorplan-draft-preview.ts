@@ -1,13 +1,12 @@
 // Ephemeral store for the 2D floor-plan's in-flight DRAFT preview state — the
 // hot, per-pointer-move values every build/edit tool republishes on `grid:move`
-// (the snapped cursor point today; wall/fence/roof draft endpoints as later
-// slices land here). It exists so those per-move updates DON'T live in
+// (the snapped cursor point and wall/fence draft endpoints). It exists so
+// those per-move updates do not live in
 // `FloorplanPanel`'s own `useState`: the panel is a ~10k-line component whose
 // render costs ~120-220ms, so a `setState` per move made every 2D draft tool
 // feel laggy. Producers write via `getState().setX(...)` (no panel re-render);
 // the small overlay leaves subscribe and re-render alone. Same pattern that
-// keeps stair / column / elevator placement smooth (`useStairBuildPreview`,
-// `usePlacementPreview`).
+// keeps stage-step placement smooth (`useStairBuildPreview`).
 //
 // Editor-only. Producers clear on tool-inactive, commit, and unmount.
 
@@ -17,7 +16,7 @@ import { create } from 'zustand'
 /** Screen-space (SVG-local px) cursor point — drives the coordinate badge. */
 type SvgPoint = { x: number; y: number }
 
-export type FloorplanPolygonDraftType = 'ceiling' | 'slab' | 'zone'
+export type FloorplanPolygonDraftType = 'slab' | 'zone'
 
 type FloorplanDraftPreviewState = {
   /** Snapped plan-XZ point under the cursor; drives the crosshair + the
@@ -28,7 +27,7 @@ type FloorplanDraftPreviewState = {
    *  single hottest 2D update — keeping it out of panel state is what stops the
    *  panel re-rendering per move. `null` when idle. */
   cursorPosition: SvgPoint | null
-  /** Live END point of the open wall / fence / roof draft segment — the per-move
+  /** Live END point of the open wall / fence draft segment — the per-move
    *  endpoint that drives the 2D draft polygon + measurement. Each is `null`
    *  unless that tool's draft is open. The START points are mirrored here (set
    *  per click / per 3D draft move) so out-of-tree consumers — e.g. the hosted
@@ -36,11 +35,8 @@ type FloorplanDraftPreviewState = {
    *  segment; panel state remains the 2D interaction source of truth. */
   wallDraftEnd: WallPlanPoint | null
   fenceDraftEnd: WallPlanPoint | null
-  roofDraftEnd: WallPlanPoint | null
   wallDraftStart: WallPlanPoint | null
   fenceDraftStart: WallPlanPoint | null
-  roofDraftStart: WallPlanPoint | null
-  roofDraftQuarterTurn: boolean
   polygonDraftType: FloorplanPolygonDraftType | null
   polygonDraftPoints: WallPlanPoint[]
   /** Set the snapped cursor point. No-ops (skips the store update, so
@@ -51,11 +47,8 @@ type FloorplanDraftPreviewState = {
   setCursorPosition(point: SvgPoint | null): void
   setWallDraftEnd(point: WallPlanPoint | null): void
   setFenceDraftEnd(point: WallPlanPoint | null): void
-  setRoofDraftEnd(point: WallPlanPoint | null): void
   setWallDraftStart(point: WallPlanPoint | null): void
   setFenceDraftStart(point: WallPlanPoint | null): void
-  setRoofDraftStart(point: WallPlanPoint | null): void
-  setRoofDraftQuarterTurn(quarterTurn: boolean): void
   setPolygonDraft(type: FloorplanPolygonDraftType | null, points: readonly WallPlanPoint[]): void
   reset(): void
 }
@@ -68,13 +61,7 @@ function planPointsEqual(a: readonly WallPlanPoint[], b: readonly WallPlanPoint[
 }
 
 function setPlanPointField(
-  field:
-    | 'fenceDraftEnd'
-    | 'fenceDraftStart'
-    | 'roofDraftEnd'
-    | 'roofDraftStart'
-    | 'wallDraftEnd'
-    | 'wallDraftStart',
+  field: 'fenceDraftEnd' | 'fenceDraftStart' | 'wallDraftEnd' | 'wallDraftStart',
   point: WallPlanPoint | null,
 ) {
   return (
@@ -92,11 +79,8 @@ export const useFloorplanDraftPreview = create<FloorplanDraftPreviewState>((set)
   cursorPosition: null,
   wallDraftEnd: null,
   fenceDraftEnd: null,
-  roofDraftEnd: null,
   wallDraftStart: null,
   fenceDraftStart: null,
-  roofDraftStart: null,
-  roofDraftQuarterTurn: false,
   polygonDraftType: null,
   polygonDraftPoints: [],
   setCursorPoint: (point) =>
@@ -115,14 +99,8 @@ export const useFloorplanDraftPreview = create<FloorplanDraftPreviewState>((set)
     }),
   setWallDraftEnd: (point) => set(setPlanPointField('wallDraftEnd', point)),
   setFenceDraftEnd: (point) => set(setPlanPointField('fenceDraftEnd', point)),
-  setRoofDraftEnd: (point) => set(setPlanPointField('roofDraftEnd', point)),
   setWallDraftStart: (point) => set(setPlanPointField('wallDraftStart', point)),
   setFenceDraftStart: (point) => set(setPlanPointField('fenceDraftStart', point)),
-  setRoofDraftStart: (point) => set(setPlanPointField('roofDraftStart', point)),
-  setRoofDraftQuarterTurn: (quarterTurn) =>
-    set((state) =>
-      state.roofDraftQuarterTurn === quarterTurn ? state : { roofDraftQuarterTurn: quarterTurn },
-    ),
   setPolygonDraft: (type, points) =>
     set((state) =>
       state.polygonDraftType === type && planPointsEqual(state.polygonDraftPoints, points)
@@ -135,11 +113,8 @@ export const useFloorplanDraftPreview = create<FloorplanDraftPreviewState>((set)
       state.cursorPosition === null &&
       state.wallDraftEnd === null &&
       state.fenceDraftEnd === null &&
-      state.roofDraftEnd === null &&
       state.wallDraftStart === null &&
       state.fenceDraftStart === null &&
-      state.roofDraftStart === null &&
-      state.roofDraftQuarterTurn === false &&
       state.polygonDraftType === null &&
       state.polygonDraftPoints.length === 0
         ? state
@@ -148,11 +123,8 @@ export const useFloorplanDraftPreview = create<FloorplanDraftPreviewState>((set)
             cursorPosition: null,
             wallDraftEnd: null,
             fenceDraftEnd: null,
-            roofDraftEnd: null,
             wallDraftStart: null,
             fenceDraftStart: null,
-            roofDraftStart: null,
-            roofDraftQuarterTurn: false,
             polygonDraftType: null,
             polygonDraftPoints: [],
           },

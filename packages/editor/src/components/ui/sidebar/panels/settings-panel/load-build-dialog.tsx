@@ -51,14 +51,13 @@ function statsRows(stats: BuildStats): StatRow[] {
   return (
     [
       { icon: MapPin, label: '场地', count: stats.byType.site ?? 0 },
-      { icon: Building2, label: '建筑', count: stats.byType.building ?? 0 },
-      { icon: Layers, label: '楼层', count: stats.byType.level ?? 0 },
+      { icon: Building2, label: '舞台空间', count: stats.byType.building ?? 0 },
+      { icon: Layers, label: '表演层', count: stats.byType.level ?? 0 },
       { icon: Square, label: '墙体', count: stats.byType.wall ?? 0 },
       { icon: DoorOpen, label: '门', count: stats.byType.door ?? 0 },
       { icon: AppWindow, label: '窗', count: stats.byType.window ?? 0 },
       { icon: Box, label: '物体', count: stats.byType.item ?? 0 },
-      { icon: Square, label: '楼板', count: stats.byType.slab ?? 0 },
-      { icon: Square, label: '天花板', count: stats.byType.ceiling ?? 0 },
+      { icon: Square, label: '舞台平台', count: stats.byType.slab ?? 0 },
       { icon: Square, label: '区域', count: stats.byType.zone ?? 0 },
       { icon: Scan, label: '扫描', count: stats.byType.scan ?? 0 },
     ] satisfies StatRow[]

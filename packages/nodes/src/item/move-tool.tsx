@@ -16,7 +16,7 @@ import { Vector3 } from 'three'
  * Replaces the legacy `MoveItemContent` in `editor/src/components/tools/
  * item/move-tool.tsx`. Behaviour is identical: it adopts the moving node
  * (or creates a draft for duplicates flagged `isNew`), runs the placement
- * coordinator with surface strategies for floor / wall / ceiling / item-
+ * coordinator with surface strategies for floor / wall / item-
  * surface, and commits via `useScene.updateNode` on click.
  *
  * Registered via `def.affordanceTools.move`. The editor's
@@ -46,39 +46,15 @@ export function getInitialState(
     return {
       surface: 'block-face',
       wallId: null,
-      roofSegmentId: null,
       blockId: parent.id,
-      ceilingId: null,
       surfaceItemId: null,
       shelfId: null,
     }
   }
   if (attachTo === 'wall' || attachTo === 'wall-side') {
-    if (node.roofSegmentId) {
-      return {
-        surface: 'roof-wall',
-        wallId: null,
-        roofSegmentId: node.roofSegmentId,
-        ceilingId: null,
-        surfaceItemId: null,
-        shelfId: null,
-      }
-    }
     return {
       surface: 'wall',
       wallId: node.parentId,
-      roofSegmentId: null,
-      ceilingId: null,
-      surfaceItemId: null,
-      shelfId: null,
-    }
-  }
-  if (attachTo === 'ceiling') {
-    return {
-      surface: 'ceiling',
-      wallId: null,
-      roofSegmentId: null,
-      ceilingId: node.parentId,
       surfaceItemId: null,
       shelfId: null,
     }
@@ -92,8 +68,6 @@ export function getInitialState(
     return {
       surface: 'item-surface',
       wallId: null,
-      roofSegmentId: null,
-      ceilingId: null,
       surfaceItemId: node.parentId,
       shelfId: null,
     }
@@ -102,8 +76,6 @@ export function getInitialState(
     return {
       surface: 'shelf-surface',
       wallId: null,
-      roofSegmentId: null,
-      ceilingId: null,
       surfaceItemId: null,
       shelfId: node.parentId,
     }
@@ -111,8 +83,6 @@ export function getInitialState(
   return {
     surface: 'floor',
     wallId: null,
-    roofSegmentId: null,
-    ceilingId: null,
     surfaceItemId: null,
     shelfId: null,
   }
@@ -130,16 +100,14 @@ export function MoveItemTool({ node }: { node: ItemNode }) {
   const cursor = usePlacementCoordinator({
     asset: node.asset,
     draftNode,
-    // Carry painted slot overrides onto the duplicate's draft (wall/ceiling
+    // Carry painted slot overrides onto the duplicate's draft (wall
     // items create their draft lazily inside the coordinator).
     slots: node.slots,
-    // Duplicates start fresh in floor mode; wall/ceiling draft is created lazily by ensureDraft.
+    // Duplicates start fresh in floor mode; a wall draft is created lazily by ensureDraft.
     initialState: isNew
       ? {
           surface: 'floor',
           wallId: null,
-          roofSegmentId: null,
-          ceilingId: null,
           surfaceItemId: null,
           shelfId: null,
         }
@@ -149,7 +117,7 @@ export function MoveItemTool({ node }: { node: ItemNode }) {
     preserveDragOffset: true,
     initDraft: (gridPosition) => {
       if (isNew) {
-        // Duplicate: floor items get a draft immediately; wall/ceiling
+        // Duplicate: floor items get a draft immediately; wall
         // items are created lazily on surface entry.
         gridPosition.copy(new Vector3(...node.position))
         if (!node.asset.attachTo) {

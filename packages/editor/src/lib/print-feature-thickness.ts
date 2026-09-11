@@ -29,11 +29,6 @@ function semanticThicknessMeters(node: AnyNode): number | null {
       return getWallThickness(node)
     case 'slab':
       return node.thickness
-    case 'roof-segment': {
-      const structuralThicknesses = [node.wallThickness, node.deckThickness + node.shingleThickness]
-      if (node.roofType === 'dutch') structuralThicknesses.push(node.dutchTopRakeThickness)
-      return Math.min(...structuralThicknesses)
-    }
     default:
       return null
   }

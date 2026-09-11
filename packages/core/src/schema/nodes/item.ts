@@ -49,15 +49,7 @@ const animationEffectSchema = z.object({
   }),
 })
 
-const lightEffectSchema = z.object({
-  kind: z.literal('light'),
-  color: z.string().default('#ffffff'),
-  intensityRange: z.tuple([z.number(), z.number()]),
-  distance: z.number().optional(),
-  offset: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
-})
-
-const effectSchema = z.discriminatedUnion('kind', [animationEffectSchema, lightEffectSchema])
+const effectSchema = animationEffectSchema
 
 // --- Interactive descriptor ---
 
@@ -71,7 +63,6 @@ export type SliderControl = z.infer<typeof sliderControlSchema>
 export type TemperatureControl = z.infer<typeof temperatureControlSchema>
 export type Control = z.infer<typeof controlSchema>
 export type AnimationEffect = z.infer<typeof animationEffectSchema>
-export type LightEffect = z.infer<typeof lightEffectSchema>
 export type Effect = z.infer<typeof effectSchema>
 export type Interactive = z.infer<typeof interactiveSchema>
 
@@ -83,26 +74,19 @@ const assetSchema = z.object({
   // Optional top-down 2D image shown inside the item's footprint on the
   // floor plan. When present, replaces the default diagonal-cross marker.
   floorPlanUrl: z.string().optional(),
-  // Where the item came from in the catalog. Used by the editor's items
-  // panel to filter Library / Community / Mine. The server populates it
-  // from `items.userId`: null → 'library', current user → 'mine',
-  // other user → 'community'. Defaults to 'library' when absent (e.g.
-  // the seeded built-in catalog).
-  source: z.enum(['library', 'community', 'mine']).default('library'),
+  // Old shared-catalog items remain loadable but become ordinary library
+  // assets; DiaStage exposes only its resource library and personal uploads.
+  source: z
+    .enum(['library', 'mine', 'community'])
+    .transform((value) => (value === 'community' ? ('library' as const) : value))
+    .default('library'),
   // True when the item belongs to the caller and is still in draft status.
   // The catalog only loads my drafts (other users' drafts are never
-  // published to the catalog). Used so the Community filter can include
-  // *my* published items alongside other users', while leaving drafts
-  // visible only under Mine.
+  // visible under Mine.
   isDraft: z.boolean().optional(),
   src: AssetUrl,
   dimensions: z.tuple([z.number(), z.number(), z.number()]).default([1, 1, 1]), // [w, h, d]
-  attachTo: z.enum(['wall', 'wall-side', 'ceiling']).optional(),
-  // Ceiling fixtures (e.g. recessed downlights) that embed *into* the ceiling
-  // rather than hang below it: the item seats flush with the ceiling plane
-  // (its body rising into the void above) and the ceiling is cut out around
-  // the item's footprint. Ignored unless `attachTo === 'ceiling'`.
-  recessed: z.boolean().optional(),
+  attachTo: z.enum(['wall', 'wall-side']).optional(),
   tags: z.array(z.string()).optional(),
   // Function-axis tag slugs from the taxonomy. Drives the hierarchical
   // Items-tab browse: a tree node matches when any of its descendant slugs
@@ -135,13 +119,6 @@ export const ItemNode = BaseNode.extend({
   // Wall attachment properties (only used when asset.attachTo is "wall" or "wall-side")
   wallId: z.string().optional(),
   wallT: z.number().optional(), // 0-1 parametric position along wall
-  // Alternative wall host: a roof-segment's generated wall face. When
-  // set, `position` is FACE-LOCAL — [u along the face, v = bottom edge,
-  // z from the wall mid-plane] — exactly the wall-child convention
-  // (ItemSystem's wall-side push applies the same way); the renderer
-  // mounts the node inside the face frame (`getRoofWallFaceFrame`).
-  roofSegmentId: z.string().optional(),
-  roofFace: z.enum(['front', 'back', 'right', 'left']).optional(),
   // Alternative wall-like host: a planar block face. Position is
   // FACE-LOCAL [u, v, normal offset], relative to the live face centroid.
   // The renderer rebuilds the frame from the face normal so the item follows
@@ -178,7 +155,7 @@ export const ItemNode = BaseNode.extend({
     - category: category of the item
     - dimensions: size in level coordinate system
     - src: url of the model
-    - attachTo: where to attach the item (wall, wall-side, ceiling)
+    - attachTo: where to attach the item (wall or wall-side)
     - offset: corrective position offset for the model
     - rotation: corrective rotation for the model
     - scale: corrective scale for the model

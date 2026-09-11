@@ -1,17 +1,13 @@
 import {
   type AnyNode,
   type AnyNodeId,
-  type CeilingNode,
   collectAlignmentAnchors,
   type FloorplanMoveTarget,
   type FloorplanMoveTargetSession,
   getBlockFaceFrame,
-  getRoofWallFaceFrame,
   getScaledDimensions,
   type ItemNode,
   movingFootprintAnchors,
-  type RoofSegmentNode,
-  roofFacePointToSegment,
   useLiveNodeOverrides,
   useScene,
 } from '@pascal-app/core'
@@ -32,9 +28,6 @@ import { findClosestWallInPlan, snapLocalXToNeighbors } from '../shared/wall-att
  *     math as door / window via `findClosestWallInPlan`). Position
  *     local-X is snapped to 0.5m grid; the wall-local Y carries over
  *     from the source position (2D has no vertical signal).
- *   - `'ceiling'`: pointer is point-in-polygon-tested against every
- *     ceiling on the level. If hit, the item reparents to that
- *     ceiling at the snapped local plan position.
  *   - undefined (floor): pointer is point-in-polygon-tested against
  *     every slab on the level. If hit, the item reparents to that
  *     slab; otherwise it stays parented to the level (free-floating)
@@ -106,31 +99,6 @@ function resolveItemPlanTransform(
       point: [parentTransform.point[0] + offsetX, parentTransform.point[1] + offsetZ],
       rotation: parentTransform.rotation + localRotation,
     }
-  } else if (parent?.type === 'roof-segment') {
-    // Roof-hosted wall item: FACE-LOCAL position mapped through the face
-    // frame, then composed through the segment's and roof's yaw +
-    // position into level-local plan coords — without this the drag seed
-    // jumps off the roof at move start.
-    const segment = parent as RoofSegmentNode
-    const roof = segment.parentId
-      ? (nodes[segment.parentId as AnyNodeId] as
-          | (AnyNode & { position: [number, number, number]; rotation: number })
-          | undefined)
-      : undefined
-    if (roof?.type === 'roof' && item.roofFace) {
-      const frame = getRoofWallFaceFrame(segment, item.roofFace)
-      const segLocal = roofFacePointToSegment(segment, item.roofFace, item.position)
-      const [sx, sz] = rotateVec(segLocal[0], segLocal[2], segment.rotation ?? 0)
-      const [rx, rz] = rotateVec(
-        sx + segment.position[0],
-        sz + segment.position[2],
-        roof.rotation ?? 0,
-      )
-      result = {
-        point: [rx + roof.position[0], rz + roof.position[2]],
-        rotation: (roof.rotation ?? 0) + (segment.rotation ?? 0) + frame.yaw + localRotation,
-      }
-    }
   } else if (parent?.type === 'block' && item.blockFaceId) {
     const frame = getBlockFaceFrame(parent.topology, item.blockFaceId)
     if (frame) {
@@ -184,7 +152,7 @@ export const itemFloorplanMoveTarget: FloorplanMoveTarget<ItemNode> = ({ node, n
   const attachTo = node.asset.attachTo
   const startLevelId: AnyNodeId | null = (() => {
     // Walk to the owning level depending on the item's current parent:
-    //   - wall / ceiling parent → parent.parentId is the level
+    //   - wall parent → parent.parentId is the level
     //   - level parent (floor items) → parent.id IS the level
     //   - item / shelf parent → walk up until we hit a level
     // Without the `parent.type === 'level'` short-circuit, floor items
@@ -206,9 +174,6 @@ export const itemFloorplanMoveTarget: FloorplanMoveTarget<ItemNode> = ({ node, n
 
   if (attachTo === 'wall' || attachTo === 'wall-side') {
     return buildWallItemSession(node, startLevelId)
-  }
-  if (attachTo === 'ceiling') {
-    return buildSurfaceItemSession(node, startLevelId, 'ceiling')
   }
   return buildFloorItemSession(node, startLevelId, nodes)
 }
@@ -262,8 +227,6 @@ function buildWallItemSession(
         rotation: [0, hit.itemRotation, 0],
         side: hit.side,
         parentId: hit.wall.id,
-        roofSegmentId: undefined,
-        roofFace: undefined,
         blockFaceId: undefined,
       }
       useLiveNodeOverrides.getState().set(node.id as AnyNodeId, lastPatch)
@@ -281,8 +244,7 @@ function buildWallItemSession(
 }
 
 /**
- * Floor items live as level children — the slab is *not* a parent (slabs
- * have no `children` field; only ceilings and the level itself do).
+ * Floor items live as level children — the slab is *not* a parent (slabs do not host items).
  * Reparenting a floor item to a slab corrupts the parent-children
  * bookkeeping and the item drops out of the level→children DFS the
  * floor-plan layer walks → the polygon stops rendering mid-drag.
@@ -343,107 +305,4 @@ function buildFloorItemSession(
       useScene.getState().updateNodes([{ id: node.id as AnyNodeId, data: lastPatch }])
     },
   }
-}
-
-/**
- * Ceiling items reparent to whichever ceiling polygon contains the
- * pointer. Ceilings carry a `children` field on their schema so the
- * parent-children bookkeeping in `updateNodes` works correctly when the
- * item moves between ceilings. If the cursor drifts off every ceiling,
- * the original parent is preserved (no detach back to the level — there
- * is no canonical "free-floating ceiling item").
- */
-function buildSurfaceItemSession(
-  node: ItemNode,
-  startLevelId: AnyNodeId | null,
-  targetKind: 'ceiling',
-): FloorplanMoveTargetSession {
-  const resolvePlanPoint = createPlanarMovePointResolver(
-    resolveItemPlanPoint(node, useScene.getState().nodes),
-    node,
-  )
-  let lastPatch: Partial<ItemNode> | null = null
-  return {
-    affectedIds: [node.id as AnyNodeId],
-    apply({ planPoint }) {
-      const nodes = useScene.getState().nodes
-      const snapped = resolvePlanPoint(planPoint)
-
-      const surface = findContainingSurface(snapped, nodes, startLevelId, targetKind)
-
-      const sourceY = node.position[1]
-      const nextPosition: [number, number, number] = [snapped[0], sourceY, snapped[1]]
-
-      lastPatch = {
-        position: nextPosition,
-        parentId: surface ? surface.id : node.parentId,
-      }
-      useLiveNodeOverrides.getState().set(node.id as AnyNodeId, lastPatch)
-      useScene.getState().markDirty(node.id as AnyNodeId)
-    },
-    canCommit() {
-      return lastPatch !== null
-    },
-    commit() {
-      if (!lastPatch) return
-      useLiveNodeOverrides.getState().clear(node.id as AnyNodeId)
-      useScene.getState().updateNodes([{ id: node.id as AnyNodeId, data: lastPatch }])
-    },
-  }
-}
-
-/**
- * Walk every ceiling under the level and return the first one whose
- * polygon contains the pointer. Holes are honoured — a point inside a
- * hole counts as not inside the surface. Slabs are intentionally NOT a
- * valid target: floor items are parented to the level, not the slab,
- * because slabs don't carry a `children` field on their schema.
- */
-function findContainingSurface(
-  point: readonly [number, number],
-  nodes: Record<AnyNodeId, AnyNode>,
-  parentLevelId: AnyNodeId | null,
-  targetKind: 'ceiling',
-): CeilingNode | null {
-  if (!parentLevelId) return null
-  const level = nodes[parentLevelId]
-  const childIds = (level as unknown as { children?: AnyNodeId[] })?.children
-  if (!Array.isArray(childIds)) return null
-
-  for (const childId of childIds) {
-    const node = nodes[childId]
-    if (!node || node.type !== targetKind) continue
-    const surface = node as CeilingNode
-    const polygon = surface.polygon
-    if (!polygon || polygon.length < 3) continue
-    if (!pointInRing(point, polygon)) continue
-    const holes = surface.holes ?? []
-    let inHole = false
-    for (const hole of holes) {
-      if (hole.length >= 3 && pointInRing(point, hole)) {
-        inHole = true
-        break
-      }
-    }
-    if (!inHole) return surface
-  }
-  return null
-}
-
-/** Standard ray-cast point-in-polygon. Treats edges as inside. */
-function pointInRing(
-  point: readonly [number, number],
-  ring: ReadonlyArray<readonly [number, number]>,
-): boolean {
-  let inside = false
-  const [px, py] = point
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const ax = ring[i]![0]
-    const ay = ring[i]![1]
-    const bx = ring[j]![0]
-    const by = ring[j]![1]
-    const intersects = ay > py !== by > py && px < ((bx - ax) * (py - ay)) / (by - ay) + ax
-    if (intersects) inside = !inside
-  }
-  return inside
 }

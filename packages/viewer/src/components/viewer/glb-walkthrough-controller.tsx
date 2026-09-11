@@ -69,11 +69,8 @@ export const EYE_LERP_SPEED = 12
 const standClearanceRaycaster = new Raycaster()
 const UP = new Vector3(0, 1, 0)
 
-// Kinds that must not block the player: room helpers, the spawn marker, the
-// ceiling/roof shell (you walk under them), and door/window leaves — excluding
-// the latter lets you pass any doorway whether the leaf is open or shut (the
-// wall already has the opening cut into its baked geometry).
-const COLLIDER_EXCLUDED_KINDS = new Set(['zone', 'spawn', 'ceiling', 'roof', 'door', 'window'])
+// Helpers, spawn markers, and door/window leaves must not block the player.
+const COLLIDER_EXCLUDED_KINDS = new Set(['zone', 'spawn', 'door', 'window'])
 
 const colliderMaterial = new MeshBasicMaterial({ visible: false })
 

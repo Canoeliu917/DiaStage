@@ -496,40 +496,14 @@ export function FloorplanRegistryMoveOverlay() {
     // ── Path 2 — generic free-floating translate ────────────────────
     const entry = scene.querySelector(`[data-node-id="${movingNode.id}"]`) as SVGGElement | null
     if (!entry) return
-    const sceneNodes = useScene.getState().nodes as Record<string, AnyNode>
-    const relatedEntryIds = collectFloorplanMoveEntryIds(movingNode.id as AnyNodeId, sceneNodes)
+    const relatedEntryIds = new Set([movingNode.id as AnyNodeId])
     const relatedEntries = Array.from(relatedEntryIds)
       .map((id) => scene.querySelector(`[data-node-id="${id}"]`) as SVGGElement | null)
       .filter((value): value is SVGGElement => value != null)
 
-    // Polyline kinds (duct / pipe / lineset) carry a `path`, not a
-    // `position` — translating a `position` here would write a field their
-    // schema ignores and snap the run back. For those we move every path
-    // point by the cursor delta and commit the translated `path` instead.
-    // The reference origin is the path centre so the SVG `translate` delta
-    // matches the geometry's actual location (which isn't at [0,0,0]).
-    // Only 3D `[x, y, z]` polyline kinds (duct / pipe / lineset) are handled
-    // here. A spline fence also carries a `path`, but it is 2D (`[x, y]`) and
-    // moves through its own `floorplanMoveTarget`, so exclude shorter tuples.
-    const rawPath = (movingNode as { path?: unknown }).path
-    const originalPath =
-      Array.isArray(rawPath) && Array.isArray(rawPath[0]) && rawPath[0].length >= 3
-        ? (rawPath as [number, number, number][]).map((p) => [...p] as [number, number, number])
-        : null
-    const originalPosition: [number, number, number] = originalPath
-      ? (() => {
-          let cx = 0
-          let cz = 0
-          for (const p of originalPath) {
-            cx += p[0]
-            cz += p[2]
-          }
-          const n = originalPath.length || 1
-          return [cx / n, originalPath[0]?.[1] ?? 0, cz / n]
-        })()
-      : (((movingNode as unknown as { position?: [number, number, number] }).position ?? [
-          0, 0, 0,
-        ]) as [number, number, number])
+    const originalPosition = (movingNode as { position?: [number, number, number] }).position ?? [
+      0, 0, 0,
+    ]
     const isFreshPlacement = isFreshPlacementMetadata(
       (movingNode as { metadata?: unknown }).metadata,
     )
@@ -546,9 +520,6 @@ export function FloorplanRegistryMoveOverlay() {
       const otherId = el.getAttribute('data-node-id')
       if (!otherId || relatedEntryIds.has(otherId as AnyNodeId)) continue
       const b = (el as SVGGraphicsElement).getBBox()
-      // Skip only fully-degenerate (point) entries. A thin run (duct / pipe /
-      // lineset drawn as a line) has one zero dimension but is still a valid
-      // alignment target — its endpoints become line anchors.
       if (b.width <= 0 && b.height <= 0) continue
       candidateAnchors.push(...bboxAnchors(otherId, b.x, b.y, b.x + b.width, b.y + b.height))
     }
@@ -765,35 +736,6 @@ export function FloorplanRegistryMoveOverlay() {
         return
       }
       let selectedId = movingNode.id as AnyNodeId
-      if (originalPath) {
-        // Polyline kinds: shift every point by the committed delta and
-        // write `path`. Strip the fresh-placement flags on first drop.
-        const dx = sx - originalPosition[0]
-        const dz = sz - originalPosition[2]
-        const nextPath = originalPath.map(
-          ([x, y, z]) => [x + dx, y, z + dz] as [number, number, number],
-        )
-        useScene.getState().updateNode(
-          movingNode.id as AnyNodeId,
-          (isFreshPlacement
-            ? {
-                path: nextPath,
-                metadata: stripPlacementMetadataFlags(
-                  (movingNode as { metadata?: unknown }).metadata,
-                ),
-                visible: true,
-              }
-            : { path: nextPath }) as Partial<AnyNode>,
-        )
-        useViewer.getState().setSelection({ selectedIds: [movingNode.id as AnyNodeId] })
-        for (const relatedEntry of relatedEntries) {
-          relatedEntry.removeAttribute('transform')
-        }
-        useAlignmentGuides.getState().clear()
-        setMovingNode(null)
-        swallowNextClick()
-        return
-      }
       if (isFreshPlacement) {
         selectedId =
           commitFreshPlacementSubtree(
@@ -913,33 +855,6 @@ function deepEqual(a: unknown, b: unknown): boolean {
     return true
   }
   return false
-}
-
-function collectFloorplanMoveEntryIds(
-  rootId: AnyNodeId,
-  nodes: Record<string, AnyNode>,
-): Set<AnyNodeId> {
-  const root = nodes[rootId]
-  if (root?.type !== 'cabinet' && root?.type !== 'cabinet-module') {
-    return new Set([rootId])
-  }
-
-  const ids = new Set<AnyNodeId>()
-  const queue: AnyNodeId[] = [rootId]
-  while (queue.length > 0) {
-    const id = queue.pop()!
-    if (ids.has(id)) continue
-    const node = nodes[id]
-    if (node?.type !== 'cabinet' && node?.type !== 'cabinet-module') continue
-    ids.add(id)
-    for (const childId of node.children ?? []) {
-      const child = nodes[childId as AnyNodeId]
-      if (child?.type === 'cabinet' || child?.type === 'cabinet-module') {
-        queue.push(childId as AnyNodeId)
-      }
-    }
-  }
-  return ids
 }
 
 function unionFloorplanEntryBBox(entries: readonly SVGGraphicsElement[]): DOMRect {

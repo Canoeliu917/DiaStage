@@ -28,13 +28,11 @@ import { Alignment3DGuideLayer } from '../editor/alignment-3d-guide-layer'
 import { Elevation3DGuideLayer } from '../editor/elevation-3d-guide-layer'
 import { OpeningGuides3DLayer } from '../editor/opening-guides-3d-layer'
 import { WallSnapBeaconLayer } from '../editor/wall-snap-beacon-layer'
-import { ElevatorTool } from './elevator/elevator-tool'
 import { MoveTool } from './item/move-tool'
 import { RegistryToolProvider } from './registry-tool-context'
 import { getRegistryAffordanceTool } from './shared/affordance-dispatch'
 import { FacingPoseIndicator } from './shared/facing-pose-indicator'
 import { SiteBoundaryEditor } from './site/site-boundary-editor'
-import { TerrainSculptTool } from './site/terrain-sculpt-tool'
 import { StairTool } from './stair/stair-tool'
 import { ZoneBoundaryEditor } from './zone/zone-boundary-editor'
 import { ZoneTool } from './zone/zone-tool'
@@ -172,14 +170,7 @@ export const ToolManager: React.FC = () => {
     editingHole?.nodeId === selectedSlabId &&
     selectedSlab?.holeMetadata?.[editingHole.holeIndex]?.source === 'manual'
 
-  // Site boundary handles normally share one 2D/3D rule. Sculpt is the deliberate
-  // 3D exception: the brush only owns this canvas, where PolygonEditor can hand
-  // off its pointer before a boundary drag starts.
-  const sculpting = mode === 'terrain-sculpt'
-  // Sculpt keeps the 3D property controls visible. PolygonEditor marks its
-  // pointer before the canvas-level brush listener runs, and activating one
-  // exits sculpt mode before starting the boundary drag.
-  const showSiteBoundaryEditor = sculpting || siteBoundaryHandlesEnabled({ mode, phase })
+  const showSiteBoundaryEditor = siteBoundaryHandlesEnabled({ mode, phase })
 
   // A multi-selection is manipulated as one rigid group (drag / R / T), so
   // per-node reshape chrome — the slab / ceiling boundary editors' vertex and
@@ -234,30 +225,10 @@ export const ToolManager: React.FC = () => {
   const handlePlacedNodeSelected = (nodeId: AnyNodeId) => {
     setSelection({ selectedIds: [nodeId] })
   }
-  const handlePlacedElevatorSelected = (
-    nodeId: AnyNodeId,
-    elevatorBuildingId: BuildingNode['id'],
-  ) => {
-    // Preserve the active level. `setSelection`'s hierarchy guard nulls
-    // `levelId` whenever `buildingId` is passed without an explicit
-    // `levelId` — which deselected the current floor plan the moment an
-    // elevator was placed. Pass the current level through so the floor
-    // plan stays selected.
-    setSelection({
-      buildingId: elevatorBuildingId,
-      levelId: activeLevelId ?? null,
-      selectedIds: [nodeId],
-    })
-  }
-
   return (
     <RegistryToolProvider value={registryToolContext}>
       {/* World-space tools: site boundary and building movement operate in world coordinates */}
       {showSiteBoundaryEditor && <SiteBoundaryEditor />}
-      {/* Terrain sculpting is a mode rather than a `tools[phase][tool]` entry —
-          it places no node — so it gets its own gate here. World-space, because
-          the ground is not building-local. */}
-      {sculpting && <TerrainSculptTool />}
       {showMover && movingNode?.type === 'building' && (
         <MoveTool onNodeMoved={handlePlacedNodeSelected} onSpawnMoved={handlePlacedNodeSelected} />
       )}
@@ -349,14 +320,7 @@ export const ToolManager: React.FC = () => {
             <RegistryToolComponent />
           </Suspense>
         )}
-        {!movingNode && !useRegistryTool && showBuildTool && tool === 'elevator' && (
-          <ElevatorTool
-            buildingId={buildingId as BuildingNode['id'] | null}
-            levelId={activeLevelId ?? null}
-            onPlaced={handlePlacedElevatorSelected}
-          />
-        )}
-        {!movingNode && BuildToolComponent && tool !== 'elevator' ? <BuildToolComponent /> : null}
+        {!movingNode && BuildToolComponent ? <BuildToolComponent /> : null}
         {/* Figma-style alignment guides published by the move / placement
             tools above. Lives inside the building-local group so the
             building-local guide coords render at the right world position. */}

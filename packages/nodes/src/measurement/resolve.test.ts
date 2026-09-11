@@ -5,12 +5,9 @@ import {
   measurementArea,
   measurementDistance,
   nodeRegistry,
-  type RoofNode,
-  type RoofSegmentNode,
   registerNode,
   type WallNode,
 } from '@pascal-app/core'
-import { roofSegmentDefinition } from '../roof-segment/definition'
 import { wallDefinition } from '../wall/definition'
 import { remapMeasurementReferences, resolveMeasurementNode } from './resolve'
 
@@ -36,7 +33,6 @@ describe('associative measurement resolution', () => {
   beforeEach(() => {
     nodeRegistry._reset()
     registerNode(wallDefinition)
-    registerNode(roofSegmentDefinition)
   })
 
   afterEach(() => nodeRegistry._reset())
@@ -148,33 +144,28 @@ describe('associative measurement resolution', () => {
     expect(resolved.anchorNormals[1]?.[2]).toBeCloseTo(-1)
   })
 
-  test('retains measurement fallback when its legacy roof feature is archived', () => {
-    const roof = {
-      id: 'roof_a',
-      type: 'roof',
+  test('retains measurement fallback when a legacy feature provider is archived', () => {
+    const parent = {
+      id: 'legacy_parent',
+      type: 'legacy-parent',
       parentId: 'level_a',
-      children: ['roof-segment_a'],
+      children: ['legacy_child'],
       position: [10, 1, 5],
       rotation: 0,
-    } as RoofNode
-    const segment = {
-      id: 'roof-segment_a',
-      type: 'roof-segment',
-      parentId: roof.id,
+    } as unknown as AnyNode
+    const child = {
+      id: 'legacy_child',
+      type: 'legacy-child',
+      parentId: parent.id,
       children: [],
       position: [0, 0, 0],
       rotation: 0,
-      width: 8,
-      depth: 6,
-      wallHeight: 2.5,
-      roofType: 'gable',
-      pitch: 40,
-    } as RoofSegmentNode
+    } as unknown as AnyNode
     const featureAnchor = (t: number) => ({
       kind: 'feature' as const,
       reference: {
-        nodeId: segment.id,
-        featureId: 'roof:ridge:0',
+        nodeId: child.id,
+        featureId: 'legacy:feature',
         parameters: { t },
       },
       fallback: [0, 0, 0] as [number, number, number],
@@ -186,7 +177,7 @@ describe('associative measurement resolution', () => {
           points: [featureAnchor(0), featureAnchor(1)],
         },
       },
-      resolveFrom([roof, segment]),
+      resolveFrom([parent, child]),
     )
 
     expect(resolved.dangling).toHaveLength(2)
@@ -194,7 +185,7 @@ describe('associative measurement resolution', () => {
       [0, 0, 0],
       [0, 0, 0],
     ])
-    expect(resolved.dependencies).toEqual([segment.id, roof.id])
+    expect(resolved.dependencies).toEqual([child.id, parent.id])
   })
 
   test('falls back visibly when a reference dangles and remaps internal clone references', () => {

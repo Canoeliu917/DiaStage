@@ -50,7 +50,7 @@ const DATUM_POLICY_OPTIONS: Array<{ label: string; value: ConstructionDimensionD
 ]
 
 const TERMINATOR_OPTIONS: Array<{ label: string; value: ConstructionDimensionTerminator }> = [
-  { label: '建筑斜线', value: 'architectural-tick' },
+  { label: '舞台斜线', value: 'architectural-tick' },
   { label: '实心箭头', value: 'filled-arrow' },
   { label: '空心箭头', value: 'open-arrow' },
   { label: '圆点', value: 'dot' },
@@ -143,7 +143,7 @@ export default function ConstructionDimensionPanel() {
     <PanelWrapper
       icon="/icons/blueprint.webp"
       onClose={() => setSelection({ selectedIds: [] })}
-      title="建筑尺寸标注"
+      title="舞台尺寸标注"
       width={320}
     >
       <PanelSection title="尺寸标注">

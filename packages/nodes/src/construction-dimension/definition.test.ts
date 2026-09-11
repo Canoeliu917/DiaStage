@@ -12,7 +12,6 @@ describe('constructionDimensionDefinition', () => {
       selectable: { hitVolume: 'bbox' },
       deletable: true,
       duplicable: true,
-      presettable: false,
     })
     expect(constructionDimensionDefinition.floorplanAffordances).toHaveProperty(
       'move-construction-dimension-baseline',

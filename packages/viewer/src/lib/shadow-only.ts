@@ -13,7 +13,7 @@ import { hideFromScene, showInScene } from './scene-visibility'
  * light's shadow camera does (see `lights.tsx`).
  *
  * The mask itself belongs to `lib/scene-visibility.ts`, which reconciles this
- * with the isolation filter. Both calls are idempotent and cheap to reapply —
+ * with wall batching. Both calls are idempotent and cheap to reapply —
  * solo re-runs `applyShadowOnly` every frame so meshes rebuilt while hidden
  * get re-hidden.
  */

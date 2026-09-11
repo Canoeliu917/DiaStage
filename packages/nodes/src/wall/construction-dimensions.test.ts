@@ -1,7 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import {
   type AnyNode,
-  ColumnNode,
   DoorNode,
   type FloorplanGeometry,
   type GeometryContext,
@@ -1003,104 +1002,6 @@ describe('buildLevelWallConstructionDimensionPlan', () => {
     expect(jogs[0]?.dimensionEnd?.[1]).toBeCloseTo(1.65)
     expect(jogs[1]?.dimensionStart?.[1]).toBeCloseTo(1.65)
     expect(jogs[1]?.dimensionEnd?.[1]).toBeCloseTo(1.65)
-  })
-
-  test('dimensions an exterior column row by structural centerline', () => {
-    const top = wall({ id: 'wall_top' })
-    const right = wall({
-      id: 'wall_right',
-      start: [10, 0],
-      end: [10, -6],
-      frontSide: 'exterior',
-      backSide: 'interior',
-    })
-    const bottom = wall({
-      id: 'wall_bottom',
-      start: [10, -6],
-      end: [0, -6],
-      frontSide: 'exterior',
-      backSide: 'interior',
-    })
-    const left = wall({
-      id: 'wall_left',
-      start: [0, -6],
-      end: [0, 0],
-      frontSide: 'exterior',
-      backSide: 'interior',
-    })
-    const columns = [-1, 5, 11].map((x, index) =>
-      ColumnNode.parse({
-        id: `column_${index}`,
-        parentId: 'level_main',
-        position: [x, 0, 2],
-        crossSection: 'square',
-      }),
-    )
-    const nodes = Object.fromEntries(columns.map((column) => [column.id, column]))
-
-    const plan = buildLevelWallConstructionDimensionPlan([top, right, bottom, left], nodes)
-    const planned = plan.get(top.id) ?? []
-
-    expect(plan.size).toBe(4)
-    expect(planned.map((entry) => entry.tier)).toEqual([
-      'structure',
-      'structure',
-      'overall',
-      'structural-overall',
-    ])
-    expect(dimensionTexts(renderPlannedConstructionDimensions(planned, 'metric'))).toEqual([
-      '6m',
-      '6m',
-      '10.2m',
-      '12m',
-    ])
-    expect(planned[0]).toMatchObject({
-      start: [-1, 2],
-      end: [5, 2],
-    })
-    expect(planned[0]?.dimensionStart?.[0]).toBe(-1)
-    expect(planned[0]?.dimensionEnd?.[0]).toBe(5)
-    expect(planned[0]?.dimensionStart?.[1]).toBeCloseTo(2.8712)
-    expect(planned[0]?.dimensionEnd?.[1]).toBeCloseTo(2.8712)
-  })
-
-  test('does not stretch interior column references to an exterior dimension string', () => {
-    const top = wall({ id: 'wall_top' })
-    const right = wall({
-      id: 'wall_right',
-      start: [10, 0],
-      end: [10, -6],
-      frontSide: 'exterior',
-      backSide: 'interior',
-    })
-    const bottom = wall({
-      id: 'wall_bottom',
-      start: [10, -6],
-      end: [0, -6],
-      frontSide: 'exterior',
-      backSide: 'interior',
-    })
-    const left = wall({
-      id: 'wall_left',
-      start: [0, -6],
-      end: [0, 0],
-      frontSide: 'exterior',
-      backSide: 'interior',
-    })
-    const columns = [2, 8].map((x, index) =>
-      ColumnNode.parse({
-        id: `column_interior_${index}`,
-        parentId: 'level_main',
-        position: [x, 0, -2],
-        crossSection: 'square',
-      }),
-    )
-    const nodes = Object.fromEntries(columns.map((column) => [column.id, column]))
-
-    const planned =
-      buildLevelWallConstructionDimensionPlan([top, right, bottom, left], nodes).get(top.id) ?? []
-
-    expect(planned.map((entry) => entry.tier)).toEqual(['overall'])
   })
 
   test('keeps internal openings off exterior strings and dimensions them locally', () => {

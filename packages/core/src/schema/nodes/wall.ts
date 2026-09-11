@@ -4,7 +4,6 @@ import { BaseNode, nodeType, objectId } from '../base'
 import { MaterialSchema } from '../material'
 import { DoorNode } from './door'
 import { ItemNode } from './item'
-import { LeanToExtensionNode } from './lean-to-extension'
 import { WindowNode } from './window'
 
 export const WallTreatmentSide = z.enum(['interior', 'exterior', 'both'])
@@ -132,14 +131,7 @@ export const WallNode = BaseNode.extend({
   id: objectId('wall'),
   type: nodeType('wall'),
   children: z
-    .array(
-      z.union([
-        ItemNode.shape.id,
-        DoorNode.shape.id,
-        WindowNode.shape.id,
-        LeanToExtensionNode.shape.id,
-      ]),
-    )
+    .array(z.union([ItemNode.shape.id, DoorNode.shape.id, WindowNode.shape.id]))
     .default([]),
   // Legacy single-material wall finish. Read for backward compatibility only.
   material: MaterialSchema.optional(),
@@ -161,12 +153,8 @@ export const WallNode = BaseNode.extend({
   curveOffset: z.number().optional(),
   // Persisted slab-support host — see ItemNode.supportSlabId for the rules.
   supportSlabId: z.string().optional(),
-  // Vertical offset from the elected support surface. Ground-hosted chained
-  // walls use this to preserve one construction plane without copying terrain.
+  // Vertical offset from the elected support surface.
   supportOffset: z.number().finite().optional(),
-  // Extend downward from the authored wall base to the terrain while keeping
-  // the wall body height and top unchanged.
-  fillToTerrain: z.boolean().optional(),
   faceBands: WallFaceBandConfig.optional(),
   skirting: WallTrimConfig.optional(),
   crown: WallTrimConfig.optional(),
@@ -182,7 +170,6 @@ export const WallNode = BaseNode.extend({
   Wall node - used to represent a wall in the building
   - thickness: thickness in meters
   - height: height in meters
-  - fillToTerrain: extends the wall downward to the terrain without changing its authored height
   - curveOffset: midpoint sagitta offset used to bend the wall into an arc
   - start: start point of the wall in level coordinate system
   - end: end point of the wall in level coordinate system

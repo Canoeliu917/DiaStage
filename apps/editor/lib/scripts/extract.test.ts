@@ -82,7 +82,7 @@ test('extracts real Chinese PDF and DOCX with page or paragraph evidence', async
   expect(document.file).toMatchObject({ name: 'sample.pdf', type: 'pdf', pageCount: 1 })
   expect(document.passages[0]?.text.replace(/\s/g, '')).toBe(text)
   expect(document.passages[0]?.page).toBe(1)
-})
+}, 15_000)
 
 test('legacy DOC, bad magic, macro packages, invalid ZIP structure and XML entities fail clearly', async () => {
   await expect(

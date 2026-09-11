@@ -254,14 +254,11 @@ export type SlotPaintConfig = {
     node: AnyNode,
     role: string,
   ) => { material: MaterialSchema | undefined; materialPreset: string | undefined } | null
-  /** Opt into the painter's `room` application scope (walls, slabs). */
-  roomScope?: boolean
 }
 
 export function createSlotPaintCapability(config: SlotPaintConfig): PaintCapability {
   return {
     materialTarget: config.materialTarget,
-    roomScope: config.roomScope,
     resolveRole: config.resolveRole,
     buildPatch: ({ node, role, materialPreset }) => {
       const slots = { ...((node as SlotsNode).slots ?? {}) }

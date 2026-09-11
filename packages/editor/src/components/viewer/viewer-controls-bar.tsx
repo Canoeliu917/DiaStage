@@ -251,7 +251,7 @@ function DisplayMenu() {
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="min-w-48">
             {SCENE_THEMES.map((t) => {
-              const swatches = (['wall', 'roof', 'floor', 'glazing'] as const).map(
+              const swatches = (['wall', 'floor', 'glazing'] as const).map(
                 (role) => t.clayTints?.[role] ?? CLAY_PALETTE[role],
               )
               return (
@@ -364,7 +364,7 @@ export const ViewerControlsBar = ({
                 ? 'hover:bg-white/5 hover:text-amber-400'
                 : 'bg-amber-500/20 text-amber-400'
             }
-            label={`楼层：${levelMode === 'manual' ? '手动' : levelModeLabels[levelMode as keyof typeof levelModeLabels]}`}
+            label={`表演层：${levelMode === 'manual' ? '手动' : levelModeLabels[levelMode as keyof typeof levelModeLabels]}`}
             onClick={() => {
               if (levelMode === 'manual') return useViewer.getState().setLevelMode('stacked')
               const modes: ('stacked' | 'exploded' | 'solo')[] = ['stacked', 'exploded', 'solo']

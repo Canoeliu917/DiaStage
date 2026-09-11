@@ -3,6 +3,7 @@ import {
   type DoorNode,
   type FloorplanMoveTarget,
   type FloorplanMoveTargetSession,
+  resolveLevelId,
   useLiveNodeOverrides,
   useLiveTransforms,
   useScene,
@@ -18,7 +19,6 @@ import {
   usePlacementPreview,
 } from '@pascal-app/editor'
 import { createFloorplanCursorResolver } from '../shared/floorplan-cursor'
-import { getOpeningHostLevelId, getRoofHostedOpeningPlanPoint } from '../shared/roof-opening-host'
 import {
   findClosestWallInPlan,
   projectWallLocalPointToPlan,
@@ -47,10 +47,7 @@ export const doorFloorplanMoveTarget: FloorplanMoveTarget<DoorNode> = ({ node })
   const nodeId = node.id as AnyNodeId
   // Snapshot of the door's "valid" state at move-start — used by
   // canCommit to decide whether the current snapped position is OK.
-  // The level that owns the wall-snap candidates — resolves the wall-hosted,
-  // roof-hosted, and fresh-placement parentings (see `getOpeningHostLevelId`).
-  // Cached at start because the parent chain doesn't change during a move.
-  const startLevelId = getOpeningHostLevelId(node, useScene.getState().nodes)
+  const startLevelId = resolveLevelId(node, useScene.getState().nodes) as AnyNodeId
   const originalWall = node.parentId
     ? (useScene.getState().nodes[node.parentId as AnyNodeId] as WallNode | undefined)
     : undefined
@@ -58,7 +55,7 @@ export const doorFloorplanMoveTarget: FloorplanMoveTarget<DoorNode> = ({ node })
     original:
       originalWall?.type === 'wall'
         ? projectWallLocalPointToPlan(originalWall, node.position[0])
-        : (getRoofHostedOpeningPlanPoint(node, useScene.getState().nodes) ?? [node.position[0], 0]),
+        : [node.position[0], node.position[2]],
     metadata: node.metadata,
     // Absolute: query the wall snap with the TRUE cursor, not the door's
     // original wall position plus a grab delta. A wall-hosted opening always
@@ -79,8 +76,6 @@ export const doorFloorplanMoveTarget: FloorplanMoveTarget<DoorNode> = ({ node })
     side: DoorNode['side']
     parentId: string
     wallId: string
-    roofSegmentId: undefined
-    roofFace: undefined
     visible: true
   } | null = null
 
@@ -159,8 +154,6 @@ export const doorFloorplanMoveTarget: FloorplanMoveTarget<DoorNode> = ({ node })
       side: ghostSide,
       parentId: wall.id,
       wallId: wall.id,
-      roofSegmentId: undefined,
-      roofFace: undefined,
       position: [half, node.position[1], 0] as [number, number, number],
       rotation: [0, flipped ? Math.PI : 0, 0] as [number, number, number],
       visible: true,
@@ -225,10 +218,6 @@ export const doorFloorplanMoveTarget: FloorplanMoveTarget<DoorNode> = ({ node })
         side,
         parentId: hit.wall.id,
         wallId: hit.wall.id,
-        // Re-anchoring to a wall ends any roof-segment hosting; the
-        // overlay's snapshot restores it if the move is reverted.
-        roofSegmentId: undefined,
-        roofFace: undefined,
         visible: true,
       }
 
@@ -236,8 +225,6 @@ export const doorFloorplanMoveTarget: FloorplanMoveTarget<DoorNode> = ({ node })
         parentId: hit.wall.id,
         wallId: hit.wall.id,
         side,
-        roofSegmentId: undefined,
-        roofFace: undefined,
         visible: true,
       })
       useLiveTransforms.getState().set(nodeId, {

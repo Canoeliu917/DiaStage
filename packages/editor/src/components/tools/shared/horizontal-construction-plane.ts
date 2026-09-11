@@ -1,11 +1,4 @@
-import {
-  type AnyNodeId,
-  GROUND_SUPPORT_ID,
-  type GridEvent,
-  sceneRegistry,
-  terrainSupportLift,
-  useScene,
-} from '@pascal-app/core'
+import { type AnyNodeId, type GridEvent, sceneRegistry } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { Vector3 } from 'three'
 import { publishPlacementSurface } from '../../../lib/active-placement-surface'
@@ -78,35 +71,6 @@ export function resolveLevelConstructionPlane(): HorizontalConstructionPlane | n
     worldY: worldScratch.y,
     elevation: 0,
     supportSlabId: null,
-    sourceNodeId: null,
-  }
-}
-
-export function resampleTerrainConstructionPlane(
-  plane: HorizontalConstructionPlane,
-  point: readonly [number, number],
-): HorizontalConstructionPlane {
-  if (plane.supportSlabId !== GROUND_SUPPORT_ID || plane.sourceNodeId) return plane
-
-  const levelId = useViewer.getState().selection.levelId
-  if (!levelId) return plane
-  const elevation = terrainSupportLift(useScene.getState().nodes, levelId, point[0], point[1])
-  if (elevation == null) return plane
-
-  const levelMesh = sceneRegistry.nodes.get(levelId as AnyNodeId)
-  worldScratch.set(point[0], elevation, point[1])
-  if (levelMesh) levelMesh.localToWorld(worldScratch)
-
-  const buildingId = useViewer.getState().selection.buildingId
-  const buildingMesh = buildingId ? sceneRegistry.nodes.get(buildingId as AnyNodeId) : undefined
-  localScratch.copy(worldScratch)
-  if (buildingMesh) buildingMesh.worldToLocal(localScratch)
-
-  return {
-    localY: localScratch.y,
-    worldY: worldScratch.y,
-    elevation,
-    supportSlabId: GROUND_SUPPORT_ID,
     sourceNodeId: null,
   }
 }

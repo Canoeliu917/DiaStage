@@ -2,6 +2,7 @@ import {
   type AnyNodeId,
   type FloorplanMoveTarget,
   type FloorplanMoveTargetSession,
+  resolveLevelId,
   useLiveNodeOverrides,
   useLiveTransforms,
   useScene,
@@ -18,7 +19,6 @@ import {
   usePlacementPreview,
 } from '@pascal-app/editor'
 import { createFloorplanCursorResolver } from '../shared/floorplan-cursor'
-import { getOpeningHostLevelId, getRoofHostedOpeningPlanPoint } from '../shared/roof-opening-host'
 import {
   findClosestWallInPlan,
   projectWallLocalPointToPlan,
@@ -41,9 +41,7 @@ import { clampToWall, DEFAULT_WINDOW_SILL_M, hasWallChildOverlap } from './windo
 
 export const windowFloorplanMoveTarget: FloorplanMoveTarget<WindowNode> = ({ node }) => {
   const nodeId = node.id as AnyNodeId
-  // The level that owns the wall-snap candidates — resolves the wall-hosted,
-  // roof-hosted, and fresh-placement parentings (see `getOpeningHostLevelId`).
-  const startLevelId = getOpeningHostLevelId(node, useScene.getState().nodes)
+  const startLevelId = resolveLevelId(node, useScene.getState().nodes) as AnyNodeId
   const originalWall = node.parentId
     ? (useScene.getState().nodes[node.parentId as AnyNodeId] as WallNode | undefined)
     : undefined
@@ -51,7 +49,7 @@ export const windowFloorplanMoveTarget: FloorplanMoveTarget<WindowNode> = ({ nod
     original:
       originalWall?.type === 'wall'
         ? projectWallLocalPointToPlan(originalWall, node.position[0])
-        : (getRoofHostedOpeningPlanPoint(node, useScene.getState().nodes) ?? [node.position[0], 0]),
+        : [node.position[0], node.position[2]],
     metadata: node.metadata,
     // Absolute: query the wall snap with the TRUE cursor (see the matching
     // comment in `doorFloorplanMoveTarget`). Relative mode anchored the search
@@ -77,8 +75,6 @@ export const windowFloorplanMoveTarget: FloorplanMoveTarget<WindowNode> = ({ nod
     side: WindowNode['side']
     parentId: string
     wallId: string
-    roofSegmentId: undefined
-    roofFace: undefined
     visible: true
   } | null = null
 
@@ -148,8 +144,6 @@ export const windowFloorplanMoveTarget: FloorplanMoveTarget<WindowNode> = ({ nod
       side: ghostSide,
       parentId: wall.id,
       wallId: wall.id,
-      roofSegmentId: undefined,
-      roofFace: undefined,
       position: [half, startLocalY, 0] as [number, number, number],
       rotation: [0, flipped ? Math.PI : 0, 0] as [number, number, number],
       visible: true,
@@ -222,10 +216,6 @@ export const windowFloorplanMoveTarget: FloorplanMoveTarget<WindowNode> = ({ nod
         side,
         parentId: hit.wall.id,
         wallId: hit.wall.id,
-        // Re-anchoring to a wall ends any roof-segment hosting; the
-        // overlay's snapshot restores it if the move is reverted.
-        roofSegmentId: undefined,
-        roofFace: undefined,
         visible: true,
       }
 
@@ -233,8 +223,6 @@ export const windowFloorplanMoveTarget: FloorplanMoveTarget<WindowNode> = ({ nod
         parentId: hit.wall.id,
         wallId: hit.wall.id,
         side,
-        roofSegmentId: undefined,
-        roofFace: undefined,
         visible: true,
       })
       useLiveTransforms.getState().set(nodeId, {

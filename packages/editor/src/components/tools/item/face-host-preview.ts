@@ -35,12 +35,7 @@ export function resolveFaceHostSwitch(
 }
 
 export function shouldDetachFaceHostOnLeave(attachTo: string | undefined): boolean {
-  return (
-    attachTo === undefined ||
-    attachTo === 'wall' ||
-    attachTo === 'wall-side' ||
-    attachTo === 'ceiling'
-  )
+  return attachTo === undefined || attachTo === 'wall' || attachTo === 'wall-side'
 }
 
 export function clampFaceHostPosition(

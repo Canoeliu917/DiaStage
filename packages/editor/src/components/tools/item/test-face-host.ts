@@ -50,23 +50,6 @@ const testFaceHost: FaceHostCapability<BlockNodeType> = {
       }
     }
 
-    if (faceId === 'f-bottom') {
-      if (asset.attachTo !== 'ceiling') return null
-      return {
-        cursorPosition: [0, -0.25, 0],
-        position: [0, 0, 0.25],
-        rotation: [-Math.PI / 2, 0, 0],
-        cursorRotation: [-Math.PI / 2, 0, 0],
-        faceId,
-        nodeUpdate: {
-          parentId: host.id,
-          blockFaceId: faceId,
-          position: [0, 0, 0.25],
-          rotation: [-Math.PI / 2, 0, 0],
-        },
-      }
-    }
-
     if (faceId === 'f-top') {
       if (asset.attachTo) return null
       return {
@@ -93,8 +76,6 @@ const testFaceHost: FaceHostCapability<BlockNodeType> = {
       blockFaceId: item.blockFaceId,
       position: [position[0], position[1], position[2]],
       rotation: item.rotation,
-      roofSegmentId: undefined,
-      roofFace: undefined,
       wallId: undefined,
       side: 'front',
     } satisfies Partial<ItemNode>

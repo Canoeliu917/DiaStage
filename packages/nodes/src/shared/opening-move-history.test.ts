@@ -33,7 +33,7 @@ type RafFn = (cb: (time: number) => void) => number
 // `getSceneHistoryPauseDepth()`. zundo evaluates `isTracking` AFTER a
 // write's subscribers have run, so any cooperating system that takes a
 // BALANCED `pauseSceneHistory`/`resumeSceneHistory` pair inside one of
-// those mid-drag writes (the space-detection sync does, whenever a reparent
+// those mid-drag writes (a cooperating derived-geometry sync can do this when a reparent
 // touches a wall's `children`) zeroed the refcount, resumed tracking, and
 // the mid-drag write that triggered it — plus every write after — became
 // its own undo entry. QA saw a scene commit fire the moment the drag armed
@@ -111,7 +111,7 @@ function pastLength(): number {
 }
 
 /**
- * A stand-in for the space-detection sync (and any other cooperating
+ * A stand-in for any cooperating derived-geometry sync that
  * system): stands down while an interaction holds the refcounted pause,
  * otherwise brackets its reaction in a BALANCED pause/resume pair. With the
  * old raw-pause tools this pair was the resume leak.
@@ -148,7 +148,7 @@ function writeMidDragSequence(): void {
     visible: false,
   })
   // Re-snap onto wall B (both walls' children change — the write that used
-  // to wake the space-detection pause/resume pair mid-drag).
+  // to wake a cooperating pause/resume pair mid-drag).
   scene.updateNode(DOOR_ID, {
     position: [0.8, 1.05, 0],
     rotation: [0, Math.PI, 0],

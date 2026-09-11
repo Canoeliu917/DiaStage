@@ -20,12 +20,10 @@ import {
   Viewer,
 } from '@pascal-app/viewer'
 import {
-  lazy,
   memo,
   Profiler,
   type ProfilerOnRenderCallback,
   type ReactNode,
-  Suspense,
   useCallback,
   useEffect,
   useRef,
@@ -87,7 +85,6 @@ import { GroupRotateHandle } from './group-rotate-handle'
 import { GroupSelectionBox3D } from './group-selection-box-3d'
 import { NodeArrowHandles } from './node-arrow-handles'
 import { QuickMeasurementHud } from './quick-measurement-hud'
-import { RiserDiagramPanel } from './riser-diagram-panel'
 import { SelectionManager } from './selection-manager'
 import { SiteEdgeLabels } from './site-edge-labels'
 import { SlabHoleHighlights } from './slab-hole-highlights'
@@ -124,21 +121,6 @@ const EDITOR_HOVER_STYLES: HoverStyles = {
   },
 }
 const EDITOR_DEFAULT_RENDER = { shading: 'solid' } as const
-const StairEditSystem = lazy(() =>
-  import('../systems/stair/stair-edit-system').then((m) => ({ default: m.StairEditSystem })),
-)
-function StageStairEditingSystem() {
-  const hasStair = useScene((s) => Object.values(s.nodes).some((n) => n.type === 'stair'))
-  return (
-    <>
-      {hasStair && (
-        <Suspense fallback={null}>
-          <StairEditSystem />
-        </Suspense>
-      )}
-    </>
-  )
-}
 
 /**
  * Wire up module-level singletons (spatial grid, space detection, SFX) for
@@ -186,18 +168,6 @@ export interface EditorProps {
    * viewer toolbar stays on top so the host's stage switch remains reachable.
    */
   stageOverlay?: ReactNode
-  /**
-   * Docked below the node inspector (v2). Hosts mount the "save as preset"
-   * affordance here so it reads as part of the inspector surface and shows
-   * only while a node is selected.
-   */
-  inspectorFooter?: ReactNode
-  /**
-   * Docked below the multi-selection panel (v2). Hosts mount whole-selection
-   * affordances here (e.g. "Save to my catalog"); shows only while more than
-   * one node is selected.
-   */
-  multiSelectionFooter?: ReactNode
   /** Replace the native selection inspector; undefined keeps the default, null hides it. */
   selectionPanelSlot?: ReactNode
 
@@ -225,7 +195,7 @@ export interface EditorProps {
   previewScene?: SceneGraph
   isVersionPreviewMode?: boolean
 
-  // Loading indicator (e.g. project fetching in community mode)
+  // Loading indicator while the host fetches a project.
   isLoading?: boolean
 
   // Fires when the full-screen scene loader shows/hides — lets hosts measure
@@ -829,7 +799,6 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!isFirstPersonMode && <WallMeasurementLabel />}
       <ExportManager />
       {isFirstPersonMode ? <ViewerZoneSystem /> : <ZoneSystem />}
-      <StageStairEditingSystem />
       {!noEditing && <SelectionAffordanceManager />}
       {!(isLoading || isFirstPersonMode) && <SnapAwareGrid />}
       {!(isLoading || noEditing) && <ToolManager />}
@@ -1257,8 +1226,6 @@ function EditorContent({
   viewerToolbarLeft,
   viewerToolbarRight,
   stageOverlay,
-  inspectorFooter,
-  multiSelectionFooter,
   selectionPanelSlot,
   viewerSceneSlot,
   viewerRuntimeSlot,
@@ -1514,7 +1481,6 @@ function EditorContent({
     >
       <ExportManager />
       <ViewerZoneSystem />
-      <StageStairEditingSystem />
       {isFirstPersonMode && <FirstPersonControls />}
       <CustomCameraControls />
       <ThumbnailGenerator onThumbnailCapture={onThumbnailCapture} />
@@ -1630,14 +1596,7 @@ function EditorContent({
                   )}
                   {!(isVersionPreviewMode || isCaptureMode || isStudioMode) && (
                     <div className="pointer-events-auto">
-                      {selectionPanelSlot === undefined ? (
-                        <PanelManager
-                          inspectorFooter={inspectorFooter}
-                          multiSelectionFooter={multiSelectionFooter}
-                        />
-                      ) : (
-                        selectionPanelSlot
-                      )}
+                      {selectionPanelSlot === undefined ? <PanelManager /> : selectionPanelSlot}
                     </div>
                   )}
                   {!isCaptureMode && (
@@ -1729,7 +1688,6 @@ function EditorContent({
             <div className="pointer-events-auto">
               <HelperManager />
             </div>
-            <RiserDiagramPanel />
             {isFirstPersonMode && (
               <FirstPersonOverlay onExit={() => useEditor.getState().setFirstPersonMode(false)} />
             )}

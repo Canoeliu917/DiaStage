@@ -12,7 +12,6 @@ import {
   getWallEffectiveHeightForNodes,
   getWallPlanFootprint,
   type ItemNode,
-  nodeRegistry,
   type StairNode,
   useLiveNodeOverrides,
   useLiveTransforms,
@@ -238,11 +237,8 @@ function movable(node: AnyNode | undefined): MovableNode {
   if (!node || (node.type !== 'item' && node.type !== 'block' && node.type !== 'stair'))
     throw new Error('请选择物件、体块或舞台台阶。')
   if (node.metadata.isNew === true) throw new Error('请先完成物件放置。')
-  if (
-    node.type === 'item' &&
-    (node.asset.attachTo || node.wallId || node.roofSegmentId || node.blockFaceId)
-  ) {
-    throw new Error('墙面、屋顶、顶棚或块体面挂接物件暂不支持复台。')
+  if (node.type === 'item' && (node.asset.attachTo || node.wallId || node.blockFaceId)) {
+    throw new Error('墙面或体块面挂接物件暂不支持复台。')
   }
   return node
 }
@@ -597,49 +593,38 @@ function obstacleSnapshot(
 ): RemountObject | null {
   if (node.type === 'item' || node.type === 'block' || node.type === 'stair')
     return objectSnapshot(movable(node), nodes)
-  if (node.type !== 'wall' && node.type !== 'column') return null
+  if (node.type !== 'wall') return null
   const parent = worldPose(node.parentId, nodes)
-  let position: Vec3
-  let rotation: Vec3
-  let dimensions: Vec3
-  if (node.type === 'wall') {
-    let miter = miters.get(node.parentId)
-    if (!miter) {
-      miter = calculateLevelMiters(
-        Object.values(nodes).filter(
-          (other): other is WallNode => other.type === 'wall' && other.parentId === node.parentId,
-        ),
-      )
-      miters.set(node.parentId, miter)
-    }
-    rotation = [0, -Math.atan2(node.end[1] - node.start[1], node.end[0] - node.start[0]), 0]
-    const polygon = getWallPlanFootprint(node, miter).map((point) =>
-      inverseRotatePoint([point.x, 0, point.y], rotation),
+  let miter = miters.get(node.parentId)
+  if (!miter) {
+    miter = calculateLevelMiters(
+      Object.values(nodes).filter(
+        (other): other is WallNode => other.type === 'wall' && other.parentId === node.parentId,
+      ),
     )
-    if (polygon.length === 0) throw new Error('墙体没有有效轮廓。')
-    const minX = Math.min(...polygon.map((point) => point[0])),
-      maxX = Math.max(...polygon.map((point) => point[0]))
-    const minZ = Math.min(...polygon.map((point) => point[2])),
-      maxZ = Math.max(...polygon.map((point) => point[2]))
-    position = rotatePoint(
-      [(minX + maxX) / 2, getWallBaseElevationForNodes(node, nodes), (minZ + maxZ) / 2],
-      rotation,
-    )
-    dimensions = [maxX - minX, getWallEffectiveHeightForNodes(node, nodes), maxZ - minZ]
-  } else {
-    rotation = [0, node.rotation, 0]
-    position = [...node.position]
-    position[1] += getFloorPlacedElevation({ node, nodes, position, rotation })
-    const footprint = nodeRegistry
-      .get('column')
-      ?.capabilities.floorPlaced?.footprint?.(node, { nodes })
-    dimensions = footprint
-      ? [...footprint.dimensions]
-      : [Math.max(node.width, node.radius * 2), node.height, Math.max(node.depth, node.radius * 2)]
+    miters.set(node.parentId, miter)
   }
+  const rotation: Vec3 = [
+    0,
+    -Math.atan2(node.end[1] - node.start[1], node.end[0] - node.start[0]),
+    0,
+  ]
+  const polygon = getWallPlanFootprint(node, miter).map((point) =>
+    inverseRotatePoint([point.x, 0, point.y], rotation),
+  )
+  if (polygon.length === 0) throw new Error('墙体没有有效轮廓。')
+  const minX = Math.min(...polygon.map((point) => point[0])),
+    maxX = Math.max(...polygon.map((point) => point[0]))
+  const minZ = Math.min(...polygon.map((point) => point[2])),
+    maxZ = Math.max(...polygon.map((point) => point[2]))
+  const position = rotatePoint(
+    [(minX + maxX) / 2, getWallBaseElevationForNodes(node, nodes), (minZ + maxZ) / 2],
+    rotation,
+  )
+  const dimensions: Vec3 = [maxX - minX, getWallEffectiveHeightForNodes(node, nodes), maxZ - minZ]
   return RemountObjectSchema.parse({
     nodeId: node.id,
-    name: node.name || (node.type === 'wall' ? '墙体' : '柱体'),
+    name: node.name || '墙体',
     representation: 'proxy',
     position: add(parent.position, rotatePoint(position, parent.rotation)),
     rotation: composeRotations(parent.rotation, rotation),

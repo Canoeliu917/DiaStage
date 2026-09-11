@@ -131,21 +131,16 @@ describe('slabDefinition handles', () => {
       children: ['segment_a'],
       position: [3, 0, 3],
       rotation: 0,
-      stairType: 'straight',
-      deckSlabId: slab.id,
       supportSlabId: 'ground',
     } as unknown as AnyNode
     const segment = {
       id: 'segment_a',
       type: 'stair-segment',
       parentId: 'stair_a',
-      segmentType: 'stair',
       height: 0.7,
       width: 1,
       length: 3,
       stepCount: 10,
-      fillToFloor: false,
-      thickness: 0.2,
     } as unknown as AnyNode
     const nodes = {
       [level.id]: level,

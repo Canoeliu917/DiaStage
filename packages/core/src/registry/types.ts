@@ -1,5 +1,5 @@
 import type { ComponentType } from 'react'
-import type { AnimationClip, BufferGeometry, Object3D, Ray } from 'three'
+import type { AnimationClip, Object3D, Ray } from 'three'
 import type { ZodObject, z } from 'zod'
 import type { MaterialSchema, MaterialTarget } from '../schema/material'
 import type { AssetInput, ItemNode } from '../schema/nodes/item'
@@ -29,25 +29,6 @@ export type GeometryContext = {
   siblings: AnyNode[]
   /** Resolved parent (null for root-level nodes). */
   parent: AnyNode | null
-  /**
-   * **The level base at level-local `x`/`z`** — the surface a node rests on
-   * when nothing built is under it. Sculpted ground where terrain supports this
-   * node's storey, `0` everywhere else (`levelBaseElevationAt`).
-   *
-   * This is how a pure builder that bakes its own vertical origin inherits
-   * terrain. Without it the only way to ask was to import the scene store,
-   * which a builder must not do, so every such kind hardcoded the plane
-   * `y = 0` — and stayed flat on a hillside. A kind that resolves its base
-   * through here follows the ground with nothing registered and nothing
-   * opted into; kinds whose Y comes from a parent group or from
-   * `capabilities.floorPlaced` ignore it.
-   *
-   * Populated by `<GeometrySystem>` for every `def.geometry` call. Absent for
-   * `def.floorplan` — the plan view draws no elevation — so builders shared
-   * between the two must treat it as optional rather than assume flat ground
-   * in 2D.
-   */
-  levelBaseAt?: (x: number, z: number) => number
   /**
    * Pre-computed level-batch data, populated by the dispatcher when the
    * kind declares `def.computeLevelData` (3D) or
@@ -282,40 +263,6 @@ export type FloorplanStyle = {
   cursor?: string
 }
 
-// ─── NodePort ────────────────────────────────────────────────────────
-//
-// A typed connection point exposed by a node — the open end of a duct
-// run, the collar of a fitting, the supply plenum of an air handler.
-// Ports are what placement tools snap to and what a future system graph
-// walks to decide connectivity.
-//
-// Coordinates are LEVEL-LOCAL meters — the same space duct paths and
-// grid events use. Kinds whose schema stores a node transform
-// (`position` / `rotation`) apply it themselves inside `def.ports` so
-// consumers never need to know how a kind stores its placement.
-
-export type NodePort = {
-  /** Stable identifier within the node, e.g. 'start', 'end', 'branch'. */
-  id: string
-  /** Level-local meters. */
-  position: readonly [number, number, number]
-  /** Unit vector pointing OUT of the port (away from the node body). */
-  direction: readonly [number, number, number]
-  /** Nominal connection diameter in inches. For a rect / oval port this is
-   *  the area-equivalent round size, so a round run still mates sensibly. */
-  diameter: number
-  /** Which distribution loop the port belongs to, e.g. 'supply' | 'return'. */
-  system?: string
-  /** Cross-section of the connection. Omitted = round at `diameter`. A duct
-   *  run joining a rect / oval port adopts this shape and rolls its
-   *  cross-section to line up with the collar. */
-  shape?: 'round' | 'rect' | 'oval'
-  /** Rect / oval cross-section in inches: width is the collar's horizontal
-   *  face at roll 0, height the vertical one. */
-  width?: number
-  height?: number
-}
-
 // ─── ToolHint ────────────────────────────────────────────────────────
 //
 // A single key + label entry in the contextual shortcut hint panel.
@@ -375,8 +322,7 @@ export type ToolHintChip = {
 // A declarative pick-one option row for a kind's build tool, chosen in a
 // sidebar BEFORE drawing (a `ToolHintChip` cycles in the HUD DURING it).
 // Any host that mounts the shared `<ToolOptionsPanel>` shows every kind's
-// declared options without per-kind wiring — the community Build sidebar
-// gets them for free instead of hardcoding each one. The kind owns the
+// declared options without per-kind wiring. The kind owns the
 // state, typically a small ephemeral store beside its tool.
 
 export type ToolOptionChoice = {
@@ -863,7 +809,7 @@ export type FloorplanAffordance<N> = {
 //     overlap helpers.
 //   - item with `attachTo: 'wall'` / `'wall-side'`: same as door /
 //     window but the local Y is free (item can move up/down the wall).
-//   - item with `attachTo: 'ceiling'`: hit-test ceiling polygons,
+//   - wall-mounted item: hit-test wall faces,
 //     reparent on transition.
 //   - item with `attachTo: 'floor'` (or no attachTo): point-in-slab
 //     check, snap to slab elevation.
@@ -925,63 +871,17 @@ export type FloorplanMoveTarget<N> = (args: {
 
 // ─── Plugin manifest ─────────────────────────────────────────────────
 
-/**
- * A plugin-contributed section for the floating node inspector card.
- * When a node whose `type` is in `kinds` is selected, the inspector header
- * shows the extension's `icon` as a button. Clicking it swaps the card
- * body to ONLY this extension's `component` (inside a section titled
- * `title`) — extension mode and the kind's own controls are EITHER/OR,
- * never appended together. Clicking the (highlighted) icon again, or the
- * chevron, returns to the regular controls. The mobile sheet has no
- * header icons, so it appends the section after the kind's controls
- * instead.
- *
- * `component` is lazy-loaded on first expand and receives the selected
- * node as a `node` prop (`ComponentType<{ node: AnyNode }>` — typed as
- * {@link LazyComponent} so plugin bundles don't need the host's node
- * types to declare one).
- *
- * Extensions surface only when the contributing plugin is installed in
- * the project (same `installedPlugins` gate as panels and node kinds).
- */
-export type InspectorExtension = {
-  /** Globally unique id, e.g. `pascal:bones:wall-engineering`. */
-  id: string
-  /** The contributing plugin's id — used for the install gate. */
-  pluginId: string
-  /** Node kinds whose inspector card grows this section. */
-  kinds: string[]
-  /** Header-button icon (16px box). */
-  icon: IconRef
-  /** Section title, e.g. `Engineering`. */
-  title: string
-  /** Lazy section body; receives `{ node }` (the selected node). */
-  component: LazyComponent
-}
-
 export type Plugin = {
   id: string
   apiVersion: 1
   nodes?: AnyNodeDefinition[]
-  /** Sections contributed to the floating node inspector card. */
-  inspectorExtensions?: InspectorExtension[]
 }
 
 // ─── NodeDefinition ──────────────────────────────────────────────────
 
 export type AnyNodeDefinition = NodeDefinition<ZodObject<any>>
 
-export type SurfaceRole =
-  | 'wall'
-  | 'floor'
-  | 'ceiling'
-  | 'roof'
-  | 'joinery'
-  | 'glazing'
-  | 'furnishing'
-
-/** Role a kind plays in a duct / pipe / lineset distribution system. */
-export type DistributionRole = 'run' | 'fitting' | 'terminal' | 'equipment'
+export type SurfaceRole = 'wall' | 'floor' | 'joinery' | 'glazing' | 'furnishing'
 
 /**
  * A kind's snapping profile (see `NodeDefinition.snapProfile`).
@@ -1026,32 +926,6 @@ export type NodeDefinition<S extends ZodObject<any>> = {
    * which sits on the -Z side of the footprint).
    */
   facingIndicator?: boolean | { reversed?: boolean }
-  /**
-   * Role this kind plays in a distribution system (HVAC duct / DWV pipe /
-   * refrigerant lineset). Lets the system-graph summary classify a
-   * component without branching on `node.type`:
-   *   - `'run'` — a duct / pipe / lineset segment (carries `path`).
-   *   - `'fitting'` — an inline fitting (elbow / tee / reducer / trap).
-   *   - `'terminal'` — a grille / register / diffuser endpoint.
-   *   - `'equipment'` — a furnace / air handler / condenser source.
-   * Kinds outside any distribution system leave this unset.
-   */
-  distributionRole?: DistributionRole
-  /**
-   * When `distributionRole` is `'fitting'`, controls whether this fitting
-   * is dragged as a rigid follower when a connected run endpoint moves.
-   *
-   * - `true` (default for `distributionRole === 'fitting'`): the fitting
-   *   translates rigidly so its mated collar stays on the moved port — the
-   *   right behaviour for in-line fittings (elbows, tees, wyes, crosses).
-   * - `false`: the fitting is anchored in space; moving a connected run
-   *   endpoint stretches the run arm, not the fitting. Use this for
-   *   fixed-position fixtures like `pipe-trap`.
-   *
-   * Has no effect when `distributionRole` is not `'fitting'`.
-   */
-  portConnectivityFollow?: boolean
-
   defaults: () => Omit<z.infer<S>, 'id' | 'type'>
 
   capabilities: Capabilities
@@ -1319,15 +1193,6 @@ export type NodeDefinition<S extends ZodObject<any>> = {
     liveTransforms: Map<string, LiveTransformLike>
     liveOverrides: Map<string, Record<string, unknown>>
   }) => Record<AnyNodeId, AnyNode>
-  /**
-   * Typed connection points this kind exposes (duct/pipe open ends,
-   * fitting collars, equipment plenums). Pure function of the node —
-   * returns LEVEL-LOCAL positions/directions (the kind applies its own
-   * transform). Consumed by placement tools for port-snapping and, in a
-   * later slice, by the system graph for connectivity. Kinds with no
-   * connectable geometry omit this.
-   */
-  ports?: (node: z.infer<S>) => NodePort[]
   system?: SystemContribution
   tool?: LazyComponent
   /**
@@ -1424,9 +1289,8 @@ export type NodeDefinition<S extends ZodObject<any>> = {
    * components with shared drag plumbing, replacing per-kind
    * `<XxxSideHandles>` files for the common cases.
    *
-   * Static array, or a function for shape-dependent affordances
-   * (column `crossSection` / `supportStyle`, stair-segment `segmentType`,
-   * curved-vs-straight stairs). See `./handles.ts` for the variant union.
+   * Static array, or a function for shape-dependent affordances. See
+   * `./handles.ts` for the variant union.
    *
    * Bespoke chrome that doesn't fit the descriptor model (wall corner
    * leader dashes, fence curving, items with `attachTo`) stays as a
@@ -1616,13 +1480,6 @@ export type Capabilities = {
     node: AnyNode,
     nodes?: Readonly<Record<string, AnyNode>>,
   ) => { size: [number, number, number]; center?: [number, number, number]; centerY?: number }
-  roofAccessory?: RoofAccessoryConfig
-  /**
-   * Kind cuts a hole in the ceiling surface it is attached to (e.g. recessed
-   * downlights). The viewer's `CeilingSystem` calls this for each child of a
-   * ceiling to collect extra holes before triangulating. See `CeilingCutCapability`.
-   */
-  ceilingCut?: CeilingCutCapability
   paint?: PaintCapability
   /**
    * In-scene click action dispatch (e.g. a cooktop knob toggling its burner).
@@ -1683,24 +1540,6 @@ export type Capabilities = {
    */
   hostRefFields?: string[]
   /**
-   * Whether instances of this kind can be saved as a reusable preset
-   * (unified `items` catalog, `kind='preset'`). The editor itself does
-   * not act on this flag — host apps read it to gate "save as preset"
-   * UI on the selected node. Default resolution (callers should use the
-   * `isPresettable(def)` helper rather than reading this directly):
-   *
-   *   - explicit `true`  → presettable
-   *   - explicit `false` → not presettable
-   *   - undefined        → presettable when `def.parametrics` exists
-   *
-   * Structural / utility kinds (level, building, site, zone, spawn,
-   * guide, scan, item) opt out explicitly because saving them as a
-   * standalone preset has no meaning — items already have their own
-   * catalog, scans/guides carry user-uploaded imagery, and the rest
-   * are non-leaf scene containers.
-   */
-  presettable?: boolean
-  /**
    * Instances of this kind are created by operating a build tool and
    * drawing on the grid (clicking points), rather than dropping a
    * finished instance. The tool id equals the node `type`. Host apps may
@@ -1753,13 +1592,6 @@ export type PaintCapability = {
    * the kind should not show up as a toolbar target from plain selection.
    */
   materialTarget?: MaterialTarget
-  /**
-   * Opt this kind into the painter's `room` application scope: a paint click
-   * spreads to every same-kind node bounding the clicked node's room (walls and
-   * slabs). The room geometry is resolved by the editor from `Space.polygon`;
-   * this flag only declares that the kind participates.
-   */
-  roomScope?: boolean
   /**
    * Resolve which logical surface the user clicked. Returns `null`
    * when the face shouldn't be painted (e.g. interior slot exposed
@@ -1902,67 +1734,8 @@ export type PaintPreviewArgs = {
 export type PaintEffectiveMaterialArgs = {
   node: AnyNode
   role: string
-  /** Snapshot of the scene `nodes` map — kinds whose effective material walks the parent chain (roof-segment → roof) read parents through it. */
+  /** Snapshot of the scene `nodes` map for material inheritance. */
   nodes: Record<AnyNodeId, AnyNode>
-}
-
-/**
- * Kinds mounted on a roof segment via `roofSegmentId`. Presence of this
- * capability tells the viewer's roof-merge loop two things:
- *
- *   1. **Dirty cascade.** When the accessory is dirtied (move / resize /
- *      reparent), the host segment's parent roof needs a re-merge —
- *      otherwise the merged shell shows the previous cut shape. The
- *      generic loop clears the accessory's dirty bit and queues the
- *      parent roof.
- *   2. **Optional CSG cut.** When `buildCut` is set, the merge loop
- *      subtracts the returned geometry from the host segment's shin /
- *      deck / wall brushes so the accessory has a clean hole to poke
- *      through. Returned geometry is SEGMENT-LOCAL; the viewer welds
- *      vertices, attaches a single material group, and wraps it in a
- *      `three-bvh-csg` Brush — core stays free of three-bvh-csg deps
- *      and kinds don't need to import it.
- *
- * Use `buildCut` when the kind pokes THROUGH the roof (skylight,
- * dormer). Kinds that sit ON TOP (vents, solar panels) declare the
- * capability without `buildCut` — the cascade still fires but no CSG
- * cut runs.
- */
-export type RoofAccessoryConfig = {
-  buildCut?: (node: AnyNode, hostSegment: AnyNode) => BufferGeometry | null
-  /**
-   * Which segment brushes `buildCut` subtracts from. Wall-face openings
-   * (door / window) cut only the wall brush — subtracting the same box
-   * from the shin / deck slabs is pointless work and creates tangential
-   * / coplanar CSG cases near the gable and shed slopes. Defaults to
-   * all three (skylight / dormer genuinely poke through the deck).
-   */
-  cutScope?: 'all' | 'wall'
-  /**
-   * The kind's own dirty-driven geometry system consumes its dirty
-   * marks (door / window via DoorSystem / WindowSystem, which already
-   * cascade to the host segment through `parentId`). The roof-merge
-   * loop must then leave those marks alone — consuming them would
-   * starve that system whenever it defers a rebuild (mesh not mounted
-   * yet, per-frame rebuild budget exhausted).
-   */
-  dirtyHandledByOwnSystem?: boolean
-}
-
-/**
- * Capability for kinds that cut a hole in their host ceiling when the node is
- * attached to a ceiling surface (e.g. recessed downlights). The viewer's
- * `CeilingSystem` queries children of a ceiling for this capability and merges
- * the returned polygons as extra holes before triangulating, keeping the viewer
- * free of per-kind branching.
- *
- * Returns a rotated-rectangle footprint in ceiling-local [x, z] plan space —
- * the same coordinate space as `CeilingNode.polygon` and `.holes`. Return
- * `null` when this particular instance should not cut a hole (e.g. a
- * non-recessed variant of the same kind).
- */
-export type CeilingCutCapability = {
-  buildCeilingHole: (node: AnyNode) => Array<[number, number]> | null
 }
 
 export type CapabilityCtx = { node: AnyNode }

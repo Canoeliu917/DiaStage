@@ -25,7 +25,7 @@ import useEditor from '../../../store/use-editor'
 import { ActionButton, ActionGroup } from '../controls/action-button'
 import { PanelSection } from '../controls/panel-section'
 import { ParametricFieldControl } from './parametric-field-control'
-import { InspectorFooterContext, PanelWrapper } from './panel-wrapper'
+import { PanelWrapper } from './panel-wrapper'
 
 /**
  * Auto-derived right-panel inspector for any registry-backed node.
@@ -44,11 +44,9 @@ import { InspectorFooterContext, PanelWrapper } from './panel-wrapper'
  * can't be auto-generated (topology editors etc.).
  */
 export function ParametricInspector({
-  footer,
   nodeId,
   onClose,
 }: {
-  footer?: React.ReactNode
   nodeId?: AnyNodeId
   onClose?: () => void
 } = {}) {
@@ -132,7 +130,7 @@ export function ParametricInspector({
 
   if (!selectedId || !def) return null
   if (!parametrics) return (
-    <PanelWrapper footer={footer} onClose={clearSelection} title="兼容物件" width={320}>
+    <PanelWrapper onClose={clearSelection} title="兼容物件" width={320}>
       <p className="p-3 text-sm text-muted-foreground">该物件保留在原场景中，可查看与移动；详细参数仅作兼容保存。</p>
       <PanelSection title="操作">
         <ActionGroup>
@@ -151,14 +149,10 @@ export function ParametricInspector({
   // panel to cover them.
   if (parametrics.customPanel) {
     const CustomPanel = resolveCustomPanel(parametrics.customPanel)
-    // Custom panels render their own `<PanelWrapper>` and don't thread a
-    // `footer` prop, so hand the host footer down via context.
     return (
-      <InspectorFooterContext.Provider value={footer}>
-        <Suspense fallback={null}>
-          <CustomPanel />
-        </Suspense>
-      </InspectorFooterContext.Provider>
+      <Suspense fallback={null}>
+        <CustomPanel />
+      </Suspense>
     )
   }
 
@@ -175,7 +169,6 @@ export function ParametricInspector({
 
   return (
     <PanelWrapper
-      footer={footer}
       icon={iconNode}
       onClose={clearSelection}
       title={title}

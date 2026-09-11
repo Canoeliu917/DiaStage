@@ -76,19 +76,6 @@ describe('canDirectMoveNode', () => {
     expect(canDirectMoveNode({ id: 'node_1', type: kind } as unknown as AnyNode)).toBe(false)
   })
 
-  test('rejects MEP kinds that own move through bespoke selection affordances', () => {
-    for (const kind of [
-      'duct-segment',
-      'duct-fitting',
-      'pipe-segment',
-      'pipe-fitting',
-      'lineset',
-      'liquid-line',
-    ]) {
-      expect(canDirectMoveNode({ id: 'node_1', type: kind } as unknown as AnyNode)).toBe(false)
-    }
-  })
-
   test('accepts kinds with a bespoke move tool', () => {
     const kind = 'direct-move-bespoke-tool-test'
     registerTestDefinition(kind, {
@@ -126,7 +113,7 @@ describe('shouldStartDirectMoveDrag', () => {
         allowPlainDrag: true,
         commandModifier: false,
         handleOwnsPointer: false,
-        nodeId: 'cabinet_existing',
+        nodeId: 'prop_existing',
         selectedIds: [],
       }),
     ).toBe(true)
@@ -159,15 +146,15 @@ describe('shouldStartDirectMoveDrag', () => {
         allowPlainDrag: true,
         commandModifier: false,
         handleOwnsPointer: true,
-        nodeId: 'cabinet_selected',
-        selectedIds: ['cabinet_selected'],
+        nodeId: 'prop_selected',
+        selectedIds: ['prop_selected'],
       }),
     ).toBe(false)
   })
 })
 
 describe('pointerEventHitsEditorHandle', () => {
-  test('keeps a visible resize handle from falling through to a nearer cabinet body', () => {
+  test('keeps a visible resize handle from falling through to a nearer stage prop', () => {
     expect(
       pointerEventHitsEditorHandle({
         intersections: [

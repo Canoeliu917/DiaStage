@@ -1,7 +1,6 @@
 import { getRenderableSlabPolygon } from '../../lib/slab-polygon'
-import { levelBaseElevationAt } from '../../lib/terrain-support'
 import { nodeRegistry } from '../../registry'
-import type { AnyNode, AnyNodeId, CeilingNode, ItemNode, SlabNode, WallNode } from '../../schema'
+import type { AnyNode, AnyNodeId, ItemNode, SlabNode, WallNode } from '../../schema'
 import { getScaledDimensions, isLowProfileItemSurface } from '../../schema'
 import { getWallPlaneTop } from '../../services/storey'
 import useLiveNodeOverrides, { getEffectiveNode } from '../../store/use-live-node-overrides'
@@ -328,9 +327,6 @@ export class SpatialGridManager {
   private readonly wallGrids = new Map<string, WallSpatialGrid>() // levelId -> wall grid
   private readonly walls = new Map<string, WallNode>() // wallId -> wall data (for length calculations)
   private readonly slabsByLevel = new Map<string, Map<string, SlabNode>>() // levelId -> (slabId -> slab)
-  private readonly ceilingGrids = new Map<string, SpatialGrid>() // ceilingId -> grid
-  private readonly ceilings = new Map<string, CeilingNode>() // ceilingId -> ceiling data
-  private readonly itemCeilingMap = new Map<string, string>() // itemId -> ceilingId (reverse lookup)
 
   private readonly cellSize: number
 
@@ -382,13 +378,6 @@ export class SpatialGridManager {
       getWallPlaneTop(wall, levelId, nodes),
       support.elevation,
     )
-  }
-
-  private getCeilingGrid(ceilingId: string): SpatialGrid {
-    if (!this.ceilingGrids.has(ceilingId)) {
-      this.ceilingGrids.set(ceilingId, new SpatialGrid({ cellSize: this.cellSize }))
-    }
-    return this.ceilingGrids.get(ceilingId)!
   }
 
   private getSlabMap(levelId: string): Map<string, SlabNode> {
@@ -520,8 +509,6 @@ export class SpatialGridManager {
     if (node.type === 'slab') {
       this.getSlabMap(levelId).set(node.id, node as SlabNode)
       this.invalidateRenderedSlabPolygons(levelId)
-    } else if (node.type === 'ceiling') {
-      this.ceilings.set(node.id, node as CeilingNode)
     } else if (node.type === 'wall') {
       const wall = node as WallNode
       this.walls.set(wall.id, wall)
@@ -552,18 +539,6 @@ export class SpatialGridManager {
             })
           }
         }
-      } else if (item.asset.attachTo === 'ceiling') {
-        // Ceiling item - use parentId as the ceiling ID
-        const ceilingId = item.parentId
-        if (ceilingId && this.ceilings.has(ceilingId)) {
-          this.getCeilingGrid(ceilingId).insert(
-            item.id,
-            item.position,
-            getScaledDimensions(item),
-            item.rotation,
-          )
-          this.itemCeilingMap.set(item.id, ceilingId)
-        }
       } else if (!item.asset.attachTo) {
         // Floor item
         this.getFloorGrid(levelId).insert(
@@ -580,8 +555,6 @@ export class SpatialGridManager {
     if (node.type === 'slab') {
       this.getSlabMap(levelId).set(node.id, node as SlabNode)
       this.invalidateRenderedSlabPolygons(levelId)
-    } else if (node.type === 'ceiling') {
-      this.ceilings.set(node.id, node as CeilingNode)
     } else if (node.type === 'wall') {
       const wall = node as WallNode
       this.walls.set(wall.id, wall)
@@ -612,24 +585,6 @@ export class SpatialGridManager {
             })
           }
         }
-      } else if (item.asset.attachTo === 'ceiling') {
-        // Remove from old ceiling grid
-        const oldCeilingId = this.itemCeilingMap.get(item.id)
-        if (oldCeilingId) {
-          this.getCeilingGrid(oldCeilingId).remove(item.id)
-          this.itemCeilingMap.delete(item.id)
-        }
-        // Insert into new ceiling grid
-        const ceilingId = item.parentId
-        if (ceilingId && this.ceilings.has(ceilingId)) {
-          this.getCeilingGrid(ceilingId).insert(
-            item.id,
-            item.position,
-            getScaledDimensions(item),
-            item.rotation,
-          )
-          this.itemCeilingMap.set(item.id, ceilingId)
-        }
       } else if (!item.asset.attachTo) {
         this.getFloorGrid(levelId).update(
           item.id,
@@ -647,9 +602,6 @@ export class SpatialGridManager {
       // (still keyed in the level map here) is dropped with its siblings'.
       this.invalidateRenderedSlabPolygons(levelId)
       this.getSlabMap(levelId).delete(nodeId)
-    } else if (nodeType === 'ceiling') {
-      this.ceilings.delete(nodeId)
-      this.ceilingGrids.delete(nodeId)
     } else if (nodeType === 'wall') {
       this.walls.delete(nodeId)
       this.invalidateRenderedSlabPolygons(levelId)
@@ -659,12 +611,6 @@ export class SpatialGridManager {
     } else if (nodeType === 'item') {
       this.getFloorGrid(levelId).remove(nodeId)
       this.getWallGrid(levelId).removeByItemId(nodeId)
-      // Also clean up ceiling grid
-      const oldCeilingId = this.itemCeilingMap.get(nodeId)
-      if (oldCeilingId) {
-        this.getCeilingGrid(oldCeilingId).remove(nodeId)
-        this.itemCeilingMap.delete(nodeId)
-      }
     }
     return []
   }
@@ -1061,7 +1007,7 @@ export class SpatialGridManager {
     // Sampled at the wall's own start point — the same anchor the mesh is
     // positioned at, so the resolver and the renderer cannot disagree about
     // where the ground is under this wall.
-    const levelBase = levelBaseElevationAt(useScene.getState().nodes, levelId, start[0], start[1])
+    const levelBase = 0
 
     if (preferredSlabId === GROUND_SUPPORT_ID) {
       const elevation = levelBase + supportOffset
@@ -1191,74 +1137,6 @@ export class SpatialGridManager {
     return walls
   }
 
-  /**
-   * Check if an item can be placed on a ceiling.
-   * Validates that the footprint is within the ceiling polygon (but not in any holes) and doesn't overlap other ceiling items.
-   */
-  canPlaceOnCeiling(
-    ceilingId: string,
-    position: [number, number, number],
-    dimensions: [number, number, number],
-    rotation: [number, number, number],
-    ignoreIds?: string[],
-  ): { valid: boolean; conflictIds: string[] } {
-    const ceiling = this.ceilings.get(ceilingId)
-    if (!ceiling || ceiling.polygon.length < 3) {
-      return { valid: false, conflictIds: [] }
-    }
-
-    // Check that the item footprint is entirely within the ceiling polygon
-    const corners = getItemFootprint(position, dimensions, rotation)
-    for (const [cx, cz] of corners) {
-      if (!pointInPolygon(cx, cz, ceiling.polygon)) {
-        return { valid: false, conflictIds: [] }
-      }
-    }
-
-    // Check if item center is in any hole (if so, it cannot be placed)
-    const [centerX, , centerZ] = position
-    const holes = ceiling.holes || []
-    for (const hole of holes) {
-      if (hole.length >= 3 && pointInPolygon(centerX, centerZ, hole)) {
-        return { valid: false, conflictIds: [] }
-      }
-    }
-
-    const nodes = useScene.getState().nodes
-    const ignoreSet = new Set(ignoreIds ?? [])
-    const [width, , depth] = dimensions
-    const yRot = rotation[1]
-    const cos = Math.abs(Math.cos(yRot))
-    const sin = Math.abs(Math.sin(yRot))
-    const rotatedW = width * cos + depth * sin
-    const rotatedD = width * sin + depth * cos
-    const draftBounds = {
-      minX: position[0] - rotatedW / 2,
-      maxX: position[0] + rotatedW / 2,
-      minZ: position[2] - rotatedD / 2,
-      maxZ: position[2] + rotatedD / 2,
-    }
-
-    const conflicts: string[] = []
-    for (const node of Object.values(nodes)) {
-      if (node.type !== 'item') continue
-      const item = node as ItemNode
-      if (item.asset.attachTo !== 'ceiling') continue
-      if (ignoreSet.has(item.id)) continue
-      if (item.parentId !== ceilingId) continue
-
-      const bounds = getItemParentAabb(item)
-      if (
-        intervalsOverlap(draftBounds.minX, draftBounds.maxX, bounds.minX, bounds.maxX) &&
-        intervalsOverlap(draftBounds.minZ, draftBounds.maxZ, bounds.minZ, bounds.maxZ)
-      ) {
-        conflicts.push(item.id)
-      }
-    }
-
-    return { valid: conflicts.length === 0, conflictIds: conflicts }
-  }
-
   clearLevel(levelId: string) {
     this.invalidateRenderedSlabPolygons(levelId)
     this.floorGrids.delete(levelId)
@@ -1271,9 +1149,6 @@ export class SpatialGridManager {
     this.wallGrids.clear()
     this.walls.clear()
     this.slabsByLevel.clear()
-    this.ceilingGrids.clear()
-    this.ceilings.clear()
-    this.itemCeilingMap.clear()
     this.renderedSlabPolygons.clear()
     this.supportInputs.clear()
     this.supportInputsRevision += 1

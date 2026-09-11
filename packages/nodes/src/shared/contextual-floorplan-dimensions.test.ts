@@ -264,20 +264,19 @@ describe('contextual floor-plan dimensions', () => {
     ).toEqual(['2.4m', '1m', '2.4m'])
   })
 
-  test('shows room area at the polygon centroid', () => {
-    const room = ZoneNode.parse({
-      id: 'zone_room',
-      name: 'Office',
+  test('shows stage-area size at the polygon centroid', () => {
+    const area = ZoneNode.parse({
+      id: 'zone_blocking',
+      name: '走位区',
       polygon: [
         [0, 0],
         [4, 0],
         [4, 3],
         [0, 3],
       ],
-      spaceRole: 'room',
     })
 
-    expect(buildZoneContextualDimensions(room, context())).toMatchObject({
+    expect(buildZoneContextualDimensions(area, context())).toMatchObject({
       kind: 'dimension-label',
       cx: 2,
       cy: 1.5,

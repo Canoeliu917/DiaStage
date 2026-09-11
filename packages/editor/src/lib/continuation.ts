@@ -1,4 +1,4 @@
-export type ContinuationContext = 'wall' | 'fence' | 'point' | 'cabinet' | 'canopy'
+export type ContinuationContext = 'wall' | 'fence' | 'point'
 export type ContinuationMode = string
 
 export const CONTINUATION_PROFILES: Record<
@@ -36,21 +36,9 @@ export const CONTINUATION_PROFILES: Record<
     labels: { once: '放置一次', repeat: '连续放置' },
     icons: { once: 'lucide:target', repeat: 'lucide:copy-plus' },
   },
-  cabinet: {
-    options: ['single', 'continuous'],
-    default: 'single',
-    labels: { single: '单个柜体', continuous: '连续柜组' },
-    icons: { single: 'lucide:minus', continuous: 'lucide:waypoints' },
-  },
-  canopy: {
-    options: ['single', 'continuous'],
-    default: 'single',
-    labels: { single: '单个雨棚', continuous: '连续雨棚' },
-    icons: { single: 'lucide:minus', continuous: 'lucide:waypoints' },
-  },
 }
 
-const POINT_KINDS = new Set(['item', 'door', 'window', 'shelf', 'column'])
+const POINT_KINDS = new Set(['item', 'door', 'window', 'shelf'])
 
 export function nextContinuation(
   context: ContinuationContext,
@@ -65,7 +53,5 @@ export function nextContinuation(
 export function continuationContextOf(kind: string): ContinuationContext | null {
   if (kind === 'wall') return 'wall'
   if (kind === 'fence') return 'fence'
-  if (kind === 'cabinet') return 'cabinet'
-  if (kind === 'lean-to-extension') return 'canopy'
   return POINT_KINDS.has(kind) ? 'point' : null
 }
