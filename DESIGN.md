@@ -88,7 +88,7 @@ components:
 
 # Design System: 咫台 DiaStage
 
-当前产品约束以 PRODUCT.md 与《Dia V0.1 — Rehearsal Intelligence Public Beta》为准；当前实现与验证边界见 REHEARSAL_INTELLIGENCE_V01.md。下列原有设计记录保留，V0.1 增量以文末记录为准。
+当前产品约束以 PRODUCT.md 与《DiaStage V0.1 — Rehearsal Intelligence 基线冻结与下一阶段推进》为准；当前实现与验证边界见 REHEARSAL_INTELLIGENCE_V01.md。下列原有设计记录保留，V0.1 增量以文末记录为准。
 
 ## 视觉与文字
 沿用现有黑白灰、细边框、紧凑工作台，不增加装饰噪声。英文 Courier New，中文本地思源黑体。品牌词分别连续显示，白底黑字。人物颜色与复台警示色属于内容语义，均配文字或形状说明。
@@ -100,6 +100,8 @@ components:
 复台保留六步：源场地、目标场地、空间标定、映射预览、实体落位、复台验收。
 
 ## 操作
+Suggest, Preview, Decide. AI proposes. The stage previews. Humans decide.
+AI 提议。舞台先演。人来决定。每次修改建议都重新预览；预览失效后清除 Ghost 并停止采用，保留手动排演和保存。
 人物设置只展示名称、颜色、位置、朝向、路线与时长。路线主要在舞台中表达。摄影机的复杂路径、跟随、采样与编码参数逐步展开。
 二维、三维、分屏属于显示；导演、观众、机位属于观察。用户不编辑渲染器照明。
 所有字段有中文含义与单位，错误和保存状态可读；旧数据读取失败时保留原文。
@@ -129,4 +131,4 @@ V0.1 沿用黑白灰、英文 Courier New、中文思源黑体与现有紧凑工
 - **Do** 保留建议、正式排演、模型分析之间的可见区别，以编号、虚线和文字图例共同识别预览。
 - **Don't** 将合成建议演示标为真实 API 结果，或将截图审查结论写成真机验收。
 
-本轮独立 UI 图片审查结论为 ship，原三项修复全部 resolved。最新 Ghost 证据为 `.impeccable/review/v01/desktop.png`、`tablet.png`、`mobile.png`；各尺寸的 `-entry`、`-simple`、`-professional`、`-analysis` 为上一轮入口与模式证据，人物位置不用于与最新 Ghost 逐像素对比。截图中的建议均为合成演示，非真实 API。当前 publicBeta 尚未 ready：38 维仍缺 30 项定义，真实 API、各平台真机与 Gold 评测尚未实测；完整边界保留于 REHEARSAL_INTELLIGENCE_V01.md。
+本轮独立 UI 图片审查结论为 ship，原三项修复全部 resolved。最新 Ghost 证据为 `.impeccable/review/v01/desktop.png`、`tablet.png`、`mobile.png`；各尺寸的 `-entry`、`-simple`、`-professional`、`-analysis` 为上一轮入口与模式证据，人物位置不用于与最新 Ghost 逐像素对比。截图中的建议均为合成演示，非真实 API。当前 publicBeta 尚未 ready：Gold Alpha 20、真实模型人工审核、各平台真机与独立用户验收尚未完成；剩余 30 个维度等待产品定义，不阻塞工程开发；完整边界保留于 REHEARSAL_INTELLIGENCE_V01.md。

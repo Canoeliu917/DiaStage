@@ -1,6 +1,56 @@
 import { expect, test } from 'bun:test'
 import type { SceneGraph } from '@pascal-app/editor'
-import { replayScenePatch, scenePatch } from './scene-journal'
+import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
+import { replayScenePatch, SceneJournal, scenePatch } from './scene-journal'
+
+test('journal v1 upgrade preserves pending edits and checkpoints before adding decision receipts', async () => {
+  const previous = globalThis.indexedDB
+  const previousRange = globalThis.IDBKeyRange
+  globalThis.indexedDB = new IDBFactory()
+  globalThis.IDBKeyRange = IDBKeyRange
+  const base: SceneGraph = {
+    nodes: { synthetic: { position: [0, 0, 0] } },
+    rootNodeIds: ['synthetic'],
+  }
+  const edited: SceneGraph = { ...base, nodes: { synthetic: { position: [1, 0, 0] } } }
+  try {
+    const legacy = await new Promise<IDBDatabase>((resolve, reject) => {
+      const r = indexedDB.open('diastage-scene-journal', 1)
+      r.onupgradeneeded = () => {
+        r.result.createObjectStore('heads', { keyPath: 'id' })
+        r.result.createObjectStore('checkpoints')
+        r.result.createObjectStore('transactions', { keyPath: ['id', 'sequence'] })
+      }
+      r.onsuccess = () => resolve(r.result)
+      r.onerror = () => reject(r.error)
+    })
+    await new Promise<void>((resolve, reject) => {
+      const tx = legacy.transaction(['heads', 'checkpoints', 'transactions'], 'readwrite')
+      tx.objectStore('heads').put({ id: 'migration', sequence: 1, acknowledged: 0, version: 1 })
+      tx.objectStore('checkpoints').put(base, 'migration')
+      tx.objectStore('transactions').put({
+        id: 'migration',
+        sequence: 1,
+        patch: scenePatch(base, edited),
+      })
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+    legacy.close()
+    const journal = new SceneJournal('migration')
+    const recovered = await journal.recover(base, 1)
+    expect(recovered.pending).toBe(true)
+    expect(recovered.graph.nodes).toEqual(edited.nodes)
+    await journal.append(base)
+    const reopened = await new SceneJournal('migration').recover(edited, 2)
+    expect(reopened.pending).toBe(true)
+    expect(reopened.conflict).toBe(true)
+    expect(reopened.graph.nodes).toEqual(base.nodes)
+  } finally {
+    globalThis.indexedDB = previous
+    globalThis.IDBKeyRange = previousRange
+  }
+})
 
 test('1000-object journal stores only changed nodes and replays 100 offline commits exactly once', () => {
   const base: SceneGraph = {

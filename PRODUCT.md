@@ -12,7 +12,7 @@ web
 咫台 DiaStage 把文字、口述和剧本中的舞台空间变成可检查、可移动、可模拟，并能复台到真实剧场的方案。
 
 ## Capabilities and Constraints
-本阶段产品边界以《Dia V0.1 — Rehearsal Intelligence Public Beta》为准；此前简化规格中“不分析人物行动”的限制已被本阶段明确替换。原有三入口、相机、复台、旧项目兼容与稳定模式继续保留。
+本阶段产品边界以《DiaStage V0.1 — Rehearsal Intelligence 基线冻结与下一阶段推进》为准；此前简化规格中“不分析人物行动”的限制已被本阶段明确替换。原有三入口、相机、复台、旧项目兼容与稳定模式继续保留。
 首页提供语音开台、手动置景、剧本搭台与醒目的复台入口。语音和剧本先生成待确认的舞台方案，经校验后与手动操作使用同一命令、历史和场景。
 一级工作区只有 SET / 置景、REHEARSE / 排演、REMOUNT / 复台。
 - 置景：舞台与场地、布景调整、舞台库、舞台镜头、舞台口令。
@@ -28,6 +28,9 @@ web
 咫台 DiaStage；黑白灰；英文 Courier New，中文思源黑体。两个品牌词各自保持连续，白底黑字。
 
 ## Product Principles
+- Suggest, Preview, Decide. AI proposes. The stage previews. Humans decide.
+- AI 提议。舞台先演。人来决定。
+- 当前 ontology 为 8 / 38；其余维度等待产品定义，不阻塞 V0.1 工程开发。Public Beta 需通过 Gold Alpha 20、真实模型人工审核、三类真机和独立用户验收。
 - 空间事实优先；模型可以简化，位置与尺度必须确定。
 - X/Z 地面、Y 向上、米、弧度；界面提供中文名称与单位。
 - 旧项目、原始缓存、未知扩展数据和既有复台配置须保留。

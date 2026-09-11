@@ -1,5 +1,7 @@
 # Dia V0.1：排演伙伴实现与验收记录
 
+历史实施记录；后续基线冻结与加固以 [V01_BASELINE.md](V01_BASELINE.md) 和 [V01_HARDENING.md](V01_HARDENING.md) 为准。以下测试数字是冻结前记录。
+
 日期：2026-09-11。基于 `codex/mobile-voice-stage-link` 的 `83fdcea7`。本轮以用户提供的《Dia V0.1 — Rehearsal Intelligence Public Beta》为准，覆盖此前“排演不做戏剧分析”的产品限制。未修改 main，未合并、部署或推送远端。
 
 **结论：已实现可本地验证的 Proposal → Ghost → 人工决定 → 正式排演 → 私有反馈闭环；尚不满足大众内测全部准入条件。** 没有真实 API Key 或移动真机，不能把合成界面用例、结构检查或 Chromium 触控模拟记为真实模型质量及 Safari 验收。规格只提供了 8 个维度，另外 30 个没有定义，不能自行编造。
@@ -162,8 +164,8 @@ bun apps/editor/lib/rehearsal-intelligence/eval.ts --manifest
 - 单项目日志未做滚动裁剪，以保护原始反馈；长期大量交互可能占用存储。界面限制生成数量，配额不足提示导出清理，不静默丢数据。
 - 固定保存事务与反馈库间不是全局原子事务；回执可补全已落地采用，未落地 prepared 不自动执行。跨标签冲突遵循既有保存机制。
 
-## 14. 下一阶段
+## 14. 后续推进
 
-先补齐正式 38D 清单、审核 100 个候选测例并配置可用模型，运行真实输出评审；随后在 iPhone/iPad/Android 和低配电脑完成排演/预览/采用/离线恢复验收，再邀请少量陌生用户试用。先修复这些验收暴露的问题，再决定是否增加更复杂动作。当前不做 SFT、DPO、GRPO、自训练、多 Agent 或原生 App。
+当前使用 8 个 ACTIVE 维度继续工程开发，剩余 30 项等待产品定义，不是阻塞项。100 个 Candidate 保留，先开展 Gold Alpha 20 人工审核；真实模型首轮取 10–20 例。当前无 Key，REAL_MODEL_EVAL=NOT_RUN。真机与独立用户验收是 Public Beta release gate，不能阻塞本轮加固；不进行训练。
 
-Eval：`bun apps/editor/lib/rehearsal-intelligence/eval.ts --manifest` 输出候选及输入；将真实模型 output、modelVersion、caseId 和独立 humanReview 写成结果数组后执行 `bun apps/editor/lib/rehearsal-intelligence/eval.ts results.json`。缺测例、无人工审核或任何语义未通过都返回非零状态；结构通过不冒充戏剧质量通过。
+人工审核、版本化日志与新版 Eval 格式见 [GOLD_ALPHA_REVIEW_V01.md](GOLD_ALPHA_REVIEW_V01.md)。真实调用入口为 `bun --conditions=react-server scripts/rehearsal-real-eval.mjs --count=10`。结构校验退出码不代表人工戏剧质量；不同来源分别汇总。真机清单见 [REAL_DEVICE_ACCEPTANCE_V01.md](REAL_DEVICE_ACCEPTANCE_V01.md)。

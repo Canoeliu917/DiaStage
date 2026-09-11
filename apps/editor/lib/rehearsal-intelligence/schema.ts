@@ -100,6 +100,10 @@ export const FeedbackSchema = z.strictObject({
   previewed: z.boolean(),
   decision: z.enum(['preview', 'adopt', 'partial', 'edit', 'reject', 'manual-edit']),
   originalProposal: RehearsalProposalSchema,
+  // Old local records did not retain the exact preview; absence must not invent one.
+  previewedProposal: RehearsalProposalSchema.nullable().default(null),
+  privateProjectData: z.literal(true).default(true),
+  trainingAuthorized: z.boolean().default(false),
   humanEdit: z.array(SuggestionSchema).max(12).nullable(),
   finalResult: RehearsalSimulationSchema.nullable(),
   reasonTags: z

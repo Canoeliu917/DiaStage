@@ -68,6 +68,17 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   }
   Object.assign(globalThis, { EventSource: SceneEvents })
   const statuses: SaveStatus[] = []
+  let proposalInvalidations = 0
+  let checkProposal = async () => {}
+  mock.module('../lib/rehearsal-intelligence/authority', () => ({
+    bindRehearsalScene: (_id: string, check: () => Promise<void>) => {
+      checkProposal = check
+      return () => {}
+    },
+    clearProposalGhost: () => {
+      proposalInvalidations++
+    },
+  }))
   const requests: { url: string; init: RequestInit }[] = []
   let respond: () => Promise<Response> = async () => new Response(null, { status: 500 })
   const Editor = () => null
@@ -137,6 +148,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
       }
       async append() {}
       async acknowledge() {}
+      async assertCurrent() {}
     },
   }))
   mock.module('next/navigation', () => ({
@@ -342,6 +354,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const remoteGraph = structuredClone(initialScene)
   remoteGraph.nodes[prop.id] = { ...prop, position: [-4, 0, -4] }
   sources.at(-1)!.scene(8, remoteGraph)
+  assert.ok(proposalInvalidations > 0, 'foreign changes invalidate rehearsal previews')
+  await assert.rejects(checkProposal(), /版本冲突/, 'a conflicted scene cannot adopt a proposal')
   assert.equal(applied.length, 0, 'a different remote revision cannot overwrite local edits')
   assert.deepEqual(liveGraph, dirtyGraph)
   assert.equal(

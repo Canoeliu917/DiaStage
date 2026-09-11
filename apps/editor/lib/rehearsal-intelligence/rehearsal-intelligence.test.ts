@@ -10,6 +10,7 @@ import {
 } from '../theatre/simulation-store'
 import {
   applyHumanDecision,
+  bindRehearsalScene,
   clearProposalGhost,
   makeFeedback,
   observeRehearsalFeedback,
@@ -28,6 +29,7 @@ import { type RehearsalContext, type RehearsalProposal, SuggestionSchema } from 
 
 globalThis.requestAnimationFrame ??= () => 0
 globalThis.cancelAnimationFrame ??= () => {}
+let unbind = () => {}
 
 test('100 distinct eval candidates stay unreviewed; missing model results cannot pass beta quality gates', () => {
   expect(EVAL_CASES).toHaveLength(100)
@@ -41,7 +43,7 @@ test('100 distinct eval candidates stay unreviewed; missing model results cannot
     evaluated: 0,
     structuralPassed: 0,
     humanReviewed: 0,
-    semanticPassed: 0,
+    humanReviewPassed: 0,
   })
 })
 
@@ -75,6 +77,7 @@ test('moving a performer translates its existing route once and is undone in one
   expect(useScene.getState().nodes).toEqual(before)
 })
 afterEach(() => {
+  unbind()
   clearProposalGhost()
   useScene.getState().setReadOnly(false)
   useScene.getState().unloadScene()
@@ -142,6 +145,8 @@ function setup() {
     'test-fixture-not-real-model',
   )
   clearSceneHistory()
+  unbind()
+  unbind = bindRehearsalScene(context.sceneId, async () => {})
   return { context, interaction, proposal: interaction.proposals[0]! }
 }
 

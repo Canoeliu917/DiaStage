@@ -1,6 +1,11 @@
 import { ACTIVE_DIMENSIONS } from './dimensions'
 import { compileProposal } from './proposal-compiler'
-import { type RehearsalContext, RehearsalContextSchema, RehearsalProposalSchema } from './schema'
+import {
+  InteractionSchema,
+  type RehearsalContext,
+  RehearsalContextSchema,
+  RehearsalProposalSchema,
+} from './schema'
 
 export function validateContext(raw: unknown): RehearsalContext {
   const context = RehearsalContextSchema.parse(raw)
@@ -47,4 +52,16 @@ export function validateProposal(context: RehearsalContext, raw: unknown) {
     throw new Error('建议不能替导演决定唯一答案')
   compileProposal(context, proposal)
   return proposal
+}
+
+export function validateInteraction(raw: unknown) {
+  const interaction = InteractionSchema.parse(raw)
+  const context = validateContext(interaction.inputContext)
+  for (const state of interaction.dramaticState) {
+    if (!context.performers.some((p) => p.id === state.character))
+      throw new Error('分析引用了不存在的人物')
+    validateEvidence(context, state.evidence)
+  }
+  for (const proposal of interaction.proposals) validateProposal(context, proposal)
+  return interaction
 }

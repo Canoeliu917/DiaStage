@@ -3,7 +3,6 @@
 import { useScene } from '@pascal-app/core'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
-import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import {
   applyHumanDecision,
   clearProposalGhost,
@@ -19,9 +18,9 @@ import {
   saveInteraction,
   saveTrainingConsent,
 } from '@/lib/rehearsal-intelligence/feedback'
+import { requestProposal } from '@/lib/rehearsal-intelligence/proposal-client'
 import {
   type Interaction,
-  InteractionSchema,
   type RehearsalProposal,
   type Suggestion,
   SuggestionSchema,
@@ -29,8 +28,6 @@ import {
 import { readStageDocument } from '@/lib/theatre/simulation-store'
 import { useRehearsalPlayback } from './state'
 
-const ResponseSchema = z.object({ interaction: InteractionSchema })
-const ErrorSchema = z.object({ error: z.object({ message: z.string() }) })
 const MOVEMENT = {
   hold: '保持位置',
   approach: '靠近对方',
@@ -114,14 +111,10 @@ export function RehearsalPartner({
       .catch(() => {
         if (mounted.current) setNotice('无法读取本机反馈。手动排演仍可使用。')
       })
-    const stop = useScene.subscribe((next, previous) => {
-      if (next.nodes !== previous.nodes) clearProposalGhost()
-    })
     return () => {
       mounted.current = false
       controller.current?.abort()
       clearProposalGhost()
-      stop()
     }
   }, [sceneId])
 
@@ -134,6 +127,7 @@ export function RehearsalPartner({
     try {
       await action(controller.current.signal)
     } catch (error) {
+      clearProposalGhost()
       if (mounted.current)
         setNotice(
           controller.current.signal.aborted
@@ -159,6 +153,7 @@ export function RehearsalPartner({
   }
   const generate = () =>
     run(async (signal) => {
+      clearProposalGhost()
       const document = readStageDocument()
       if (!document) throw new Error('请先建立剧目并添加人物')
       if (!document.rehearsalSimulation.performers.length)
@@ -172,20 +167,7 @@ export function RehearsalPartner({
         directorIntention,
         selectedPerformerId: selectedId,
       })
-      const { response } = await fetchAiWithBudgetConsent('/api/rehearsal/propose', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(context),
-        signal: AbortSignal.any([signal, AbortSignal.timeout(65000)]),
-      })
-      const body: unknown = await response.json()
-      if (!response.ok)
-        throw new Error(
-          ErrorSchema.safeParse(body).data?.error.message ?? '无法取得建议，请稍后重试',
-        )
-      const next = ResponseSchema.parse(body).interaction
-      if (next.sceneId !== sceneId || JSON.stringify(next.inputContext) !== JSON.stringify(context))
-        throw new Error('排演返回资料不匹配，请重新生成')
+      const next = await requestProposal(context, signal)
       await saveInteraction(next)
       signal.throwIfAborted()
       setInteraction(next)
@@ -461,8 +443,14 @@ export function RehearsalPartner({
                 type="button"
                 onClick={() =>
                   run(async () => {
+                    const feedback = makeFeedback(interaction, proposal, 'reject')
+                    clearProposalGhost()
                     await saveFeedback({
-                      ...makeFeedback(interaction, proposal, 'reject'),
+                      ...feedback,
+                      humanEdit:
+                        JSON.stringify(suggestions) === JSON.stringify(proposal.suggestions)
+                          ? null
+                          : suggestions,
                       optionalUserNote: note,
                     })
                     clearProposalGhost()

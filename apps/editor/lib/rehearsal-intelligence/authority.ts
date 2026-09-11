@@ -1,11 +1,16 @@
 import { useScene } from '@pascal-app/core'
 import { create } from 'zustand'
-import { subscribeLocalScene, waitForLocalScene } from '../scene-journal'
+import {
+  observeForeignSceneCommits,
+  readLocalDecisionReceipt,
+  subscribeLocalScene,
+  waitForLocalScene,
+} from '../scene-journal'
 import { assertTheatreWritable, THEATRE_METADATA_KEY } from '../theatre/scene-adapter'
 import { type RehearsalSimulation, StageSceneDocumentSchema } from '../theatre/simulation'
 import { readStageDocument } from '../theatre/simulation-store'
 import { buildRehearsalContext } from './context'
-import { readFeedback, saveFeedback } from './feedback'
+import { readFeedback, readFeedbackLog, saveFeedback } from './feedback'
 import { compileProposal } from './proposal-compiler'
 import { validateProposal } from './proposal-validator'
 import { type Feedback, type Interaction, type RehearsalProposal, SuggestionSchema } from './schema'
@@ -15,6 +20,7 @@ export const useProposalGhost = create<{
   sceneId: string | null
   proposalId: string | null
   simulation: RehearsalSimulation | null
+  proposal: RehearsalProposal | null
   time: number
   visible: boolean
   playing: boolean
@@ -23,6 +29,7 @@ export const useProposalGhost = create<{
   sceneId: null,
   proposalId: null,
   simulation: null,
+  proposal: null,
   time: 0,
   visible: false,
   playing: false,
@@ -33,15 +40,54 @@ export const clearProposalGhost = () =>
     sceneId: null,
     proposalId: null,
     simulation: null,
+    proposal: null,
     time: 0,
     visible: false,
     playing: false,
   })
 
+let activeScene: { id: string; check: () => Promise<void> } | null = null
+export function bindRehearsalScene(id: string, check: () => Promise<void>) {
+  const session = { id, check }
+  activeScene = session
+  clearProposalGhost()
+  const stop = observeForeignSceneCommits(id, clearProposalGhost)
+  const stopScene = useScene.subscribe((next, previous) => {
+    if (next.nodes !== previous.nodes) clearProposalGhost()
+  })
+  return () => {
+    stop()
+    stopScene()
+    if (activeScene === session) {
+      activeScene = null
+      clearProposalGhost()
+    }
+  }
+}
+
+async function checkCurrentScene(id: string) {
+  const session = activeScene
+  if (!session || session.id !== id) throw new Error('当前场景已变化，请重新生成建议')
+  await session.check()
+  if (activeScene !== session) throw new Error('当前场景已变化，请重新生成建议')
+}
+
 /** Receipts reconcile interrupted feedback writes; preferences observe only durable scene commits. */
 export function observeRehearsalFeedback(sceneId: string) {
   let queue = Promise.resolve()
   let previousEventId: string | null = null
+  let initialized = false
+  async function wasCommitted(event: Feedback) {
+    if (!['adopt', 'partial', 'edit'].includes(event.decision)) return false
+    if (event.status === 'applied') return true
+    if (event.status !== 'prepared') return false
+    const receipt = await readLocalDecisionReceipt(sceneId, event.eventId)
+    return (
+      receipt?.eventId === event.eventId &&
+      receipt.proposalId === event.proposalId &&
+      receipt.interactionId === event.interactionId
+    )
+  }
   return subscribeLocalScene(sceneId, (nodes) => {
     queue = queue
       .then(async () => {
@@ -56,33 +102,50 @@ export function observeRehearsalFeedback(sceneId: string) {
             continue
           const metadata = node.metadata as Record<string, unknown>
           const receipt = metadata[DECISION_KEY]
-          const eventId =
+          const receiptEventId =
             receipt &&
             typeof receipt === 'object' &&
             'eventId' in receipt &&
             typeof receipt.eventId === 'string'
               ? receipt.eventId
-              : previousEventId
-          if (!eventId) continue
-          previousEventId = eventId
-          const event = await readFeedback(eventId)
-          if (!event || event.sceneId !== sceneId) continue
+              : null
+          // A refresh can restore an older receipt after Undo; find the last committed decision once.
+          if (!initialized) {
+            for (const event of (await readFeedbackLog(sceneId)).events.reverse()) {
+              if (await wasCommitted(event)) {
+                previousEventId = event.eventId
+                break
+              }
+            }
+            initialized = true
+          }
+          if (!previousEventId && !receiptEventId) continue
+          const eventIds = new Set([previousEventId, receiptEventId])
+          previousEventId = receiptEventId ?? previousEventId
           const result = StageSceneDocumentSchema.parse(
             metadata[THEATRE_METADATA_KEY],
           ).rehearsalSimulation
-          if (event.status === 'prepared') await saveFeedback({ ...event, status: 'applied' })
-          const manual = await readFeedback(`${event.eventId}:manual`)
-          if (JSON.stringify(manual?.finalResult ?? event.finalResult) !== JSON.stringify(result)) {
-            // ponytail: keep the latest implicit final state per adoption, not a per-frame training history.
-            await saveFeedback({
-              ...event,
-              eventId: `${event.eventId}:manual`,
-              decision: 'manual-edit',
-              createdAt: new Date().toISOString(),
-              finalResult: result,
-              humanEdit: null,
-              status: 'applied',
-            })
+          // Update the outgoing adoption too when Undo restores a previous adoption's receipt.
+          for (const eventId of eventIds) {
+            if (!eventId) continue
+            const event = await readFeedback(eventId)
+            if (!event || event.sceneId !== sceneId || !(await wasCommitted(event))) continue
+            if (event.status === 'prepared') await saveFeedback({ ...event, status: 'applied' })
+            const manual = await readFeedback(`${event.eventId}:manual`)
+            if (
+              JSON.stringify(manual?.finalResult ?? event.finalResult) !== JSON.stringify(result)
+            ) {
+              // ponytail: keep the latest implicit final state per adoption, not a per-frame training history.
+              await saveFeedback({
+                ...event,
+                eventId: `${event.eventId}:manual`,
+                decision: 'manual-edit',
+                createdAt: new Date().toISOString(),
+                finalResult: result,
+                humanEdit: null,
+                status: 'applied',
+              })
+            }
           }
         }
         useProposalGhost.setState({ feedbackError: '' })
@@ -96,6 +159,7 @@ export function observeRehearsalFeedback(sceneId: string) {
 }
 
 function currentContext(interaction: Interaction) {
+  if (activeScene?.id !== interaction.sceneId) throw new Error('当前场景已变化，请重新生成建议')
   const document = readStageDocument()
   if (!document || document.production.id !== interaction.inputContext.productionId)
     throw new Error('当前剧目已变化，请重新生成建议')
@@ -114,16 +178,27 @@ export function makeFeedback(
   proposal: RehearsalProposal,
   decision: Feedback['decision'],
 ): Feedback {
+  const ghost = useProposalGhost.getState()
+  const previewed =
+    ghost.sceneId === interaction.sceneId && ghost.proposalId === proposal.proposalId
+  const previewedProposal = previewed ? ghost.proposal : null
   return {
     eventId: crypto.randomUUID(),
     interactionId: interaction.interactionId,
     sceneId: interaction.sceneId,
     proposalId: proposal.proposalId,
     createdAt: new Date().toISOString(),
-    previewed: useProposalGhost.getState().proposalId === proposal.proposalId,
+    previewed,
     decision,
     originalProposal: proposal,
-    humanEdit: null,
+    previewedProposal,
+    privateProjectData: true,
+    trainingAuthorized: false,
+    humanEdit:
+      previewedProposal &&
+      JSON.stringify(previewedProposal.suggestions) !== JSON.stringify(proposal.suggestions)
+        ? previewedProposal.suggestions
+        : null,
     finalResult: null,
     reasonTags: [],
     optionalUserNote: '',
@@ -135,6 +210,9 @@ export async function previewProposal(
   proposal: RehearsalProposal,
   signal?: AbortSignal,
 ) {
+  clearProposalGhost()
+  signal?.throwIfAborted()
+  await checkCurrentScene(interaction.sceneId)
   const { context } = currentContext(interaction)
   const simulation = compileProposal(context, validateProposal(context, proposal))
   const original = interaction.proposals.find((p) => p.proposalId === proposal.proposalId)
@@ -143,6 +221,7 @@ export async function previewProposal(
   await saveFeedback({
     ...event,
     previewed: true,
+    previewedProposal: proposal,
     humanEdit:
       JSON.stringify(original.suggestions) === JSON.stringify(proposal.suggestions)
         ? null
@@ -150,11 +229,14 @@ export async function previewProposal(
     finalResult: simulation,
   })
   signal?.throwIfAborted()
+  await checkCurrentScene(interaction.sceneId)
+  signal?.throwIfAborted()
   currentContext(interaction)
   useProposalGhost.setState({
     sceneId: interaction.sceneId,
     proposalId: proposal.proposalId,
     simulation,
+    proposal,
     visible: true,
     playing: false,
     time: 0,
@@ -163,6 +245,22 @@ export async function previewProposal(
 
 /** Only a user gesture calls this gate. Server generation has no dependency on the scene store. */
 export async function applyHumanDecision(
+  interaction: Interaction,
+  original: RehearsalProposal,
+  decision: 'adopt' | 'partial' | 'edit',
+  suggestions: RehearsalProposal['suggestions'],
+  note: string,
+  signal: AbortSignal,
+) {
+  try {
+    return await commitHumanDecision(interaction, original, decision, suggestions, note, signal)
+  } catch (error) {
+    clearProposalGhost()
+    throw error
+  }
+}
+
+async function commitHumanDecision(
   interaction: Interaction,
   original: RehearsalProposal,
   decision: 'adopt' | 'partial' | 'edit',
@@ -200,6 +298,7 @@ export async function applyHumanDecision(
   const simulation = compileProposal(context, validateProposal(context, changed))
   if (
     ghost.sceneId !== interaction.sceneId ||
+    JSON.stringify(ghost.proposal) !== JSON.stringify(changed) ||
     JSON.stringify(ghost.simulation) !== JSON.stringify(simulation)
   )
     throw new Error('请先预览本次调整后的方案')
@@ -212,9 +311,13 @@ export async function applyHumanDecision(
   }
   const nodes = useScene.getState().nodes
   await saveFeedback(event)
+  await checkCurrentScene(interaction.sceneId)
   signal.throwIfAborted()
   assertTheatreWritable()
   if (useScene.getState().nodes !== nodes) throw new Error('场景已经变化，请重新预览')
+  const liveGhost = useProposalGhost.getState()
+  if (liveGhost.simulation !== ghost.simulation || liveGhost.proposal !== ghost.proposal)
+    throw new Error('建议预览已经停止，请重新预览再采用')
   currentContext(interaction)
   const state = useScene.getState()
   const site = state.rootNodeIds.map((id) => state.nodes[id]).find((n) => n?.type === 'site')

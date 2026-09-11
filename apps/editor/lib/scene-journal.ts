@@ -8,6 +8,89 @@ type Patch = {
 }
 type Head = { id: string; version: number; sequence: number; acknowledged: number }
 type Entry = { id: string; sequence: number; patch: Patch }
+type DecisionReceipt = { eventId: string; proposalId: string; interactionId: string }
+
+function decisionReceipt(node: unknown): DecisionReceipt | null {
+  if (
+    !node ||
+    typeof node !== 'object' ||
+    !('type' in node) ||
+    node.type !== 'site' ||
+    !('metadata' in node) ||
+    !node.metadata ||
+    typeof node.metadata !== 'object' ||
+    !('diastageRehearsalDecision' in node.metadata)
+  )
+    return null
+  const receipt = node.metadata.diastageRehearsalDecision
+  if (
+    !receipt ||
+    typeof receipt !== 'object' ||
+    !('eventId' in receipt) ||
+    typeof receipt.eventId !== 'string' ||
+    !('proposalId' in receipt) ||
+    typeof receipt.proposalId !== 'string' ||
+    !('interactionId' in receipt) ||
+    typeof receipt.interactionId !== 'string'
+  )
+    return null
+  return {
+    eventId: receipt.eventId,
+    proposalId: receipt.proposalId,
+    interactionId: receipt.interactionId,
+  }
+}
+
+export async function readLocalDecisionReceipt(
+  sceneId: string,
+  eventId: string,
+): Promise<DecisionReceipt | null> {
+  const db = await openJournal()
+  try {
+    return (
+      (await request<DecisionReceipt | undefined>(
+        db.transaction('receipts').objectStore('receipts').get([sceneId, eventId]),
+      )) ?? null
+    )
+  } finally {
+    db.close()
+  }
+}
+
+const journalChannel = 'diastage-scene-commits'
+const journalWindowId = `${Date.now()}-${Math.random()}`
+export function observeForeignSceneCommits(sceneId: string, changed: () => void) {
+  if (typeof BroadcastChannel === 'undefined') return () => {}
+  try {
+    const channel = new BroadcastChannel(journalChannel)
+    channel.onmessage = ({ data }: MessageEvent<unknown>) => {
+      if (
+        data &&
+        typeof data === 'object' &&
+        'sceneId' in data &&
+        data.sceneId === sceneId &&
+        'sender' in data &&
+        data.sender !== journalWindowId
+      )
+        changed()
+    }
+    return () => channel.close()
+  } catch {
+    // A restricted browser can still use the durable head check without notifications.
+    return () => {}
+  }
+}
+
+function broadcastCommit(sceneId: string) {
+  // Notifications are advisory; assertCurrent also checks the durable head before adoption.
+  try {
+    const channel = new BroadcastChannel(journalChannel)
+    channel.postMessage({ sceneId, sender: journalWindowId })
+    channel.close()
+  } catch {
+    /* Saving must work when cross-tab notifications are unavailable. */
+  }
+}
 
 let durable: { id: string; nodes: SceneGraph['nodes'] } | undefined
 const persistedListeners = new Set<() => void>()
@@ -101,12 +184,15 @@ function complete(tx: IDBTransaction) {
 }
 function openJournal(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const opening = indexedDB.open('diastage-scene-journal', 1)
+    const opening = indexedDB.open('diastage-scene-journal', 2)
     opening.onupgradeneeded = () => {
       const db = opening.result
-      db.createObjectStore('heads', { keyPath: 'id' })
-      db.createObjectStore('checkpoints')
-      db.createObjectStore('transactions', { keyPath: ['id', 'sequence'] })
+      if (!db.objectStoreNames.contains('heads')) {
+        db.createObjectStore('heads', { keyPath: 'id' })
+        db.createObjectStore('checkpoints')
+        db.createObjectStore('transactions', { keyPath: ['id', 'sequence'] })
+      }
+      db.createObjectStore('receipts', { keyPath: ['id', 'eventId'] })
     }
     opening.onsuccess = () => {
       opening.result.onversionchange = () => opening.result.close()
@@ -125,12 +211,25 @@ export class SceneJournal {
   private revisions = new WeakMap<SceneGraph, number>()
   constructor(readonly id: string) {}
 
+  async assertCurrent() {
+    if (!this.db || !this.head) throw new Error('本机日志尚未加载')
+    const head = await request<Head | undefined>(
+      this.db.transaction('heads').objectStore('heads').get(this.id),
+    )
+    if (!head || head.sequence !== this.head.sequence || head.version !== this.head.version)
+      throw new Error('另一个窗口已更新场景，请先处理版本差异再生成建议')
+  }
+
   async recover(server: SceneGraph, version: number) {
     server = { nodes: server.nodes, ...scenePatch(server, server).document }
     this.db ??= await openJournal()
-    const tx = this.db.transaction(['heads', 'checkpoints', 'transactions'], 'readwrite', {
-      durability: 'strict',
-    })
+    const tx = this.db.transaction(
+      ['heads', 'checkpoints', 'transactions', 'receipts'],
+      'readwrite',
+      {
+        durability: 'strict',
+      },
+    )
     const done = complete(tx)
     // Attach rejection immediately, including when request validation aborts below.
     void done.catch(() => {})
@@ -162,6 +261,10 @@ export class SceneJournal {
       }
       this.head = head
     }
+    for (const node of Object.values(graph.nodes)) {
+      const receipt = decisionReceipt(node)
+      if (receipt) tx.objectStore('receipts').put({ id: this.id, ...receipt })
+    }
     await done
     this.graph = graph
     this.revisions.set(graph, this.head!.sequence)
@@ -176,7 +279,9 @@ export class SceneJournal {
       Object.keys(patch.put).length ||
       patch.remove.length ||
       JSON.stringify(patch.document) !== JSON.stringify(scenePatch(this.graph, this.graph).document)
-    const tx = this.db.transaction(['heads', 'transactions'], 'readwrite', { durability: 'strict' })
+    const tx = this.db.transaction(['heads', 'transactions', 'receipts'], 'readwrite', {
+      durability: 'strict',
+    })
     const done = complete(tx)
     void done.catch(() => {})
     const head = await request<Head>(tx.objectStore('heads').get(this.id))
@@ -192,12 +297,18 @@ export class SceneJournal {
         patch,
       } satisfies Entry)
       tx.objectStore('heads').put(head)
+      // Keep proof of a committed adoption through Undo, refresh and server acknowledgement.
+      for (const node of Object.values(patch.put)) {
+        const receipt = decisionReceipt(node)
+        if (receipt) tx.objectStore('receipts').put({ id: this.id, ...receipt })
+      }
     }
     await done
     this.head = head
     this.graph = graph
     this.revisions.set(graph, head.sequence)
     publishLocalCommit(this.id, graph)
+    if (changed) broadcastCommit(this.id)
   }
 
   async acknowledge(graph: SceneGraph, version: number) {

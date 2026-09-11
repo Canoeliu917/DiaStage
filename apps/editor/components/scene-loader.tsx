@@ -17,6 +17,7 @@ import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
+import { bindRehearsalScene, clearProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import { SceneJournal } from '@/lib/scene-journal'
 import { type PersistedSceneGraph, sceneGraphSignature } from '@/lib/scene-signature'
 import { THEATRE_METADATA_KEY } from '@/lib/theatre/scene-adapter'
@@ -129,6 +130,14 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
   const journal = useMemo(() => new SceneJournal(meta.id), [meta.id])
   const needsRecoverySync = useRef(false)
   const syncConflict = useRef(false)
+  useEffect(
+    () =>
+      bindRehearsalScene(meta.id, async () => {
+        if (syncConflict.current) throw new Error('请先处理场景版本冲突，再生成建议')
+        await journal.assertCurrent()
+      }),
+    [meta.id, journal],
+  )
   const { group, onGroupChange, sidebarTabs } = useStudioSidebar(meta.id)
   const { document } = useTheatreDocument()
   const activePanel = useEditor((state) => state.activeSidebarPanel)
@@ -329,6 +338,7 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
           }
           setConflict(true)
           syncConflict.current = true
+          clearProposalGhost()
           throw new Error('剧目已被其他窗口更新，请先处理版本冲突')
         }
 
@@ -372,6 +382,7 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
         serverNodeCountRef.current = countGraphNodes(payload.graph)
         return
       }
+      clearProposalGhost()
       if (localDirtyRef.current) {
         setConflict(true)
         syncConflict.current = true
