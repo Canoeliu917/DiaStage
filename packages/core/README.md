@@ -1,83 +1,21 @@
-# @pascal-app/core
+# `@pascal-app/core`
 
-Core library for Pascal 3D building editor.
+DiaStage 沿用的场景核心包。包名保持不变，用于兼容既有内部依赖和上游 MIT 许可边界。
 
-## Installation
+## 职责
 
-```bash
-npm install @pascal-app/core
-```
+- 舞台场景节点与 Zod 校验
+- Zustand 场景状态、批量事务、撤销与重做
+- 节点注册表、事件总线与素材存储
+- 碰撞、吸附、对齐、测量和复台坐标计算
+- 旧建筑数据的只读兼容归档
 
-## Peer Dependencies
+启用的舞台节点包括场地容器、表演层、景片、平台、体块、门、窗、围栏、搁板、物件、人物标记、测量、扫描参考和舞台台阶。屋顶、天花板、机电、家装与工程节点不进入活动场景。
 
-```bash
-npm install react three @react-three/fiber @react-three/drei
-```
+## 边界
 
-## What's Included
+该包不依赖 React Three Fiber 或编辑器界面。渲染在 `packages/viewer`，交互在 `packages/editor` 与 `apps/editor`。
 
-- **Node Schemas** - Zod schemas for all building primitives (walls, slabs, items, etc.)
-- **Scene State** - Zustand store with IndexedDB persistence and undo/redo
-- **Registry Contracts** - Plugin and node-definition APIs shared by renderers and editor tools
-- **Scene Registry** - Fast lookup from node IDs to Three.js objects
-- **Spatial Grid** - Collision detection and placement validation
-- **Event Bus** - Typed event emitter for inter-component communication
-- **Asset Storage** - IndexedDB-based file storage for user-uploaded assets
+## 许可
 
-## Usage
-
-```typescript
-import { useScene, WallNode } from '@pascal-app/core'
-
-// Create a wall
-const wall = WallNode.parse({
-  start: [0, 0],
-  end: [5, 0],
-  height: 3,
-  thickness: 0.2,
-})
-
-useScene.getState().createNode(wall, parentLevelId)
-
-// Subscribe to scene changes
-function MyComponent() {
-  const nodes = useScene((state) => state.nodes)
-  const walls = Object.values(nodes).filter(n => n.type === 'wall')
-
-  return <div>Total walls: {walls.length}</div>
-}
-```
-
-## Node Types
-
-- `SiteNode` - Root container
-- `BuildingNode` - Building within a site
-- `LevelNode` - Floor level
-- `WallNode` - Vertical wall with optional openings
-- `SlabNode` - Floor slab
-- `CeilingNode` - Ceiling surface
-- `RoofNode` - Roof geometry
-- `ZoneNode` - Spatial zone/room
-- `ItemNode` - Furniture, fixtures, appliances
-- `ScanNode` - 3D scan reference
-- `GuideNode` - 2D guide image reference
-
-## Built-in Node Definitions
-
-Core contains the schemas, scene state, and registry contracts. The built-in node definitions,
-renderers, geometry builders, tools, and systems ship in `@pascal-app/nodes`:
-
-```typescript
-import { loadPlugin } from '@pascal-app/core'
-import { builtinPlugin } from '@pascal-app/nodes'
-
-await loadPlugin(builtinPlugin)
-```
-
-Load the plugin before mounting `@pascal-app/viewer`. See the
-[`@pascal-app/viewer` quick start](https://github.com/pascalorg/editor/tree/main/packages/viewer#usage)
-for a React example.
-
-## License
-
-MIT
+MIT。原许可见本目录 `LICENSE` 和仓库根目录 `LICENSES/PASCAL-MIT.txt`。

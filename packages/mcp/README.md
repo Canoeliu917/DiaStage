@@ -4,7 +4,7 @@
 
 ## 默认能力
 
-`createPascalMcpServer({ bridge })` 默认使用 `theatre` profile：
+`createPascalMcpServer({ bridge })` 只注册戏剧读取能力：
 
 | 工具 | 用途 |
 | --- | --- |
@@ -37,16 +37,16 @@ node packages/mcp/dist/bin/pascal-mcp.js --stdio --scene ./my-scene.json
 
 `storage` 和 `operations` 子路径仍供应用场景 API、保存及事件流使用。存储位置、SQLite 版本检查和原有数据不变。
 
-只有兼容宿主明确传入 `profile: 'legacy'` 时才注册历史工具、资源和 prompts。该配置不提供戏剧口令的确认边界，不用于咫台默认产品。历史参考全文位于 [MCP_README.md](../../docs/history/2026-09-10-before-theatre/MCP_README.md)。CLI 没有开启历史 profile 的参数。
+原 Pascal 生成、修改、住宅资源和视觉分析工具已从本 package 物理删除，不存在隐藏 profile 或运行时开关。历史参考全文位于 [MCP_README.md](../../docs/history/2026-09-10-before-theatre/MCP_README.md)。
 
 ## 验证
 
 ```sh
-bun test packages/mcp/src/theatre-profile.test.ts packages/mcp/src/tools/output-schema-contract.test.ts packages/mcp/src/transports
+bun test packages/mcp/src/theatre-profile.test.ts packages/mcp/src/tools packages/mcp/src/transports
 node node_modules/typescript/bin/tsc --build packages/mcp
 ```
 
-回归检查默认白名单、读取/导出、不修改场景、拒绝未注册写入以及显式兼容配置。HTTP 认证与会话隔离继续沿用现有测试。
+回归检查读取白名单、JSON 导出、未注册写入拒绝、HTTP 认证与会话隔离。
 
 ## 来源与许可
 

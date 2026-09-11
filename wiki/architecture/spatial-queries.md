@@ -1,104 +1,21 @@
 # Spatial Queries
 
-*Placement validation for tools — `canPlaceOnFloor`, `canPlaceOnWall`, `canPlaceOnCeiling`.*
+`useSpatialQuery()` is the shared placement validation hook for stage objects. It exposes `canPlaceOnFloor` and `canPlaceOnWall` from `packages/core/src/hooks/spatial-grid/use-spatial-query.ts`.
 
-Applies to: `apps/editor/components/tools/**`.
+## Floor placement
 
-`useSpatialQuery()` validates whether an item can be placed at a given position without overlapping existing items. Every placement tool must call it before committing a node to the scene.
+`canPlaceOnFloor(levelId, position, dimensions, rotation, ignoreIds)` checks the complete rotated footprint and returns `{ valid, conflictIds }`. Pass the moving node ID in `ignoreIds` so it cannot collide with itself. Use `spatialGridManager.getSlabElevationForItem(...)` when an object stands on an elevated platform.
 
-**Source**: `packages/core/src/hooks/spatial-grid/use-spatial-query.ts`
+## Wall placement
 
-## Hook
+`canPlaceOnWall(levelId, wallId, localX, localY, dimensions, attachType, side, ignoreIds)` validates an object attached to or beside a wall. Its `adjustedY` is the accepted vertical position and must be used for the commit.
 
-```ts
-const { canPlaceOnFloor, canPlaceOnWall, canPlaceOnCeiling } = useSpatialQuery()
-```
+## Interaction contract
 
-All three methods return `{ valid: boolean; conflictIds: string[] }`.
-`canPlaceOnWall` additionally returns `adjustedY: number` (snapped height).
+- Validate live pointer positions for preview feedback.
+- Keep the preview transient.
+- Create or update the node once on pointer release.
+- Use scaled dimensions rather than the catalog dimensions.
+- Reuse the same collision math for editing, undo, local recovery, and Remount.
 
----
-
-## canPlaceOnFloor
-
-```ts
-canPlaceOnFloor(
-  levelId: string,
-  position: [number, number, number],
-  dimensions: [number, number, number],   // scaled width/height/depth
-  rotation: [number, number, number],
-  ignoreIds?: string[],                   // pass [draftItem.id] to exclude self
-): { valid: boolean; conflictIds: string[] }
-```
-
-**Usage in a tool:**
-```ts
-const pos: [number, number, number] = [x, 0, z]
-const { valid } = canPlaceOnFloor(levelId, pos, getScaledDimensions(item), item.rotation, [item.id])
-if (valid) createNode(item, levelId)
-```
-
----
-
-## canPlaceOnWall
-
-```ts
-canPlaceOnWall(
-  levelId: string,
-  wallId: string,
-  localX: number,          // distance along wall from start
-  localY: number,          // height from floor
-  dimensions: [number, number, number],
-  attachType: 'wall' | 'wall-side',  // 'wall' needs clearance both sides; 'wall-side' only one
-  side?: 'front' | 'back',
-  ignoreIds?: string[],
-): { valid: boolean; conflictIds: string[]; adjustedY: number }
-```
-
-`adjustedY` contains the snapped Y so items sit flush on the slab — always use it instead of the raw `localY`:
-
-```ts
-const { valid, adjustedY } = canPlaceOnWall(levelId, wallId, x, y, dims, 'wall', undefined, [item.id])
-if (valid) updateNode(item.id, { wallT: x, wallY: adjustedY })
-```
-
----
-
-## canPlaceOnCeiling
-
-```ts
-canPlaceOnCeiling(
-  ceilingId: string,
-  position: [number, number, number],
-  dimensions: [number, number, number],
-  rotation: [number, number, number],
-  ignoreIds?: string[],
-): { valid: boolean; conflictIds: string[] }
-```
-
----
-
-## Slab Elevation
-
-When items rest on a slab (not flat ground), use these to get the correct Y:
-
-```ts
-import { spatialGridManager } from '@pascal-app/core'
-
-// Y at a single point
-const y = spatialGridManager.getSlabElevationAt(levelId, x, z)
-
-// Y considering the item's full footprint (highest slab point under item)
-const y = spatialGridManager.getSlabElevationForItem(levelId, position, dimensions, rotation)
-```
-
----
-
-## Rules
-
-- **Always pass `[item.id]` in `ignoreIds`** when validating a draft item that already exists in the scene — otherwise it collides with itself.
-- **Use `adjustedY` from `canPlaceOnWall`** — don't use the raw cursor Y for wall-mounted items.
-- **Use `getScaledDimensions(item)`** (`packages/core/src/schema/nodes/item.ts`) to account for item scale, not the raw `asset.dimensions`.
-- Validate on every pointer move for live feedback (highlight ghost red/green). Only `createNode` / `updateNode` on pointer up or click.
-
-See `apps/editor/components/tools/item/use-placement-coordinator.tsx` for a full implementation.
+There is no ceiling placement query. Legacy ceiling-attached catalog data is accepted only by the compatibility archive and is not exposed as an editing workflow.

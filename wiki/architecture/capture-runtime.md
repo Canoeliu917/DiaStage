@@ -1,7 +1,6 @@
 # Capture runtime
 
-Capture data is an optional viewer extension, not a private Community renderer and not a second
-scene graph.
+Capture data is an optional viewer extension and not a second scene graph.
 
 ## Package boundaries
 
@@ -16,7 +15,7 @@ scene graph.
   placement, opacity, and an extensible visibility map. Raw samples and artifact inventories never
   enter scene JSON.
 - A host owns source resolution, access control, signed URLs, persistence, retention, collaboration,
-  and transport selection. Community's resolver uses its authenticated capture manifest route.
+  and transport selection.
 
 ## Static and live use the same source
 
@@ -26,12 +25,8 @@ generation and sequence ordering before renderers consume packets.
 
 The protocol intentionally does not choose WebSocket, WebRTC, Supabase Realtime, or another
 transport. An embedded viewer can use a public HTTP manifest; a local tool can use files or an
-in-memory producer; Community can layer its collaboration and authorization model on the same
+in-memory producer; a remote service can layer collaboration and authorization on the same
 interface.
-
-Community deliberately does not mount capture artifacts in its public project viewer yet. Its
-current manifest route requires edit access; a future public surface needs an explicit view-scoped
-artifact and privacy policy before it can use the same runtime safely.
 
 ## Stream extension
 
@@ -45,7 +40,7 @@ source and visibility contract.
 
 ## Compatibility
 
-The protocol normalizes Community's v1 RoomPlan/device-motion manifest, so existing captures remain
+The protocol normalizes the legacy v1 RoomPlan/device-motion manifest, so existing captures remain
 viewable. `ScanNode` keeps legacy GLB-backed scans loadable, makes `manifestUrl` optional for
 host-resolved sessions, and uses an extensible visibility record so adding a data modality does not
 require another node-schema release.
