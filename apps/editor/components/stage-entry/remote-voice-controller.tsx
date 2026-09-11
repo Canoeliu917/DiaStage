@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
 import {
@@ -12,9 +13,19 @@ import {
   SentRemoteVoiceResponseSchema,
 } from '@/lib/remote-voice/client'
 import type { VoiceState } from './command-input'
-import { ScanTransfer } from './scan-transfer'
-import { VoiceRecorder } from './voice-recorder'
 import './stage-entry.css'
+
+const ScanTransfer = dynamic(
+  () => import('./scan-transfer').then((module) => module.ScanTransfer),
+  {
+    ssr: false,
+    loading: () => <p role="status">正在打开扫描上传…</p>,
+  },
+)
+const VoiceRecorder = dynamic(
+  () => import('./voice-recorder').then((module) => module.VoiceRecorder),
+  { ssr: false, loading: () => <p role="status">正在打开录音…</p> },
+)
 
 const STORAGE_KEY = 'diastage:remote-voice-controller'
 const pendingSchema = z.strictObject({

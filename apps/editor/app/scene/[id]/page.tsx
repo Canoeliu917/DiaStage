@@ -1,5 +1,6 @@
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import { ClientBootstrap } from '@/app/client-bootstrap'
 import { SceneLoader } from '@/components/scene-loader'
 import { getScenePageOperations } from '@/lib/scene-store-server'
 
@@ -39,5 +40,9 @@ export default async function ScenePage({ params }: { params: Promise<{ id: stri
   }
 
   const { graph, ...meta } = scene
-  return <SceneLoader initialScene={graph} meta={meta} />
+  return (
+    <ClientBootstrap>
+      <SceneLoader initialScene={graph} meta={meta} />
+    </ClientBootstrap>
+  )
 }

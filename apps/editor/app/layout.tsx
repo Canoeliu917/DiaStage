@@ -1,6 +1,5 @@
-import { Agentation } from 'agentation'
 import localFont from 'next/font/local'
-import { ClientBootstrap } from './client-bootstrap'
+import { DevDiagnostics } from './dev-diagnostics'
 import './globals.css'
 
 export const metadata = {
@@ -23,13 +22,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   const enableDevDiagnostics =
-    process.env.NODE_ENV === 'development' && process.env.PASCAL_DEV_DIAGNOSTICS === '1'
+    process.env.NODE_ENV === 'development' && process.env.DIASTAGE_DEV_DIAGNOSTICS === '1'
 
   return (
     <html className={sourceHanSans.variable} lang="zh-CN">
       <body className="font-sans">
-        <ClientBootstrap enableDevDiagnostics={enableDevDiagnostics}>{children}</ClientBootstrap>
-        {enableDevDiagnostics && <Agentation />}
+        {children}
+        <DevDiagnostics enabled={enableDevDiagnostics} />
       </body>
     </html>
   )
