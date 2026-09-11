@@ -1,37 +1,31 @@
 'use client'
 
 import { useScene } from '@pascal-app/core'
-import { useEffect, useRef, useState } from 'react'
-import { z } from 'zod'
+import { useEffect, useMemo, useState } from 'react'
+import { useStore } from 'zustand'
+import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
+import { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
 import {
-  applyHumanDecision,
-  clearProposalGhost,
-  makeFeedback,
-  previewProposal,
-  useProposalGhost,
-} from '@/lib/rehearsal-intelligence/authority'
-import { buildRehearsalContext } from '@/lib/rehearsal-intelligence/context'
+  readConversation,
+  readProductEvents,
+} from '@/lib/rehearsal-intelligence/conversation-storage'
 import {
   clearFeedbackLog,
   readFeedbackLog,
-  saveFeedback,
-  saveInteraction,
   saveTrainingConsent,
 } from '@/lib/rehearsal-intelligence/feedback'
-import { requestProposal } from '@/lib/rehearsal-intelligence/proposal-client'
-import {
-  type Interaction,
-  type RehearsalProposal,
-  type Suggestion,
-  SuggestionSchema,
-} from '@/lib/rehearsal-intelligence/schema'
-import { readStageDocument } from '@/lib/theatre/simulation-store'
+import { SuggestionSchema } from '@/lib/rehearsal-intelligence/schema'
+import type { CreatedRemoteVoiceSession } from '@/lib/remote-voice/client'
+import { PhoneVoiceLink } from '../stage-entry/phone-voice-link'
+import { DiaRemoteBridge } from './dia-remote-bridge'
+import { useSimulationSelection } from './simulation-panel'
 import { useRehearsalPlayback } from './state'
+import './dia-conversation.css'
 
 const MOVEMENT = {
   hold: '保持位置',
   approach: '靠近对方',
-  withdraw: '与对方拉开距离',
+  withdraw: '拉开距离',
   'toward-zone': '走向舞台区域',
 }
 const ZONES = {
@@ -41,38 +35,19 @@ const ZONES = {
   upstage: '台后',
   downstage: '台前',
 }
+const SHORTCUTS = [
+  '帮我看看这一段',
+  '给我两个排法',
+  '这个人物还能怎么做',
+  '为什么这样排',
+  '换一种',
+  '我自己来',
+]
 
-export function RehearsalPartner({
-  sceneId,
-  selectedId,
-  professional,
-}: {
-  sceneId: string
-  selectedId: string | null
-  professional: boolean
-}) {
-  const [intention, setIntention] = useState('')
-  const [script, setScript] = useState('')
-  const [directorIntention, setDirectorIntention] = useState('')
-  const [interaction, setInteraction] = useState<Interaction | null>(null)
-  const [proposalId, setProposalId] = useState('')
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
-  const [editing, setEditing] = useState(false)
-  const [note, setNote] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [notice, setNotice] = useState('')
-  const [consent, setConsent] = useState(false)
-  const [settled, setSettled] = useState(false)
-  const controller = useRef<AbortController | null>(null)
-  const locked = useRef(false)
-  const mounted = useRef(true)
-  const ghostId = useProposalGhost((s) => s.proposalId)
+function GhostControls({ controller }: { controller: DiaConversation }) {
   const ghostVisible = useProposalGhost((s) => s.visible)
   const ghostTime = useProposalGhost((s) => s.time)
   const ghostPlaying = useProposalGhost((s) => s.playing)
-  const feedbackError = useProposalGhost((s) => s.feedbackError)
-  const readOnly = useScene((s) => s.readOnly)
-  const proposal = interaction?.proposals.find((p) => p.proposalId === proposalId)
 
   useEffect(() => {
     if (!ghostPlaying || !ghostVisible) return
@@ -95,558 +70,666 @@ export function RehearsalPartner({
     return () => cancelAnimationFrame(frame)
   }, [ghostPlaying, ghostVisible])
 
+  return (
+    <div className="dia-ghost-controls">
+      <p>建议预演 · {ghostTime.toFixed(1)} 秒 · 尚未采用</p>
+      <div className="dia-actions">
+        <button type="button" onClick={() => useProposalGhost.setState({ visible: !ghostVisible })}>
+          {ghostVisible ? '隐藏预览' : '显示预览'}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            const ghost = useProposalGhost.getState()
+            useProposalGhost.setState({
+              playing: !ghostPlaying,
+              visible: true,
+              time: ghost.time >= (ghost.simulation?.durationSeconds ?? 0) ? 0 : ghost.time,
+            })
+          }}
+        >
+          {ghostPlaying ? '暂停建议' : '播放建议'}
+        </button>
+        <button
+          type="button"
+          onClick={() => useProposalGhost.setState({ time: 0, playing: false })}
+        >
+          预览复位
+        </button>
+        <button
+          type="button"
+          onClick={() => controller.cancel('已清除预演，采用前需要重新预演。', 'proposal-ready')}
+        >
+          清除预演
+        </button>
+      </div>
+      <input
+        aria-label="建议预览进度"
+        type="range"
+        min={0}
+        max={useProposalGhost.getState().simulation?.durationSeconds ?? 20}
+        step={0.1}
+        value={ghostTime}
+        onChange={(e) =>
+          useProposalGhost.setState({ time: e.target.valueAsNumber, playing: false })
+        }
+      />
+    </div>
+  )
+}
+
+function GhostFeedbackError() {
+  const feedbackError = useProposalGhost((s) => s.feedbackError)
+  return feedbackError ? <p role="alert">{feedbackError}</p> : null
+}
+
+export function RehearsalPartner({
+  sceneId,
+  modelConfigured,
+}: {
+  sceneId: string
+  modelConfigured: boolean
+}) {
+  const controller = useMemo(
+    () => new DiaConversation(sceneId, () => useSimulationSelection.getState().selectedId),
+    [sceneId],
+  )
+  const state = useStore(controller.store)
+  const professional = useSimulationSelection((s) => s.professional)
+  const readOnly = useScene((s) => s.readOnly)
+  const ghostId = useProposalGhost((s) => s.proposalId)
+  const [consent, setConsent] = useState(false)
+  const [privateNotice, setPrivateNotice] = useState('')
+  const [session, setSession] = useState<CreatedRemoteVoiceSession | null>(null)
+  const proposal = controller.proposal()
+  const settled = ['applied', 'rejected'].includes(state.thread?.status ?? '')
+  const stale = state.thread?.status === 'stale'
+  const preview = async (id: string) => {
+    if (state.thread?.selectedProposalId !== id) controller.choose(id)
+    useRehearsalPlayback.getState().stop()
+    await controller.preview()
+  }
+
   useEffect(() => {
-    mounted.current = true
+    void controller.load()
+    let active = true
     void readFeedbackLog(sceneId)
       .then((log) => {
-        const saved = log.consent.at(-1)
-        if (mounted.current)
+        const last = log.consent.at(-1)
+        if (active)
           setConsent(
-            !!saved &&
-              typeof saved === 'object' &&
-              'trainingAuthorized' in saved &&
-              saved.trainingAuthorized === true,
+            !!last &&
+              typeof last === 'object' &&
+              'trainingAuthorized' in last &&
+              last.trainingAuthorized === true,
           )
       })
-      .catch(() => {
-        if (mounted.current) setNotice('无法读取本机反馈。手动排演仍可使用。')
-      })
+      .catch(() => {})
     return () => {
-      mounted.current = false
-      controller.current?.abort()
-      clearProposalGhost()
+      active = false
+      controller.dispose()
     }
-  }, [sceneId])
+  }, [controller, sceneId])
 
-  const run = async (action: (signal: AbortSignal) => Promise<void>) => {
-    if (locked.current) return
-    locked.current = true
-    controller.current = new AbortController()
-    setBusy(true)
-    setNotice('')
+  const privateAction = async (action: () => Promise<void>) => {
     try {
-      await action(controller.current.signal)
-    } catch (error) {
-      clearProposalGhost()
-      if (mounted.current)
-        setNotice(
-          controller.current.signal.aborted
-            ? '操作已取消；已提交的排演可在版本中检查。'
-            : error instanceof z.ZodError
-              ? '资料超出排演伙伴的范围。请使用不超过24个人物、每条64个路线点，并缩短选段后重试。'
-              : error instanceof Error
-                ? error.message
-                : '操作未完成，请重试。手动排演仍可使用。',
-        )
-    } finally {
-      locked.current = false
-      if (mounted.current) setBusy(false)
+      await action()
+    } catch {
+      setPrivateNotice('本机记录未能读写，请检查存储空间。正式排演不受影响。')
     }
   }
-  const choose = (entry: RehearsalProposal) => {
-    clearProposalGhost()
-    setProposalId(entry.proposalId)
-    setSuggestions(structuredClone(entry.suggestions))
-    setEditing(false)
-    setSettled(false)
-    setNote('')
-  }
-  const generate = () =>
-    run(async (signal) => {
-      clearProposalGhost()
-      const document = readStageDocument()
-      if (!document) throw new Error('请先建立剧目并添加人物')
-      if (!document.rehearsalSimulation.performers.length)
-        throw new Error('请先添加人物，再告诉我你想试什么。')
-      const history = await readFeedbackLog(sceneId)
-      if (history.interactions.length >= 200)
-        throw new Error('本机已有200次排演记录，请先导出并清空反馈记录后继续。项目不受影响。')
-      const context = buildRehearsalContext(sceneId, document, useScene.getState().nodes, {
-        intention,
-        script,
-        directorIntention,
-        selectedPerformerId: selectedId,
-      })
-      const next = await requestProposal(context, signal)
-      await saveInteraction(next)
-      signal.throwIfAborted()
-      setInteraction(next)
-      choose(next.proposals[0]!)
-      setNotice('建议已保存在本机。先预览，再选择是否采用。')
-    })
-  const updateSuggestion = (id: string, patch: Partial<Suggestion>) => {
-    clearProposalGhost()
-    setSuggestions((items) => items.map((s) => (s.id === id ? { ...s, ...patch } : s)))
-    setEditing(true)
-  }
-  const adopted = () =>
-    run(async (signal) => {
-      if (!interaction || !proposal) return
-      const decision = editing
-        ? 'edit'
-        : suggestions.length === proposal.suggestions.length
-          ? 'adopt'
-          : 'partial'
-      await applyHumanDecision(interaction, proposal, decision, suggestions, note, signal)
-      setSettled(true)
-      setNotice('已采用，本机已保存。可用撤销恢复到采用前。')
-    })
-  const exportLog = () =>
-    run(async () => {
-      const log = await readFeedbackLog(sceneId)
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' }),
-      )
-      const link = document.createElement('a')
-      link.href = url
-      link.download = 'DiaStage-private-feedback.json'
-      link.click()
-      setTimeout(() => URL.revokeObjectURL(url), 1000)
-      setNotice('已导出私有反馈备份，包含选段原文，请自行保管。')
-    })
+
   return (
-    <section className="rehearsal-partner" aria-label="AI 排演伙伴" aria-busy={busy}>
-      <h3>AI 排演伙伴</h3>
-      <p>你决定怎么演。DiaStage 陪你尝试不同可能。</p>
-      <label>
-        告诉 DiaStage 你想试什么
-        <textarea
-          rows={3}
-          maxLength={2000}
-          value={intention}
-          onChange={(e) => setIntention(e.target.value)}
-          placeholder="这里我希望她想靠近，但最后还是忍住。"
-        />
-      </label>
-      <details>
-        <summary>补充选段与导演意图（可选）</summary>
-        <label>
-          只粘贴本次讨论的剧本选段
-          <textarea
-            rows={5}
-            maxLength={12000}
-            value={script}
-            onChange={(e) => setScript(e.target.value)}
-          />
-        </label>
-        <label>
-          希望观众看到什么
-          <textarea
-            rows={2}
-            maxLength={2000}
-            value={directorIntention}
-            onChange={(e) => setDirectorIntention(e.target.value)}
-          />
-        </label>
-      </details>
-      <p>
-        生成时将发送以上文字、当前人物与路线、布景边界摘要给模型服务。反馈保存在本机，默认不用于训练。
-      </p>
-      <div className="th-buttons">
-        <button type="button" disabled={busy || !intention.trim()} onClick={generate}>
-          {busy ? '处理中…' : '生成排演可能'}
-        </button>
-        {busy && (
-          <button type="button" onClick={() => controller.current?.abort()}>
-            取消
-          </button>
-        )}
-      </div>
-      {interaction && (
-        <div className="th-buttons" role="group" aria-label="切换排演方案">
-          {interaction.proposals.map((p) => (
-            <button
-              key={p.proposalId}
-              disabled={busy}
-              type="button"
-              aria-pressed={proposalId === p.proposalId}
-              onClick={() => choose(p)}
-            >
-              {p.title}
-            </button>
-          ))}
+    <section className="dia-panel" aria-label="Dia 排演对话">
+      <header className="dia-panel-header">
+        <div>
+          <h2>Dia</h2>
+          <p>你说戏，我看舞台。</p>
         </div>
+        <label>
+          <span className="sr-only">对话信息密度</span>
+          <select
+            aria-label="对话模式"
+            value={professional ? 'professional' : 'default'}
+            onChange={(e) =>
+              useSimulationSelection.setState({ professional: e.target.value === 'professional' })
+            }
+          >
+            <option value="default">一起排</option>
+            <option value="professional">专业排演</option>
+          </select>
+        </label>
+      </header>
+      {state.synthetic && (
+        <p className="dia-synthetic" role="note">
+          演示数据 · 非真实模型输出
+        </p>
       )}
-      {proposal && interaction && (
-        <article className="rehearsal-proposal">
-          <h4>可以试试：{proposal.title}</h4>
-          <p>{proposal.intention}</p>
-          <p>
-            <strong>为什么：</strong>
-            {proposal.rationale}
-          </p>
-          <fieldset disabled={busy || settled}>
-            <legend>勾选想采用的部分</legend>
-            {proposal.suggestions.map((original) => {
-              const current = suggestions.find((s) => s.id === original.id)
-              return (
-                <div key={original.id} className="rehearsal-suggestion">
-                  <label className="rehearsal-choice">
-                    <input
-                      type="checkbox"
-                      checked={!!current}
-                      onChange={(e) => {
-                        clearProposalGhost()
-                        setSuggestions((items) =>
-                          e.target.checked
-                            ? [...items, structuredClone(original)].sort(
-                                (a, b) =>
-                                  proposal.suggestions.findIndex((s) => s.id === a.id) -
-                                  proposal.suggestions.findIndex((s) => s.id === b.id),
-                              )
-                            : items.filter((s) => s.id !== original.id),
-                        )
-                      }}
-                    />
-                    {original.intention}
-                  </label>
-                  {editing && current && (
-                    <>
-                      <label>
-                        移动方式
-                        <select
-                          value={current.movement}
-                          onChange={(e) => {
-                            const movement = SuggestionSchema.shape.movement.parse(e.target.value)
-                            updateSuggestion(current.id, {
-                              movement,
-                              targetPerformerId: null,
-                              zone: movement === 'toward-zone' ? 'center' : null,
-                            })
-                          }}
-                        >
-                          {Object.entries(MOVEMENT).map(([id, label]) => (
-                            <option key={id} value={id}>
-                              {label}
-                            </option>
-                          ))}
-                        </select>
+      {state.ready && !state.synthetic && !modelConfigured && (
+        <p className="dia-synthetic" role="note">
+          Dia 当前未连接模型服务，你仍可以使用手动排演。
+        </p>
+      )}
+      <div className="dia-dialogue" role="log" aria-label="本场对话记录">
+        {!state.thread?.messages.length && (
+          <div className="dia-welcome">
+            <h3>你想试什么？</h3>
+            <p>
+              {state.synthetic
+                ? '两个人在告别。A 想走，B 不想让他走。你想让这一段发生什么？'
+                : '说说你想改变的关系或行动。我们先在舞台上试，再由你决定。'}
+            </p>
+          </div>
+        )}
+        {state.thread?.messages.map((message) => (
+          <article className={`dia-message dia-message-${message.role}`} key={message.messageId}>
+            <strong>
+              {message.role === 'user' ? '你' : message.role === 'dia' ? 'Dia' : '舞台记录'}
+            </strong>
+            <p>{message.content}</p>
+          </article>
+        ))}
+        {state.interaction && (
+          <div className="dia-proposals" role="group" aria-label="本轮方案">
+            {state.interaction.proposals.map((entry, index) => (
+              <article
+                className="dia-proposal"
+                key={entry.proposalId}
+                data-selected={entry.proposalId === state.thread?.selectedProposalId}
+              >
+                <h3>
+                  方案 {String(index + 1).padStart(2, '0')} · {entry.title}
+                </h3>
+                <p>{entry.intention}</p>
+                <ul>
+                  {entry.suggestions.map((suggestion) => (
+                    <li key={suggestion.id}>
+                      {
+                        state.interaction!.inputContext.performers.find(
+                          (p) => p.id === suggestion.performerId,
+                        )?.name
+                      }
+                      ：{MOVEMENT[suggestion.movement]}
+                      {suggestion.zone ? ` · ${ZONES[suggestion.zone]}` : ''}
+                    </li>
+                  ))}
+                </ul>
+                <details>
+                  <summary>为什么？</summary>
+                  <p>{entry.rationale}</p>
+                  {entry.evidence.map((e, i) => (
+                    <blockquote key={`${e.source}-${i}`}>{e.quote.slice(0, 120)}</blockquote>
+                  ))}
+                  {entry.alternatives.map((alternative) => (
+                    <p key={alternative}>{alternative}</p>
+                  ))}
+                </details>
+                <button
+                  type="button"
+                  className="dia-primary"
+                  disabled={
+                    state.busy ||
+                    stale ||
+                    (settled && entry.proposalId === state.thread?.selectedProposalId)
+                  }
+                  onClick={() => void preview(entry.proposalId)}
+                >
+                  在舞台上试试
+                </button>
+              </article>
+            ))}
+            <button
+              type="button"
+              disabled={state.busy}
+              onClick={() => void controller.send('换几个有不同处理的方向')}
+            >
+              换几个方向
+            </button>
+          </div>
+        )}
+        {proposal && state.interaction && (
+          <section className="dia-decision" aria-label="预演与决定">
+            <h3>你的决定</h3>
+            <p>{proposal.title}</p>
+            <details>
+              <summary>选一部分，或修改行动</summary>
+              <fieldset disabled={state.busy || settled || stale}>
+                {proposal.suggestions.map((original) => {
+                  const current = state.suggestions.find((s) => s.id === original.id)
+                  return (
+                    <div className="dia-suggestion" key={original.id}>
+                      <label className="dia-choice">
+                        <input
+                          type="checkbox"
+                          checked={!!current}
+                          onChange={(e) =>
+                            controller.edit(
+                              e.target.checked
+                                ? proposal.suggestions.filter(
+                                    (s) =>
+                                      s.id === original.id ||
+                                      state.suggestions.some((p) => p.id === s.id),
+                                  )
+                                : state.suggestions.filter((s) => s.id !== original.id),
+                              state.editing,
+                            )
+                          }
+                        />
+                        {
+                          state.interaction!.inputContext.performers.find(
+                            (p) => p.id === original.performerId,
+                          )?.name
+                        }{' '}
+                        · {original.intention}
                       </label>
-                      {['approach', 'withdraw'].includes(current.movement) && (
-                        <label>
-                          与谁互动
-                          <select
-                            value={current.targetPerformerId ?? ''}
-                            onChange={(e) =>
-                              updateSuggestion(current.id, {
-                                targetPerformerId: e.target.value || null,
-                              })
-                            }
-                          >
-                            <option value="">选择人物</option>
-                            {interaction.inputContext.performers
-                              .filter((p) => p.id !== current.performerId && p.visible)
-                              .map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {p.name}
+                      {current && (
+                        <>
+                          <label>
+                            移动方式
+                            <select
+                              value={current.movement}
+                              onChange={(e) => {
+                                const movement = SuggestionSchema.shape.movement.parse(
+                                  e.target.value,
+                                )
+                                controller.edit(
+                                  state.suggestions.map((s) =>
+                                    s.id === current.id
+                                      ? {
+                                          ...s,
+                                          movement,
+                                          zone: movement === 'toward-zone' ? 'center' : null,
+                                          targetPerformerId: null,
+                                        }
+                                      : s,
+                                  ),
+                                  true,
+                                )
+                              }}
+                            >
+                              {Object.entries(MOVEMENT).map(([id, label]) => (
+                                <option key={id} value={id}>
+                                  {label}
                                 </option>
                               ))}
-                          </select>
-                        </label>
+                            </select>
+                          </label>
+                          {['approach', 'withdraw'].includes(current.movement) && (
+                            <label>
+                              与谁互动
+                              <select
+                                value={current.targetPerformerId ?? ''}
+                                onChange={(e) =>
+                                  controller.edit(
+                                    state.suggestions.map((s) =>
+                                      s.id === current.id
+                                        ? { ...s, targetPerformerId: e.target.value || null }
+                                        : s,
+                                    ),
+                                    true,
+                                  )
+                                }
+                              >
+                                <option value="">选择人物</option>
+                                {state
+                                  .interaction!.inputContext.performers.filter(
+                                    (p) => p.id !== current.performerId && p.visible,
+                                  )
+                                  .map((p) => (
+                                    <option value={p.id} key={p.id}>
+                                      {p.name}
+                                    </option>
+                                  ))}
+                              </select>
+                            </label>
+                          )}
+                          {current.movement === 'toward-zone' && (
+                            <label>
+                              走向
+                              <select
+                                value={current.zone ?? 'center'}
+                                onChange={(e) =>
+                                  controller.edit(
+                                    state.suggestions.map((s) =>
+                                      s.id === current.id
+                                        ? {
+                                            ...s,
+                                            zone: SuggestionSchema.shape.zone.parse(e.target.value),
+                                          }
+                                        : s,
+                                    ),
+                                    true,
+                                  )
+                                }
+                              >
+                                {Object.entries(ZONES).map(([id, label]) => (
+                                  <option value={id} key={id}>
+                                    {label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
+                          <label>
+                            幅度
+                            <select
+                              value={current.extent}
+                              onChange={(e) =>
+                                controller.edit(
+                                  state.suggestions.map((s) =>
+                                    s.id === current.id
+                                      ? {
+                                          ...s,
+                                          extent: SuggestionSchema.shape.extent.parse(
+                                            e.target.value,
+                                          ),
+                                        }
+                                      : s,
+                                  ),
+                                  true,
+                                )
+                              }
+                            >
+                              <option value="small">小一些（最多0.6米）</option>
+                              <option value="medium">大一些（最多1.2米）</option>
+                            </select>
+                          </label>
+                          <label>
+                            节奏
+                            <select
+                              value={current.pace}
+                              onChange={(e) =>
+                                controller.edit(
+                                  state.suggestions.map((s) =>
+                                    s.id === current.id
+                                      ? {
+                                          ...s,
+                                          pace: SuggestionSchema.shape.pace.parse(e.target.value),
+                                        }
+                                      : s,
+                                  ),
+                                  true,
+                                )
+                              }
+                            >
+                              <option value="slow">缓慢</option>
+                              <option value="natural">自然</option>
+                            </select>
+                          </label>
+                        </>
                       )}
-                      {current.movement === 'toward-zone' && (
-                        <label>
-                          走向
-                          <select
-                            value={current.zone ?? 'center'}
-                            onChange={(e) =>
-                              updateSuggestion(current.id, {
-                                zone: SuggestionSchema.shape.zone.parse(e.target.value),
-                              })
-                            }
-                          >
-                            {Object.entries(ZONES).map(([id, label]) => (
-                              <option key={id} value={id}>
-                                {label}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      )}
-                      <label>
-                        幅度
-                        <select
-                          value={current.extent}
-                          onChange={(e) =>
-                            updateSuggestion(current.id, {
-                              extent: SuggestionSchema.shape.extent.parse(e.target.value),
-                            })
-                          }
-                        >
-                          <option value="small">小一些（最多0.6米）</option>
-                          <option value="medium">大一些（最多1.2米）</option>
-                        </select>
-                      </label>
-                      <label>
-                        节奏
-                        <select
-                          value={current.pace}
-                          onChange={(e) =>
-                            updateSuggestion(current.id, {
-                              pace: SuggestionSchema.shape.pace.parse(e.target.value),
-                            })
-                          }
-                        >
-                          <option value="slow">缓慢</option>
-                          <option value="natural">自然</option>
-                        </select>
-                      </label>
-                    </>
-                  )}
-                </div>
-              )
-            })}
+                    </div>
+                  )
+                })}
+                <button
+                  type="button"
+                  disabled={!state.suggestions.length}
+                  onClick={() => void controller.preview()}
+                >
+                  重新预演调整
+                </button>
+              </fieldset>
+            </details>
             <label>
-              我的想法（可选）
+              这次选择的原因（可选）
               <textarea
-                maxLength={1000}
                 rows={2}
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
+                maxLength={1000}
+                value={state.note}
+                onChange={(e) => controller.patch({ note: e.target.value })}
               />
             </label>
-            <div className="th-buttons">
+            {ghostId === proposal.proposalId && <GhostControls controller={controller} />}
+            <div className="dia-actions">
               <button
+                className="dia-primary"
                 type="button"
-                disabled={!suggestions.length}
-                onClick={() =>
-                  run(async (signal) => {
-                    useRehearsalPlayback.getState().stop()
-                    await previewProposal(interaction, { ...proposal, suggestions }, signal)
-                    setNotice('半透明人物与虚线为建议预览，正式排演未改动。')
-                  })
+                disabled={
+                  state.busy ||
+                  settled ||
+                  stale ||
+                  readOnly ||
+                  ghostId !== proposal.proposalId ||
+                  !state.suggestions.length
                 }
+                onClick={() => void controller.adopt()}
               >
-                预览
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  clearProposalGhost()
-                  setEditing(true)
-                }}
-              >
-                修改
-              </button>
-              <button
-                type="button"
-                disabled={readOnly || ghostId !== proposalId || !suggestions.length}
-                onClick={adopted}
-              >
-                {editing
+                {state.editing
                   ? '调整后采用'
-                  : suggestions.length === proposal.suggestions.length
+                  : state.suggestions.length === proposal.suggestions.length
                     ? '采用'
                     : '采用一部分'}
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  run(async () => {
-                    const feedback = makeFeedback(interaction, proposal, 'reject')
-                    clearProposalGhost()
-                    await saveFeedback({
-                      ...feedback,
-                      humanEdit:
-                        JSON.stringify(suggestions) === JSON.stringify(proposal.suggestions)
-                          ? null
-                          : suggestions,
-                      optionalUserNote: note,
-                    })
-                    clearProposalGhost()
-                    setSettled(true)
-                    setNotice('已记录“不成立”，正式排演未改动。')
-                  })
-                }
+                disabled={state.busy || settled}
+                onClick={() => void controller.reject()}
               >
                 不成立
               </button>
             </div>
-          </fieldset>
-          {ghostId === proposalId && (
-            <div className="rehearsal-ghost-controls">
-              <p>建议预览 · {ghostTime.toFixed(1)} 秒</p>
-              <p>
-                预览编号：
-                {interaction.inputContext.performers
-                  .filter((p) => p.visible)
-                  .map((p, index) => `${index + 1} ${p.name}`)
-                  .join('；')}
-              </p>
-              <div className="th-buttons">
-                <button
-                  type="button"
-                  onClick={() => useProposalGhost.setState({ visible: !ghostVisible })}
-                >
-                  {ghostVisible ? '隐藏预览' : '显示预览'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const ghost = useProposalGhost.getState()
-                    useProposalGhost.setState({
-                      playing: !ghostPlaying,
-                      visible: true,
-                      time: ghost.time >= (ghost.simulation?.durationSeconds ?? 0) ? 0 : ghost.time,
-                    })
-                  }}
-                >
-                  {ghostPlaying ? '暂停建议' : '播放建议'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => useProposalGhost.setState({ time: 0, playing: false })}
-                >
-                  预览复位
-                </button>
-                <button type="button" onClick={clearProposalGhost}>
-                  清除预览
-                </button>
-              </div>
-              <input
-                type="range"
-                aria-label="建议预览进度"
-                min={0}
-                max={useProposalGhost.getState().simulation?.durationSeconds ?? 20}
-                step={0.1}
-                value={ghostTime}
-                onChange={(e) =>
-                  useProposalGhost.setState({ time: e.target.valueAsNumber, playing: false })
-                }
-              />
-            </div>
-          )}
-          {proposal.alternatives.length > 0 && (
-            <details>
-              <summary>还可以怎么试</summary>
-              {proposal.alternatives.map((a) => (
-                <p key={a}>{a}</p>
-              ))}
-              <button type="button" disabled={busy} onClick={generate}>
-                换一种
-              </button>
-            </details>
-          )}
-          <details>
-            <summary>这条建议基于什么</summary>
-            {proposal.evidence.map((e, i) => (
-              <blockquote key={`${e.source}:${i}`}>{e.quote}</blockquote>
-            ))}
-            {!proposal.evidence.length && <p>没有逐字证据，请作为待验证的尝试。</p>}
-          </details>
-          {professional && (
-            <details>
-              <summary>专业分析与版本信息</summary>
-              <p>Confidence：{proposal.confidence}（模型自评，非正确率）</p>
-              <p>
-                {proposal.modelVersion} · {proposal.promptVersion} · {proposal.ontologyVersion}
-              </p>
-              {interaction.dramaticState.map((s, i) => (
-                <dl key={`${s.character}:${i}`}>
-                  <dt>人物</dt>
-                  <dd>
-                    {interaction.inputContext.performers.find((p) => p.id === s.character)?.name}
-                  </dd>
-                  {(
-                    [
-                      'objective',
-                      'tactic',
-                      'action',
-                      'relationship',
-                      'conflict',
-                      'spatialRelationship',
-                      'stateChange',
-                    ] as const
-                  ).map((key) => (
-                    <div key={key}>
-                      <dt>{key}</dt>
-                      <dd>{s[key]}</dd>
-                    </div>
-                  ))}
-                </dl>
-              ))}
-            </details>
-          )}
-        </article>
-      )}
-      <p role="status" aria-live="polite">
-        {notice}
-      </p>
-      {feedbackError && <p role="alert">{feedbackError}</p>}
-      <details>
-        <summary>私有反馈与训练授权</summary>
-        <p>
-          生成记录包含本次选段、人物资料、原建议及你的选择，保存于当前浏览器。不会自动上传训练池。导出文件包含私有原文。
-        </p>
-        <label className="rehearsal-choice">
-          <input
-            type="checkbox"
-            checked={consent}
-            disabled={busy}
-            onChange={(e) => {
-              const value = e.target.checked
-              void run(async () => {
-                await saveTrainingConsent(sceneId, value)
-                setConsent(value)
-                setNotice(
-                  value
-                    ? '已记录授权意向。未来仍需匿名化审核；当前不会上传或训练。'
-                    : '已撤销训练授权。',
+            {professional && (
+              <details>
+                <summary>专业分析与版本信息</summary>
+                <p>Confidence：{proposal.confidence}（模型自评，非正确率）</p>
+                <p>
+                  模型：{proposal.modelVersion}
+                  <br />
+                  提示词：{proposal.promptVersion}
+                  <br />
+                  Ontology：{proposal.ontologyVersion}
+                  <br />
+                  舞台版本：{state.interaction.sceneVersion}
+                  <br />
+                  Proposal Revision：{proposal.revision?.revisionId ?? '原始方案'}
+                </p>
+                <p>ACTIVE Dimensions：{proposal.activeDimensions.join(' · ')}</p>
+                <h4>当前站位与路线</h4>
+                {state.interaction.inputContext.performers.map((p) => (
+                  <p key={p.id}>
+                    {p.name} · {p.position.map((v) => v.toFixed(2)).join(', ')} 米；路线{' '}
+                    {state.interaction!.inputContext.paths.find((path) => path.performerId === p.id)
+                      ?.points.length ?? 0}{' '}
+                    个点
+                  </p>
+                ))}
+                {state.interaction.dramaticState.map((s) => (
+                  <dl key={s.character}>
+                    <dt>人物</dt>
+                    <dd>
+                      {
+                        state.interaction!.inputContext.performers.find((p) => p.id === s.character)
+                          ?.name
+                      }
+                    </dd>
+                    {(
+                      [
+                        'objective',
+                        'relationship',
+                        'action',
+                        'tactic',
+                        'conflict',
+                        'spatialRelationship',
+                        'stateChange',
+                      ] as const
+                    ).map((key) => (
+                      <div key={key}>
+                        <dt>{key}</dt>
+                        <dd>{s[key]}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ))}
+              </details>
+            )}
+          </section>
+        )}
+        <details className="dia-context">
+          <summary>{professional ? '剧本选段与导演意图' : '补充这一段（可选）'}</summary>
+          <label>
+            只粘贴本次讨论的剧本选段
+            <textarea
+              rows={4}
+              maxLength={12000}
+              value={state.script}
+              onChange={(e) => controller.patch({ script: e.target.value })}
+            />
+          </label>
+          <label>
+            希望观众看到什么
+            <textarea
+              rows={2}
+              maxLength={2000}
+              value={state.directorIntention}
+              onChange={(e) => controller.patch({ directorIntention: e.target.value })}
+            />
+          </label>
+          <p>
+            发送时只提供当前文字、人物与路线、布景边界和最近相关对话。正式舞台以你的手动操作为准。
+          </p>
+        </details>
+        <PhoneVoiceLink
+          sceneId={sceneId}
+          sceneLabel="Dia 排演对话"
+          storageKey={`dia:${sceneId}`}
+          canLoad={false}
+          onSessionChange={setSession}
+          onTranscript={async (_command, report) => {
+            await report('rejected', '请在手机 Dia 对话中发送排演想法；这里不会执行舞台口令。')
+          }}
+        />
+        <details>
+          <summary>私有记录与训练授权</summary>
+          <p>
+            对话、建议和选择保存在当前浏览器。训练授权默认关闭；将来还需确认内容权利，当前不上传或训练。
+          </p>
+          <label className="dia-choice">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => {
+                const value = e.target.checked
+                void privateAction(async () => {
+                  await saveTrainingConsent(sceneId, value)
+                  setConsent(value)
+                  setPrivateNotice(
+                    value
+                      ? '只记录授权意向，内容权利尚未确认，不具备训练资格。'
+                      : '已撤销训练授权。',
+                  )
+                })
+              }}
+            />
+            允许未来另行审核后的反馈用于训练
+          </label>
+          <div className="dia-actions">
+            <button
+              type="button"
+              onClick={() =>
+                void privateAction(async () => {
+                  const [feedback, conversation, events] = await Promise.all([
+                    readFeedbackLog(sceneId),
+                    readConversation(sceneId),
+                    readProductEvents(sceneId),
+                  ])
+                  const url = URL.createObjectURL(
+                    new Blob([JSON.stringify({ feedback, conversation, events }, null, 2)], {
+                      type: 'application/json',
+                    }),
+                  )
+                  const link = document.createElement('a')
+                  link.href = url
+                  link.download = 'DiaStage-private-conversation.json'
+                  link.click()
+                  setTimeout(() => URL.revokeObjectURL(url), 1000)
+                  setPrivateNotice('已导出私有记录，包含原文，请自行保管。')
+                })
+              }
+            >
+              导出本机记录
+            </button>
+            <button
+              type="button"
+              disabled={state.busy}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    '删除当前场景在本机的对话和 AI 反馈？正式舞台保留。建议先导出备份。',
+                  )
                 )
-              })
+                  void privateAction(async () => {
+                    controller.dispose()
+                    await clearFeedbackLog(sceneId)
+                    window.location.reload()
+                  })
+              }}
+            >
+              删除本机记录
+            </button>
+          </div>
+          <p role="status">{privateNotice}</p>
+        </details>
+      </div>
+      <form
+        className="dia-composer"
+        onSubmit={(e) => {
+          e.preventDefault()
+          void controller.send()
+        }}
+      >
+        <p role="status" aria-live="polite" data-dia-state={state.thread?.status ?? 'idle'}>
+          {state.notice || '你的舞台，你来决定。'}
+        </p>
+        <GhostFeedbackError />
+        <div className="dia-shortcuts">
+          {SHORTCUTS.map((text) => (
+            <button
+              key={text}
+              type="button"
+              disabled={state.busy}
+              onClick={() =>
+                text === '我自己来'
+                  ? controller.cancel('好的，继续手动排演。想讨论时再来找我。')
+                  : controller.patch({ draft: text })
+              }
+            >
+              {text}
+            </button>
+          ))}
+        </div>
+        <label>
+          <span className="sr-only">你想试什么？</span>
+          <textarea
+            aria-label="你想试什么？"
+            rows={2}
+            maxLength={2000}
+            value={state.draft}
+            placeholder="比如：这场太平了，我想让他们之间更紧张一点。"
+            onChange={(e) => controller.patch({ draft: e.target.value })}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                void controller.send()
+              }
             }}
           />
-          允许未来匿名化后的反馈用于训练（默认关闭，可撤销）
         </label>
-        <div className="th-buttons">
-          <button type="button" disabled={busy} onClick={exportLog}>
-            导出本机私有反馈
-          </button>
+        <div className="dia-actions">
           <button
-            type="button"
-            disabled={busy}
-            onClick={() =>
-              run(async () => {
-                const log = await readFeedbackLog(sceneId)
-                const latest = log.interactions.at(-1)
-                if (!latest) throw new Error('本机尚无排演建议')
-                setInteraction(latest)
-                choose(latest.proposals[0]!)
-                const lastConsent = log.consent.at(-1)
-                setConsent(
-                  !!lastConsent &&
-                    typeof lastConsent === 'object' &&
-                    'trainingAuthorized' in lastConsent &&
-                    lastConsent.trainingAuthorized === true,
-                )
-                setNotice('已载入本机最近建议。若舞台已变化，需要重新生成。')
-              })
-            }
+            className="dia-primary"
+            type="submit"
+            disabled={state.busy || !state.ready || !state.draft.trim()}
           >
-            载入最近建议
+            发送
           </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              if (
-                window.confirm(
-                  '删除当前项目在此浏览器的 AI 反馈记录？正式舞台不受影响。建议先导出备份。',
-                )
-              )
-                void run(async () => {
-                  await clearFeedbackLog(sceneId)
-                  setConsent(false)
-                  setInteraction(null)
-                  clearProposalGhost()
-                  setNotice('本机反馈已删除，正式舞台保留。')
-                })
-            }}
-          >
-            删除本机反馈
-          </button>
+          {state.busy && (
+            <button type="button" onClick={() => controller.cancel()}>
+              停止
+            </button>
+          )}
         </div>
-      </details>
+      </form>
+      <DiaRemoteBridge session={session} controller={controller} />
     </section>
   )
 }

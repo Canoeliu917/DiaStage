@@ -41,6 +41,7 @@ export function PhoneVoiceLink({
   canLoad,
   onTranscript,
   onDisconnect,
+  onSessionChange,
 }: {
   sceneId?: string
   sceneLabel: string
@@ -52,6 +53,7 @@ export function PhoneVoiceLink({
     sessionId: string,
   ) => Promise<void>
   onDisconnect?: () => void
+  onSessionChange?: (session: CreatedRemoteVoiceSession | null) => void
 }) {
   const [session, setSession] = useState<CreatedRemoteVoiceSession | null>(null)
   const [connection, setConnection] = useState('等待配对')
@@ -64,7 +66,23 @@ export function PhoneVoiceLink({
   const completed = useRef<Receipt | null>(null)
   const callback = useRef(onDisconnect)
   callback.current = onDisconnect
+  const sessionCallback = useRef(onSessionChange)
+  sessionCallback.current = onSessionChange
   const key = `diastage:remote-voice-owner:${storageKey}`
+  useEffect(() => {
+    const active =
+      session && session.sceneId === sceneId && Date.parse(session.expiresAt) > Date.now()
+    sessionCallback.current?.(active ? session : null)
+    if (!active) return
+    const expiry = setTimeout(
+      () => sessionCallback.current?.(null),
+      Date.parse(session.expiresAt) - Date.now(),
+    )
+    return () => {
+      clearTimeout(expiry)
+      sessionCallback.current?.(null)
+    }
+  }, [session, sceneId])
   useEffect(() => {
     const configured = process.env.NEXT_PUBLIC_DIASTAGE_REMOTE_URL?.trim()
     let url: URL
@@ -119,6 +137,7 @@ export function PhoneVoiceLink({
         if (response.status === 410) {
           setConnection('已过期')
           stopped = true
+          sessionCallback.current?.(null)
           callback.current?.()
           return
         }
@@ -271,7 +290,7 @@ export function PhoneVoiceLink({
       <div className="phone-voice-link__body">
         {!session ? (
           <>
-            <p>手机录音、校对文字或上传扫描。舞台方案和扫描均在电脑端确认后落位。</p>
+            <p>在手机和 Dia 一起排，校对语音、预演方案或上传扫描。舞台变化由你在电脑端确认。</p>
             {!sceneId && <p>请先建立并保存舞台，再连接手机。</p>}
             <button
               type="button"

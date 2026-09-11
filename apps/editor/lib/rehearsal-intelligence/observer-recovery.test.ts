@@ -7,10 +7,12 @@ import { editStageDocument, readStageDocument } from '../theatre/simulation-stor
 import {
   applyHumanDecision,
   bindRehearsalScene,
+  isCommittedRehearsalDecision,
   observeRehearsalFeedback,
   previewProposal,
 } from './authority'
 import { buildRehearsalContext } from './context'
+import { readProductEvents } from './conversation-storage'
 import { readFeedbackLog, saveFeedback } from './feedback'
 import { createInteraction } from './proposal-generator'
 
@@ -115,6 +117,56 @@ async function waitForFinal(sceneId: string, eventId: string) {
   throw new Error('最终反馈未恢复到持久场景')
 }
 
+async function waitForProductEventCount(sceneId: string, count: number) {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const events = await readProductEvents(sceneId)
+    if (events.length >= count) return events
+    await new Promise((resolve) => setTimeout(resolve, 5))
+  }
+  throw new Error('真实排演操作的产品事件未保存')
+}
+
+test('two adoptions are not Undo or manual edits; real manual changes and Undo use actual history evidence', async () => {
+  const { journal, adopt, flush } = await setup()
+  disposers.push(observeRehearsalFeedback(journal.id))
+  const first = await adopt('approach')
+  const afterA = structuredClone(readStageDocument()!.rehearsalSimulation)
+  const second = await adopt('hold')
+  const afterB = structuredClone(readStageDocument()!.rehearsalSimulation)
+  await flush()
+  await waitForFinal(journal.id, first.eventId)
+  editStageDocument((document) => {
+    document.rehearsalSimulation.performers[0]!.position[2] = 1
+  })
+  await flush()
+  const manual = await waitForProductEventCount(journal.id, 1)
+  expect(manual.map((event) => event.name)).toEqual(['post_adopt_manual_edit'])
+  expect(manual[0]!.proposalId).toBe(second.proposalId)
+
+  useScene.temporal.getState().undo()
+  await journal.append(useScene.getState())
+  expect(readStageDocument()!.rehearsalSimulation).toEqual(afterB)
+  const undoManual = await waitForProductEventCount(journal.id, 2)
+  expect(undoManual.filter((event) => event.name === 'post_adopt_undo')).toHaveLength(1)
+  expect(undoManual.find((event) => event.name === 'post_adopt_undo')!.proposalId).toBe(
+    second.proposalId,
+  )
+
+  useScene.temporal.getState().undo()
+  await journal.append(useScene.getState())
+  expect(readStageDocument()!.rehearsalSimulation).toEqual(afterA)
+  const undoAdoption = await waitForProductEventCount(journal.id, 3)
+  expect(undoAdoption.filter((event) => event.name === 'post_adopt_undo')).toHaveLength(2)
+  expect(undoAdoption.filter((event) => event.name === 'post_adopt_manual_edit')).toHaveLength(1)
+  await waitForFinal(journal.id, second.eventId)
+
+  useScene.temporal.getState().redo()
+  await journal.append(useScene.getState())
+  await waitForFinal(journal.id, second.eventId)
+  expect(readStageDocument()!.rehearsalSimulation).toEqual(afterB)
+  expect(await readProductEvents(journal.id)).toHaveLength(3)
+})
+
 for (const refresh of [false, true])
   test(`two adoptions, Undo B and Redo B keep B final feedback current (refresh=${refresh})`, async () => {
     const { journal, adopt, flush } = await setup()
@@ -186,6 +238,9 @@ test('failed applied feedback, Undo, acknowledgement and refresh recover from du
   })
   disposers.push(observeRehearsalFeedback(journal.id))
   const events = await waitForFinal(journal.id, adoption.eventId)
+  expect(await readProductEvents(journal.id)).toHaveLength(0)
+  expect(await isCommittedRehearsalDecision(journal.id, adoption)).toBe(true)
+  expect(await isCommittedRehearsalDecision('other-scene', adoption)).toBe(false)
   expect(useScene.getState().nodes).toBe(undone.nodes)
   expect(events.find((event) => event.eventId === adoption.eventId)?.finalResult).toEqual(applied)
   useScene.temporal.getState().redo()

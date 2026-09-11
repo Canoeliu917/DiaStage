@@ -128,6 +128,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   }))
   mock.module('@pascal-app/editor', () => ({
     Editor,
+    useSidebarStore: { getState: () => ({ isCollapsed: false, setIsCollapsed: () => {} }) },
     useEditor: (select: (state: { activeSidebarPanel: string }) => unknown) =>
       select({ activeSidebarPanel: 'theatre-roles' }),
     applySceneGraphToEditor: (graph: SceneGraph) => {

@@ -1,5 +1,11 @@
+import { sceneFactsVersion } from './conversation'
 import { ACTIVE_DIMENSIONS, ONTOLOGY_VERSION, PROMPT_VERSION } from './dimensions'
-import { validateContext, validateEvidence, validateProposal } from './proposal-validator'
+import {
+  validateContext,
+  validateConversationProposal,
+  validateEvidence,
+  validateProposal,
+} from './proposal-validator'
 import { AgentOutputSchema, InteractionSchema } from './schema'
 
 export function createInteraction(input: unknown, output: unknown, modelVersion: string) {
@@ -15,18 +21,51 @@ export function createInteraction(input: unknown, output: unknown, modelVersion:
     ontologyVersion: ONTOLOGY_VERSION,
     promptVersion: PROMPT_VERSION,
     activeDimensions: [...ACTIVE_DIMENSIONS],
+    sceneVersion: context.sceneVersion ?? sceneFactsVersion(context),
   }
+  const createdAt = new Date().toISOString()
+  const conversation = context.conversation
+  const parent = conversation?.previousInteraction?.proposals.find(
+    (proposal) => proposal.proposalId === conversation.selectedProposalId,
+  )
   return InteractionSchema.parse({
     interactionId: crypto.randomUUID(),
     sceneId: context.sceneId,
-    createdAt: new Date().toISOString(),
+    createdAt,
     ...metadata,
     inputContext: context,
     dramaticState: result.dramaticState,
-    proposals: result.proposals.map((proposal) =>
-      validateProposal(context, { ...proposal, ...metadata, proposalId: crypto.randomUUID() }),
-    ),
+    proposals: result.proposals.map((content) => {
+      const proposalId = crypto.randomUUID()
+      const revision = conversation
+        ? {
+            schemaVersion: 1 as const,
+            revisionId: crypto.randomUUID(),
+            proposalId,
+            rootProposalId: parent?.revision?.rootProposalId ?? parent?.proposalId ?? proposalId,
+            parentProposalId: parent?.proposalId ?? null,
+            parentInteractionId: parent ? conversation.previousInteraction!.interactionId : null,
+            revisionNumber: parent ? (parent.revision?.revisionNumber ?? 0) + 1 : 0,
+            humanMessageId: conversation.requestMessageId,
+            instruction: context.intention,
+            heldPerformerIds: conversation.heldPerformerIds,
+            sceneVersion: metadata.sceneVersion,
+            createdAt,
+          }
+        : undefined
+      return validateConversationProposal(
+        context,
+        validateProposal(context, {
+          ...content,
+          ...metadata,
+          proposalId,
+          ...(revision ? { revision } : {}),
+        }),
+      )
+    }),
     privateProjectData: true,
     trainingAuthorized: false,
+    rightsStatus: context.rightsStatus ?? 'unknown',
+    trainingEligible: false,
   })
 }

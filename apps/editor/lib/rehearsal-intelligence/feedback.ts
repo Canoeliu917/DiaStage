@@ -2,13 +2,16 @@ import { type Feedback, FeedbackSchema, type Interaction, InteractionSchema } fr
 
 function openLog(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('diastage-rehearsal-feedback', 1)
+    const request = indexedDB.open('diastage-rehearsal-feedback', 2)
     request.onupgradeneeded = () => {
       for (const [name, keyPath] of [
         ['interactions', 'interactionId'],
         ['events', 'eventId'],
         ['consent', 'sceneId'],
+        ['threads', 'sceneId'],
+        ['product-events', 'eventId'],
       ] as const) {
+        if (request.result.objectStoreNames.contains(name)) continue
         const store = request.result.createObjectStore(name, { keyPath })
         store.createIndex('sceneId', 'sceneId')
       }
@@ -21,6 +24,9 @@ function openLog(): Promise<IDBDatabase> {
     request.onblocked = () => reject(new Error('请关闭旧版窗口后重试反馈保存'))
   })
 }
+
+export { openLog as openRehearsalLog }
+
 async function put(store: string, record: object) {
   const db = await openLog()
   try {
@@ -94,10 +100,13 @@ export async function clearFeedbackLog(sceneId: string) {
   const db = await openLog()
   try {
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(['interactions', 'events', 'consent'], 'readwrite')
+      const tx = db.transaction(
+        ['interactions', 'events', 'consent', 'threads', 'product-events'],
+        'readwrite',
+      )
       tx.oncomplete = () => resolve()
       tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('反馈删除失败'))
-      for (const name of ['interactions', 'events', 'consent']) {
+      for (const name of ['interactions', 'events', 'consent', 'threads', 'product-events']) {
         const cursor = tx.objectStore(name).index('sceneId').openCursor(sceneId)
         cursor.onsuccess = () => {
           const value = cursor.result

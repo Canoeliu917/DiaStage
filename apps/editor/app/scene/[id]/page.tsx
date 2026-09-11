@@ -42,7 +42,11 @@ export default async function ScenePage({ params }: { params: Promise<{ id: stri
   const { graph, ...meta } = scene
   return (
     <ClientBootstrap>
-      <SceneLoader initialScene={graph} meta={meta} />
+      <SceneLoader
+        initialScene={graph}
+        meta={meta}
+        modelConfigured={!!process.env.OPENAI_API_KEY}
+      />
     </ClientBootstrap>
   )
 }

@@ -13,6 +13,7 @@ import {
   SentRemoteVoiceResponseSchema,
 } from '@/lib/remote-voice/client'
 import type { VoiceState } from './command-input'
+import { MobileDia } from './mobile-dia'
 import './stage-entry.css'
 
 const ScanTransfer = dynamic(
@@ -64,7 +65,7 @@ export function RemoteVoiceController() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
   const [secureContext, setSecureContext] = useState(true)
-  const [tab, setTab] = useState<'voice' | 'scan'>('voice')
+  const [tab, setTab] = useState<'dia' | 'voice' | 'scan'>('dia')
   const request = useRef<AbortController | null>(null)
   const transcribeHeaders = useMemo(
     () => (session ? { 'x-diastage-remote-token': session.remoteToken } : undefined),
@@ -252,8 +253,8 @@ export function RemoteVoiceController() {
     <section className="remote-voice-card">
       <header>
         <div>
-          <h1>舞台助手</h1>
-          <p>{session?.label || '把排练现场的想法带回舞台。'}</p>
+          <h1>Dia</h1>
+          <p>{session?.label || '咫台 DiaStage · 一起排'}</p>
         </div>
         {session && (
           <button type="button" disabled={sending} onClick={() => void disconnect()}>
@@ -261,44 +262,52 @@ export function RemoteVoiceController() {
           </button>
         )}
       </header>
-      <nav className="assistant-entries" aria-label="舞台助手功能">
-        <button type="button" aria-pressed={tab === 'voice'} onClick={() => setTab('voice')}>
-          <strong>语音构台</strong>
-          <span>从一句话开始，搭出你的舞台。</span>
+      {tab !== 'dia' && (
+        <button type="button" onClick={() => setTab('dia')}>
+          回到 Dia 对话
         </button>
-        <a
-          href={
-            session?.sceneId
-              ? `/scene/${encodeURIComponent(session.sceneId)}?workspace=set`
-              : '/?entry=manual'
-          }
-        >
-          <strong>手动置景</strong>
-          <span>用方块和木板，完成舞台。</span>
-        </a>
-        <a href="/?entry=script">
-          <strong>剧本搭台</strong>
-          <span>上传剧本，把文字变成场景。</span>
-        </a>
-        <a
-          href={
-            session?.sceneId
-              ? `/scene/${encodeURIComponent(session.sceneId)}?workspace=remount&versions=1`
-              : '/scenes'
-          }
-        >
-          <strong>复台</strong>
-          <span>找回并继续之前的舞台版本。</span>
-        </a>
-        <button type="button" aria-pressed={tab === 'scan'} onClick={() => setTab('scan')}>
-          <strong>扫描上传</strong>
-          <span>导入扫描应用导出的场地 GLB。</span>
-        </button>
-      </nav>
+      )}
+      {session && tab === 'dia' && <MobileDia key={session.id} session={session} />}
+      {!session && tab === 'dia' && (
+        <div className="mobile-dia-welcome">
+          <h2>今天想排什么？</h2>
+          <p>说一句，或输入文字。连接舞台后，和 Dia 看同一段戏，试几个方向，再由你决定。</p>
+        </div>
+      )}
+      <details className="mobile-assistant-tools">
+        <summary>继续最近排演 · 剧本 · 舞台 · 扫描</summary>
+        <nav aria-label="其他排演工具">
+          <button type="button" aria-pressed={tab === 'voice'} onClick={() => setTab('voice')}>
+            语音构台
+          </button>
+          <a
+            href={
+              session?.sceneId
+                ? `/scene/${encodeURIComponent(session.sceneId)}?workspace=set`
+                : '/?entry=manual'
+            }
+          >
+            手动置景
+          </a>
+          <a href="/?entry=script">剧本搭台</a>
+          <a
+            href={
+              session?.sceneId
+                ? `/scene/${encodeURIComponent(session.sceneId)}?workspace=remount&versions=1`
+                : '/scenes'
+            }
+          >
+            复台
+          </a>
+          <button type="button" aria-pressed={tab === 'scan'} onClick={() => setTab('scan')}>
+            扫描上传
+          </button>
+        </nav>
+      </details>
       {!session ? (
         <>
           <h2>{tab === 'scan' ? '连接后上传扫描' : '连接电脑舞台'}</h2>
-          <p>在电脑已保存的场景中，打开“舞台口令 → 连接手机舞台助手”，获取配对码。</p>
+          <p>在电脑已保存的场景中，打开“连接手机舞台助手”，获取配对码。</p>
           <label>
             8 位配对码
             <input
@@ -325,7 +334,7 @@ export function RemoteVoiceController() {
             {connection === 'connecting' ? '正在连接…' : '连接舞台'}
           </button>
         </>
-      ) : (
+      ) : tab !== 'dia' ? (
         <>
           <p role="status">
             {
@@ -405,7 +414,7 @@ export function RemoteVoiceController() {
             </>
           )}
         </>
-      )}
+      ) : null}
       {error && <p role="alert">{error}</p>}
     </section>
   )

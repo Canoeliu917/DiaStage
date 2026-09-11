@@ -1,0 +1,238 @@
+.mobile-dia {
+  --dia-ink: #202020;
+  --dia-muted: #525252;
+  --dia-line: #999994;
+  color: var(--dia-ink);
+  background: #f2f2ed;
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.mobile-dia h2 {
+  font-size: clamp(26px, 7vw, 36px);
+  letter-spacing: -0.04em;
+  margin: 8px 0 0;
+}
+.mobile-dia h3,
+.mobile-dia p {
+  margin: 0;
+}
+.mobile-dia p,
+.mobile-dia li {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.mobile-dia button,
+.mobile-dia summary,
+.mobile-assistant-tools a,
+.mobile-assistant-tools button,
+.mobile-assistant-tools summary {
+  min-height: 44px;
+}
+.remote-voice-card .mobile-dia button {
+  border: 1px solid var(--dia-line);
+  border-radius: 6px;
+  background: #f2f2ed;
+  color: var(--dia-ink);
+  padding: 9px 12px;
+  cursor: pointer;
+}
+.mobile-dia button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.mobile-dia button:focus-visible,
+.mobile-dia textarea:focus-visible,
+.mobile-dia summary:focus-visible,
+.mobile-assistant-tools :focus-visible {
+  outline: 2px solid #202020;
+  outline-offset: 3px;
+}
+.remote-voice-card .mobile-dia .mobile-dia__primary {
+  background: var(--dia-ink);
+  color: #f5f5f5;
+  border-color: var(--dia-ink);
+}
+.mobile-dia__connection,
+.mobile-dia__hint,
+.mobile-dia__eyebrow,
+.mobile-dia__mini figcaption {
+  color: var(--dia-muted);
+  font-size: 13px;
+}
+.mobile-dia__synthetic {
+  border: 1px solid var(--dia-line);
+  padding: 10px;
+  font-size: 14px;
+}
+.mobile-dia__mini {
+  margin: 0;
+}
+.mobile-dia__mini svg {
+  display: block;
+  width: 100%;
+  max-height: 235px;
+}
+.mobile-dia__mini svg svg {
+  overflow: hidden;
+}
+.mobile-dia__mini text {
+  fill: var(--dia-ink);
+  font-size: 11px;
+}
+.mobile-dia__mini svg svg text {
+  fill: #eeeeec;
+}
+.mobile-dia__stage {
+  fill: #252523;
+  stroke: #777772;
+}
+.mobile-dia__actor {
+  fill: #eeeeec;
+}
+.mobile-dia__path {
+  fill: none;
+  stroke: #85857e;
+  stroke-width: 1.5;
+}
+.mobile-dia__ghost-path,
+.mobile-dia__ghost-actor {
+  fill: none;
+  stroke: #eeeeec;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+.mobile-dia__messages {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 18px;
+}
+.mobile-dia__messages li > span {
+  display: block;
+  color: var(--dia-muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.mobile-dia__messages li[data-role="user"] {
+  border-left: 2px solid var(--dia-line);
+  padding-left: 12px;
+}
+.mobile-dia__messages li[data-role="system-state"] {
+  color: var(--dia-muted);
+  font-size: 13px;
+}
+.mobile-dia__state,
+.mobile-dia__pending {
+  border-block: 1px solid var(--dia-line);
+  padding-block: 12px;
+  display: grid;
+  gap: 8px;
+}
+.mobile-dia__pending blockquote {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.mobile-dia__composer {
+  display: grid;
+  gap: 12px;
+}
+.remote-voice-card .mobile-dia__composer textarea {
+  width: 100%;
+  min-height: 112px;
+  box-sizing: border-box;
+  resize: vertical;
+  padding: 12px;
+  color: var(--dia-ink);
+  border: 1px solid var(--dia-line);
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.mobile-dia__composer textarea::placeholder {
+  color: var(--dia-muted);
+}
+.mobile-dia__actions,
+.mobile-dia__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mobile-dia__suggestions button {
+  font-size: 12px;
+  color: var(--dia-muted);
+}
+.mobile-dia__voice {
+  display: grid;
+  gap: 12px;
+}
+.mobile-dia__proposals {
+  display: grid;
+  gap: 24px;
+}
+.mobile-dia__proposals article {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--dia-line);
+  padding-top: 18px;
+}
+.mobile-dia__proposals article[data-selected="true"] {
+  border-color: var(--dia-ink);
+}
+.mobile-dia__proposals ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.mobile-dia__proposals summary {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.mobile-assistant-tools {
+  margin: 20px 0;
+  border-block: 1px solid #999994;
+  color: #202020;
+  background: #f2f2ed;
+}
+.mobile-assistant-tools > summary {
+  display: flex;
+  align-items: center;
+  color: #525252;
+  cursor: pointer;
+}
+.mobile-assistant-tools nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-block: 10px;
+}
+.mobile-assistant-tools a,
+.mobile-assistant-tools button {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  color: #202020;
+  background: #f2f2ed;
+  font-size: 13px;
+}
+.mobile-dia-welcome {
+  display: grid;
+  gap: 12px;
+  padding-block: 16px;
+  color: #202020;
+  background: #f2f2ed;
+}
+.mobile-dia-welcome h2 {
+  font-size: 30px;
+  margin: 0;
+}
+.mobile-dia-welcome p {
+  color: #525252;
+  line-height: 1.6;
+}

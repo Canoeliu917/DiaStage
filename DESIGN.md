@@ -88,7 +88,7 @@ components:
 
 # Design System: 咫台 DiaStage
 
-当前产品约束以 PRODUCT.md 与《DiaStage V0.1 — Rehearsal Intelligence 基线冻结与下一阶段推进》为准；当前实现与验证边界见 REHEARSAL_INTELLIGENCE_V01.md。下列原有设计记录保留，V0.1 增量以文末记录为准。
+当前产品约束以 PRODUCT.md 与《Dia Conversation Layer — 网页与手机统一戏剧智能体验》为准；实现与验证见 DIA_CONVERSATION_LAYER.md。下列原有设计记录保留，最新增量以文末记录为准。
 
 ## 视觉与文字
 沿用现有黑白灰、细边框、紧凑工作台，不增加装饰噪声。英文 Courier New，中文本地思源黑体。品牌词分别连续显示，白底黑字。人物颜色与复台警示色属于内容语义，均配文字或形状说明。
@@ -116,7 +116,7 @@ V0.1 沿用黑白灰、英文 Courier New、中文思源黑体与现有紧凑工
 
 ## Layout
 
-桌面保留舞台总览与操作面板的上下分区，手机沿用可关闭的底部面板。模拟排演顶部提供“保存 / 查看版本”，不依赖用户滚动到排演流程末尾。AI 伙伴位于模拟排演面板内，输入、建议与反馈纵向排列。
+桌面保留舞台总览与操作面板的上下分区，模拟排演顶部提供“保存 / 查看版本”。Dia 改为舞台右侧独立分栏，输入区固定在分栏底部；不覆盖舞台。平板展开 Dia 时先收起左栏，用户可重新展开。手机默认轻量对话与远控，完整编辑器仍为次级入口。
 
 ## Components
 
@@ -132,3 +132,11 @@ V0.1 沿用黑白灰、英文 Courier New、中文思源黑体与现有紧凑工
 - **Don't** 将合成建议演示标为真实 API 结果，或将截图审查结论写成真机验收。
 
 本轮独立 UI 图片审查结论为 ship，原三项修复全部 resolved。最新 Ghost 证据为 `.impeccable/review/v01/desktop.png`、`tablet.png`、`mobile.png`；各尺寸的 `-entry`、`-simple`、`-professional`、`-analysis` 为上一轮入口与模式证据，人物位置不用于与最新 Ghost 逐像素对比。截图中的建议均为合成演示，非真实 API。当前 publicBeta 尚未 ready：Gold Alpha 20、真实模型人工审核、各平台真机与独立用户验收尚未完成；剩余 30 个维度等待产品定义，不阻塞工程开发；完整边界保留于 REHEARSAL_INTELLIGENCE_V01.md。
+
+## Dia Conversation Layer · 2026-09-12
+
+当前首页是浅灰纸面上的 Dia 对话入口，工作台内的 Dia 为深灰分栏。沿用英文 Courier New / 中文思源黑体与黑白灰；输入字号16px保证移动端可读，触控区至少44px。普通模式只显示处理方向、行动和“为什么”；专业模式在同一份数据上增加依据和精确值。角色/舞台事实与模型可能解释分开呈现，合成示例固定标明“演示数据 · 非真实模型输出”。
+
+桌面 Dia 宽370px，平板330px；平板展开Dia时默认收起左栏，用户仍可手动打开。人物与舞台视窗不被聊天覆盖。手机远控采用明确的浅底深字，SVG小舞台使用深底浅字。首页主CTA之后立即排列继续排演、剧本、舞台、扫描轻入口；首屏不加载完整Viewer，录音按需加载。
+
+本轮检测为0 anti-patterns、43条旧调色/字号表的非阻断advisory；这些浅/深纸面灰阶与16px输入为本轮有意的可读性扩展。独立截图复核修复了手机浅底浅字、平板人物裁切和手机轻入口过低三项；一次修正后结论ship。证据改见 `.impeccable/review/conversation/`。这些是浏览器模拟，不是实际设备或模型质量验收。完整状态见 DIA_CONVERSATION_LAYER.md。

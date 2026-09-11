@@ -9,6 +9,22 @@ import { DimensionIdSchema, ONTOLOGY_VERSION, PROMPT_VERSION } from './dimension
 
 const id = z.string().min(1).max(160)
 const sentence = z.string().trim().min(1).max(600)
+const promptVersion = z.enum(['rehearsal-partner-0.1', PROMPT_VERSION])
+export const RightsStatusSchema = z.enum(['unknown', 'cleared', 'restricted'])
+export const DiaStatusSchema = z.enum([
+  'idle',
+  'understanding',
+  'proposing',
+  'proposal-ready',
+  'compiling',
+  'ghost-ready',
+  'waiting-human',
+  'applying',
+  'applied',
+  'rejected',
+  'stale',
+  'failed',
+])
 export const EvidenceSchema = z.strictObject({
   source: z.enum(['script', 'intention', 'director']),
   quote: sentence,
@@ -49,12 +65,85 @@ export const ProposalContentSchema = z.strictObject({
   evidence: z.array(EvidenceSchema).max(8),
   confidence: z.number().min(0).max(1),
 })
+export const ProposalRevisionSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  revisionId: id,
+  proposalId: id,
+  rootProposalId: id,
+  parentProposalId: id.nullable(),
+  parentInteractionId: id.nullable(),
+  revisionNumber: z.number().int().nonnegative(),
+  humanMessageId: id,
+  instruction: z.string().trim().min(1).max(2000),
+  heldPerformerIds: z.array(id).max(24),
+  sceneVersion: id,
+  createdAt: z.iso.datetime(),
+})
 export const RehearsalProposalSchema = ProposalContentSchema.extend({
   proposalId: id,
   activeDimensions: z.array(DimensionIdSchema).length(8),
   modelVersion: id,
-  promptVersion: z.literal(PROMPT_VERSION),
+  promptVersion,
   ontologyVersion: z.literal(ONTOLOGY_VERSION),
+  sceneVersion: id.optional(),
+  revision: ProposalRevisionSchema.optional(),
+})
+export const ThreadMessageSchema = z.strictObject({
+  messageId: id,
+  role: z.enum(['user', 'dia', 'system-state']),
+  content: z.string().trim().min(1).max(4000),
+  createdAt: z.iso.datetime(),
+  sceneVersion: id,
+  interactionId: id.optional(),
+  proposalIds: z.array(id).max(3).optional(),
+  status: DiaStatusSchema.optional(),
+})
+export const RehearsalThreadSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  threadId: id,
+  sceneId: id,
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
+  messages: z.array(ThreadMessageSchema).max(600),
+  activeInteractionId: id.nullable(),
+  selectedProposalId: id.nullable(),
+  sceneVersion: id,
+  status: DiaStatusSchema,
+  rejectedProposalSignatures: z.array(z.string().max(6000)).max(8).default([]),
+  privateProjectData: z.literal(true).default(true),
+  trainingAuthorized: z.boolean().default(false),
+  rightsStatus: RightsStatusSchema.default('unknown'),
+  trainingEligible: z.literal(false).default(false),
+})
+export const RecentDecisionSchema = z.strictObject({
+  decision: z.enum(['preview', 'adopt', 'partial', 'edit', 'reject', 'manual-edit']),
+  proposalId: id,
+  sceneVersion: id,
+  note: z.string().max(1000),
+})
+export const ConversationContextSchema = z.strictObject({
+  schemaVersion: z.literal(1),
+  threadId: id,
+  sceneId: id,
+  requestMessageId: id,
+  recentMessages: z
+    .array(ThreadMessageSchema)
+    .max(8)
+    .refine(
+      (messages) => messages.reduce((total, message) => total + message.content.length, 0) <= 6000,
+      '最近对话超出上下文限制',
+    ),
+  previousInteraction: z
+    .strictObject({
+      interactionId: id,
+      sceneVersion: id,
+      proposals: z.array(RehearsalProposalSchema).min(1).max(3),
+    })
+    .nullable(),
+  selectedProposalId: id.nullable(),
+  heldPerformerIds: z.array(id).max(24),
+  rejectedProposalSignatures: z.array(z.string().max(6000)).max(8),
+  recentDecision: RecentDecisionSchema.nullable().default(null),
 })
 export const AgentOutputSchema = z.strictObject({
   dramaticState: z.array(DramaticStateSchema).max(24),
@@ -63,6 +152,9 @@ export const AgentOutputSchema = z.strictObject({
 export const ObstacleSchema = z.strictObject({ id, name: id, min: Vec3Schema, max: Vec3Schema })
 export const RehearsalContextSchema = z.strictObject({
   sceneId: id,
+  sceneVersion: id.optional(),
+  conversation: ConversationContextSchema.optional(),
+  rightsStatus: RightsStatusSchema.optional(),
   productionId: id,
   script: z.string().max(12000),
   intention: z.string().trim().min(1).max(2000),
@@ -80,9 +172,10 @@ export const RehearsalContextSchema = z.strictObject({
 export const InteractionSchema = z.strictObject({
   interactionId: id,
   sceneId: id,
+  sceneVersion: id.optional(),
   createdAt: z.iso.datetime(),
   modelVersion: id,
-  promptVersion: z.literal(PROMPT_VERSION),
+  promptVersion,
   ontologyVersion: z.literal(ONTOLOGY_VERSION),
   activeDimensions: z.array(DimensionIdSchema).length(8),
   inputContext: RehearsalContextSchema,
@@ -90,6 +183,8 @@ export const InteractionSchema = z.strictObject({
   proposals: z.array(RehearsalProposalSchema).min(1).max(3),
   privateProjectData: z.literal(true),
   trainingAuthorized: z.boolean(),
+  rightsStatus: RightsStatusSchema.default('unknown'),
+  trainingEligible: z.literal(false).default(false),
 })
 export const FeedbackSchema = z.strictObject({
   eventId: id,
@@ -104,6 +199,8 @@ export const FeedbackSchema = z.strictObject({
   previewedProposal: RehearsalProposalSchema.nullable().default(null),
   privateProjectData: z.literal(true).default(true),
   trainingAuthorized: z.boolean().default(false),
+  rightsStatus: RightsStatusSchema.default('unknown'),
+  trainingEligible: z.literal(false).default(false),
   humanEdit: z.array(SuggestionSchema).max(12).nullable(),
   finalResult: RehearsalSimulationSchema.nullable(),
   reasonTags: z
@@ -117,3 +214,9 @@ export type RehearsalProposal = z.infer<typeof RehearsalProposalSchema>
 export type Suggestion = z.infer<typeof SuggestionSchema>
 export type Interaction = z.infer<typeof InteractionSchema>
 export type Feedback = z.infer<typeof FeedbackSchema>
+export type DiaStatus = z.infer<typeof DiaStatusSchema>
+export type ThreadMessage = z.infer<typeof ThreadMessageSchema>
+export type RehearsalThread = z.infer<typeof RehearsalThreadSchema>
+export type ProposalRevision = z.infer<typeof ProposalRevisionSchema>
+export type ConversationContext = z.infer<typeof ConversationContextSchema>
+export type RecentDecision = z.infer<typeof RecentDecisionSchema>

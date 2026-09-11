@@ -1,8 +1,6 @@
 'use client'
 
 import { useScene } from '@pascal-app/core'
-import { ViewerErrorBoundary } from '@pascal-app/viewer'
-import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
 import { create } from 'zustand'
 import { commandMeta, executeStageCommands } from '@/lib/stage/command-executor'
@@ -18,11 +16,8 @@ import { openStudioPanel } from '../studio-navigation'
 import { useRehearsalPlayback } from './state'
 import './theatre.css'
 
-const RehearsalPartner = dynamic(() =>
-  import('./rehearsal-partner').then((m) => m.RehearsalPartner),
-)
-
 export const useSimulationSelection = create<{
+  professional: boolean
   selectedId: string | null
   input: 'select' | 'position' | 'route'
   points: Vec3[]
@@ -30,6 +25,7 @@ export const useSimulationSelection = create<{
   drag: { id: string; position: Vec3 } | null
   error: string
 }>(() => ({
+  professional: false,
   selectedId: null,
   input: 'select',
   points: [],
@@ -182,11 +178,11 @@ export function VenuePanel() {
   )
 }
 
-export function SimulationPanel({ sceneId = '' }: { sceneId?: string }) {
+export function SimulationPanel(_props: { sceneId?: string }) {
   const { document, error } = useStageDocument()
   const ui = useSimulationSelection()
   const [notice, setNotice] = useState('')
-  const [professional, setProfessional] = useState(false)
+  const professional = ui.professional
   const readOnly = useScene((s) => s.readOnly)
   const simulation = document?.rehearsalSimulation
   const selected = simulation?.performers.find((p) => p.id === ui.selectedId)
@@ -209,10 +205,12 @@ export function SimulationPanel({ sceneId = '' }: { sceneId?: string }) {
         操作模式
         <select
           value={professional ? 'professional' : 'default'}
-          onChange={(e) => setProfessional(e.target.value === 'professional')}
+          onChange={(e) =>
+            useSimulationSelection.setState({ professional: e.target.value === 'professional' })
+          }
         >
-          <option value="default">简单模式</option>
-          <option value="professional">专业模式</option>
+          <option value="default">一起排</option>
+          <option value="professional">专业排演</option>
         </select>
       </label>
       <p>拖动人物调整站位；也可以先点“在舞台上定位”，再点击目的地。记录路线后播放排演。</p>
@@ -437,20 +435,6 @@ export function SimulationPanel({ sceneId = '' }: { sceneId?: string }) {
         </button>
       )}
       {(error || notice) && <p role="alert">{error || notice}</p>}
-      {sceneId && (
-        <ViewerErrorBoundary
-          scope="rehearsal-partner"
-          resetKey={sceneId}
-          fallback={<p role="alert">AI 面板暂不可用，仍可继续手动排演。请刷新后重试。</p>}
-        >
-          <RehearsalPartner
-            key={sceneId}
-            sceneId={sceneId}
-            selectedId={ui.selectedId}
-            professional={professional}
-          />
-        </ViewerErrorBoundary>
-      )}
     </section>
   )
 }

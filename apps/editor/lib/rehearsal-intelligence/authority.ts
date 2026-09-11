@@ -1,4 +1,4 @@
-import { useScene } from '@pascal-app/core'
+import { subscribeSceneCommits, useScene } from '@pascal-app/core'
 import { create } from 'zustand'
 import {
   observeForeignSceneCommits,
@@ -10,6 +10,7 @@ import { assertTheatreWritable, THEATRE_METADATA_KEY } from '../theatre/scene-ad
 import { type RehearsalSimulation, StageSceneDocumentSchema } from '../theatre/simulation'
 import { readStageDocument } from '../theatre/simulation-store'
 import { buildRehearsalContext } from './context'
+import { saveProductEvent } from './conversation-storage'
 import { readFeedback, readFeedbackLog, saveFeedback } from './feedback'
 import { compileProposal } from './proposal-compiler'
 import { validateProposal } from './proposal-validator'
@@ -72,23 +73,103 @@ async function checkCurrentScene(id: string) {
   if (activeScene !== session) throw new Error('当前场景已变化，请重新生成建议')
 }
 
+export async function isCommittedRehearsalDecision(sceneId: string, event: Feedback) {
+  if (event.sceneId !== sceneId || !['adopt', 'partial', 'edit'].includes(event.decision))
+    return false
+  if (event.status === 'applied') return true
+  if (event.status !== 'prepared') return false
+  const receipt = await readLocalDecisionReceipt(sceneId, event.eventId)
+  return (
+    receipt?.eventId === event.eventId &&
+    receipt.proposalId === event.proposalId &&
+    receipt.interactionId === event.interactionId
+  )
+}
+
 /** Receipts reconcile interrupted feedback writes; preferences observe only durable scene commits. */
 export function observeRehearsalFeedback(sceneId: string) {
   let queue = Promise.resolve()
   let previousEventId: string | null = null
   let initialized = false
-  async function wasCommitted(event: Feedback) {
-    if (!['adopt', 'partial', 'edit'].includes(event.decision)) return false
-    if (event.status === 'applied') return true
-    if (event.status !== 'prepared') return false
-    const receipt = await readLocalDecisionReceipt(sceneId, event.eventId)
-    return (
-      receipt?.eventId === event.eventId &&
-      receipt.proposalId === event.proposalId &&
-      receipt.interactionId === event.interactionId
+  function recordUserChange(
+    before: ReturnType<typeof useScene.getState>['nodes'],
+    after: ReturnType<typeof useScene.getState>['nodes'],
+    name: 'post_adopt_undo' | 'post_adopt_manual_edit',
+  ) {
+    if (activeScene?.id !== sceneId) return
+    const site = Object.values(before).find((node) => node?.type === 'site')
+    if (!site) return
+    const next = after[site.id]
+    if (next?.type !== 'site') return
+    const receipt = site.metadata[DECISION_KEY]
+    if (
+      !receipt ||
+      typeof receipt !== 'object' ||
+      !('eventId' in receipt) ||
+      typeof receipt.eventId !== 'string' ||
+      !('proposalId' in receipt) ||
+      !('interactionId' in receipt)
     )
+      return
+    const sameReceipt = JSON.stringify(receipt) === JSON.stringify(next.metadata[DECISION_KEY])
+    if (name === 'post_adopt_manual_edit' && !sameReceipt) return
+    const previousDocument = StageSceneDocumentSchema.safeParse(site.metadata[THEATRE_METADATA_KEY])
+    const nextDocument = StageSceneDocumentSchema.safeParse(next.metadata[THEATRE_METADATA_KEY])
+    if (
+      !previousDocument.success ||
+      !nextDocument.success ||
+      (sameReceipt &&
+        JSON.stringify(previousDocument.data.rehearsalSimulation) ===
+          JSON.stringify(nextDocument.data.rehearsalSimulation))
+    )
+      return
+    const eventId = receipt.eventId
+    const createdAt = new Date().toISOString()
+    queue = queue
+      .then(async () => {
+        const event = await readFeedback(eventId)
+        if (
+          !event ||
+          event.proposalId !== receipt.proposalId ||
+          event.interactionId !== receipt.interactionId ||
+          !(await isCommittedRehearsalDecision(sceneId, event))
+        )
+          return
+        await saveProductEvent({
+          eventId: crypto.randomUUID(),
+          sceneId,
+          threadId: null,
+          interactionId: event.interactionId,
+          proposalId: event.proposalId,
+          sceneVersion: '',
+          createdAt,
+          name,
+          privateProjectData: true,
+          trainingAuthorized: false,
+          trainingEligible: false,
+        })
+      })
+      .catch(() => {
+        useProposalGhost.setState({
+          feedbackError: '排演操作已保留，但产品事件未能保存；请检查浏览器存储空间。',
+        })
+      })
   }
-  return subscribeLocalScene(sceneId, (nodes) => {
+  const stopChanges = subscribeSceneCommits((commit) => {
+    if (commit.origin === 'local')
+      recordUserChange(commit.before.nodes, commit.current.nodes, 'post_adopt_manual_edit')
+  })
+  let futureLength = useScene.temporal.getState().futureStates.length
+  const stopHistory = useScene.temporal.subscribe((history) => {
+    // Zundo moves the pre-Undo snapshot into futureStates; Redo and normal commits do not grow it.
+    if (history.futureStates.length > futureLength) {
+      const before = history.futureStates[futureLength]
+      if (before?.nodes)
+        recordUserChange(before.nodes, useScene.getState().nodes, 'post_adopt_undo')
+    }
+    futureLength = history.futureStates.length
+  })
+  const stopLocal = subscribeLocalScene(sceneId, (nodes) => {
     queue = queue
       .then(async () => {
         for (const node of Object.values(nodes)) {
@@ -112,7 +193,7 @@ export function observeRehearsalFeedback(sceneId: string) {
           // A refresh can restore an older receipt after Undo; find the last committed decision once.
           if (!initialized) {
             for (const event of (await readFeedbackLog(sceneId)).events.reverse()) {
-              if (await wasCommitted(event)) {
+              if (await isCommittedRehearsalDecision(sceneId, event)) {
                 previousEventId = event.eventId
                 break
               }
@@ -129,7 +210,7 @@ export function observeRehearsalFeedback(sceneId: string) {
           for (const eventId of eventIds) {
             if (!eventId) continue
             const event = await readFeedback(eventId)
-            if (!event || event.sceneId !== sceneId || !(await wasCommitted(event))) continue
+            if (!event || !(await isCommittedRehearsalDecision(sceneId, event))) continue
             if (event.status === 'prepared') await saveFeedback({ ...event, status: 'applied' })
             const manual = await readFeedback(`${event.eventId}:manual`)
             if (
@@ -156,6 +237,11 @@ export function observeRehearsalFeedback(sceneId: string) {
         })
       })
   })
+  return () => {
+    stopChanges()
+    stopHistory()
+    stopLocal()
+  }
 }
 
 function currentContext(interaction: Interaction) {
@@ -169,7 +255,9 @@ function currentContext(interaction: Interaction) {
     useScene.getState().nodes,
     interaction.inputContext,
   )
-  if (JSON.stringify(context) !== JSON.stringify(interaction.inputContext))
+  const comparable = { ...context }
+  if (interaction.inputContext.sceneVersion === undefined) delete comparable.sceneVersion
+  if (JSON.stringify(comparable) !== JSON.stringify(interaction.inputContext))
     throw new Error('人物、路线或布景已变化，请重新生成建议，避免覆盖你的调整')
   return { document, context }
 }
@@ -194,6 +282,8 @@ export function makeFeedback(
     previewedProposal,
     privateProjectData: true,
     trainingAuthorized: false,
+    rightsStatus: interaction.rightsStatus,
+    trainingEligible: false,
     humanEdit:
       previewedProposal &&
       JSON.stringify(previewedProposal.suggestions) !== JSON.stringify(proposal.suggestions)

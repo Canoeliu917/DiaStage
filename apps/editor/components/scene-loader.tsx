@@ -10,6 +10,7 @@ import {
   type SaveStatus,
   type SceneGraph,
   useEditor,
+  useSidebarStore,
 } from '@pascal-app/editor'
 import { NeutralRenderEnvironment, StableRenderMode, ViewerErrorBoundary } from '@pascal-app/viewer'
 import dynamic from 'next/dynamic'
@@ -41,6 +42,10 @@ const StagePlanPreviewSystem = dynamic(
 )
 const StageSelectionPanel = dynamic(
   () => import('./stage-entry/stage-selection-panel').then((m) => m.StageSelectionPanel),
+  { ssr: false },
+)
+const RehearsalPartner = dynamic(
+  () => import('./theatre/rehearsal-partner').then((m) => m.RehearsalPartner),
   { ssr: false },
 )
 
@@ -79,6 +84,7 @@ import { useStudioSidebar } from './studio-sidebar'
 import { RehearsalTransport, TheatreFloorplan, TheatreRuntime } from './theatre/runtime'
 import { useTheatreDocument } from './theatre/state'
 import { VersionViewSync } from './theatre/versions-panel'
+import './theatre/dia-conversation.css'
 import { EditorViewerToolbarLeft, EditorViewerToolbarRight } from './viewer-toolbar'
 
 export interface SceneMeta {
@@ -97,6 +103,7 @@ export interface SceneMeta {
 interface SceneLoaderProps {
   initialScene: SceneGraph
   meta: SceneMeta
+  modelConfigured?: boolean
 }
 
 interface LiveSceneEvent {
@@ -118,7 +125,8 @@ function isLightPreviewQuery(searchParams: URLSearchParams): boolean {
   return disable.split(',').some((p) => p.trim() === 'postFx')
 }
 
-export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
+export function SceneLoader({ initialScene, meta, modelConfigured = false }: SceneLoaderProps) {
+  const [diaOpen, setDiaOpen] = useState(true)
   const [stableMode, setStableMode] = useState(true)
   useEffect(() => {
     try {
@@ -141,13 +149,21 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
   const { group, onGroupChange, sidebarTabs } = useStudioSidebar(meta.id)
   const { document } = useTheatreDocument()
   const activePanel = useEditor((state) => state.activeSidebarPanel)
+  const immersive = useEditor(
+    (state) => state.isCaptureMode || state.isFirstPersonMode || state.isPreviewMode,
+  )
+  const showDia = diaOpen && group === 'rehearse' && !immersive
   const cameraEnabled = ['stage-cameras', 'observe', 'record', 'display'].includes(activePanel)
   const recordingEnabled =
     group === 'rehearse' && ['observe', 'record', 'camera-rehearsal'].includes(activePanel)
   const searchParams = useSearchParams()
   const initialWorkspace = useRef(searchParams.get('workspace'))
   useEffect(() => {
-    if (initialWorkspace.current === 'remount' || initialWorkspace.current === 'set') {
+    if (
+      initialWorkspace.current === 'remount' ||
+      initialWorkspace.current === 'set' ||
+      initialWorkspace.current === 'rehearse'
+    ) {
       const workspace = initialWorkspace.current
       initialWorkspace.current = null
       onGroupChange(workspace)
@@ -167,6 +183,26 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [stageReady, setStageReady] = useState(false)
+  useEffect(() => {
+    if (!showDia || !stageReady) return
+    const media = window.matchMedia('(min-width: 801px) and (max-width: 1180px)')
+    let restore: boolean | undefined
+    const adapt = () => {
+      if (media.matches && restore === undefined) {
+        restore = useSidebarStore.getState().isCollapsed
+        useSidebarStore.getState().setIsCollapsed(true)
+      } else if (!media.matches && restore !== undefined) {
+        useSidebarStore.getState().setIsCollapsed(restore)
+        restore = undefined
+      }
+    }
+    adapt()
+    media.addEventListener('change', adapt)
+    return () => {
+      media.removeEventListener('change', adapt)
+      if (restore !== undefined) useSidebarStore.getState().setIsCollapsed(restore)
+    }
+  }, [showDia, stageReady])
   const handleLoaderChange = useCallback((visible: boolean) => setStageReady(!visible), [])
   const exportBackup = useCallback(() => {
     const url = URL.createObjectURL(
@@ -473,122 +509,152 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
               </button>
             </div>
           )}
-          <div className="relative min-h-0 flex-1">
-            <Editor
-              navbarSlot={
-                <StudioNavigation
-                  sceneName={document?.production.name ?? meta.name}
-                  group={group}
-                  onGroupChange={onGroupChange}
-                  actions={
-                    <>
-                      <span className="studio-save-status" role="status">
-                        {
-                          {
-                            idle: '自动保存',
-                            pending: '待保存',
-                            'local-saved': '本机已保存',
-                            saving: '保存中…',
-                            saved: '本机已保存 · 已同步',
-                            paused: '保存已暂停',
-                            error: '保存失败',
-                          }[saveStatus]
-                        }
-                      </span>
-                      <button
-                        aria-pressed={stableMode}
-                        className={cn(
-                          'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
-                          lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
+          <div className="dia-stage-layout">
+            <div className="dia-editor">
+              <Editor
+                navbarSlot={
+                  <StudioNavigation
+                    sceneName={document?.production.name ?? meta.name}
+                    group={group}
+                    onGroupChange={onGroupChange}
+                    actions={
+                      <>
+                        {group === 'rehearse' && (
+                          <button
+                            type="button"
+                            aria-pressed={diaOpen}
+                            className="min-h-11 border px-3"
+                            onClick={() => setDiaOpen(!diaOpen)}
+                          >
+                            {diaOpen ? '收起 Dia' : '和 Dia 一起排'}
+                          </button>
                         )}
-                        onClick={() => {
-                          setStableMode(!stableMode)
-                          try {
-                            localStorage.setItem('diastage:stable-mode', String(!stableMode))
-                          } catch {
-                            /* Session choice still applies. */
+                        <span className="studio-save-status" role="status">
+                          {
+                            {
+                              idle: '自动保存',
+                              pending: '待保存',
+                              'local-saved': '本机已保存',
+                              saving: '保存中…',
+                              saved: '本机已保存 · 已同步',
+                              paused: '保存已暂停',
+                              error: '保存失败',
+                            }[saveStatus]
                           }
-                        }}
-                        title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据与复台计算"
-                        type="button"
-                      >
-                        稳定模式
-                      </button>
-                    </>
+                        </span>
+                        <button
+                          aria-pressed={stableMode}
+                          className={cn(
+                            'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
+                            lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
+                          )}
+                          onClick={() => {
+                            setStableMode(!stableMode)
+                            try {
+                              localStorage.setItem('diastage:stable-mode', String(!stableMode))
+                            } catch {
+                              /* Session choice still applies. */
+                            }
+                          }}
+                          title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据与复台计算"
+                          type="button"
+                        >
+                          稳定模式
+                        </button>
+                      </>
+                    }
+                  />
+                }
+                disablePostFx={lightPreview}
+                layoutVersion="v2"
+                selectionPanelSlot={<StageSelectionPanel />}
+                onLoad={handleLoad}
+                onLoaderChange={handleLoaderChange}
+                sceneLoadKey={sceneLoadKey}
+                onSave={handleSave}
+                onLocalSave={handleLocalSave}
+                onDirty={() => {
+                  if (!applyingRemoteRef.current) localDirtyRef.current = true
+                }}
+                onSaveStatusChange={setSaveStatus}
+                projectId={meta.projectId ?? 'default'}
+                viewerRuntimeSlot={
+                  <>
+                    {recordingEnabled && (
+                      <ViewerErrorBoundary fallback={null} scope="recording-runtime">
+                        <CameraStudioRuntime />
+                      </ViewerErrorBoundary>
+                    )}
+                    <TheatreRuntime enabled={group !== 'remount'} />
+                  </>
+                }
+                viewerSceneSlot={
+                  <>
+                    {group === 'remount' && (
+                      <ViewerErrorBoundary fallback={null} scope="remount-preview">
+                        <RemountPreviewSystem sceneId={meta.id} />
+                      </ViewerErrorBoundary>
+                    )}
+                    {cameraEnabled && (
+                      <ViewerErrorBoundary fallback={null} scope="camera-stage">
+                        <CameraStageSystem enabled />
+                      </ViewerErrorBoundary>
+                    )}
+                    <StagePlacementSystem enabled={group === 'set'} />
+                    <StagePlanPreviewSystem enabled={group === 'set'} />
+                  </>
+                }
+                studioSceneSlot={
+                  recordingEnabled ? (
+                    <ViewerErrorBoundary fallback={null} scope="sequence-recording">
+                      <CameraRehearsalSystem sceneId={meta.id} />
+                    </ViewerErrorBoundary>
+                  ) : null
+                }
+                floorplanSceneSlot={
+                  <>
+                    <TheatreFloorplan enabled={group !== 'remount'} />
+                    {cameraEnabled && <CameraStageFloorplan enabled />}
+                    <StagePlacementFloorplan enabled={group === 'set'} />
+                  </>
+                }
+                sidebarTabs={sidebarTabs}
+                sidebarTopSlot={<StageOverviewPanel key={meta.id} sceneId={meta.id} />}
+                showPluginPanels={false}
+                showLevelSelector={false}
+                viewerToolbarLeft={<EditorViewerToolbarLeft />}
+                viewerToolbarRight={<EditorViewerToolbarRight />}
+              />
+              {cameraEnabled && (
+                <ViewerErrorBoundary
+                  fallback={<p role="alert">监看已暂停，场景仍可编辑。</p>}
+                  scope="camera-monitor"
+                >
+                  <CameraMonitor
+                    enabled={cameraEnabled}
+                    className="absolute right-4 bottom-4 z-30 max-w-[calc(100%-400px)]"
+                  />
+                </ViewerErrorBoundary>
+              )}
+            </div>
+            <aside className="dia-dock" hidden={!showDia} aria-label="Dia 对话工作区">
+              {stageReady && (
+                <ViewerErrorBoundary
+                  scope="dia-conversation"
+                  resetKey={meta.id}
+                  onError={clearProposalGhost}
+                  fallback={
+                    <p role="alert">Dia 对话暂不可用，舞台仍可编辑与保存。请刷新后重试。</p>
                   }
-                />
-              }
-              disablePostFx={lightPreview}
-              layoutVersion="v2"
-              selectionPanelSlot={<StageSelectionPanel />}
-              onLoad={handleLoad}
-              onLoaderChange={handleLoaderChange}
-              sceneLoadKey={sceneLoadKey}
-              onSave={handleSave}
-              onLocalSave={handleLocalSave}
-              onDirty={() => {
-                if (!applyingRemoteRef.current) localDirtyRef.current = true
-              }}
-              onSaveStatusChange={setSaveStatus}
-              projectId={meta.projectId ?? 'default'}
-              viewerRuntimeSlot={
-                <>
-                  {recordingEnabled && (
-                    <ViewerErrorBoundary fallback={null} scope="recording-runtime">
-                      <CameraStudioRuntime />
-                    </ViewerErrorBoundary>
-                  )}
-                  <TheatreRuntime enabled={group !== 'remount'} />
-                </>
-              }
-              viewerSceneSlot={
-                <>
-                  {group === 'remount' && (
-                    <ViewerErrorBoundary fallback={null} scope="remount-preview">
-                      <RemountPreviewSystem sceneId={meta.id} />
-                    </ViewerErrorBoundary>
-                  )}
-                  {cameraEnabled && (
-                    <ViewerErrorBoundary fallback={null} scope="camera-stage">
-                      <CameraStageSystem enabled />
-                    </ViewerErrorBoundary>
-                  )}
-                  <StagePlacementSystem enabled={group === 'set'} />
-                  <StagePlanPreviewSystem enabled={group === 'set'} />
-                </>
-              }
-              studioSceneSlot={
-                recordingEnabled ? (
-                  <ViewerErrorBoundary fallback={null} scope="sequence-recording">
-                    <CameraRehearsalSystem sceneId={meta.id} />
-                  </ViewerErrorBoundary>
-                ) : null
-              }
-              floorplanSceneSlot={
-                <>
-                  <TheatreFloorplan enabled={group !== 'remount'} />
-                  {cameraEnabled && <CameraStageFloorplan enabled />}
-                  <StagePlacementFloorplan enabled={group === 'set'} />
-                </>
-              }
-              sidebarTabs={sidebarTabs}
-              sidebarTopSlot={<StageOverviewPanel key={meta.id} sceneId={meta.id} />}
-              showPluginPanels={false}
-              showLevelSelector={false}
-              viewerToolbarLeft={<EditorViewerToolbarLeft />}
-              viewerToolbarRight={<EditorViewerToolbarRight />}
-            />
-            {cameraEnabled && (
-              <ViewerErrorBoundary
-                fallback={<p role="alert">监看已暂停，场景仍可编辑。</p>}
-                scope="camera-monitor"
-              >
-                <CameraMonitor
-                  enabled={cameraEnabled}
-                  className="absolute right-4 bottom-4 z-30 max-w-[calc(100%-400px)]"
-                />
-              </ViewerErrorBoundary>
-            )}
+                >
+                  <RehearsalPartner
+                    key={meta.id}
+                    sceneId={meta.id}
+                    modelConfigured={modelConfigured}
+                  />
+                </ViewerErrorBoundary>
+              )}
+            </aside>
           </div>
           {recordingEnabled && (
             <ViewerErrorBoundary

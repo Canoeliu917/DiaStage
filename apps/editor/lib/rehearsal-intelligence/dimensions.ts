@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const ONTOLOGY_VERSION = 'diastage-dramaturgy-0.1' as const
-export const PROMPT_VERSION = 'rehearsal-partner-0.1' as const
+export const PROMPT_VERSION = 'rehearsal-partner-0.2' as const
 export const ACTIVE_DIMENSIONS = [
   'character',
   'objective',

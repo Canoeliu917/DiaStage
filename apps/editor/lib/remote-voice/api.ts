@@ -56,12 +56,16 @@ export function takeRemoteJoinRateLimit(key: string, now = Date.now()): number |
   return null
 }
 
-export async function readRemoteJson<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
+export async function readRemoteJson<T>(
+  request: Request,
+  schema: z.ZodType<T>,
+  maxBytes = MAX_JSON_BYTES,
+): Promise<T> {
   if (request.headers.get('content-type')?.split(';')[0]?.trim() !== 'application/json') {
     throw new RemoteVoiceApiError('INVALID_REQUEST', '请求格式无效。', 415)
   }
   const declared = Number(request.headers.get('content-length'))
-  if (Number.isFinite(declared) && declared > MAX_JSON_BYTES) {
+  if (Number.isFinite(declared) && declared > maxBytes) {
     throw new RemoteVoiceApiError('REQUEST_TOO_LARGE', '请求内容过长。', 413)
   }
   if (!request.body) throw new RemoteVoiceApiError('INVALID_REQUEST', '请求内容为空。', 400)
@@ -74,8 +78,7 @@ export async function readRemoteJson<T>(request: Request, schema: z.ZodType<T>):
       const result = await withAbort(reader.read(), request.signal)
       if (result.done) break
       size += result.value.byteLength
-      if (size > MAX_JSON_BYTES)
-        throw new RemoteVoiceApiError('REQUEST_TOO_LARGE', '请求内容过长。', 413)
+      if (size > maxBytes) throw new RemoteVoiceApiError('REQUEST_TOO_LARGE', '请求内容过长。', 413)
       chunks.push(result.value)
     }
     complete = true

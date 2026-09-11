@@ -3,6 +3,7 @@ import { getObjectCorners } from '@pascal-app/core/remount'
 import { obstacleSnapshot } from '../remount-scene'
 import type { Vec3 } from '../theatre/schema'
 import type { StageSceneDocument } from '../theatre/simulation'
+import { sceneFactsVersion } from './conversation'
 import { ACTIVE_DIMENSIONS } from './dimensions'
 import { validateContext } from './proposal-validator'
 import type { RehearsalContext } from './schema'
@@ -16,6 +17,8 @@ export function buildRehearsalContext(
     script: string
     directorIntention: string
     selectedPerformerId: string | null
+    conversation?: RehearsalContext['conversation']
+    rightsStatus?: RehearsalContext['rightsStatus']
   },
 ): RehearsalContext {
   const obstacles: RehearsalContext['obstacles'] = []
@@ -38,7 +41,7 @@ export function buildRehearsalContext(
       max: [0, 1, 2].map((axis) => Math.max(...corners.map((p) => p[axis]!))) as Vec3,
     })
   }
-  return validateContext({
+  const context = {
     sceneId,
     productionId: document.production.id,
     intention: input.intention,
@@ -51,5 +54,8 @@ export function buildRehearsalContext(
     durationSeconds: document.rehearsalSimulation.durationSeconds,
     obstacles,
     activeDimensions: [...ACTIVE_DIMENSIONS],
-  })
+    ...(input.conversation ? { conversation: input.conversation } : {}),
+    ...(input.rightsStatus ? { rightsStatus: input.rightsStatus } : {}),
+  }
+  return validateContext({ ...context, sceneVersion: sceneFactsVersion(context) })
 }
