@@ -33,7 +33,7 @@ build
 dist
 *.tsbuildinfo
 
-# SQLite runtime sidecars; the durable scene database is versioned separately.
+# Local scene databases and private test artifacts.
 data/*.db-shm
 data/*.db-wal
 data/*.db-journal
@@ -63,3 +63,7 @@ og-test
 .claude/launch.json
 .claude/settings.local.json
 .vscode/launch.json
+
+**/data/*.db*
+/.tmp-*
+/.local/

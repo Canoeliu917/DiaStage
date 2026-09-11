@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useState } from 'react'
+import { observeRehearsalFeedback } from '@/lib/rehearsal-intelligence/authority'
 import { migrateStudioGroup, migrateStudioPanel, type StudioGroup } from '@/lib/studio-workspaces'
 import { StageOverviewPanel } from './stage-overview-panel'
 import { openStudioPanel } from './studio-navigation'
@@ -44,6 +45,7 @@ const StageCommandInput = dynamic(() =>
   import('./stage-entry/command-input').then((m) => m.StageCommandInput),
 )
 export function useStudioSidebar(sceneId: string) {
+  useEffect(() => observeRehearsalFeedback(sceneId), [sceneId])
   const mobile = useIsMobile()
   const activePanel = useEditor((s) => s.activeSidebarPanel)
   const [selectedGroup, setSelectedGroup] = useState<StudioGroup>('set')
@@ -94,7 +96,12 @@ export function useStudioSidebar(sceneId: string) {
           ]
         : group === 'rehearse'
           ? [
-              { id: 'simulation', label: '模拟排演', component: SimulationPanel, icon: Users },
+              {
+                id: 'simulation',
+                label: '模拟排演',
+                component: () => <SimulationPanel sceneId={sceneId} />,
+                icon: Users,
+              },
               { id: 'display', label: '显示', component: DisplayPanel, icon: SlidersHorizontal },
               { id: 'observe', label: '观察', component: ObservePanel, icon: Eye },
               {

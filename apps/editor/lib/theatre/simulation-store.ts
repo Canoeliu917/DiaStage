@@ -1,5 +1,6 @@
 import { useScene } from '@pascal-app/core'
 import { assertTheatreWritable, stageFloorUpdates, THEATRE_METADATA_KEY } from './scene-adapter'
+import { type Vec3, Vec3Schema } from './schema'
 import {
   createStageSceneDocument,
   migrateStageDocument,
@@ -38,4 +39,17 @@ export function editStageDocument(change: (document: StageSceneDocument) => void
   const next = structuredClone(readStageDocument() ?? createStageSceneDocument())
   change(next)
   writeStageDocument(next)
+}
+
+export function moveSimulationPerformer(id: string, position: Vec3) {
+  Vec3Schema.parse(position)
+  editStageDocument((document) => {
+    const performer = document.rehearsalSimulation.performers.find((p) => p.id === id)
+    if (!performer) throw new Error('人物已不存在')
+    const delta = position.map((value, axis) => value - performer.position[axis]!)
+    performer.position = [...position]
+    const path = document.rehearsalSimulation.paths.find((p) => p.performerId === id)
+    if (path)
+      path.points = path.points.map((p) => p.map((value, axis) => value + delta[axis]!) as Vec3)
+  })
 }

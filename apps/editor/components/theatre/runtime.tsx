@@ -2,13 +2,22 @@
 
 import { emitter, useScene } from '@pascal-app/core'
 import { useEditor, useFloorplanRender } from '@pascal-app/editor'
-import { useViewer } from '@pascal-app/viewer'
+import { OVERLAY_LAYER, useViewer, ViewerErrorBoundary } from '@pascal-app/viewer'
 import { type CameraControlsImpl, Html } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { memo, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
-import { BufferGeometry, PerspectiveCamera, Line as ThreeLine, Vector3 } from 'three'
+import {
+  BufferGeometry,
+  PerspectiveCamera,
+  Plane,
+  Raycaster,
+  Line as ThreeLine,
+  Vector2,
+  Vector3,
+} from 'three'
 import { LineBasicNodeMaterial, LineDashedNodeMaterial } from 'three/webgpu'
 import { useCameraDirectorState } from '@/lib/camera-director'
+import { clearProposalGhost, useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import { sampleRehearsal } from '@/lib/theatre/blocking'
 import {
   actorObservationPose,
@@ -16,12 +25,14 @@ import {
   venueAudiencePositions,
 } from '@/lib/theatre/presentation'
 import { activeRehearsalScene, type Vec3 } from '@/lib/theatre/schema'
+import { runtimeTheatreDocument } from '@/lib/theatre/simulation'
 import {
   cameraFloorplanMatrix,
   cameraPlanPoint,
   cameraPointerToPlan,
 } from '../camera-studio/camera-stage-floorplan'
 import { useCameraStudio } from '../camera-studio/store'
+import { useSimulationDrag } from './simulation-drag'
 import { placeSimulationPoint, useSimulationSelection, useStageDocument } from './simulation-panel'
 import {
   rehearsalIsExclusive,
@@ -40,15 +51,24 @@ export function applyObservationPose(
   void controls.setLookAt(...position, ...target, transition)
 }
 
+function disableFailedProposalPreview() {
+  clearProposalGhost()
+  useProposalGhost.setState({
+    feedbackError: '建议预览未能显示，已停止采用。手动排演与场景保存仍可使用。',
+  })
+}
+
 const StageLine = memo(
   function StageLine({
     points,
     color,
     dashed = false,
+    overlay = false,
   }: {
     points: Vec3[]
     color: string
     dashed?: boolean
+    overlay?: boolean
   }) {
     const line = useMemo(() => {
       const object = new ThreeLine(
@@ -58,8 +78,9 @@ const StageLine = memo(
           : new LineBasicNodeMaterial({ color }),
       )
       if (dashed) object.computeLineDistances()
+      if (overlay) object.layers.set(OVERLAY_LAYER)
       return object
-    }, [points, color, dashed])
+    }, [points, color, dashed, overlay])
     useEffect(
       () => () => {
         line.geometry.dispose()
@@ -72,6 +93,7 @@ const StageLine = memo(
   (previous, next) =>
     previous.color === next.color &&
     previous.dashed === next.dashed &&
+    previous.overlay === next.overlay &&
     previous.points.length === next.points.length &&
     previous.points.every((point, index) =>
       point.every((value, axis) => value === next.points[index]![axis]),
@@ -86,8 +108,18 @@ export function TheatreRuntime({ enabled }: { enabled: boolean }) {
   const invalidate = useThree((s) => s.invalidate)
   const readOnly = useScene((s) => s.readOnly)
   const ui = useSimulationSelection()
+  const ghostId = useProposalGhost((s) => s.proposalId)
   const { document: stageDocument } = useStageDocument()
   const activePanel = useEditor((s) => s.activeSidebarPanel)
+  const viewMode = useEditor((s) => s.viewMode)
+  const three = useThree()
+  const drag = useSimulationDrag(
+    enabled &&
+      activePanel === 'simulation' &&
+      ui.input === 'select' &&
+      viewMode !== '2d' &&
+      !readOnly,
+  )
   const scene = document ? activeRehearsalScene(document) : null
   const visible = enabled && !!scene
   const sample = useMemo(() => (scene ? sampleRehearsal(scene, time) : null), [scene, time])
@@ -143,6 +175,14 @@ export function TheatreRuntime({ enabled }: { enabled: boolean }) {
     d = venue.depth / 2
   return (
     <group name="DiaStage Rehearsal">
+      <ViewerErrorBoundary
+        fallback={null}
+        scope="proposal-ghost"
+        resetKey={ghostId}
+        onError={disableFailedProposalPreview}
+      >
+        <ProposalGhost3D />
+      </ViewerErrorBoundary>
       {activePanel === 'simulation' && ui.input !== 'select' && !readOnly && (
         <mesh
           position={[x, y + 0.08, z]}
@@ -239,8 +279,35 @@ export function TheatreRuntime({ enabled }: { enabled: boolean }) {
         return (
           <group
             key={role.id}
-            position={pose.position}
+            position={ui.drag?.id === role.id ? ui.drag.position : pose.position}
             rotation={[0, pose.facing, 0]}
+            onPointerDown={(e) => {
+              if (activePanel !== 'simulation' || ui.input !== 'select' || readOnly) return
+              e.stopPropagation()
+              const controls = three.controls as CameraControlsImpl | undefined
+              const previous = controls?.enabled
+              if (controls) controls.enabled = false
+              const ray = new Raycaster(),
+                plane = new Plane(new Vector3(0, 1, 0), -pose.position[1])
+              drag(
+                e.nativeEvent,
+                role.id,
+                (clientX, clientY) => {
+                  const rect = three.gl.domElement.getBoundingClientRect()
+                  ray.setFromCamera(
+                    new Vector2(
+                      ((clientX - rect.left) / rect.width) * 2 - 1,
+                      1 - ((clientY - rect.top) / rect.height) * 2,
+                    ),
+                    three.camera,
+                  )
+                  return ray.ray.intersectPlane(plane, new Vector3())?.toArray() ?? null
+                },
+                () => {
+                  if (controls && previous !== undefined) controls.enabled = previous
+                },
+              )
+            }}
             onClick={(e) => {
               if (activePanel === 'simulation' && ui.input === 'select') {
                 e.stopPropagation()
@@ -305,6 +372,16 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
   const ui = useSimulationSelection()
   const groupRef = useRef<SVGGElement>(null)
   const activePanel = useEditor((s) => s.activeSidebarPanel)
+  const viewMode = useEditor((s) => s.viewMode)
+  const ghostId = useProposalGhost((s) => s.proposalId)
+  const drag = useSimulationDrag(
+    enabled &&
+      viewMode !== '3d' &&
+      !!context &&
+      !exclusive &&
+      activePanel === 'simulation' &&
+      ui.input === 'select',
+  )
   const { document: stageDocument } = useStageDocument()
   const frame = useMemo(() => cameraFloorplanMatrix(nodes, levelId), [nodes, levelId])
   const scene = document ? activeRehearsalScene(document) : null
@@ -323,6 +400,14 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
     front = plan([v.origin[0], v.origin[1], v.origin[2] + v.depth / 2])
   return (
     <g ref={groupRef} pointerEvents="none" aria-label="模拟排演舞台图">
+      <ViewerErrorBoundary
+        fallback={null}
+        scope="proposal-ghost-plan"
+        resetKey={ghostId}
+        onError={disableFailedProposalPreview}
+      >
+        <ProposalGhost2D plan={plan} unit={unit} />
+      </ViewerErrorBoundary>
       <polygon
         points={boundary
           .map((point) => {
@@ -408,7 +493,7 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
         })}
       {sample.roles.map((pose) => {
         const role = scene.roles.find((r) => r.id === pose.roleId)!,
-          p = plan(pose.position),
+          p = plan(ui.drag?.id === role.id ? ui.drag.position : pose.position),
           end = plan([
             pose.position[0] + Math.sin(pose.facing) * 22 * unit,
             pose.position[1],
@@ -419,11 +504,22 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
             key={role.id}
             transform={`translate(${p[0]} ${p[2]})`}
             pointerEvents={activePanel === 'simulation' && ui.input === 'select' ? 'all' : 'none'}
+            style={{ touchAction: 'none', cursor: 'grab' }}
+            onPointerDown={(e) => {
+              e.stopPropagation()
+              drag(e.nativeEvent, role.id, (clientX, clientY) => {
+                if (!groupRef.current) return null
+                const point = cameraPointerToPlan(groupRef.current, clientX, clientY)
+                if (!point) return null
+                return new Vector3(point[0], 0, point[1]).applyMatrix4(frame).toArray()
+              })
+            }}
             onClick={(e) => {
               e.stopPropagation()
               useSimulationSelection.setState({ selectedId: role.id })
             }}
           >
+            <circle r={22 * unit} fill="transparent" />
             <circle r={10 * unit} fill={role.color} stroke="#222" strokeWidth={unit} />
             <path
               d={`M 0 0 L ${end[0] - p[0]} ${end[2] - p[2]}`}
@@ -437,6 +533,121 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
               fill={context.palette.measurementLabelText}
             >
               {role.name}
+            </text>
+          </g>
+        )
+      })}
+    </g>
+  )
+}
+
+function useGhostSample() {
+  const simulation = useProposalGhost((s) => s.simulation)
+  const visible = useProposalGhost((s) => s.visible)
+  const time = useProposalGhost((s) => s.time)
+  const { document } = useStageDocument()
+  const scene = useMemo(
+    () =>
+      document && simulation
+        ? activeRehearsalScene(
+            runtimeTheatreDocument({ ...document, rehearsalSimulation: simulation }),
+          )
+        : null,
+    [document, simulation],
+  )
+  return { scene, sample: scene && visible ? sampleRehearsal(scene, time) : null }
+}
+
+function ProposalGhost3D() {
+  const { scene, sample } = useGhostSample()
+  const invalidate = useThree((s) => s.invalidate)
+  useEffect(() => useProposalGhost.subscribe(() => invalidate()), [invalidate])
+  if (!scene || !sample) return null
+  return (
+    <group name="AI proposal ghost" raycast={() => null}>
+      {scene.paths.map((path) => (
+        <StageLine
+          key={path.id}
+          overlay
+          dashed
+          color="#333333"
+          points={path.markIds.map((id) => {
+            const point = scene.marks.find((m) => m.id === id)!.position
+            return [point[0], point[1] + 0.15, point[2]]
+          })}
+        />
+      ))}
+      {sample.roles.map((pose, index) => (
+        <group key={pose.roleId} position={pose.position} rotation={[0, pose.facing, 0]}>
+          <mesh layers={OVERLAY_LAYER} position={[0, 0.75, 0]} raycast={() => null}>
+            <cylinderGeometry args={[0.18, 0.25, 1.3, 10]} />
+            <meshBasicMaterial color="#222222" transparent opacity={0.4} depthWrite={false} />
+          </mesh>
+          <mesh layers={OVERLAY_LAYER} position={[0, 1.55, 0]} raycast={() => null}>
+            <sphereGeometry args={[0.18, 10, 8]} />
+            <meshBasicMaterial color="#222222" transparent opacity={0.4} depthWrite={false} />
+          </mesh>
+          <Html
+            center
+            position={[0, 2, 0]}
+            style={{
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+              color: '#fff',
+              background: '#222',
+              padding: '2px 6px',
+              fontSize: 12,
+              border: '1px solid #fff',
+              marginTop: index % 2 ? -68 : -42,
+            }}
+          >
+            <span
+              role="img"
+              aria-label={`建议：${scene.roles.find((r) => r.id === pose.roleId)?.name}`}
+            >
+              {index + 1}
+            </span>
+          </Html>
+        </group>
+      ))}
+    </group>
+  )
+}
+
+function ProposalGhost2D({ plan, unit }: { plan: (point: Vec3) => Vec3; unit: number }) {
+  const { scene, sample } = useGhostSample()
+  if (!scene || !sample) return null
+  return (
+    <g aria-label="AI 建议预览" pointerEvents="none" opacity={0.7}>
+      {scene.paths.map((path) => (
+        <polyline
+          key={path.id}
+          points={path.markIds
+            .map((id) => {
+              const p = plan(scene.marks.find((m) => m.id === id)!.position)
+              return `${p[0]},${p[2]}`
+            })
+            .join(' ')}
+          stroke="#333"
+          fill="none"
+          strokeWidth={2 * unit}
+          strokeDasharray={`${8 * unit} ${5 * unit}`}
+        />
+      ))}
+      {sample.roles.map((pose, index) => {
+        const p = plan(pose.position)
+        return (
+          <g key={pose.roleId} transform={`translate(${p[0]} ${p[2]})`}>
+            <circle
+              r={14 * unit}
+              fill="#eee"
+              stroke="#222"
+              strokeWidth={2 * unit}
+              strokeDasharray={`${3 * unit} ${3 * unit}`}
+            />
+            <text y={4 * unit} textAnchor="middle" fill="#222" fontSize={12 * unit}>
+              <title>建议：{scene.roles.find((r) => r.id === pose.roleId)?.name}</title>
+              {index + 1}
             </text>
           </g>
         )

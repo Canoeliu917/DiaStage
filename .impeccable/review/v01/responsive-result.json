@@ -1,0 +1,260 @@
+[
+  {
+    "viewport": {
+      "name": "desktop",
+      "width": 1440,
+      "height": 1000,
+      "touch": false
+    },
+    "errors": [],
+    "overflow": false,
+    "controls": [
+      {
+        "text": "生成排演可能",
+        "width": 100,
+        "height": 44
+      },
+      {
+        "text": "测试用例 · 试着靠近",
+        "width": 149.40625,
+        "height": 44
+      },
+      {
+        "text": "预览",
+        "width": 48,
+        "height": 44
+      },
+      {
+        "text": "修改",
+        "width": 48,
+        "height": 44
+      },
+      {
+        "text": "采用",
+        "width": 48,
+        "height": 44
+      },
+      {
+        "text": "不成立",
+        "width": 61,
+        "height": 44
+      },
+      {
+        "text": "隐藏预览",
+        "width": 74,
+        "height": 44
+      },
+      {
+        "text": "播放建议",
+        "width": 74,
+        "height": 44
+      },
+      {
+        "text": "预览复位",
+        "width": 74,
+        "height": 44
+      },
+      {
+        "text": "清除预览",
+        "width": 74,
+        "height": 44
+      },
+      {
+        "text": "",
+        "width": 61,
+        "height": 44
+      },
+      {
+        "text": "导出本机私有反馈",
+        "width": 126,
+        "height": 44
+      },
+      {
+        "text": "载入最近建议",
+        "width": 100,
+        "height": 44
+      },
+      {
+        "text": "删除本机反馈",
+        "width": 100,
+        "height": 44
+      }
+    ],
+    "metrics": {
+      "loadMs": 528.5,
+      "jsHeapBytes": 36539971
+    }
+  },
+  {
+    "viewport": {
+      "name": "tablet",
+      "width": 1024,
+      "height": 1366,
+      "touch": true
+    },
+    "errors": [],
+    "overflow": false,
+    "controls": [
+      {
+        "text": "生成排演可能",
+        "width": 118,
+        "height": 44
+      },
+      {
+        "text": "测试用例 · 试着靠近",
+        "width": 178.8125,
+        "height": 44
+      },
+      {
+        "text": "预览",
+        "width": 54,
+        "height": 44
+      },
+      {
+        "text": "修改",
+        "width": 54,
+        "height": 44
+      },
+      {
+        "text": "采用",
+        "width": 54,
+        "height": 44
+      },
+      {
+        "text": "不成立",
+        "width": 70,
+        "height": 44
+      },
+      {
+        "text": "隐藏预览",
+        "width": 86,
+        "height": 44
+      },
+      {
+        "text": "播放建议",
+        "width": 86,
+        "height": 44
+      },
+      {
+        "text": "预览复位",
+        "width": 86,
+        "height": 44
+      },
+      {
+        "text": "清除预览",
+        "width": 86,
+        "height": 44
+      },
+      {
+        "text": "",
+        "width": 70,
+        "height": 44
+      },
+      {
+        "text": "导出本机私有反馈",
+        "width": 150,
+        "height": 44
+      },
+      {
+        "text": "载入最近建议",
+        "width": 118,
+        "height": 44
+      },
+      {
+        "text": "删除本机反馈",
+        "width": 118,
+        "height": 44
+      }
+    ],
+    "metrics": {
+      "loadMs": 489.90000000596046,
+      "jsHeapBytes": 36062201
+    }
+  },
+  {
+    "viewport": {
+      "name": "mobile",
+      "width": 390,
+      "height": 844,
+      "touch": true
+    },
+    "errors": [],
+    "overflow": false,
+    "controls": [
+      {
+        "text": "生成排演可能",
+        "width": 118,
+        "height": 44
+      },
+      {
+        "text": "测试用例 · 试着靠近",
+        "width": 178.8125,
+        "height": 44
+      },
+      {
+        "text": "预览",
+        "width": 54,
+        "height": 44
+      },
+      {
+        "text": "修改",
+        "width": 54,
+        "height": 44
+      },
+      {
+        "text": "采用",
+        "width": 54,
+        "height": 44
+      },
+      {
+        "text": "不成立",
+        "width": 70,
+        "height": 44
+      },
+      {
+        "text": "隐藏预览",
+        "width": 86,
+        "height": 44
+      },
+      {
+        "text": "播放建议",
+        "width": 86,
+        "height": 44
+      },
+      {
+        "text": "预览复位",
+        "width": 86,
+        "height": 44
+      },
+      {
+        "text": "清除预览",
+        "width": 86,
+        "height": 44
+      },
+      {
+        "text": "",
+        "width": 70,
+        "height": 44
+      },
+      {
+        "text": "导出本机私有反馈",
+        "width": 150,
+        "height": 44
+      },
+      {
+        "text": "载入最近建议",
+        "width": 118,
+        "height": 44
+      },
+      {
+        "text": "删除本机反馈",
+        "width": 118,
+        "height": 44
+      }
+    ],
+    "metrics": {
+      "loadMs": 513.9000000059605,
+      "jsHeapBytes": 35111482
+    }
+  }
+]

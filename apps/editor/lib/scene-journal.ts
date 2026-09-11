@@ -16,6 +16,21 @@ function publishLocalCommit(id: string, graph: SceneGraph) {
   for (const listener of persistedListeners) listener()
 }
 
+/** Observe committed snapshots, never pointer-move notifications. */
+export function subscribeLocalScene(
+  sceneId: string,
+  listener: (nodes: SceneGraph['nodes']) => void,
+) {
+  const notify = () => {
+    if (durable?.id === sceneId) listener(durable.nodes)
+  }
+  persistedListeners.add(notify)
+  notify()
+  return () => {
+    persistedListeners.delete(notify)
+  }
+}
+
 /** An imported asset is not acknowledged to the phone until its node is durable. */
 export function waitForLocalScene(
   sceneId: string,

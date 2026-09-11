@@ -1,22 +1,42 @@
 'use client'
 
 import { useScene } from '@pascal-app/core'
+import { ViewerErrorBoundary } from '@pascal-app/viewer'
+import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
 import { create } from 'zustand'
 import { commandMeta, executeStageCommands } from '@/lib/stage/command-executor'
 import { stageDirection } from '@/lib/theatre/blocking'
 import { VENUE_TEMPLATES, type Vec3 } from '@/lib/theatre/schema'
 import type { StageSceneDocument } from '@/lib/theatre/simulation'
-import { editStageDocument, readStageDocument } from '@/lib/theatre/simulation-store'
+import {
+  editStageDocument,
+  moveSimulationPerformer,
+  readStageDocument,
+} from '@/lib/theatre/simulation-store'
+import { openStudioPanel } from '../studio-navigation'
 import { useRehearsalPlayback } from './state'
 import './theatre.css'
+
+const RehearsalPartner = dynamic(() =>
+  import('./rehearsal-partner').then((m) => m.RehearsalPartner),
+)
 
 export const useSimulationSelection = create<{
   selectedId: string | null
   input: 'select' | 'position' | 'route'
   points: Vec3[]
   showRoutes: boolean
-}>(() => ({ selectedId: null, input: 'select', points: [], showRoutes: true }))
+  drag: { id: string; position: Vec3 } | null
+  error: string
+}>(() => ({
+  selectedId: null,
+  input: 'select',
+  points: [],
+  showRoutes: true,
+  drag: null,
+  error: '',
+}))
 
 export function useStageDocument() {
   const nodes = useScene((s) => s.nodes),
@@ -35,11 +55,14 @@ export function placeSimulationPoint(point: Vec3) {
   if (!state.selectedId || useScene.getState().readOnly) return
   if (state.input === 'route') useSimulationSelection.setState({ points: [...state.points, point] })
   else if (state.input === 'position') {
-    editStageDocument((doc) => {
-      const performer = doc.rehearsalSimulation.performers.find((p) => p.id === state.selectedId)
-      if (performer) performer.position = point
-    })
-    useSimulationSelection.setState({ input: 'select' })
+    try {
+      moveSimulationPerformer(state.selectedId, point)
+      useSimulationSelection.setState({ input: 'select', error: '' })
+    } catch (error) {
+      useSimulationSelection.setState({
+        error: error instanceof Error ? error.message : '定位未完成，原站位保留',
+      })
+    }
   }
 }
 
@@ -159,10 +182,11 @@ export function VenuePanel() {
   )
 }
 
-export function SimulationPanel() {
+export function SimulationPanel({ sceneId = '' }: { sceneId?: string }) {
   const { document, error } = useStageDocument()
   const ui = useSimulationSelection()
   const [notice, setNotice] = useState('')
+  const [professional, setProfessional] = useState(false)
   const readOnly = useScene((s) => s.readOnly)
   const simulation = document?.rehearsalSimulation
   const selected = simulation?.performers.find((p) => p.id === ui.selectedId)
@@ -178,7 +202,21 @@ export function SimulationPanel() {
   return (
     <section className="theatre-panel" aria-label="模拟排演">
       <h2>模拟排演</h2>
-      <p>添加人物，设置站位与朝向，再在舞台上记录移动路线。</p>
+      <button type="button" onClick={() => openStudioPanel('versions')}>
+        保存 / 查看版本
+      </button>
+      <label>
+        操作模式
+        <select
+          value={professional ? 'professional' : 'default'}
+          onChange={(e) => setProfessional(e.target.value === 'professional')}
+        >
+          <option value="default">简单模式</option>
+          <option value="professional">专业模式</option>
+        </select>
+      </label>
+      <p>拖动人物调整站位；也可以先点“在舞台上定位”，再点击目的地。记录路线后播放排演。</p>
+      {ui.error && <p role="alert">{ui.error}</p>}
       <fieldset disabled={readOnly}>
         <button
           type="button"
@@ -203,6 +241,7 @@ export function SimulationPanel() {
           <label>
             选择人物
             <select
+              aria-label="选择人物"
               value={selected?.id ?? ''}
               onChange={(e) =>
                 useSimulationSelection.setState({ selectedId: e.target.value, input: 'select' })
@@ -249,33 +288,52 @@ export function SimulationPanel() {
               位置：{stageDirection(selected.position, document.venue)} ·{' '}
               {route ? '路线已记录' : '尚无路线'}
             </p>
-            <div className="th-grid">
-              {selected.position.map((value, axis) => (
-                <NumberField
-                  key={axis}
-                  label={['左右（米）', '高度（米）', '前后（米）'][axis]!}
-                  value={value}
-                  onChange={(n) =>
+            {professional && (
+              <div className="th-grid">
+                {selected.position.map((value, axis) => (
+                  <NumberField
+                    key={axis}
+                    label={['左右（米）', '高度（米）', '前后（米）'][axis]!}
+                    value={value}
+                    onChange={(n) => {
+                      const position: Vec3 = [...selected.position]
+                      position[axis] = n
+                      try {
+                        moveSimulationPerformer(selected.id, position)
+                        setNotice('')
+                      } catch (error) {
+                        setNotice(error instanceof Error ? error.message : '定位未完成')
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+            {professional && (
+              <NumberField
+                label="朝向（度；0 为面向观众）"
+                value={(selected.facing * 180) / Math.PI}
+                onChange={(n) =>
+                  change((d) => {
+                    d.rehearsalSimulation.performers.find((p) => p.id === selected.id)!.facing =
+                      (n * Math.PI) / 180
+                  })
+                }
+              />
+            )}
+            <div className="th-buttons">
+              {!professional && (
+                <button
+                  type="button"
+                  onClick={() =>
                     change((d) => {
-                      d.rehearsalSimulation.performers.find((p) => p.id === selected.id)!.position[
-                        axis
-                      ] = n
+                      d.rehearsalSimulation.performers.find((p) => p.id === selected.id)!.facing = 0
                     })
                   }
-                />
-              ))}
-            </div>
-            <NumberField
-              label="朝向（度；0 为面向观众）"
-              value={(selected.facing * 180) / Math.PI}
-              onChange={(n) =>
-                change((d) => {
-                  d.rehearsalSimulation.performers.find((p) => p.id === selected.id)!.facing =
-                    (n * Math.PI) / 180
-                })
-              }
-            />
-            <div className="th-buttons">
+                >
+                  面向观众
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => useSimulationSelection.setState({ input: 'position' })}
@@ -379,6 +437,20 @@ export function SimulationPanel() {
         </button>
       )}
       {(error || notice) && <p role="alert">{error || notice}</p>}
+      {sceneId && (
+        <ViewerErrorBoundary
+          scope="rehearsal-partner"
+          resetKey={sceneId}
+          fallback={<p role="alert">AI 面板暂不可用，仍可继续手动排演。请刷新后重试。</p>}
+        >
+          <RehearsalPartner
+            key={sceneId}
+            sceneId={sceneId}
+            selectedId={ui.selectedId}
+            professional={professional}
+          />
+        </ViewerErrorBoundary>
+      )}
     </section>
   )
 }

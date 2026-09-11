@@ -586,7 +586,7 @@ function mappedCamera(shot: Shot, draft: RemountDraft): Shot {
   }
 }
 
-function obstacleSnapshot(
+export function obstacleSnapshot(
   node: AnyNode,
   nodes: SceneNodes,
   miters: Map<string | null, WallMiterData>,

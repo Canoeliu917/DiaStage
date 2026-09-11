@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-11",
+  "baseCommit": "83fdcea706c910f192026181948f0340d3dbb692",
+  "branch": "codex/mobile-voice-stage-link",
+  "environment": "Windows, Bun 1.3.14, production Next.js 16.3.0, isolated data directory and Chrome headless",
+  "check": { "command": "bun run check", "result": "PASS", "files": 1383, "errors": 0, "existingInformational": 1 },
+  "types": { "command": "bun run check-types", "result": "PASS", "successfulTasks": 9 },
+  "unit": { "command": "bun test apps/editor/lib/rehearsal-intelligence/rehearsal-intelligence.test.ts", "passed": 11, "failed": 0, "assertions": 262, "indexedDB": "fake-indexeddb test double" },
+  "allTests": { "command": "bun run test --concurrency=1", "passed": 2707, "failed": 0, "existingSkipped": 1, "successfulTasks": 14, "cachedTasks": 13, "editorTestsFreshlyExecuted": 287 },
+  "build": { "command": "bun run build", "result": "PASS", "successfulTasks": 8, "cachedTasks": 7, "seconds": 5.916 },
+  "browser": { "server": "http://127.0.0.1:4324", "data": ".tmp-v01-data", "scene": "4990618ed04f", "proposalProvenance": "explicit synthetic UI fixture, not a real model response", "persistence": "real Chromium IndexedDB and isolated scene REST API", "modeSwitchChangedSavedScene": false },
+  "eval": { "candidates": 100, "humanReviewedGold": 0, "realModelRuns": 0 },
+  "ontology": { "registered": 8, "required": 38, "complete": false },
+  "notTested": ["real model API", "iPhone Safari hardware", "iPad Safari hardware", "Android Chrome hardware", "thermal behavior", "1000 objects for 30 minutes", "forced process kill recovery", "novice user acceptance"],
+  "publicBetaReady": false,
+  "remotePush": false,
+  "mergedOrDeployed": false
+}

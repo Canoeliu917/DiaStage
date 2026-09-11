@@ -60,6 +60,19 @@ export default function PrivacyPage() {
               。
             </p>
           </section>
+          <section className="mb-8 space-y-4">
+            <h2 className="font-semibold text-xl">AI 排演伙伴 · 2026 年 9 月 11 日</h2>
+            <p>
+              仅在你点击“生成排演可能”时，将输入意图、粘贴的选段、当前人物与路线、布景边界摘要发送至模型服务。不会发送完整项目或自动采用建议。
+            </p>
+            <p>
+              建议、生成依据、你的采用/部分采用/修改/拒绝以及采用后的最终调整，独立保存在当前浏览器的私有反馈记录中。项目保存与训练授权分开，训练授权默认关闭，可随时撤销。当前版本没有训练上传或模型训练流程。
+            </p>
+            <p>
+              你可在“AI 排演伙伴 →
+              私有反馈与训练授权”中导出或删除这些记录。导出的备份包含选段原文，应作为私有文件保管；删除反馈不会删除舞台。清理浏览器数据可能删除本机记录，建议定期导出项目及反馈备份。
+            </p>
+          </section>
           <h2 className="font-semibold text-xl">上游 Pascal 历史政策参考</h2>
           <p className="mb-2 text-muted-foreground text-sm">生效日期：2026 年 2 月 20 日</p>
           <p className="mb-8 text-muted-foreground text-sm">
