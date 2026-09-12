@@ -2,7 +2,7 @@
 
 日期：2026-09-12。基线：`b2abdbbc52b09fb5e97569adbf49b7d1bacd6708`。
 
-**当前门禁状态：LOCAL_READY_PENDING_REMOTE_CI。尚未宣布冻结。**
+**PRODUCT BACKBONE = FROZEN。** 本机门禁、远端 CI（quality + macOS CLI smoke）及 mcp-ci 已在冻结检查点 `d290c417474823fb089b17b4003783046c79321b` 全部通过。停止在 Draft PR #1 增加产品能力。
 
 本报告是 Closure 的当前验收口径；`DIASTAGE_PRODUCT_BACKBONE_INTEGRATION_REPORT.md` 保留为 b2abdbbc 阶段的历史报告，其未完成项与后续建议不再扩展 PR #1 范围。
 
@@ -10,7 +10,7 @@
 
 | 项目 | 结果 |
 |---|---|
-| PRODUCT BACKBONE | NOT_READY — 本机完成，等待远端 CI |
+| PRODUCT BACKBONE | FROZEN |
 | VENUE | PASS — 现有空间基础 |
 | BUILD | PASS |
 | REHEARSE | PASS |
@@ -26,8 +26,8 @@
 | TYPES | PASS |
 | TESTS | PASS |
 | BUILD | PASS |
-| REMOTE CI | PENDING |
-| MCP-CI | PENDING |
+| REMOTE CI | PASS |
+| MCP-CI | PASS |
 | NEW PRODUCT CAPABILITIES ADDED | 0 |
 | REAL MODEL | NOT_RUN |
 | REAL DEVICES | NOT_RUN |
@@ -107,7 +107,7 @@ Dia 是贯穿全过程的统一智能入口；品牌表达为 Dialogue → Diago
 
 实际 Chrome 自动化使用隔离合成数据库：创建舞台→Build 修订→Ghost 零写入→明确采用→实际刷新恢复→只读 Version→Target 映射确认→一次撤销→手机配对请求 Ghost。Version 验证实际 Dia Build 来源，Remount 验证正式 Venue 没有被伪称替换。Tablet/Phone 仅 viewport/触控模拟，真实模型与设备均 NOT_RUN。
 
-本地入口：`http://127.0.0.1:4328/scene/04951a762115`；独立合成库，不替代用户正式服务。完整中间结果在 `.tmp-product-backbone-closure/`，脚本 `scripts/product-backbone-acceptance.mjs` 可复跑。
+15项浏览器流程在 `http://127.0.0.1:4328/scene/04951a762115` 验证。随后层级补充只改核心文档和首页一句定义，重新完成全部本机门禁；最新构建另在 `http://127.0.0.1:4329/scene/04951a762115` 启动，首页 HTTP 200 且新定义可见。均为独立合成库，不替代用户正式服务。完整中间结果在 `.tmp-product-backbone-closure/`，脚本 `scripts/product-backbone-acceptance.mjs` 可复跑。
 
 ## 6. Evidence Trim
 
@@ -125,7 +125,12 @@ Dia 是贯穿全过程的统一智能入口；品牌表达为 Dialogue → Diago
 
 ## 7. Git 与冻结门禁
 
-产品代码提交：`4110939f`。工作分支：`codex/mobile-voice-stage-link`。PR #1 保持 Draft。报告/证据提交和远端测试链接在 CI 完成后补录；在此之前保持 LOCAL_READY_PENDING_REMOTE_CI。
+Closure 产品代码提交：`4110939f26dbd29b6cf4d5b377f057b914ac8b0b`。层级文案、报告与 Evidence 检查点：`d290c417474823fb089b17b4003783046c79321b`。工作分支：`codex/mobile-voice-stage-link`。
+
+作出冻结决定时，当前 Commit 与实际 Draft PR Head 均为 **d290c417474823fb089b17b4003783046c79321b**，PR 为 Open / Draft / unmerged。随后仅提交本报告的冻结结果和 Beta Blockers 文档；报告不把尚未产生的自身提交 SHA 伪造为已测试代码。最终文档 Head 及其检查以 [PR #1](https://github.com/Canoeliu917/DiaStage/pull/1) 和交付消息为准。
+
+- [GitHub CI #23](https://github.com/Canoeliu917/DiaStage/actions/runs/34674876003)：PASS；quality 与 macOS packed CLI smoke 均 success。
+- [mcp-ci #21](https://github.com/Canoeliu917/DiaStage/actions/runs/34674875995)：PASS；core/mcp build、mcp tests、scene API tests、Biome 均 success。
 
 基线 main：`4170d1919a8eb25a7bc96503dfb55098b71bbbfe`。本轮不修改 main，不 merge、deploy、release、force push，不重写历史；没有新增 secret/private data，没有删除必要 license。审计的变更范围仅闭环引用/恢复/来源、小量状态文案、测试、文档及 evidence。
 
@@ -139,8 +144,12 @@ PR #1 是 **Pascal → DiaStage Alpha Integration Migration**，不是普通 Fea
 
 仍需验证公网 Auth/tenant、项目归属、服务器持久化、备份恢复、预算/kill switch、staging、真实模型、隐私导出删除、release/rollback 及首批5–10位用户。现有本机机制不等于这些公网保障均已完成。浏览器配额、用户主动清理存储、系统强杀/断电、真实移动端 GPU/音频/后台行为仍是实际风险。
 
-冻结后另列 `DIASTAGE_01_INVITE_BETA_BLOCKERS.md`，只保留10项发布阻塞。后续建议独立主题：`beta/auth-tenancy`、`beta/persistence-backup`、`beta/real-model`、`beta/device-validation`；不在本轮创建分支或 PR。Document → Stage 仅为0.2候选，不是 Invite Beta blocker，不进入 PR #1。
+冻结后已另列 [DIASTAGE_01_INVITE_BETA_BLOCKERS.md](DIASTAGE_01_INVITE_BETA_BLOCKERS.md)，只保留10项发布阻塞。后续建议独立主题：`beta/auth-tenancy`、`beta/persistence-backup`、`beta/real-model`、`beta/device-validation`；不在本轮创建分支或 PR。Document → Stage 仅为0.2候选，不是 Invite Beta blocker，不进入 PR #1。
 
 ## 10. Closure 源码与测试文件
 
-本轮产品代码 commit 共31个文件（含测试和1个验收脚本）；完整路径可用 `git show --name-status 4110939f` 核查。核心新增为 `build-feedback.ts`、`interaction-envelope.ts`、`version-source.ts` 及对应专项；原 Controller、Authority、Version、Remount、Journal、Phone bridge 仅适配。Evidence删除列表见manifest。最终本轮总文件数、Draft PR 累计文件数将在远端门禁通过后记录。
+本轮产品代码 commit 共31个文件（含测试和1个验收脚本），层级补充另改 `brand.ts` 的一句产品定义；完整路径可用 `git show --name-status 4110939f` 核查。核心新增为 `build-feedback.ts`、`interaction-envelope.ts`、`version-source.ts` 及对应专项；原 Controller、Authority、Version、Remount、Journal、Phone bridge 仅适配。
+
+本轮相对 b2abdbbc 的最终变更共 **190个文件**（Git默认重命名检测口径）：32个代码/测试/脚本文件，6个文档/配置文件，152个 Evidence 路径变更。Evidence 149个原文件移出当前树，其中2张最终图像由Git识别为重命名；完整逐项列表在manifest，未删测试脚本。
+
+Draft PR 的整个迁移累计变更为 **2680个文件**（包含最终 Beta Blockers 文档）；这是相对 main 的迁移量，不是本轮新增功能量。本轮新增产品能力 **0**。冻结后的下一步只进入 Validation / Release / Real Users，不再重新定义 Dia、工作区或核心过程。
