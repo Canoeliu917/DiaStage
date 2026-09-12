@@ -92,7 +92,6 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     StageLibraryPanel: () => null,
     StageObjectPanel: () => null,
   }))
-  mock.module('./stage-entry/command-input', () => ({ StageCommandInput: () => null }))
   const StageOverviewPanel = () => null
   mock.module('./stage-overview-panel', () => ({ StageOverviewPanel }))
   mock.module('./viewer-toolbar', () => ({ StudioPicturePanel: () => null }))
@@ -212,7 +211,7 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   }
   assert.equal(renderNavigation().length, 3, 'three peer workspace options')
   for (const [label, expected, group] of [
-    ['置景', ['theatre-venue', 'build', 'items', 'stage-cameras', 'stage-command'], 'set'],
+    ['置景', ['theatre-venue', 'build', 'items', 'stage-cameras'], 'set'],
     ['排演', ['simulation', 'display', 'observe', 'record'], 'rehearse'],
     ['复台', ['versions', 'remount'], 'remount'],
   ] as const) {
@@ -243,6 +242,7 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   for (const [legacy, expected, expectedGroup] of [
     ['picture', 'display', 'rehearse'],
     ['camera-studio', 'stage-cameras', 'set'],
+    ['stage-command', 'items', 'set'],
     ['camera-rehearsal', 'camera-rehearsal', 'rehearse'],
   ]) {
     assert.equal(openStudioPanel(legacy!), true)

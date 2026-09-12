@@ -15,6 +15,7 @@ import {
   SlabNode,
   spatialGridManager,
   subscribeSceneCommits,
+  useLiveNodeOverrides,
   useLiveTransforms,
   useScene,
   WallNode,
@@ -116,6 +117,7 @@ describe('remount scene boundary', () => {
       },
     })
     spatialGridManager.clear()
+    useLiveNodeOverrides.getState().clearAll()
     useLiveTransforms.getState().clearAll()
     fixture(Array.from({ length: 10 }, (_, index) => item(index)))
   })
@@ -125,6 +127,7 @@ describe('remount scene boundary', () => {
     restoreRegistry()
     spatialGridManager.clear()
     useScene.getState().setReadOnly(false)
+    useLiveNodeOverrides.getState().clearAll()
     useLiveTransforms.getState().clearAll()
   })
 
@@ -228,6 +231,52 @@ describe('remount scene boundary', () => {
     useLiveTransforms.getState().set('item_test_1', { position: [0, 0, 0], rotation: 0 })
     expect(() => applyRemount(SCENE)).toThrow('结束当前')
     expect(useScene.getState().nodes).toBe(before)
+  })
+
+  test('display-only layer hiding preserves remount mapping and allows one apply and undo', () => {
+    const before = useScene.getState().nodes
+    captureProductionLayout(SCENE, ['item_test_0'])
+    const visiblePlan = previewRemount(SCENE)
+    const hidden = { theatreSceneVisibility: true, visible: false }
+    useLiveNodeOverrides.getState().setMany([
+      ['item_test_0', hidden],
+      ['item_test_9', hidden],
+    ])
+    captureProductionLayout(SCENE, ['item_test_0'])
+    expect(previewRemount(SCENE)).toEqual(visiblePlan)
+    expect(useScene.getState().nodes).toBe(before)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(0)
+    applyRemount(SCENE)
+    expect(position('item_test_0')).toEqual([7, 0, -1])
+    expect(useScene.getState().nodes.item_test_0?.visible).toBe(true)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+    expect(undoLastRemount(SCENE)).toBe(true)
+    expect(useScene.getState().nodes).toEqual(before)
+    expect(useLiveNodeOverrides.getState().get('item_test_0')).toEqual(hidden)
+  })
+
+  test('unmarked or mixed overrides and live transforms still block remount without writing', () => {
+    captureProductionLayout(SCENE, ['item_test_0'])
+    previewRemount(SCENE)
+    const before = useScene.getState().nodes
+    for (const override of [
+      { visible: false },
+      { theatreSceneVisibility: true, visible: false, position: [9, 0, 0] },
+    ]) {
+      useLiveNodeOverrides.getState().clearAll()
+      useLiveNodeOverrides.getState().set('item_test_0', override)
+      expect(() => previewRemount(SCENE)).toThrow('结束当前')
+      expect(() => applyRemount(SCENE)).toThrow('结束当前')
+    }
+    useLiveNodeOverrides.getState().clearAll()
+    useLiveNodeOverrides.getState().set('item_test_0', {
+      theatreSceneVisibility: true,
+      visible: false,
+    })
+    useLiveTransforms.getState().set('item_test_1', { position: [9, 0, 0], rotation: 0 })
+    expect(() => applyRemount(SCENE)).toThrow('结束当前')
+    expect(useScene.getState().nodes).toBe(before)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(0)
   })
 
   test('parent and child are included once, share assembly and never inherit parent mesh scale', () => {

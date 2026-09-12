@@ -22,6 +22,8 @@ export function validateContext(raw: unknown): RehearsalContext {
     if (!ids.includes(path.performerId)) throw new Error('路线引用了不存在的人物')
   for (const obstacle of context.obstacles)
     if (obstacle.min.some((x, axis) => x > obstacle.max[axis]!)) throw new Error('布景边界无效')
+  if (new Set(context.obstacles.map((obstacle) => obstacle.id)).size !== context.obstacles.length)
+    throw new Error('布景编号重复，请检查目标物件')
   if (context.sceneVersion && context.sceneVersion !== sceneFactsVersion(context))
     throw new Error('舞台版本与当前事实不匹配，请重新生成')
   const conversation = context.conversation

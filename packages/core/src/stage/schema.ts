@@ -15,6 +15,7 @@ export const StageItemKindSchema = z.enum([
   'screen',
   'curtain',
   'table',
+  'round-table',
   'chair',
   'sofa',
   'counter',

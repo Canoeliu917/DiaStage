@@ -12,56 +12,29 @@ import { useViewer, ViewerErrorBoundary } from '@pascal-app/viewer'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
-import { objectSnapshot } from '@/lib/remount-scene'
+import { objectSnapshot, prepareVersionRemount } from '@/lib/remount-scene'
 import { stageKind } from '@/lib/stage/context'
+import {
+  VersionCameraSchema as cameraSchema,
+  VersionDisplaySchema as displaySchema,
+  openVersionPreview,
+  type RehearsalVersion,
+  rehearsalVersionHashes,
+  useVersionPreview,
+  REHEARSAL_VERSIONS_KEY as VERSIONS,
+  RehearsalVersionSchema as versionSchema,
+} from '@/lib/theatre/rehearsal-versions'
 import {
   assertTheatreWritable,
   captureStageSnapshot,
   parseSnapshot,
   THEATRE_METADATA_KEY,
 } from '@/lib/theatre/scene-adapter'
-import { StageSnapshotSchema } from '@/lib/theatre/schema'
 import { StageSceneDocumentSchema } from '@/lib/theatre/simulation'
 import { readStageDocument } from '@/lib/theatre/simulation-store'
-import { validateCameraProject } from '../camera-studio/model'
 import { useCameraStudio } from '../camera-studio/store'
-import { PlanDrawing } from '../stage-entry/plan-review'
 import { useSimulationSelection } from './simulation-panel'
 
-const displaySchema = z.object({
-  viewMode: z.enum(['2d', '3d', 'split']),
-  theme: z.enum(['studio', 'night']),
-  textures: z.boolean(),
-  shading: z.enum(['solid', 'rendered']),
-  showGrid: z.boolean(),
-  showGuides: z.boolean(),
-  showRoutes: z.boolean(),
-  showCameras: z.boolean(),
-})
-const cameraSchema = z.object({
-  project: z.unknown().transform((input, ctx) => {
-    try {
-      return validateCameraProject(input)
-    } catch {
-      ctx.addIssue({ code: 'custom', message: '版本机位资料无效' })
-      return z.NEVER
-    }
-  }),
-  selectedId: z.string().nullable(),
-})
-const versionSchema = z.object({
-  id: z.string(),
-  name: z.string().trim().min(1),
-  createdAt: z.string(),
-  note: z.string().max(240).default(''),
-  restoredFrom: z.string().optional(),
-  stageGraph: StageSnapshotSchema,
-  venue: StageSceneDocumentSchema.shape.venue,
-  rehearsalSimulation: StageSceneDocumentSchema.shape.rehearsalSimulation,
-  cameraState: cameraSchema,
-  displayState: displaySchema,
-})
-const VERSIONS = 'diastageRehearsalVersions'
 const VIEW = 'diastageRestoredView'
 function siteNode() {
   const state = useScene.getState()
@@ -91,6 +64,17 @@ export function saveRehearsalVersion(name: string, note = '') {
     stageGraph: clean,
     venue: doc.venue,
     rehearsalSimulation: doc.rehearsalSimulation,
+    ...rehearsalVersionHashes({
+      stageGraph: clean,
+      venue: doc.venue,
+      rehearsalSimulation: doc.rehearsalSimulation,
+    }),
+    ...(typeof site.metadata.diastageRehearsalDecision === 'object' &&
+    site.metadata.diastageRehearsalDecision !== null &&
+    'interactionId' in site.metadata.diastageRehearsalDecision &&
+    typeof site.metadata.diastageRehearsalDecision.interactionId === 'string'
+      ? { interactionId: site.metadata.diastageRehearsalDecision.interactionId }
+      : {}),
     cameraState: { project: camera.project, selectedId: camera.selectedShotId },
     displayState: {
       viewMode: useEditor.getState().viewMode,
@@ -121,10 +105,11 @@ export function restoreRehearsalVersion(id: string) {
   const restored = versionSchema.parse({
     ...version,
     id: crypto.randomUUID(),
-    name: `复台 · ${version.name}`.slice(0, 120),
+    name: `恢复 · ${version.name}`.slice(0, 120),
     note: `从「${version.name}」恢复`,
     createdAt: new Date().toISOString(),
     restoredFrom: version.id,
+    sourceVersion: version.id,
   })
   const snapshot = parseSnapshot(version.stageGraph)
   const root = snapshot.rootNodeIds.map((id) => snapshot.nodes[id]).find((n) => n?.type === 'site')
@@ -200,19 +185,24 @@ export function VersionViewSync() {
   useEffect(connectVersionViewSync, [])
   return null
 }
-export function VersionsPanel() {
+export function VersionsPanel({ sceneId }: { sceneId: string }) {
   const nodes = useScene((s) => s.nodes),
     roots = useScene((s) => s.rootNodeIds),
     readOnly = useScene((s) => s.readOnly)
   const [name, setName] = useState(''),
     [notice, setNotice] = useState('')
   const [note, setNote] = useState('')
-  const [preview, setPreview] = useState<z.infer<typeof versionSchema> | null>(null)
+  const selectedId = useVersionPreview((state) => state.selectedId)
+  const previewRoot = useVersionPreview((state) => state.rootKey)
   const parsed = z
     .array(versionSchema)
     .safeParse(
       roots.map((id) => nodes[id]).find((n) => n?.type === 'site')?.metadata[VERSIONS] ?? [],
     )
+  const preview =
+    parsed.success && previewRoot === JSON.stringify(roots)
+      ? parsed.data.find((version) => version.id === selectedId)
+      : null
   const run = (fn: () => void) => {
     try {
       fn()
@@ -224,7 +214,7 @@ export function VersionsPanel() {
   return (
     <section className="theatre-panel" aria-label="排演版本">
       <h2>排演版本</h2>
-      <p>预览后再恢复舞台。恢复会新增一条版本记录，原版本保留，操作可撤销。</p>
+      <p>版本保留场地、布景与排演。可以只读查看、明确恢复，或带入新场地复台。</p>
       <fieldset disabled={readOnly}>
         <label>
           版本名称
@@ -241,29 +231,28 @@ export function VersionsPanel() {
         >
           保存当前版本
         </button>
-        {parsed.success ? (
-          parsed.data.map((v) => (
-            <div key={v.id}>
-              <strong>{v.name}</strong>
-              <p>{new Date(v.createdAt).toLocaleString('zh-CN')}</p>
-              {v.note && <p>{v.note}</p>}
-              <button
-                type="button"
-                onClick={() =>
-                  run(() => {
-                    parseSnapshot(v.stageGraph)
-                    setPreview(v)
-                  })
-                }
-              >
-                预览此版本
-              </button>
-            </div>
-          ))
-        ) : (
-          <p role="alert">版本资料无法读取，原始数据已保留。</p>
-        )}
       </fieldset>
+      {parsed.success ? (
+        parsed.data.map((v) => (
+          <div key={v.id}>
+            <strong>{v.name}</strong>
+            <p>{new Date(v.createdAt).toLocaleString('zh-CN')}</p>
+            {v.note && <p>{v.note}</p>}
+            <button
+              type="button"
+              onClick={() =>
+                run(() => {
+                  openVersionPreview(v.id)
+                })
+              }
+            >
+              查看此版本
+            </button>
+          </div>
+        ))
+      ) : (
+        <p role="alert">版本资料无法读取，原始数据已保留。</p>
+      )}
       {preview && (
         <section aria-label="版本预览">
           <h3>{preview.name}</h3>
@@ -274,22 +263,47 @@ export function VersionsPanel() {
           >
             <VersionDrawing version={preview} />
           </ViewerErrorBoundary>
-          <p>将恢复布景、人物路线和机位。当前舞台会进入撤销记录；版本列表将新增本次复台记录。</p>
+          <p>
+            正在查看历史版本，当前舞台未改变。人物 {preview.rehearsalSimulation.performers.length}{' '}
+            位 · 路线 {preview.rehearsalSimulation.paths.length} 条。
+          </p>
+          <details>
+            <summary>版本来源</summary>
+            <p>场景 {preview.sceneVersion ?? rehearsalVersionHashes(preview).sceneVersion}</p>
+            <p>场地 {preview.venueVersion ?? rehearsalVersionHashes(preview).venueVersion}</p>
+            <p>
+              排演 {preview.rehearsalVersion ?? rehearsalVersionHashes(preview).rehearsalVersion}
+            </p>
+            <p>{new Date(preview.createdAt).toLocaleString('zh-CN')}</p>
+            {preview.sourceVersion && <p>来源版本 {preview.sourceVersion}</p>}
+          </details>
           <div className="th-buttons">
             <button
               type="button"
               disabled={readOnly}
               onClick={() =>
                 run(() => {
+                  prepareVersionRemount(sceneId, preview.id)
+                  useEditor.getState().setActiveSidebarPanel('remount')
+                })
+              }
+            >
+              以此版本复台
+            </button>
+            <button
+              type="button"
+              disabled={readOnly}
+              onClick={() =>
+                run(() => {
                   restoreRehearsalVersion(preview.id)
-                  setPreview(null)
+                  useVersionPreview.setState({ selectedId: null })
                 })
               }
             >
               确认恢复此版本
             </button>
-            <button type="button" onClick={() => setPreview(null)}>
-              取消恢复
+            <button type="button" onClick={() => useVersionPreview.setState({ selectedId: null })}>
+              关闭查看
             </button>
           </div>
         </section>
@@ -299,7 +313,7 @@ export function VersionsPanel() {
   )
 }
 
-function VersionDrawing({ version }: { version: z.infer<typeof versionSchema> }) {
+function VersionDrawing({ version }: { version: RehearsalVersion }) {
   const snapshot = parseSnapshot(version.stageGraph)
   const frame = { origin: version.venue.origin, depthMeters: version.venue.depth }
   const objects: SceneContextObject[] = Object.values(snapshot.nodes).flatMap((node) => {
@@ -347,30 +361,59 @@ function VersionDrawing({ version }: { version: z.infer<typeof versionSchema> })
         rotationDegrees: worldToStageRotation([0, performer.facing, 0]),
       },
     })
+  const { width, depth, origin } = version.venue
   return (
-    <PlanDrawing
-      plan={{
-        schemaVersion: 1,
-        source: 'manual',
-        venue: null,
-        items: [],
-        relations: [],
-        assumptions: [],
-        questions: [],
-        evidence: [],
-        warnings: [],
-      }}
-      context={{
-        documentVersion: 0,
-        selectedObjectIds: [],
-        objects,
-        venue: {
-          type: version.venue.type === 'arena' ? 'other' : version.venue.type,
-          widthMeters: version.venue.width,
-          depthMeters: version.venue.depth,
-          heightMeters: version.venue.height,
-        },
-      }}
-    />
+    <figure>
+      <svg
+        style={{ width: '100%', height: 'auto' }}
+        role="img"
+        aria-label="历史版本：场地、布景、人物与路线，台口在下方"
+        viewBox={`${-width / 2 - 0.5} -0.5 ${width + 1} ${depth + 1.2}`}
+      >
+        <rect
+          x={-width / 2}
+          y={0}
+          width={width}
+          height={depth}
+          fill="#eee"
+          stroke="#888"
+          strokeWidth={0.04}
+        />
+        {objects.map((object) => (
+          <rect
+            key={object.id}
+            x={-object.transform.position.x - object.dimensionsMeters.width / 2}
+            y={depth - object.transform.position.z - object.dimensionsMeters.depth / 2}
+            width={object.dimensionsMeters.width}
+            height={object.dimensionsMeters.depth}
+            transform={`rotate(${object.transform.rotationDegrees.y},${-object.transform.position.x},${depth - object.transform.position.z})`}
+            fill={object.kind === 'performer-marker' ? '#303030' : '#999'}
+            fillOpacity={0.6}
+            stroke="#444"
+            strokeWidth={0.03}
+          >
+            <title>{object.name}</title>
+          </rect>
+        ))}
+        {version.rehearsalSimulation.paths
+          .filter((path) => path.visible)
+          .map((path) => (
+            <polyline
+              key={path.id}
+              points={path.points
+                .map((point) => `${point[0] - origin[0]},${point[2] - origin[2] + depth / 2}`)
+                .join(' ')}
+              fill="none"
+              stroke="#444"
+              strokeWidth={0.05}
+              strokeDasharray="0.15 0.1"
+            />
+          ))}
+        <text x={0} y={depth + 0.45} fontSize={0.3} textAnchor="middle" fill="currentColor">
+          台口 · 观众方向
+        </text>
+      </svg>
+      <figcaption>只读快照 · 虚线为当时保存的走位。</figcaption>
+    </figure>
   )
 }

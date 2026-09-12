@@ -10,6 +10,7 @@ export const stageKindLabels: Record<StageItemKind, string> = {
   screen: '屏风',
   curtain: '幕',
   table: '桌',
+  'round-table': '圆桌',
   chair: '椅',
   sofa: '沙发',
   counter: '柜台',

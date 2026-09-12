@@ -3,7 +3,11 @@
 **DiaStage: Theatre Rehearsal & Stage Previs**\
 **戏剧排演与舞台复现**
 
-在虚拟舞台排一遍，再按同一套位置、走位与尺寸把演出搭回来。咫台面向导演、演员、舞台美术、舞台监督与戏剧学习者。
+DiaStage 是一个以真实舞台空间为基础，记录从搭台、排演到复台全过程的戏剧创作系统。Dia 是贯穿其中的智能伙伴，把人的自然语言转化成可预演、可修改、可保留的舞台方案。
+
+**把戏说给 Dia。** 从场地，到搭台，到排演，再到复台。工程骨架为 **Venue → Build → Rehearse → Version → Remount**，用户仍只有置景、排演、复台三个工作区，Dia 贯穿其中。
+
+Dialogue / Diagonal / Diagram / Diary 是品牌解释，不是四个 Agent 或工作区。完整映射、已实现能力及限制见 [PRODUCT.md](PRODUCT.md) 与 [本轮整合报告](DIASTAGE_PRODUCT_BACKBONE_INTEGRATION_REPORT.md)。
 
 ## 工作区
 

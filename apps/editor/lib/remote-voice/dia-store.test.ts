@@ -249,6 +249,58 @@ test('Dia schemas reject scene writes, adopt, unbounded display data, and incons
   ).toBe(false)
 })
 
+test('Build projection carries bounded scenery and confirmed Ghost without extending remote authority', () => {
+  const { channels, owner, remote, publish } = setup()
+  const build = snapshot()
+  build.stage.performers = []
+  build.stage.scenery = [{ id: 'table', name: '圆桌', min: [-1, -1], max: [1, 1] }]
+  publish(build)
+  const preview = {
+    type: 'preview',
+    requestId: crypto.randomUUID(),
+    sequence: 1,
+    sceneVersion: build.sceneVersion,
+    interactionId: build.interactionId,
+    proposalId: build.selectedProposalId,
+  }
+  channels.send(owner.id, remote.remoteToken, preview)
+  expect(channels.remoteStatus(owner.id, remote.remoteToken).status.snapshot?.ghost).toBeNull()
+  build.state = 'waiting-human'
+  build.ghost = {
+    proposalId: build.selectedProposalId!,
+    performers: [],
+    paths: [],
+    scenery: [{ id: 'new-table', name: '建议圆桌', min: [-2, -1], max: [-1, 0] }],
+    venue: { width: 10, depth: 8, origin: [0, 0, 0] },
+  }
+  channels.publish(owner.id, owner.ownerToken, {
+    snapshot: build,
+    acknowledgement: { sequence: 1, disposition: 'received' },
+  })
+  expect(
+    channels.remoteStatus(owner.id, remote.remoteToken).status.snapshot?.ghost?.scenery,
+  ).toEqual(build.ghost.scenery)
+  for (const invalid of [
+    { ...build.stage.scenery[0], min: [2, 0], max: [1, 1] },
+    { ...build.stage.scenery[0], min: [Infinity, 0] },
+    { ...build.stage.scenery[0], geometry: [] },
+  ])
+    expect(
+      RemoteDiaSnapshotSchema.safeParse({ ...build, stage: { ...build.stage, scenery: [invalid] } })
+        .success,
+    ).toBe(false)
+  expect(
+    RemoteDiaSnapshotSchema.safeParse({
+      ...build,
+      ghost: {
+        ...build.ghost,
+        scenery: Array.from({ length: 201 }, () => build.ghost!.scenery![0]),
+      },
+    }).success,
+  ).toBe(false)
+  expect(RemoteDiaCommandInputSchema.safeParse({ ...preview, type: 'adopt' }).success).toBe(false)
+})
+
 test('Dia HTTP routes validate requests/responses, enforce roles and streamed payload limits', async () => {
   const oldRate = process.env.PASCAL_SCENE_API_RATE_LIMIT
   process.env.PASCAL_SCENE_API_RATE_LIMIT = '0'

@@ -20,6 +20,26 @@ function intersects(a: Vec3, b: Vec3, min: Vec3, max: Vec3) {
   return true
 }
 
+function validateRoute(context: RehearsalContext, start: Vec3, end: Vec3) {
+  const v = context.venue
+  for (const point of [start, end]) {
+    if (
+      !point.every(Number.isFinite) ||
+      Math.abs(point[0] - v.origin[0]) + 0.25 > v.width / 2 ||
+      Math.abs(point[2] - v.origin[2]) + 0.25 > v.depth / 2 ||
+      point[1] < v.origin[1] ||
+      point[1] + 1.7 > v.origin[1] + v.height
+    )
+      throw new Error('建议路线超出舞台边界，请调整建议；系统不会缩放舞台')
+  }
+  for (const obstacle of context.obstacles) {
+    const min: Vec3 = [obstacle.min[0] - 0.25, obstacle.min[1] - 1.7 + 0.01, obstacle.min[2] - 0.25]
+    const max: Vec3 = [obstacle.max[0] + 0.25, obstacle.max[1] - 0.01, obstacle.max[2] + 0.25]
+    if (intersects(start, end, min, max))
+      throw new Error(`路线可能穿过「${obstacle.name}」，请手动调整路线`)
+  }
+}
+
 export function compileProposal(
   context: RehearsalContext,
   proposal: RehearsalProposal,
@@ -37,6 +57,27 @@ export function compileProposal(
     if (!performer?.visible || seen.has(performer.id)) throw new Error('建议必须引用不同的可见人物')
     seen.add(performer.id)
     result.paths = result.paths.filter((p) => p.performerId !== performer.id)
+    if (suggestion.movement === 'stand-near-object') {
+      const target = context.obstacles.find((obstacle) => obstacle.id === suggestion.targetObjectId)
+      if (!target || suggestion.targetPerformerId || suggestion.zone)
+        throw new Error('站在物件旁需要当前场景中唯一明确的布景目标')
+      const [x, y, z] = performer.position
+      const gap = (suggestion.extent === 'small' ? 0.5 : 1) + 0.25
+      const nearX = Math.max(target.min[0], Math.min(target.max[0], x))
+      const nearZ = Math.max(target.min[2], Math.min(target.max[2], z))
+      const candidates: Vec3[] = [
+        [nearX, y, target.max[2] + gap],
+        [nearX, y, target.min[2] - gap],
+        [target.min[0] - gap, y, nearZ],
+        [target.max[0] + gap, y, nearZ],
+      ]
+      candidates.sort((a, b) => Math.hypot(a[0] - x, a[2] - z) - Math.hypot(b[0] - x, b[2] - z))
+      const point = candidates[0]!
+      validateRoute(context, point, point)
+      performer.position = point
+      continue
+    }
+    if (suggestion.targetObjectId) throw new Error('该行动不支持布景目标，请使用站在物件旁')
     if (suggestion.movement === 'hold') {
       if (suggestion.targetPerformerId || suggestion.zone)
         throw new Error('保持位置不能包含移动目标')
@@ -75,27 +116,7 @@ export function compileProposal(
       start[1],
       start[2] + (direction[2] / distance) * step,
     ]
-    const v = context.venue
-    for (const point of [start, end]) {
-      if (
-        !point.every(Number.isFinite) ||
-        Math.abs(point[0] - v.origin[0]) + 0.25 > v.width / 2 ||
-        Math.abs(point[2] - v.origin[2]) + 0.25 > v.depth / 2 ||
-        point[1] < v.origin[1] ||
-        point[1] + 1.7 > v.origin[1] + v.height
-      )
-        throw new Error('建议路线超出舞台边界，请调整建议；系统不会缩放舞台')
-    }
-    for (const obstacle of context.obstacles) {
-      const min: Vec3 = [
-        obstacle.min[0] - 0.25,
-        obstacle.min[1] - 1.7 + 0.01,
-        obstacle.min[2] - 0.25,
-      ]
-      const max: Vec3 = [obstacle.max[0] + 0.25, obstacle.max[1] - 0.01, obstacle.max[2] + 0.25]
-      if (intersects(start, end, min, max))
-        throw new Error(`路线可能穿过「${obstacle.name}」，请手动调整路线`)
-    }
+    validateRoute(context, start, end)
     const durationSeconds = step / (suggestion.pace === 'slow' ? 0.2 : 0.5)
     result.paths.push({
       id: `${proposal.proposalId}:${suggestion.id}`,
@@ -107,15 +128,23 @@ export function compileProposal(
     result.durationSeconds = Math.max(result.durationSeconds, durationSeconds)
   }
   // Linear, simultaneous V0.1 paths: check closest approach on every time segment.
-  const pathFor = (id: string) => result.paths.find((p) => p.performerId === id)
+  const pathData = new Map(
+    result.paths.map((path) => {
+      const lengths = path.points
+        .slice(1)
+        .map((point, i) => Math.hypot(...point.map((x, axis) => x - path.points[i]![axis]!)))
+      return [
+        path.performerId,
+        { path, lengths, total: lengths.reduce((a, b) => a + b, 0) },
+      ] as const
+    }),
+  )
   const at = (id: string, t: number): Vec3 => {
     const p = result.performers.find((p) => p.id === id)!,
-      path = pathFor(id)
-    if (!path) return p.position
-    const lengths = path.points
-      .slice(1)
-      .map((point, i) => Math.hypot(...point.map((x, a) => x - path.points[i]![a]!)))
-    let remaining = Math.min(1, t / path.durationSeconds) * lengths.reduce((a, b) => a + b, 0)
+      data = pathData.get(id)
+    if (!data) return p.position
+    const { path, lengths, total } = data
+    let remaining = Math.min(1, t / path.durationSeconds) * total
     for (let i = 0; i < lengths.length; i++) {
       if (remaining <= lengths[i]! && lengths[i]! > 0)
         return path.points[i]!.map(
@@ -126,11 +155,7 @@ export function compileProposal(
     return path.points.at(-1)!
   }
   const times = new Set([0, result.durationSeconds])
-  for (const path of result.paths) {
-    const lengths = path.points
-      .slice(1)
-      .map((p, i) => Math.hypot(...p.map((v, a) => v - path.points[i]![a]!)))
-    const total = lengths.reduce((a, b) => a + b, 0)
+  for (const { path, lengths, total } of pathData.values()) {
     let accumulated = 0
     for (const length of lengths) {
       accumulated += length
@@ -139,16 +164,18 @@ export function compileProposal(
   }
   const sorted = [...times].sort((a, b) => a - b)
   const visible = result.performers.filter((p) => p.visible)
+  // Every pair samples the same breakpoints; compute each position once, preserving exact times.
+  const poses = new Map(visible.map((p) => [p.id, sorted.map((time) => at(p.id, time))]))
   for (let i = 0; i < visible.length; i++)
     for (let j = i + 1; j < visible.length; j++) {
       const a = visible[i]!,
         b = visible[j]!
       if (!seen.has(a.id) && !seen.has(b.id)) continue
       for (let k = 1; k < sorted.length; k++) {
-        const a0 = at(a.id, sorted[k - 1]!),
-          b0 = at(b.id, sorted[k - 1]!)
-        const a1 = at(a.id, sorted[k]!),
-          b1 = at(b.id, sorted[k]!)
+        const a0 = poses.get(a.id)![k - 1]!,
+          b0 = poses.get(b.id)![k - 1]!
+        const a1 = poses.get(a.id)![k]!,
+          b1 = poses.get(b.id)![k]!
         const r = a0.map((v, axis) => v - b0[axis]!)
         const d = a1.map((v, axis) => v - b1[axis]! - r[axis]!)
         const denominator = d.reduce((s, v) => s + v * v, 0)

@@ -4,6 +4,10 @@
 .dia-home a { text-underline-offset: 5px; }
 .dia-home button, .dia-home input, .dia-home textarea { font: inherit; }
 .dia-home button, .dia-home a { touch-action: manipulation; }
+.dia-home :is(button,a) { min-width:44px; }
+.dia-home-phone-entry { display:none; }
+.dia-home :is(p,blockquote,textarea) { overflow-wrap:anywhere; }
+.dia-home-conversation > * { min-width:0; }
 .dia-home button { cursor: pointer; }
 .dia-home button:disabled { cursor: wait; opacity: .55; }
 .dia-home-conversation { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(230px, 1fr); column-gap: 80px; }
@@ -42,6 +46,11 @@
 .dia-home-tool-list > section > :is(button, a) { border: 1px solid #888; border-radius: 3px; font-size: 13px; }
 .dia-home-tool-list .stage-entry-form { flex-basis: 100%; }
 .dia-home-footer { margin-top: 28px; padding-block: 20px; border-top: 1px solid #c0c0c0; color: #555; font-size: 12px; }
+.dia-home-tools > details > summary { min-height:44px; padding-block:12px; cursor:pointer; }
+.dia-brand-explanation { border-top:1px solid #c0c0c0; margin-top:20px; line-height:1.8; }
+.dia-brand-explanation :is(p,dl) { margin-block:16px; max-width:60em; }
+.dia-brand-explanation dl { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
+.dia-brand-explanation dt { font-weight:600; }
 .dia-demo-entry { max-width: 760px; }
 .dia-demo-entry h1 { font-size: 32px; line-height: 1.4; }
 .dia-demo-entry blockquote { margin-block: 28px; }
@@ -57,6 +66,8 @@
   .dia-home .dia-home-demo-label { margin-top: 14px; font-size: 11px; }
   .dia-home-example { margin-top: 20px; padding-top: 0; }
   .dia-home-example > p { margin-bottom: 6px; font-size: 12px; }
+  .dia-home-example .dia-home-phone-entry { display:flex; align-items:center; min-height:44px; padding:8px 12px; border:1px solid currentColor; }
+  .dia-home-example > :is(p,blockquote) { display:none; }
   .dia-home-example blockquote { font-size: 16px; line-height: 1.75; }
   .dia-home-composer { margin-top: 20px; padding: 16px; }
   .dia-home-input-actions { gap: 12px; }

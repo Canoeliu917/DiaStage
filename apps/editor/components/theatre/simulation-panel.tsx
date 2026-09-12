@@ -12,6 +12,7 @@ import {
   moveSimulationPerformer,
   readStageDocument,
 } from '@/lib/theatre/simulation-store'
+import { deriveVenueModel } from '@/lib/theatre/venue-model'
 import { openStudioPanel } from '../studio-navigation'
 import { useRehearsalPlayback } from './state'
 import './theatre.css'
@@ -22,6 +23,10 @@ export const useSimulationSelection = create<{
   input: 'select' | 'position' | 'route'
   points: Vec3[]
   showRoutes: boolean
+  showVenue: boolean
+  showScenery: boolean
+  showPerformers: boolean
+  showGhost: boolean
   drag: { id: string; position: Vec3 } | null
   error: string
 }>(() => ({
@@ -30,6 +35,10 @@ export const useSimulationSelection = create<{
   input: 'select',
   points: [],
   showRoutes: true,
+  showVenue: true,
+  showScenery: true,
+  showPerformers: true,
+  showGhost: true,
   drag: null,
   error: '',
 }))
@@ -89,6 +98,7 @@ function NumberField({
 
 export function VenuePanel() {
   const { document, error } = useStageDocument()
+  const nodes = useScene((state) => state.nodes)
   const [notice, setNotice] = useState('')
   const readOnly = useScene((s) => s.readOnly)
   const heightMeasured = useScene(
@@ -96,6 +106,16 @@ export function VenuePanel() {
       state.rootNodeIds.map((id) => state.nodes[id]).find((node) => node?.type === 'site')?.metadata
         .stageHeightMeasured !== false,
   )
+  const foundation = useMemo(() => {
+    try {
+      return {
+        model: document ? deriveVenueModel(document.venue, nodes, { heightMeasured }) : null,
+        error: '',
+      }
+    } catch (error) {
+      return { model: null, error: error instanceof Error ? error.message : '场地参考读取失败' }
+    }
+  }, [document, nodes, heightMeasured])
   const change = (fn: (d: StageSceneDocument) => void) => {
     try {
       editStageDocument(fn)
@@ -169,12 +189,56 @@ export function VenuePanel() {
               ))}
             </div>
             <p>中心线经过舞台中央；台口线位于舞台前沿。</p>
+            {foundation.model && (
+              <details>
+                <summary>场地参考 · 随正式舞台同步</summary>
+                <p>
+                  出入口参考 {foundation.model.entranceNodeIds.length} · 墙体{' '}
+                  {foundation.model.wallNodeIds.length} · 平台{' '}
+                  {foundation.model.platformNodeIds.length} · 舞台台阶{' '}
+                  {foundation.model.stairNodeIds.length} · 扫描参考{' '}
+                  {foundation.model.scanReferenceNodeIds.length}
+                </p>
+                <p>
+                  出入口参考来自门与门景片，请人工确认可通行。扫描用于对照，不会自动推断障碍或尺寸。
+                </p>
+              </details>
+            )}
             {!heightMeasured && <p>净高未测量，可继续置景；进入复台预览前必须补齐实测净高。</p>}
           </>
         )}
       </fieldset>
       {(error || notice) && <p role="alert">{error || notice}</p>}
+      {foundation.error && <p role="alert">{foundation.error}</p>}
     </section>
+  )
+}
+
+export function SceneLayersPanel() {
+  const ui = useSimulationSelection()
+  return (
+    <fieldset aria-label="场景图层">
+      <legend>场景图层</legend>
+      {(
+        [
+          ['showVenue', '场地'],
+          ['showScenery', '布景'],
+          ['showPerformers', '人物'],
+          ['showRoutes', '路线'],
+          ['showGhost', '方案预览'],
+        ] as const
+      ).map(([key, label]) => (
+        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 44 }}>
+          <input
+            type="checkbox"
+            checked={ui[key]}
+            onChange={(event) => useSimulationSelection.setState({ [key]: event.target.checked })}
+          />
+          {label}
+        </label>
+      ))}
+      <p>仅调整显示，不修改或删除舞台内容。原版本与新场地对比在“复台”中设置。</p>
+    </fieldset>
   )
 }
 

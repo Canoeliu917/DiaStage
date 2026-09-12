@@ -1,8 +1,10 @@
 'use client'
 
 import { useScene } from '@pascal-app/core'
-import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
+import { DIASTAGE_BRAND } from '@/lib/brand'
 import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
 import {
@@ -16,17 +18,26 @@ import {
 } from '@/lib/rehearsal-intelligence/feedback'
 import { SuggestionSchema } from '@/lib/rehearsal-intelligence/schema'
 import type { CreatedRemoteVoiceSession } from '@/lib/remote-voice/client'
+import type { VoiceState } from '../stage-entry/command-input'
 import { PhoneVoiceLink } from '../stage-entry/phone-voice-link'
+import { StagePlanReview } from '../stage-entry/plan-review'
+import { openStudioPanel } from '../studio-navigation'
 import { DiaRemoteBridge } from './dia-remote-bridge'
-import { useSimulationSelection } from './simulation-panel'
+import { SceneLayersPanel, useSimulationSelection } from './simulation-panel'
 import { useRehearsalPlayback } from './state'
 import './dia-conversation.css'
+
+const VoiceRecorder = dynamic(
+  () => import('../stage-entry/voice-recorder').then((m) => m.VoiceRecorder),
+  { ssr: false },
+)
 
 const MOVEMENT = {
   hold: '保持位置',
   approach: '靠近对方',
   withdraw: '拉开距离',
   'toward-zone': '走向舞台区域',
+  'stand-near-object': '站在布景旁',
 }
 const ZONES = {
   center: '中区',
@@ -36,6 +47,7 @@ const ZONES = {
   downstage: '台前',
 }
 const SHORTCUTS = [
+  '给我一张圆桌，两把椅子，台右一扇门',
   '帮我看看这一段',
   '给我两个排法',
   '这个人物还能怎么做',
@@ -131,7 +143,15 @@ export function RehearsalPartner({
   modelConfigured: boolean
 }) {
   const controller = useMemo(
-    () => new DiaConversation(sceneId, () => useSimulationSelection.getState().selectedId),
+    () =>
+      new DiaConversation(
+        sceneId,
+        () => useSimulationSelection.getState().selectedId,
+        (panel) => {
+          // Build stays in Dia; opening the sidebar would close it on tablets.
+          if (panel !== 'items') openStudioPanel(panel)
+        },
+      ),
     [sceneId],
   )
   const state = useStore(controller.store)
@@ -141,7 +161,23 @@ export function RehearsalPartner({
   const [consent, setConsent] = useState(false)
   const [privateNotice, setPrivateNotice] = useState('')
   const [session, setSession] = useState<CreatedRemoteVoiceSession | null>(null)
+  const [voice, setVoice] = useState(false)
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle')
+  const [voiceError, setVoiceError] = useState('')
+  const voiceBusy =
+    voice && ['requesting-permission', 'recording', 'transcribing'].includes(voiceState)
+  const build = controller.buildProposal()
   const proposal = controller.proposal()
+  const currentProposals = useRef<HTMLDivElement>(null)
+  const decision = useRef<HTMLElement>(null)
+  const interactionId = state.thread?.activeInteractionId
+  const diaStatus = state.thread?.status
+  useEffect(() => {
+    if (interactionId) currentProposals.current?.scrollIntoView({ block: 'start' })
+  }, [interactionId])
+  useEffect(() => {
+    if (diaStatus === 'waiting-human') decision.current?.scrollIntoView({ block: 'start' })
+  }, [diaStatus])
   const settled = ['applied', 'rejected'].includes(state.thread?.status ?? '')
   const stale = state.thread?.status === 'stale'
   const preview = async (id: string) => {
@@ -184,7 +220,7 @@ export function RehearsalPartner({
       <header className="dia-panel-header">
         <div>
           <h2>Dia</h2>
-          <p>你说戏，我看舞台。</p>
+          <p>{DIASTAGE_BRAND.invitation}</p>
         </div>
         <label>
           <span className="sr-only">对话信息密度</span>
@@ -207,10 +243,10 @@ export function RehearsalPartner({
       )}
       {state.ready && !state.synthetic && !modelConfigured && (
         <p className="dia-synthetic" role="note">
-          Dia 当前未连接模型服务，你仍可以使用手动排演。
+          当前可使用本机搭台和靠近布景的站位口令；开放式排演讨论尚未连接模型服务。
         </p>
       )}
-      <div className="dia-dialogue" role="log" aria-label="本场对话记录">
+      <div className="dia-dialogue" role="region" aria-label="本场对话记录">
         {!state.thread?.messages.length && (
           <div className="dia-welcome">
             <h3>你想试什么？</h3>
@@ -221,7 +257,23 @@ export function RehearsalPartner({
             </p>
           </div>
         )}
-        {state.thread?.messages.map((message) => (
+        {(state.thread?.messages.length ?? 0) > 6 && (
+          <details className="dia-history">
+            <summary>更早的对话（{state.thread!.messages.length - 6}）</summary>
+            {state.thread!.messages.slice(0, -6).map((message) => (
+              <article
+                className={`dia-message dia-message-${message.role}`}
+                key={message.messageId}
+              >
+                <strong>
+                  {message.role === 'user' ? '你' : message.role === 'dia' ? 'Dia' : '舞台记录'}
+                </strong>
+                <p>{message.content}</p>
+              </article>
+            ))}
+          </details>
+        )}
+        {state.thread?.messages.slice(-6).map((message) => (
           <article className={`dia-message dia-message-${message.role}`} key={message.messageId}>
             <strong>
               {message.role === 'user' ? '你' : message.role === 'dia' ? 'Dia' : '舞台记录'}
@@ -229,8 +281,34 @@ export function RehearsalPartner({
             <p>{message.content}</p>
           </article>
         ))}
-        {state.interaction && (
-          <div className="dia-proposals" role="group" aria-label="本轮方案">
+        {build && (
+          <section className="dia-proposals" aria-label="Dia 搭台建议">
+            <h3>{build.parentId ? '搭台修订' : '搭台建议'} · 本机规则</h3>
+            {settled ? (
+              <p>
+                {build.status === 'applied'
+                  ? '已采用，可撤销或继续调整。'
+                  : '已放下这个方向，正式舞台未改变。'}
+              </p>
+            ) : (
+              <StagePlanReview
+                key={build.id}
+                plan={build.plan}
+                context={build.context}
+                onChange={(plan) => controller.editBuild(plan)}
+                onPreview={(plan) => {
+                  useRehearsalPlayback.getState().stop()
+                  void controller.previewBuild(plan)
+                }}
+                onConfirm={(plan) => void controller.adoptBuild(plan)}
+                onBack={() => void controller.reject()}
+                busy={state.busy || stale || readOnly}
+              />
+            )}
+          </section>
+        )}
+        {state.interaction && !build && (
+          <div ref={currentProposals} className="dia-proposals" role="group" aria-label="本轮方案">
             {state.interaction.proposals.map((entry, index) => (
               <article
                 className="dia-proposal"
@@ -251,6 +329,8 @@ export function RehearsalPartner({
                       }
                       ：{MOVEMENT[suggestion.movement]}
                       {suggestion.zone ? ` · ${ZONES[suggestion.zone]}` : ''}
+                      {suggestion.movement === 'stand-near-object' &&
+                        ` · ${state.interaction!.inputContext.obstacles.find((object) => object.id === suggestion.targetObjectId)?.name ?? '请选择布景'} · 净距 ${suggestion.extent === 'small' ? '0.5' : '1'} 米`}
                     </li>
                   ))}
                 </ul>
@@ -264,6 +344,14 @@ export function RehearsalPartner({
                     <p key={alternative}>{alternative}</p>
                   ))}
                 </details>
+                <button
+                  type="button"
+                  aria-pressed={entry.proposalId === state.thread?.selectedProposalId}
+                  disabled={state.busy || stale || settled}
+                  onClick={() => controller.choose(entry.proposalId)}
+                >
+                  选这个
+                </button>
                 <button
                   type="button"
                   className="dia-primary"
@@ -287,8 +375,8 @@ export function RehearsalPartner({
             </button>
           </div>
         )}
-        {proposal && state.interaction && (
-          <section className="dia-decision" aria-label="预演与决定">
+        {proposal && state.interaction && !build && (
+          <section ref={decision} className="dia-decision" aria-label="预演与决定">
             <h3>你的决定</h3>
             <p>{proposal.title}</p>
             <details>
@@ -325,7 +413,7 @@ export function RehearsalPartner({
                       {current && (
                         <>
                           <label>
-                            移动方式
+                            行动方式
                             <select
                               value={current.movement}
                               onChange={(e) => {
@@ -340,6 +428,7 @@ export function RehearsalPartner({
                                           movement,
                                           zone: movement === 'toward-zone' ? 'center' : null,
                                           targetPerformerId: null,
+                                          targetObjectId: null,
                                         }
                                       : s,
                                   ),
@@ -410,8 +499,33 @@ export function RehearsalPartner({
                               </select>
                             </label>
                           )}
+                          {current.movement === 'stand-near-object' && (
+                            <label>
+                              靠近哪件布景
+                              <select
+                                value={current.targetObjectId ?? ''}
+                                onChange={(e) =>
+                                  controller.edit(
+                                    state.suggestions.map((s) =>
+                                      s.id === current.id
+                                        ? { ...s, targetObjectId: e.target.value || null }
+                                        : s,
+                                    ),
+                                    true,
+                                  )
+                                }
+                              >
+                                <option value="">选择布景</option>
+                                {state.interaction!.inputContext.obstacles.map((object) => (
+                                  <option value={object.id} key={object.id}>
+                                    {object.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
                           <label>
-                            幅度
+                            {current.movement === 'stand-near-object' ? '与布景净距' : '幅度'}
                             <select
                               value={current.extent}
                               onChange={(e) =>
@@ -430,32 +544,47 @@ export function RehearsalPartner({
                                 )
                               }
                             >
-                              <option value="small">小一些（最多0.6米）</option>
-                              <option value="medium">大一些（最多1.2米）</option>
+                              <option value="small">
+                                {current.movement === 'stand-near-object'
+                                  ? '0.5米'
+                                  : '小一些（最多0.6米）'}
+                              </option>
+                              <option value="medium">
+                                {current.movement === 'stand-near-object'
+                                  ? '1米'
+                                  : '大一些（最多1.2米）'}
+                              </option>
                             </select>
                           </label>
-                          <label>
-                            节奏
-                            <select
-                              value={current.pace}
-                              onChange={(e) =>
-                                controller.edit(
-                                  state.suggestions.map((s) =>
-                                    s.id === current.id
-                                      ? {
-                                          ...s,
-                                          pace: SuggestionSchema.shape.pace.parse(e.target.value),
-                                        }
-                                      : s,
-                                  ),
-                                  true,
-                                )
-                              }
-                            >
-                              <option value="slow">缓慢</option>
-                              <option value="natural">自然</option>
-                            </select>
-                          </label>
+                          {current.movement === 'stand-near-object' ? (
+                            <p>
+                              调整初始站位，保留朝向并清除该人物原有路线。按人物半径0.25米估算净距，
+                              选择距原位置最近的布景外侧；遇到边界或碰撞会提示你调整。
+                            </p>
+                          ) : (
+                            <label>
+                              节奏
+                              <select
+                                value={current.pace}
+                                onChange={(e) =>
+                                  controller.edit(
+                                    state.suggestions.map((s) =>
+                                      s.id === current.id
+                                        ? {
+                                            ...s,
+                                            pace: SuggestionSchema.shape.pace.parse(e.target.value),
+                                          }
+                                        : s,
+                                    ),
+                                    true,
+                                  )
+                                }
+                              >
+                                <option value="slow">缓慢</option>
+                                <option value="natural">自然</option>
+                              </select>
+                            </label>
+                          )}
                         </>
                       )}
                     </div>
@@ -511,7 +640,7 @@ export function RehearsalPartner({
             {professional && (
               <details>
                 <summary>专业分析与版本信息</summary>
-                <p>Confidence：{proposal.confidence}（模型自评，非正确率）</p>
+                <p>参考置信度：{proposal.confidence}（非正确率）</p>
                 <p>
                   模型：{proposal.modelVersion}
                   <br />
@@ -588,9 +717,25 @@ export function RehearsalPartner({
             发送时只提供当前文字、人物与路线、布景边界和最近相关对话。正式舞台以你的手动操作为准。
           </p>
         </details>
+        {professional && <SceneLayersPanel />}
+        <nav className="dia-actions" aria-label="舞台版本与复台">
+          <button type="button" onClick={() => openStudioPanel('versions')}>
+            查看与保留版本
+          </button>
+          <button type="button" onClick={() => openStudioPanel('remount')}>
+            把这一版带去复台
+          </button>
+        </nav>
+        {state.synthetic && (
+          <nav className="dia-demo-actions" aria-label="示例与自己的排演">
+            <a href="/demo">重新开始示例</a>
+            <a href="/">返回首页</a>
+            <a href="/?entry=manual#stage-tools">开始自己的项目</a>
+          </nav>
+        )}
         <PhoneVoiceLink
           sceneId={sceneId}
-          sceneLabel="Dia 排演对话"
+          sceneLabel="Dia · 搭台到复台"
           storageKey={`dia:${sceneId}`}
           canLoad={false}
           onSessionChange={setSession}
@@ -674,7 +819,7 @@ export function RehearsalPartner({
         className="dia-composer"
         onSubmit={(e) => {
           e.preventDefault()
-          void controller.send()
+          if (!voiceBusy) void controller.send()
         }}
       >
         <p role="status" aria-live="polite" data-dia-state={state.thread?.status ?? 'idle'}>
@@ -709,7 +854,7 @@ export function RehearsalPartner({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault()
-                void controller.send()
+                if (!voiceBusy) void controller.send()
               }
             }}
           />
@@ -718,9 +863,17 @@ export function RehearsalPartner({
           <button
             className="dia-primary"
             type="submit"
-            disabled={state.busy || !state.ready || !state.draft.trim()}
+            disabled={state.busy || voiceBusy || !state.ready || !state.draft.trim()}
           >
             发送
+          </button>
+          <button
+            type="button"
+            disabled={state.busy}
+            aria-expanded={voice}
+            onClick={() => setVoice(!voice)}
+          >
+            {voice ? '收起录音' : '说一句'}
           </button>
           {state.busy && (
             <button type="button" onClick={() => controller.cancel()}>
@@ -728,6 +881,21 @@ export function RehearsalPartner({
             </button>
           )}
         </div>
+        {voice && (
+          <div>
+            <VoiceRecorder
+              state={voiceState}
+              setState={setVoiceState}
+              onError={setVoiceError}
+              onTranscript={(text) => {
+                controller.patch({ draft: text.slice(0, 2000) })
+                if (text.length > 2000) setVoiceError('已保留前 2000 字，请校对并精简后发送。')
+              }}
+            />
+            <p>转写填入输入框，请校对后再发送给 Dia。</p>
+            {voiceError && <p role="alert">{voiceError}</p>}
+          </div>
+        )}
       </form>
       <DiaRemoteBridge session={session} controller={controller} />
     </section>

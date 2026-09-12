@@ -9,6 +9,7 @@ import {
   observeRehearsalFeedback,
   useProposalGhost,
 } from './authority'
+import { conversationContext } from './conversation'
 import { DiaConversation } from './conversation-controller'
 import * as productStorage from './conversation-storage'
 import { readConversation, readProductEvents, saveConversation } from './conversation-storage'
@@ -258,4 +259,109 @@ test('legacy feedback without a Thread restores a completed decision, ignoring f
   expect(previous.decision).toBe('reject')
   expect(previous.proposalId).toBe(rejected.proposalId)
   expect(previous.sceneVersion.length).toBeGreaterThan(0)
+})
+
+test('immediate refresh restores unsaved input without overwriting the durable thread', async () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage')
+  const values = new Map<string, string>()
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+      removeItem: (key: string) => values.delete(key),
+    },
+  })
+  try {
+    const { controller, sceneId } = await setup()
+    const before = (await readConversation(sceneId))!
+    controller.patch({ draft: '最后一笔立即刷新', script: '合成选段', note: '保留原因' })
+    controller.dispose()
+    expect((await readConversation(sceneId))!.draft).toBe(before.draft)
+    const reopened = new DiaConversation(sceneId, () => null)
+    disposers.push(() => reopened.dispose())
+    await reopened.load()
+    expect(reopened.store.getState()).toMatchObject({
+      draft: '最后一笔立即刷新',
+      script: '合成选段',
+      note: '保留原因',
+    })
+    expect(reopened.store.getState().thread!.threadId).toBe(before.thread.threadId)
+    expect(values.size).toBe(0)
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'sessionStorage', descriptor)
+    else Reflect.deleteProperty(globalThis, 'sessionStorage')
+  }
+})
+
+test('50, 100 and 200 maximum-sized mixed-language messages restore with bounded model history', async () => {
+  const texts = [
+    '中'.repeat(2000),
+    'Word'.repeat(500),
+    'A中🙂'.repeat(500),
+    '对白\n行动\n'.repeat(285),
+  ]
+  for (const size of [50, 100, 200]) {
+    const { controller, sceneId } = await setup()
+    const saved = (await readConversation(sceneId))!
+    saved.thread.messages = Array.from({ length: size }, (_, i) => ({
+      messageId: crypto.randomUUID(),
+      role: i % 2 ? 'dia' : 'user',
+      content: texts[i % 4]!.slice(0, 2000).trim(),
+      createdAt: new Date().toISOString(),
+      sceneVersion: saved.thread.sceneVersion,
+    }))
+    await saveConversation(saved)
+    controller.dispose()
+    const reopened = new DiaConversation(sceneId, () => null)
+    disposers.push(() => reopened.dispose())
+    await reopened.load()
+    const thread = reopened.store.getState().thread!
+    expect(thread.messages).toEqual(saved.thread.messages)
+    const context = conversationContext(thread, null, null, {
+      ...thread.messages.at(-1)!,
+      role: 'user',
+    })
+    expect(context.recentMessages.length).toBeLessThanOrEqual(8)
+    expect(
+      context.recentMessages.reduce((sum, m) => sum + m.content.length, 0),
+    ).toBeLessThanOrEqual(6000)
+  }
+})
+
+test('thread quota, feedback and product event failures cannot corrupt or disable formal scene editing', async () => {
+  const { controller } = await setup()
+  const before = useScene.getState().nodes
+  spyOn(productStorage, 'saveConversation').mockRejectedValueOnce(
+    new DOMException('本机空间不足', 'QuotaExceededError'),
+  )
+  await controller.send('合成失败：没有空间')
+  expect(controller.store.getState().thread!.status).toBe('failed')
+  expect(useScene.getState().nodes).toBe(before)
+  spyOn(productStorage, 'saveProductEvent').mockRejectedValueOnce(new Error('产品事件不可用'))
+  await controller.send('事件失败，仍可继续')
+  expect(controller.store.getState().interaction).not.toBeNull()
+  spyOn(feedbackStorage, 'saveFeedback').mockRejectedValueOnce(
+    new DOMException('事务终止', 'AbortError'),
+  )
+  await controller.reject()
+  expect(useScene.getState().nodes).toBe(before)
+  const actor = readStageDocument()!.rehearsalSimulation.performers[0]!
+  moveSimulationPerformer(actor.id, [-1, 0, 0])
+  expect(readStageDocument()!.rehearsalSimulation.performers[0]!.position).toEqual([-1, 0, 0])
+})
+
+test('reopening after an external stage edit marks old proposals stale without rewriting the stage', async () => {
+  const { controller, sceneId } = await setup()
+  await controller.send('给我两个排法')
+  controller.dispose()
+  const actor = readStageDocument()!.rehearsalSimulation.performers[0]!
+  moveSimulationPerformer(actor.id, [-1.1, 0, 0])
+  const nodes = useScene.getState().nodes
+  const reopened = new DiaConversation(sceneId, () => null)
+  disposers.push(() => reopened.dispose())
+  await reopened.load()
+  expect(reopened.store.getState().thread!.status).toBe('stale')
+  expect(useScene.getState().nodes).toBe(nodes)
+  expect(useProposalGhost.getState().proposalId).toBeNull()
 })

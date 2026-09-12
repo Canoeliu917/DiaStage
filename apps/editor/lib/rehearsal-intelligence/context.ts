@@ -3,12 +3,13 @@ import { getObjectCorners } from '@pascal-app/core/remount'
 import { obstacleSnapshot } from '../remount-scene'
 import type { Vec3 } from '../theatre/schema'
 import type { StageSceneDocument } from '../theatre/simulation'
+import { PerformerMarkerSchema } from '../theatre/simulation'
 import { sceneFactsVersion } from './conversation'
 import { ACTIVE_DIMENSIONS } from './dimensions'
 import { validateContext } from './proposal-validator'
-import type { RehearsalContext } from './schema'
+import { type RehearsalContext, RehearsalContextSchema } from './schema'
 
-export function buildRehearsalContext(
+export function buildDiaContext(
   sceneId: string,
   document: StageSceneDocument,
   nodes: Record<string, AnyNode>,
@@ -57,5 +58,11 @@ export function buildRehearsalContext(
     ...(input.conversation ? { conversation: input.conversation } : {}),
     ...(input.rightsStatus ? { rightsStatus: input.rightsStatus } : {}),
   }
-  return validateContext({ ...context, sceneVersion: sceneFactsVersion(context) })
+  return RehearsalContextSchema.extend({ performers: PerformerMarkerSchema.array().max(24) }).parse(
+    { ...context, sceneVersion: sceneFactsVersion(context) },
+  )
+}
+
+export function buildRehearsalContext(...args: Parameters<typeof buildDiaContext>) {
+  return validateContext(buildDiaContext(...args))
 }

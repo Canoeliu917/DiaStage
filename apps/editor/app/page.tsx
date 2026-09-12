@@ -4,6 +4,7 @@ import { ManualStageEntry } from '@/components/stage-entry/manual-entry'
 import { ScriptStageEntry } from '@/components/stage-entry/script-entry'
 import { VoiceStageEntry } from '@/components/stage-entry/voice-entry'
 import { StudioWordmark } from '@/components/studio-wordmark'
+import { DIASTAGE_BRAND } from '@/lib/brand'
 import '@/components/theatre/theatre.css'
 import '@/components/stage-entry/dia-home.css'
 
@@ -27,13 +28,6 @@ export default async function Home({
         <section className="dia-home-tools" id="stage-tools" aria-labelledby="stage-tools-heading">
           <h2 id="stage-tools-heading">从自己的舞台开始</h2>
           <div className="dia-home-tool-list">
-            <section>
-              <div>
-                <h3>语音构台</h3>
-                <p>说出空间，先看方案。</p>
-              </div>
-              <VoiceStageEntry />
-            </section>
             <section>
               <div>
                 <h3>手动置景</h3>
@@ -62,6 +56,28 @@ export default async function Home({
               <Link href="/scenes?workspace=remount">选择已有剧目</Link>
             </section>
           </div>
+          <details>
+            <summary>旧版搭台入口</summary>
+            <p>已有流程仍可打开。新项目请在舞台中统一告诉 Dia。</p>
+            <VoiceStageEntry />
+          </details>
+          <details className="dia-brand-explanation">
+            <summary>认识 DiaStage 与 Dia</summary>
+            <p>{DIASTAGE_BRAND.product}</p>
+            <p>{DIASTAGE_BRAND.companion}</p>
+            <dl>
+              {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
+                <div key={name}>
+                  <dt>{name}</dt>
+                  <dd>{description}</dd>
+                </div>
+              ))}
+            </dl>
+            <p>
+              这四个词解释同一个 Dia
+              的能力。当前记录保存在本机浏览器，复杂方案仍需模型服务；它们不是任意生成或永久记忆的承诺。
+            </p>
+          </details>
         </section>
         <footer className="dia-home-footer">AI 提议。舞台先演。人来决定。</footer>
       </div>

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
+import { DIASTAGE_BRAND } from '@/lib/brand'
 import { prepareSyntheticDemo } from '@/lib/rehearsal-intelligence/synthetic-demo-intention'
 import type { VoiceState } from './command-input'
 
@@ -38,13 +39,14 @@ export function DiaHomeEntry() {
   return (
     <section className="dia-home-conversation" aria-labelledby="dia-home-heading">
       <div className="dia-home-introduction">
-        <h1 id="dia-home-heading">
-          Dia<span>今天想排什么？</span>
-        </h1>
-        <p>说说你的想法。一起看人物的位置，试几个方向，再由你决定。</p>
+        <h1 id="dia-home-heading">{DIASTAGE_BRAND.headline}</h1>
+        <p>{DIASTAGE_BRAND.tagline}</p>
         <p className="dia-home-demo-label">演示数据 · 非真实模型输出</p>
       </div>
       <div className="dia-home-example">
+        <a className="dia-home-phone-entry" href="/remote-voice">
+          手机 Dia · 连接电脑舞台
+        </a>
         <p>从一段原创告别开始</p>
         <blockquote>
           两个人在告别。

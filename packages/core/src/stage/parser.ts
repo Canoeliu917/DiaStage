@@ -117,7 +117,12 @@ const defaults: { aliases: string[]; kind: StageItemKind; dimensions: StageDimen
     dimensions: { width: 2, height: 2.4, depth: 0.15 },
   },
   {
-    aliases: ['圆桌', '桌子', '桌'],
+    aliases: ['圆桌'],
+    kind: 'round-table',
+    dimensions: { width: 1.2, height: 0.75, depth: 1.2 },
+  },
+  {
+    aliases: ['长方桌', '长桌', '桌子', '桌'],
     kind: 'table',
     dimensions: { width: 1.2, height: 0.75, depth: 1.2 },
   },
@@ -307,7 +312,10 @@ export function parseStageText(
           (item.id === selected || item.proposal?.existingNodeId === selected) &&
           (!noun || item.name === noun || item.kind === kind),
       )
-    else if (matches.length === 0 && kind) matches = list.filter((item) => item.kind === kind)
+    else if (matches.length === 0 && kind)
+      matches = list.filter(
+        (item) => item.kind === kind || (kind === 'table' && item.kind === 'round-table'),
+      )
     const choice = answer(id)
     if (choice) {
       const exact = (matches.length ? matches : list).filter(
@@ -414,6 +422,56 @@ export function parseStageText(
       .replace(/^将/, '把')
       .replace(/^在舞台中区/, '舞台中区')
       .replace(/(平台)前方$/, '$1台前')
+    const casualMove = clause.match(
+      /^(?:把)?(.+?)(?:再)?(?:往|向)?(台左|台右|台前|台后)(?:移|挪)?(?:一|一点|一些|一点点)$/,
+    )
+    if (casualMove) {
+      clause = `把${casualMove[1]}向${casualMove[2]}移30厘米`
+      plan.assumptions.push({
+        id: `nudge-${index}`,
+        message: '“一点”先预览移动 30 厘米，可在采用前修改。',
+      })
+    }
+    const naturalCreate = clause.match(
+      new RegExp(`^(?:给我|我要|添加|增加|放入)?(${numberPattern})[张把扇块个](.+)$`),
+    )
+    if (naturalCreate) {
+      const count = parseStageNumber(naturalCreate[1]!)
+      if (
+        count === null ||
+        !Number.isInteger(count) ||
+        count < 1 ||
+        count > 20 ||
+        plan.items.length + count > 200
+      ) {
+        ask(`quantity-${index}`, '每次请添加 1 至 20 件布景。')
+        continue
+      }
+      const table = candidates().filter((item) => ['table', 'round-table'].includes(item.kind))
+      for (let n = 0; n < count; n++) {
+        const created = create(naturalCreate[2]!)
+        if (!created) return null
+        if (count > 1) created.displayName += String(n + 1)
+        if (created.kind === 'chair' && count === 2 && table.length === 1) {
+          relation(created, table[0]!, n === 0 ? '台左' : '台右', 0.5)
+        } else if (count > 1) {
+          created.transform.position.x =
+            (n - (count - 1) / 2) * (created.dimensionsMeters.width + 0.3)
+        }
+      }
+      plan.assumptions.push({
+        id: `layout-${index}`,
+        message:
+          table.length === 1 && count === 2 && naturalCreate[2]!.includes('椅')
+            ? '两把椅子暂放在桌子两侧，各留 0.5 米；可修改后再采用。'
+            : '未指定台位的布景暂放中区，多件横向排开并留 0.3 米；冲突不会自动压缩。',
+      })
+      continue
+    }
+    clause = clause.replace(
+      /^(台左|台右|台前|台后)(?:有|放)?([一二两三四五六七八九\d]+[扇把张个块].+)$/,
+      '$1增加$2',
+    )
     const atSide = clause.match(/^(?:在)?(台左|台右|台前|台后)(?:增加|添加|放置)(.+)$/)
     if (atSide) {
       const created = create(atSide[2]!)

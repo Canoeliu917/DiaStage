@@ -417,3 +417,55 @@ test('ambiguous references fail explicitly and current requests cannot be replac
     conversationContext(thread, interaction, null, message('AA不要动')).heldPerformerIds,
   ).toEqual([])
 })
+
+test('2, 6, 12 and 24 performers with 64-point paths and 1 to 3 maximal proposals preserve spatial facts', () => {
+  for (const count of [2, 6, 12, 24]) {
+    const { document, context, content } = setup()
+    document.rehearsalSimulation.performers = Array.from({ length: count }, (_, i) => ({
+      id: `person-${i}`,
+      name: `合成人物 ${i} ${'LongName'.repeat(8)}`,
+      color: '#888888',
+      position: [-2.5 + (i % 6), 0, -1.5 + Math.floor(i / 6)],
+      facing: 0,
+      visible: true,
+    }))
+    document.rehearsalSimulation.paths = document.rehearsalSimulation.performers.map((p) => ({
+      id: `route-${p.id}`,
+      performerId: p.id,
+      points: Array.from({ length: 64 }, (_, i) => [
+        p.position[0] + Math.sin(i / 10) * 0.1,
+        0,
+        p.position[2] + i * 0.002,
+      ]),
+      durationSeconds: 20,
+      visible: true,
+    }))
+    const input = buildRehearsalContext(context.sceneId, document, {}, context)
+    expect(input.performers).toHaveLength(count)
+    expect(input.paths.every((p) => p.points.length === 64)).toBe(true)
+    const before = structuredClone(document)
+    for (const proposalCount of [1, 2, 3]) {
+      const proposals = Array.from({ length: proposalCount }, (_, i) => ({
+        ...content,
+        title: `合成方向 ${i}`,
+        suggestions: input.performers.slice(0, 12).map((p) => ({
+          ...content.suggestions[1]!,
+          id: `hold-${p.id}`,
+          performerId: p.id,
+          movement: 'hold' as const,
+        })),
+      }))
+      const interaction = createInteraction(
+        input,
+        { dramaticState: [], proposals },
+        'synthetic-stress',
+      )
+      expect(interaction.proposals).toHaveLength(proposalCount)
+      const compiled = compileProposal(input, interaction.proposals[0]!)
+      expect(compiled.performers.map((p) => p.position)).toEqual(
+        input.performers.map((p) => p.position),
+      )
+      expect(document).toEqual(before)
+    }
+  }
+})

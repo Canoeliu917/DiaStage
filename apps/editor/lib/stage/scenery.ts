@@ -13,12 +13,15 @@ import {
   StageCommandSchema,
   type StageDimensions,
   StageDimensionsSchema,
+  type StageItemKind,
 } from '@pascal-app/core/stage'
 import { THEATRE_CATALOG_ITEMS } from '@pascal-app/editor'
 
 type AddScenery = Extract<StageCommand, { type: 'AddScenery' }>
 type Vec3 = [number, number, number]
 type Box = [width: number, height: number, depth: number, x: number, y: number, z: number]
+export type SceneryProxyPart = { shape: 'box' | 'cylinder'; size: Vec3; position: Vec3 }
+export const SCENERY_ROUND_SEGMENTS = 24
 
 const ASSET_KINDS: Record<string, AddScenery['kind']> = {
   'dining-table-mo9ms5yh': 'table',
@@ -50,7 +53,7 @@ export const SCENERY_LIBRARY = THEATRE_CATALOG_ITEMS.flatMap((asset) => {
   return kind ? [{ kind, asset }] : []
 })
 
-function proxyBoxes(kind: AddScenery['kind']): Box[] {
+function proxyBoxes(kind: StageItemKind, stepCount: number): Box[] {
   switch (kind) {
     case 'door-flat':
       return [
@@ -90,6 +93,15 @@ function proxyBoxes(kind: AddScenery['kind']): Box[] {
       ])
     case 'table':
       return [[1, 0.1, 1, 0, 0.9, 0], ...legs(0.9)]
+    case 'stairs':
+      return Array.from({ length: stepCount }, (_, i) => [
+        1,
+        (i + 1) / stepCount,
+        1 / stepCount,
+        0,
+        0,
+        (i + 0.5) / stepCount - 0.5,
+      ])
     case 'chair':
       return [[1, 0.1, 1, 0, 0.4, 0], [1, 0.5, 0.14, 0, 0.5, 0.43], ...legs(0.4)]
     case 'sofa':
@@ -120,36 +132,95 @@ function proxyBoxes(kind: AddScenery['kind']): Box[] {
   }
 }
 
+export function sceneryProxyParts(
+  kind: StageItemKind,
+  dimensions: StageDimensions,
+  stepCount = 3,
+): SceneryProxyPart[] {
+  const { width, height, depth } = StageDimensionsSchema.parse(dimensions)
+  if (!Number.isInteger(stepCount) || stepCount < 1 || stepCount > 200)
+    throw new Error('台阶级数必须为 1 至 200 的整数。')
+  const boxes: Box[] =
+    kind === 'round-table'
+      ? [
+          [1, 0.1, 1, 0, 0.9, 0],
+          [0.12, 0.82, 0.12, 0, 0.08, 0],
+          [0.5, 0.08, 0.5, 0, 0, 0],
+        ]
+      : proxyBoxes(kind, stepCount)
+  return boxes.map(([w, h, d, x, y, z]) => ({
+    shape: kind === 'round-table' ? 'cylinder' : 'box',
+    size: [w * width, h * height, d * depth],
+    position: [x * width, (y + h / 2) * height, z * depth],
+  }))
+}
+
 function legs(height: number): Box[] {
   return [-0.455, 0.455].flatMap((x) =>
     [-0.455, 0.455].map((z): Box => [0.09, height, 0.09, x, 0, z]),
   )
 }
 
+function cylinderTopology(width: number, height: number, depth: number): BlockTopology {
+  const n = SCENERY_ROUND_SEGMENTS
+  const ring = (level: number) => Array.from({ length: n }, (_, i) => `v${level * n + i}`)
+  const bottom = ring(0),
+    top = ring(1)
+  return {
+    vertices: [0, 1].flatMap((level) =>
+      ring(level).map((id, i) => ({
+        id,
+        position: [
+          (Math.cos((i * Math.PI * 2) / n) * width) / 2,
+          level * height,
+          (Math.sin((i * Math.PI * 2) / n) * depth) / 2,
+        ] as Vec3,
+      })),
+    ),
+    edges: bottom.flatMap((id, i) => [
+      { id: `b${i}`, vertexIds: [id, bottom[(i + 1) % n]!] as [string, string] },
+      { id: `t${i}`, vertexIds: [top[i]!, top[(i + 1) % n]!] as [string, string] },
+      { id: `s${i}`, vertexIds: [id, top[i]!] as [string, string] },
+    ]),
+    faces: [
+      { id: 'bottom', vertexIds: bottom, materialSlot: 'body' },
+      { id: 'top', vertexIds: [...top].reverse(), materialSlot: 'body' },
+      ...bottom.map((id, i) => ({
+        id: `side${i}`,
+        vertexIds: [id, top[i]!, top[(i + 1) % n]!, bottom[(i + 1) % n]!],
+        materialSlot: 'body',
+      })),
+    ],
+  }
+}
+
 function proxyTopology(kind: AddScenery['kind'], dimensions: StageDimensions): BlockTopology {
   const topology: BlockTopology = { vertices: [], edges: [], faces: [] }
-  const { width, height, depth } = dimensions
-  proxyBoxes(kind).forEach(([w, h, d, x, y, z], i) => {
-    const box = createBoxBlockTopology(w * width, h * height, d * depth)
+  sceneryProxyParts(kind, dimensions).forEach(({ shape, size, position }, i) => {
+    const part = shape === 'cylinder' ? cylinderTopology(...size) : createBoxBlockTopology(...size)
     const id = (value: string) => `part-${i}:${value}`
     topology.vertices.push(
-      ...box.vertices.map((vertex) => ({
+      ...part.vertices.map((vertex) => ({
         id: id(vertex.id),
         position: [
-          vertex.position[0] + x * width,
-          vertex.position[1] + y * height,
-          vertex.position[2] + z * depth,
+          vertex.position[0] + position[0],
+          vertex.position[1] - size[1] / 2 + position[1],
+          vertex.position[2] + position[2],
         ] as Vec3,
       })),
     )
     topology.edges.push(
-      ...box.edges.map((edge) => ({
+      ...part.edges.map((edge) => ({
         id: id(edge.id),
         vertexIds: [id(edge.vertexIds[0]), id(edge.vertexIds[1])] as [string, string],
       })),
     )
     topology.faces.push(
-      ...box.faces.map((face) => ({ ...face, id: id(face.id), vertexIds: face.vertexIds.map(id) })),
+      ...part.faces.map((face) => ({
+        ...face,
+        id: id(face.id),
+        vertexIds: face.vertexIds.map(id),
+      })),
     )
   })
   return topology

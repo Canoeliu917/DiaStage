@@ -184,6 +184,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     './camera-studio/runtime': ['CameraStudioRuntime'],
     './camera-studio/persistence': ['CameraPersistence'],
     './theatre/versions-panel': ['VersionViewSync'],
+    './theatre/scene-visibility': ['SceneLayersRuntime'],
     './remount-preview-system': ['RemountPreviewSystem'],
     './stage-overview-panel': ['StageOverviewPanel'],
     './studio-navigation': ['StudioNavigation'],

@@ -1,12 +1,15 @@
 import localFont from 'next/font/local'
+import { DIASTAGE_BRAND } from '@/lib/brand'
 import { DevDiagnostics } from './dev-diagnostics'
 import './globals.css'
 
 export const metadata = {
   title: '咫台 DiaStage: Theatre Rehearsal & Stage Previs',
-  description: '咫台 — 戏剧排演与舞台复现。置景、人物走位与行动排演、跨场地复台。',
+  description: DIASTAGE_BRAND.product,
   icons: { icon: '/diastage-mark.svg' },
 }
+
+export const viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover' }
 
 const sourceHanSans = localFont({
   src: './fonts/source-han-sans/SourceHanSansSC-VF.ttf.woff2',

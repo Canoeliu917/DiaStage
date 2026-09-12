@@ -1,3 +1,4 @@
+import { discussionDirection } from './dia-backbone'
 import {
   type ConversationContext,
   ConversationContextSchema,
@@ -100,6 +101,7 @@ export function proposalActionSignature(proposal: Pick<RehearsalProposal, 'sugge
               suggestion.zone,
               suggestion.extent,
               suggestion.pace,
+              ...(suggestion.targetObjectId ? [suggestion.targetObjectId] : []),
             ],
       ),
   )
@@ -154,7 +156,12 @@ export function conversationContext(
     return '一二三'.indexOf(value) + 1 || Number(value)
   })
   if (new Set(ordinals).size > 1) throw new Error('请明确本轮要修改哪一个方案')
-  if (ordinals.length) {
+  if (
+    ordinals.length &&
+    !(
+      !interaction && discussionDirection(userMessage.content, thread.messages, thread.sceneVersion)
+    )
+  ) {
     const selected = proposals[ordinals[0]! - 1]
     if (!selected) throw new Error('上一轮没有这个方案，请重新选择')
     selectedProposalId = selected.proposalId

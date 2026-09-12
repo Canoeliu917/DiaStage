@@ -29,6 +29,7 @@ const sceneryWords: Partial<Record<StageItemKind, RegExp>> = {
   screen: /屏风/,
   curtain: /幕布|帷幕|侧幕|天幕/,
   table: /圆桌|餐桌|桌子|桌/,
+  'round-table': /圆桌/,
   chair: /椅子|餐椅|椅/,
   sofa: /沙发/,
   counter: /柜台/,

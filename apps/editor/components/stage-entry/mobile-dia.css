@@ -5,7 +5,7 @@
   color: var(--dia-ink);
   background: #f2f2ed;
   display: grid;
-  gap: 20px;
+  gap: 12px;
   min-width: 0;
 }
 .mobile-dia h2 {
@@ -28,6 +28,7 @@
 .mobile-assistant-tools button,
 .mobile-assistant-tools summary {
   min-height: 44px;
+  min-width: 44px;
 }
 .remote-voice-card .mobile-dia button {
   border: 1px solid var(--dia-line);
@@ -108,6 +109,10 @@
   margin: 0;
   display: grid;
   gap: 18px;
+  max-height: 45dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  white-space: pre-wrap;
 }
 .mobile-dia__messages li > span {
   display: block;
@@ -140,7 +145,8 @@
 }
 .remote-voice-card .mobile-dia__composer textarea {
   width: 100%;
-  min-height: 112px;
+  min-height: 88px;
+  max-height: 30dvh;
   box-sizing: border-box;
   resize: vertical;
   padding: 12px;
@@ -164,6 +170,29 @@
 .mobile-dia__suggestions button {
   font-size: 12px;
   color: var(--dia-muted);
+}
+.mobile-dia__suggestions { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+.mobile-dia__suggestions button { flex: none; }
+.mobile-dia__current { display: grid; gap: 8px; }
+.mobile-dia__current p { max-height: 3.4em; overflow: auto; }
+.mobile-dia__pending blockquote { max-height: 6em; overflow: auto; }
+.mobile-dia :is(details,section,article,div) { min-width: 0; }
+.mobile-dia summary { display: flex; align-items: center; cursor: pointer; }
+.mobile-dia__actions { row-gap: 12px; }
+.mobile-dia__proposals .mobile-dia__actions button:last-child { margin-left: 8px; }
+.remote-voice-page { gap: 16px; padding-top: max(16px,env(safe-area-inset-top)); }
+.remote-voice-page .remote-voice-card { padding: 16px; gap: 12px; overflow-wrap: anywhere; }
+.remote-voice-page .remote-voice-card > header { flex-direction: row; align-items: center; }
+.remote-voice-page .remote-voice-card > header > div { min-width: 0; }
+.remote-voice-page .remote-voice-card > header button { width: auto; flex: none; min-width: 44px; }
+.remote-voice-page .mobile-dia__connection { font-size: 13px; }
+.remote-voice-page .mobile-dia__synthetic { padding: 6px 8px; font-size: 13px; }
+.remote-voice-page .remote-voice-card .mobile-dia__state p { font-size: 14px; }
+.remote-voice-page .mobile-dia__state { padding-block: 8px; }
+.remote-voice-page .mobile-dia__composer { scroll-margin-block: 16px; }
+@media(max-height: 520px) {
+  .remote-voice-page { padding-top: 8px; }
+  .remote-voice-page .mobile-dia__composer textarea { min-height: 72px; }
 }
 .mobile-dia__voice {
   display: grid;

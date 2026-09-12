@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { RehearsalThreadSchema } from './conversation'
+import { DiaBuildProposalSchema } from './dia-backbone'
 import { openRehearsalLog } from './feedback'
 import { SuggestionSchema } from './schema'
 
@@ -13,8 +14,17 @@ export const StoredConversationSchema = z.strictObject({
   suggestions: z.array(SuggestionSchema).max(12),
   editing: z.boolean(),
   note: z.string().max(1000),
+  builds: z.array(DiaBuildProposalSchema).max(200).default([]),
+  activeBuildId: z.string().uuid().nullable().default(null),
 })
 export type StoredConversation = z.infer<typeof StoredConversationSchema>
+
+export const ConversationDraftSchema = StoredConversationSchema.pick({
+  draft: true,
+  script: true,
+  directorIntention: true,
+  note: true,
+}).strip()
 
 export const ProductEventSchema = z.strictObject({
   eventId: z.string().min(1),

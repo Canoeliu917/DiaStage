@@ -66,7 +66,7 @@ export function bindRehearsalScene(id: string, check: () => Promise<void>) {
   }
 }
 
-async function checkCurrentScene(id: string) {
+export async function checkCurrentScene(id: string) {
   const session = activeScene
   if (!session || session.id !== id) throw new Error('当前场景已变化，请重新生成建议')
   await session.check()

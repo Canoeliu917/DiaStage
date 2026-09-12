@@ -45,6 +45,8 @@ if (!process.env.REMOUNT_PREVIEW_RUNTIME_TEST) {
     plan: { placements: [], paths: [], conflicts: [] },
     sourceVenue: venue,
     targetVenue: venue,
+    sourceReferences: [],
+    comparisonMode: 'overlay',
   }
   let previewCurrent = true
   const hook =
@@ -110,6 +112,23 @@ if (!process.env.REMOUNT_PREVIEW_RUNTIME_TEST) {
   assert.equal(wire.layers.mask, 2)
   assert.equal(wire.renderOrder, 1000)
   assert.equal(wire.geometry.getAttribute('position').count, 24)
+  const names = (element: ComponentElement): string[] =>
+    (element.props.children as unknown[])
+      .flat(2)
+      .flatMap((child) =>
+        child && typeof child === 'object' && 'props' in child
+          ? [String((child as ComponentElement).props.name ?? '')]
+          : [],
+      )
+  assert(names(ghosts).includes('remount-source-venue'))
+  assert(names(ghosts).includes('remount-source-paths'))
+  assert(names(ghosts).includes('remount-target-paths'))
+  const sourceOnly = outer.type({ ...outer.props, comparisonMode: 'source' })
+  assert(names(sourceOnly).includes('remount-source-boxes'))
+  assert(!names(sourceOnly).includes('remount-target-boxes'))
+  const targetOnly = outer.type({ ...outer.props, comparisonMode: 'target' })
+  assert(!names(targetOnly).includes('remount-source-boxes'))
+  assert(names(targetOnly).includes('remount-target-boxes'))
   const source = new Group()
   const traverse = source.traverseVisible.bind(source)
   let walks = 0

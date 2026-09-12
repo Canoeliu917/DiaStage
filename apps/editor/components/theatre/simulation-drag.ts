@@ -107,6 +107,14 @@ export function useSimulationDrag(enabled: boolean) {
     )
     window.addEventListener('pointercancel', finish, options)
     window.addEventListener('blur', finish, options)
+    window.addEventListener('scroll', finish, { ...options, capture: true })
+    window.document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (window.document.hidden) finish()
+      },
+      options,
+    )
     window.addEventListener(
       'keydown',
       (e) => {
@@ -120,7 +128,7 @@ export function useSimulationDrag(enabled: boolean) {
       (e) => {
         if (e.pointerId !== event.pointerId) finish()
       },
-      options,
+      { ...options, capture: true },
     )
   }
 }

@@ -78,6 +78,41 @@ test('mini stage is lightweight SVG and hides Ghost when owner confirmation is u
   expect(
     renderToStaticMarkup(<MiniDiaStage snapshot={snapshot} showGhost={false} />),
   ).not.toContain('mobile-dia__ghost-actor')
+  const build = {
+    ...snapshot,
+    stage: {
+      ...snapshot.stage,
+      scenery: [
+        {
+          id: 'table',
+          name: '当前圆桌',
+          min: [-1, -1] as [number, number],
+          max: [1, 1] as [number, number],
+        },
+      ],
+    },
+    ghost: {
+      ...snapshot.ghost,
+      scenery: [
+        {
+          id: 'proposed-table',
+          name: '建议圆桌',
+          min: [-2, -1] as [number, number],
+          max: [-1, 0] as [number, number],
+        },
+      ],
+      venue: { width: 12, depth: 8, origin: snapshot.stage.origin },
+    },
+  }
+  const buildMarkup = renderToStaticMarkup(<MiniDiaStage snapshot={build} />)
+  expect(buildMarkup).toContain('mobile-dia__scenery')
+  expect(buildMarkup).toContain('mobile-dia__ghost-scenery')
+  expect(buildMarkup).toContain('建议场地边界')
+  expect(buildMarkup).not.toContain('<canvas')
+  const offline = renderToStaticMarkup(<MiniDiaStage snapshot={build} showGhost={false} />)
+  expect(offline).toContain('当前圆桌')
+  expect(offline).not.toContain('建议圆桌')
+  expect(offline).not.toContain('建议场地边界')
 })
 
 test('scan upload uses GLB only, no browser LiDAR claim or automatic import control', () => {

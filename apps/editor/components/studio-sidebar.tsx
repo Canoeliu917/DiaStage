@@ -7,7 +7,6 @@ import {
   Hammer,
   History,
   Layers,
-  Mic,
   Package,
   ScanLine,
   SlidersHorizontal,
@@ -40,9 +39,6 @@ const StageLibrary = dynamic(() =>
 )
 const StageProperties = dynamic(() =>
   import('./stage-entry/manual-stage-panel').then((m) => m.StageObjectPanel),
-)
-const StageCommandInput = dynamic(() =>
-  import('./stage-entry/command-input').then((m) => m.StageCommandInput),
 )
 export function useStudioSidebar(sceneId: string) {
   useEffect(() => observeRehearsalFeedback(sceneId), [sceneId])
@@ -82,17 +78,6 @@ export function useStudioSidebar(sceneId: string) {
             },
             { id: 'items', label: '舞台库', component: StageLibrary, icon: Package },
             { id: 'stage-cameras', label: '舞台镜头', component: CameraPanel, icon: Camera },
-            {
-              id: 'stage-command',
-              label: '舞台口令',
-              component: () => (
-                <section className="stage-command-panel">
-                  <h2>舞台口令</h2>
-                  <StageCommandInput sceneId={sceneId} />
-                </section>
-              ),
-              icon: Mic,
-            },
           ]
         : group === 'rehearse'
           ? [
@@ -115,7 +100,12 @@ export function useStudioSidebar(sceneId: string) {
               },
             ]
           : [
-              { id: 'versions', label: '排演版本', component: VersionsPanel, icon: History },
+              {
+                id: 'versions',
+                label: '排演版本',
+                component: () => <VersionsPanel sceneId={sceneId} />,
+                icon: History,
+              },
               {
                 id: 'remount',
                 label: '场地映射',

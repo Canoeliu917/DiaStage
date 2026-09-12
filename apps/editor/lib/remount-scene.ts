@@ -38,6 +38,7 @@ import {
   toFrameCoordinates,
   transformDirection,
   transformPoint,
+  transformRotation,
   type Vec3,
   type VenueProfile,
   VenueProfileSchema,
@@ -52,8 +53,14 @@ import {
   validateCameraProject,
 } from '../components/camera-studio/model'
 import { isLegacyLight } from './legacy-lighting'
-import { THEATRE_METADATA_KEY } from './theatre/scene-adapter'
-import { StageSceneDocumentSchema } from './theatre/simulation'
+import { isTheatreVisibilityOverride } from './theatre/presentation'
+import { getRehearsalVersion, rehearsalVersionHashes } from './theatre/rehearsal-versions'
+import { parseSnapshot, THEATRE_METADATA_KEY } from './theatre/scene-adapter'
+import {
+  type RehearsalSimulation,
+  RehearsalSimulationSchema,
+  StageSceneDocumentSchema,
+} from './theatre/simulation'
 import { readStageDocument } from './theatre/simulation-store'
 
 const CAMERA_METADATA_KEY = 'diastageCameraStudio'
@@ -67,7 +74,7 @@ const cameraSnapshotSchema = z.unknown().transform((input, context): Shot => {
 })
 const SourceSnapshotSchema = RemountObjectSchema.extend({
   fingerprint: z.string(),
-  sourceKind: z.enum(['node', 'camera']).default('node'),
+  sourceKind: z.enum(['node', 'camera', 'performer']).default('node'),
   camera: cameraSnapshotSchema.optional(),
 })
 type SourceSnapshot = z.infer<typeof SourceSnapshotSchema>
@@ -79,6 +86,20 @@ export const RemountMetadataSchema = z.object({
   targetVenue: VenueProfileSchema,
   layout: ProductionLayoutSchema.nullable(),
   sourceSnapshots: z.array(SourceSnapshotSchema),
+  sourceVersion: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      createdAt: z.string(),
+      sceneVersion: z.string(),
+      venueVersion: z.string(),
+      rehearsalVersion: z.string(),
+    })
+    .nullable()
+    .default(null),
+  sourceRehearsal: RehearsalSimulationSchema.nullable().default(null),
+  sourceReferences: z.array(RemountObjectSchema).default([]),
+  sourceWarnings: z.array(z.string()).default([]),
   clearance: z.number().finite().nonnegative(),
   tolerance: z.number().finite().nonnegative(),
   lastPlan: DeploymentPlanSchema.nullable(),
@@ -98,6 +119,7 @@ type RemountDraft = RemountMetadata & {
   undoNodes: SceneNodes | null
   undoEntry: object | null
   obstacleWarnings: string[]
+  comparisonMode: 'overlay' | 'source' | 'target'
 }
 
 function defaultVenue(id: string, name: string, x: number): VenueProfile {
@@ -142,6 +164,10 @@ function defaults(): RemountMetadata {
     targetVenue: defaultVenue('target', '目标场地', 10),
     layout: null,
     sourceSnapshots: [],
+    sourceVersion: null,
+    sourceRehearsal: null,
+    sourceReferences: [],
+    sourceWarnings: [],
     clearance: 0.15,
     tolerance: 0.02,
     lastPlan: null,
@@ -158,6 +184,7 @@ export const useRemountDraft = create<RemountDraft>(() => ({
   undoNodes: null,
   undoEntry: null,
   obstacleWarnings: [],
+  comparisonMode: 'overlay',
 }))
 
 function currentSite() {
@@ -216,6 +243,7 @@ export function reloadRemount(sceneId: string): void {
     undoNodes: null,
     undoEntry: null,
     obstacleWarnings: [],
+    comparisonMode: 'overlay',
   })
 }
 
@@ -226,7 +254,9 @@ function assertWritable(guardBlocked = false): void {
     !useScene.temporal.getState().isTracking ||
     getSceneHistoryPauseDepth() > 0 ||
     useLiveTransforms.getState().transforms.size > 0 ||
-    useLiveNodeOverrides.getState().overrides.size > 0 ||
+    [...useLiveNodeOverrides.getState().overrides.values()].some(
+      (override) => !isTheatreVisibilityOverride(override),
+    ) ||
     Object.values(useScene.getState().nodes).some((node) => node.metadata.isNew === true)
   ) {
     throw new Error('请先结束当前放置、拖动或编辑操作。')
@@ -311,8 +341,12 @@ function cameraFingerprint(shot: Shot): string {
   })
 }
 
-function cameraSnapshot(id: string, nodes: SceneNodes): SourceSnapshot {
-  const shot = canonicalCameras().shots.find((candidate) => `camera:${candidate.id}` === id)
+function cameraSnapshot(
+  id: string,
+  nodes: SceneNodes,
+  project = canonicalCameras(),
+): SourceSnapshot {
+  const shot = project.shots.find((candidate) => `camera:${candidate.id}` === id)
   if (!shot) throw new Error('机位已删除或尚未保存，请重新记录演出布置。')
   if (shot.motion)
     throw new Error(
@@ -349,9 +383,51 @@ function cameraSnapshot(id: string, nodes: SceneNodes): SourceSnapshot {
 }
 
 function snapshotFor(id: string, nodes: SceneNodes): SourceSnapshot {
+  if (id.startsWith('performer:')) {
+    const performer = readStageDocument()?.rehearsalSimulation.performers.find(
+      (entry) => `performer:${entry.id}` === id,
+    )
+    if (!performer) throw new Error('人物已不存在，请重新记录演出布置。')
+    return performerSnapshot(performer)
+  }
   return id.startsWith('camera:')
     ? cameraSnapshot(id, nodes)
     : objectSnapshot(movable(nodes[id as AnyNodeId]), nodes)
+}
+
+function performerSnapshot(performer: RehearsalSimulation['performers'][number]): SourceSnapshot {
+  const { position, facing, ...identity } = performer
+  return SourceSnapshotSchema.parse({
+    nodeId: `performer:${performer.id}`,
+    sourceKind: 'performer',
+    name: performer.name,
+    representation: 'virtual',
+    position,
+    rotation: [0, facing, 0],
+    dimensions: [0.4, 1.7, 0.4],
+    boundsCenter: [0, 0.85, 0],
+    fingerprint: JSON.stringify(identity),
+  })
+}
+
+function referenceObjects(
+  nodes: SceneNodes,
+  included: Set<string>,
+  warnings: string[],
+): RemountObject[] {
+  const miters = new Map<string | null, WallMiterData>()
+  return Object.values(nodes).flatMap((node) => {
+    if (included.has(node.id) || node.visible === false || isLegacyLight(node)) return []
+    try {
+      const reference = obstacleSnapshot(node, nodes, miters)
+      return reference ? [reference] : []
+    } catch (error) {
+      warnings.push(
+        `${node.name || node.id} 的原位置参考无法显示：${error instanceof Error ? error.message : '几何资料无效。'}`,
+      )
+      return []
+    }
+  })
 }
 
 function validateCameraDependencies(snapshots: SourceSnapshot[]) {
@@ -409,6 +485,7 @@ function expandSelection(nodeIds: string[], nodes: SceneNodes): string[] {
   const result = new Set<string>()
   const visit = (id: string) => {
     if (result.has(id)) return
+    if (id.startsWith('performer:')) return
     if (id.startsWith('camera:')) {
       cameraSnapshot(id, nodes)
       result.add(id)
@@ -494,7 +571,10 @@ export function captureProductionLayout(sceneId: string, nodeIds: string[]): voi
   const draft = draftFor(sceneId)
   const nodes = useScene.getState().nodes
   const ids = expandSelection(nodeIds, nodes)
-  if (ids.length === 0) throw new Error('请至少选择一个可搬运物件。')
+  const sourceRehearsal = readStageDocument()?.rehearsalSimulation ?? null
+  const sourceVenue = draft.sourceVersion ? defaults().sourceVenue : draft.sourceVenue
+  if (ids.length === 0 && !sourceRehearsal?.performers.length)
+    throw new Error('请至少选择一个可搬运物件，或先添加排演人物。')
   const included = new Set(ids)
   const sourceSnapshots = ids.map((id) => {
     if (id.startsWith('camera:')) return cameraSnapshot(id, nodes)
@@ -508,13 +588,132 @@ export function captureProductionLayout(sceneId: string, nodeIds: string[]): voi
     return SourceSnapshotSchema.parse({ ...objectSnapshot(node, nodes), assemblyId })
   })
   validateCameraDependencies(sourceSnapshots)
+  for (const performer of sourceRehearsal?.performers ?? [])
+    sourceSnapshots.push(performerSnapshot(performer))
   const layout = ProductionLayoutSchema.parse({
     id: 'production',
     name: '演出布置',
-    sourceVenueId: draft.sourceVenue.id,
-    objectNodeIds: ids,
+    sourceVenueId: sourceVenue.id,
+    objectNodeIds: sourceSnapshots.map((snapshot) => snapshot.nodeId),
+    paths:
+      sourceRehearsal?.paths.map((path) => ({
+        id: path.id,
+        name:
+          sourceRehearsal.performers.find((entry) => entry.id === path.performerId)?.name ??
+          '人物走位',
+        points: path.points,
+      })) ?? [],
   })
-  useRemountDraft.setState({ layout, sourceSnapshots, plan: null, previewNodes: null })
+  const sourceWarnings: string[] = []
+  const sourceReferences = referenceObjects(nodes, included, sourceWarnings)
+  useRemountDraft.setState({
+    layout,
+    sourceVenue,
+    ...(draft.sourceVersion ? { sourceHeightMeasured: defaults().sourceHeightMeasured } : {}),
+    sourceSnapshots,
+    sourceRehearsal,
+    sourceVersion: null,
+    sourceReferences,
+    sourceWarnings,
+    plan: null,
+    previewNodes: null,
+  })
+}
+
+export function prepareVersionRemount(sceneId: string, versionId: string): void {
+  assertWritable()
+  initializeRemount(sceneId)
+  const version = getRehearsalVersion(versionId)
+  const snapshot = parseSnapshot(version.stageGraph)
+  const sourceSnapshots: SourceSnapshot[] = []
+  const sourceWarnings: string[] = []
+  const included = new Set<string>()
+  for (const node of Object.values(snapshot.nodes)) {
+    if (
+      node.visible === false ||
+      isLegacyLight(node) ||
+      !['item', 'block', 'stair'].includes(node.type)
+    )
+      continue
+    try {
+      const ids = expandSelection([node.id], snapshot.nodes)
+      for (const id of ids) {
+        if (included.has(id)) continue
+        included.add(id)
+        sourceSnapshots.push(
+          objectSnapshot(movable(snapshot.nodes[id as AnyNodeId]), snapshot.nodes),
+        )
+      }
+    } catch (error) {
+      sourceWarnings.push(
+        `${node.name || node.id} 未选入落位：${error instanceof Error ? error.message : '无法读取。'}`,
+      )
+    }
+  }
+  for (const source of sourceSnapshots) {
+    let node = snapshot.nodes[source.nodeId as AnyNodeId]
+    while (node?.parentId && included.has(node.parentId))
+      node = snapshot.nodes[node.parentId as AnyNodeId]
+    source.assemblyId = node?.id ?? source.nodeId
+  }
+  for (const shot of version.cameraState.project.shots) {
+    if (!shot.motion && (!shot.follow || included.has(shot.follow.nodeId)))
+      sourceSnapshots.push(
+        cameraSnapshot(`camera:${shot.id}`, snapshot.nodes, version.cameraState.project),
+      )
+    else sourceWarnings.push(`${shot.name} 的独立运动或跟随依赖无法迁移，原机位资料保留在版本中。`)
+  }
+  for (const performer of version.rehearsalSimulation.performers)
+    sourceSnapshots.push(performerSnapshot(performer))
+  const { origin, depth, width, height, id, name } = version.venue
+  const point: Vec3 = [origin[0], origin[1], origin[2] + depth / 2]
+  const anchors: VenueProfile['anchors'] = [
+    { id: 'origin', name: '台口中点', position: point },
+    { id: 'right', name: '横向基准', position: add(point, [1, 0, 0]) },
+    { id: 'upstage', name: '舞台后向', position: add(point, [0, 0, -1]) },
+  ]
+  const targetVenue = defaults().sourceVenue
+  const sourceReferences = referenceObjects(snapshot.nodes, included, sourceWarnings)
+  useRemountDraft.setState({
+    sourceVenue: {
+      id,
+      name,
+      frame: createStageFrame(anchors),
+      anchors,
+      bounds: { width, depth, height },
+    },
+    sourceHeightMeasured:
+      snapshot.rootNodeIds.map((root) => snapshot.nodes[root]).find((node) => node?.type === 'site')
+        ?.metadata.stageHeightMeasured !== false,
+    targetVenue,
+    sourceSnapshots,
+    sourceVersion: {
+      id: version.id,
+      name: version.name,
+      createdAt: version.createdAt,
+      ...rehearsalVersionHashes(version),
+    },
+    sourceRehearsal: version.rehearsalSimulation,
+    sourceReferences,
+    sourceWarnings,
+    layout: ProductionLayoutSchema.parse({
+      id: `version:${version.id}`,
+      name: version.name,
+      sourceVenueId: id,
+      objectNodeIds: sourceSnapshots.map((source) => source.nodeId),
+      paths: version.rehearsalSimulation.paths.map((path) => ({
+        id: path.id,
+        name:
+          version.rehearsalSimulation.performers.find(
+            (performer) => performer.id === path.performerId,
+          )?.name ?? '人物走位',
+        points: path.points,
+      })),
+    }),
+    plan: null,
+    previewNodes: null,
+    comparisonMode: 'overlay',
+  })
 }
 
 export function updateRemountInput(
@@ -535,7 +734,20 @@ export function updateRemountInput(
   const next = RemountMetadataSchema.parse({
     ...draft,
     ...fields,
-    layout: draft.layout && paths ? { ...draft.layout, paths } : draft.layout,
+    layout:
+      draft.layout && paths
+        ? {
+            ...draft.layout,
+            paths: [
+              ...draft.layout.paths.filter((path) =>
+                draft.sourceRehearsal?.paths.some((route) => route.id === path.id),
+              ),
+              ...paths.filter(
+                (path) => !draft.sourceRehearsal?.paths.some((route) => route.id === path.id),
+              ),
+            ],
+          }
+        : draft.layout,
     sourceSnapshots: draft.sourceSnapshots.map((snapshot) => ({
       ...snapshot,
       representation: representations?.[snapshot.nodeId] ?? snapshot.representation,
@@ -545,12 +757,19 @@ export function updateRemountInput(
   useRemountDraft.setState({ ...next, plan: null, previewNodes: null })
 }
 
-function validatedSources(draft: RemountDraft, nodes: SceneNodes): SourceSnapshot[] {
-  if (!draft.layout || draft.sourceSnapshots.length === 0) throw new Error('请先记录演出布置。')
+function validatedSources(
+  draft: RemountDraft,
+  nodes: SceneNodes,
+  applying = false,
+): SourceSnapshot[] {
+  if (!draft.layout) throw new Error('请先记录演出布置。')
   const ids = draft.sourceSnapshots.map((entry) => entry.nodeId)
   if (JSON.stringify(ids) !== JSON.stringify(draft.layout.objectNodeIds))
     throw new Error('保存的演出布置与原始快照不匹配。')
+  if ((!draft.sourceVersion || applying) && rehearsalStructureChanged(draft))
+    throw new Error('人物名单或路线结构已变化，请重新记录演出布置。')
   for (const source of draft.sourceSnapshots) {
+    if (draft.sourceVersion && !applying) continue
     if (snapshotFor(source.nodeId, nodes).fingerprint !== source.fingerprint) {
       throw new Error('物件尺寸、挂接或子树已变化，请重新记录演出布置。')
     }
@@ -559,6 +778,29 @@ function validatedSources(draft: RemountDraft, nodes: SceneNodes): SourceSnapsho
   }
   validateCameraDependencies(draft.sourceSnapshots)
   return draft.sourceSnapshots
+}
+
+function rehearsalStructureChanged(draft: RemountDraft): boolean {
+  if (!draft.sourceRehearsal) return false
+  const current = readStageDocument()?.rehearsalSimulation
+  const ids = (entries: { id: string }[]) => JSON.stringify(entries.map((entry) => entry.id).sort())
+  return (
+    !current ||
+    ids(current.performers) !== ids(draft.sourceRehearsal.performers) ||
+    ids(current.paths) !== ids(draft.sourceRehearsal.paths)
+  )
+}
+
+export function remountSourceIssues(): string[] {
+  const draft = useRemountDraft.getState()
+  if (!draft.sourceVersion) return []
+  const issues: string[] = [...draft.sourceWarnings]
+  try {
+    validatedSources(draft, useScene.getState().nodes, true)
+  } catch (error) {
+    issues.push(error instanceof Error ? error.message : '历史版本与当前舞台结构不同。')
+  }
+  return issues
 }
 
 function assertMeasuredHeight(draft: RemountDraft) {
@@ -743,14 +985,22 @@ export function isRemountPreviewCurrent(sceneId: string): boolean {
   })
 }
 
-function metadataUpdate(draft: RemountDraft, lastPlan = draft.lastPlan, cameras?: CameraProject) {
+function metadataUpdate(
+  draft: RemountDraft,
+  lastPlan = draft.lastPlan,
+  cameras?: CameraProject,
+  rehearsal?: RehearsalSimulation,
+) {
   const site = currentSite()
   const remount = RemountMetadataSchema.parse(
     JSON.parse(JSON.stringify(RemountMetadataSchema.parse({ ...draft, lastPlan }))),
   )
   const document = readStageDocument()
   const measuredSource =
-    document && draft.sourceVenue.id === document.venue.id && draft.sourceHeightMeasured
+    document &&
+    !draft.sourceVersion &&
+    draft.sourceVenue.id === document.venue.id &&
+    draft.sourceHeightMeasured
       ? {
           stageHeightMeasured: true,
           [THEATRE_METADATA_KEY]: StageSceneDocumentSchema.parse({
@@ -759,6 +1009,7 @@ function metadataUpdate(draft: RemountDraft, lastPlan = draft.lastPlan, cameras?
           }),
         }
       : {}
+  const savedDocument = measuredSource[THEATRE_METADATA_KEY] ?? document
   return {
     id: site.id,
     data: {
@@ -766,6 +1017,14 @@ function metadataUpdate(draft: RemountDraft, lastPlan = draft.lastPlan, cameras?
         ...site.metadata,
         ...measuredSource,
         ...(cameras ? { [CAMERA_METADATA_KEY]: validateCameraProject(cameras) } : {}),
+        ...(savedDocument && rehearsal
+          ? {
+              [THEATRE_METADATA_KEY]: StageSceneDocumentSchema.parse({
+                ...savedDocument,
+                rehearsalSimulation: rehearsal,
+              }),
+            }
+          : {}),
         remount,
       },
     },
@@ -790,7 +1049,9 @@ export function applyRemount(sceneId: string, guardBlocked = false): void {
   const nodes = useScene.getState().nodes
   if (!draft.plan || !isRemountPreviewCurrent(sceneId))
     throw new Error('预览已过期，请重新生成预览。')
-  validatedSources(draft, nodes)
+  validatedSources(draft, nodes, true)
+  if (remountSourceIssues().length)
+    throw new Error('历史版本与当前舞台结构不同。请先在版本面板明确恢复，再复台；当前舞台未改变。')
   const plan = DeploymentPlanSchema.parse(draft.plan)
   if (!plan.calibration.valid || plan.conflicts.some((conflict) => conflict.severity === 'error'))
     throw new Error('请先解决标定误差或物理冲突。')
@@ -800,6 +1061,7 @@ export function applyRemount(sceneId: string, guardBlocked = false): void {
   const updates: { id: AnyNodeId; data: Partial<AnyNode> }[] = []
   for (const placement of plan.placements) {
     const source = draft.sourceSnapshots.find((snapshot) => snapshot.nodeId === placement.nodeId)!
+    if (source.sourceKind === 'performer') continue
     if (source.sourceKind === 'camera' && source.camera) {
       cameras.shots = cameras.shots.map((shot) =>
         shot.id === source.camera!.id ? mappedCamera(source.camera!, draft) : shot,
@@ -836,7 +1098,35 @@ export function applyRemount(sceneId: string, guardBlocked = false): void {
       },
     })
   }
-  updates.push(metadataUpdate(draft, plan, cameraChanged ? cameras : undefined))
+  const rehearsal =
+    draft.sourceRehearsal &&
+    RehearsalSimulationSchema.parse({
+      ...draft.sourceRehearsal,
+      performers: draft.sourceRehearsal.performers.map((performer) => ({
+        ...performer,
+        position: transformPoint(
+          performer.position,
+          draft.sourceVenue.frame,
+          draft.targetVenue.frame,
+        ),
+        facing: yawOf(
+          transformRotation(
+            [0, performer.facing, 0],
+            draft.sourceVenue.frame,
+            draft.targetVenue.frame,
+          ),
+        ),
+      })),
+      paths: draft.sourceRehearsal.paths.map((path) => ({
+        ...path,
+        points: path.points.map((point) =>
+          transformPoint(point, draft.sourceVenue.frame, draft.targetVenue.frame),
+        ),
+      })),
+    })
+  updates.push(
+    metadataUpdate(draft, plan, cameraChanged ? cameras : undefined, rehearsal ?? undefined),
+  )
   const previousEntry = useScene.temporal.getState().pastStates.at(-1)
   useScene.getState().applyNodeChanges({ update: updates })
   const entry = useScene.temporal.getState().pastStates.at(-1)

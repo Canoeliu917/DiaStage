@@ -9,13 +9,15 @@ web
 戏剧导演、舞台美术与在教室和排练厅学习戏剧的学生。
 
 ## Product Purpose
-咫台 DiaStage 把文字、口述和剧本中的舞台空间变成可检查、可移动、可模拟，并能复台到真实剧场的方案。
+DiaStage 是一个以真实舞台空间为基础，记录从搭台、排演到复台全过程的戏剧创作系统。
+
+Dia 是贯穿其中的智能伙伴，把人的自然语言转化成可预演、可修改、可保留的舞台方案。
 
 ## Capabilities and Constraints
-本阶段以《Dia Conversation Layer — 网页与手机统一戏剧智能体验》为准，在已冻结的 V0.1 基线上增加连续排演对话。原有三入口、相机、复台、旧项目兼容与稳定模式继续保留。
-首页以“Dia · 今天想排什么？”和原创告别示例为主，语音、手动置景、剧本与复台作为次级入口。语音先转写校对；建议先预演，确认后才改变舞台。
+本阶段遵循《产品骨架重构与 Dia 统一智能端口完善指令》及《Dia 四项能力与品牌定位对齐》补充。工程骨架固定为 Venue → Build → Rehearse → Version → Remount；复用已验证模块，不新增 Agent 或第四工作区。
+首页以“把戏说给 Dia。”及“从场地，到搭台，到排演，再到复台。”说明用途；原创示例明确标注为合成演示。语音先转写校对，再进入同一个 Dia。旧版搭台入口折叠保留，手动、剧本输入与复台仍可独立操作。
 一级工作区只有 SET / 置景、REHEARSE / 排演、REMOUNT / 复台。
-- 置景：舞台与场地、布景调整、舞台库、舞台镜头、舞台口令。
+- 置景：舞台与场地、布景调整、舞台库、舞台镜头。搭台口令进入共享 Dia。
 - 排演：模拟排演；显示；观察与记录并排；排演版本固定最后。
 - 复台：源场地、目标场地、空间标定、映射预览、实体落位、复台验收。
 
@@ -29,7 +31,20 @@ web
 ## Brand Commitments
 咫台 DiaStage；黑白灰；英文 Courier New，中文思源黑体。两个品牌词各自保持连续，白底黑字。
 
+品牌文案集中于 `apps/editor/lib/brand.ts`。三层命名分别为品牌、用户产品、工程；不得将四个品牌词用作 runtime capability enum 或新页面。
+
+| Brand | Product | Engineering |
+| --- | --- | --- |
+| Dialogue — 听懂你想说的戏 | Dia 对话、语音、选段、澄清 | Conversation / Voice / Reflect / Clarify |
+| Diagonal — 人物一进入舞台，距离、方向和位置本身就是关系 | 人物空间关系、排演 | Rehearse / Blocking / Constraints |
+| Diagram — 把想法变成可以看见、比较和修改的舞台 | 场地、搭台、Ghost | Venue / Build / Scene / Preview |
+| Diary — 记住一场戏是怎样被排出来的 | 版本、历史、复台 | Version / Journal / Feedback / Remount |
+
+戏从 Dialogue 开始；距离、方向和位置让关系在空间中发生；可操作舞台成为 Diagram；修改、选择、版本和复台形成这场戏的 Diary。这是品牌解释，不代表模型完全理解人物、任意生成舞台或永久记忆。四项能力只在第二层产品说明展示，默认工作流不暴露四个英文标签。
+
 ## Product Principles
+- Dia Core 优先于设备 UI。Web/Desktop 是完整功能参考；Tablet 使用同一个 Web 应用的响应式布局；Phone 保持 Dia + Remote 的轻量定位。先稳定同一个 Dia，再让三端共享它。
+- Interaction、Proposal、SceneVersion、Ghost 与 Human Authority 由统一 Dia 链维护。各端只适配输入、显示和会话传输，不复制意图判断、方案生成、编译或采用逻辑；协议投影不能成为另一份正式 Scene。
 - Suggest, Preview, Decide. AI proposes. The stage previews. Humans decide.
 - AI 提议。舞台先演。人来决定。
 - 当前 ontology 为 8 / 38；其余维度等待产品定义，不阻塞 V0.1 工程开发。Public Beta 需通过 Gold Alpha 20、真实模型人工审核、三类真机和独立用户验收。
@@ -40,7 +55,7 @@ web
 - 不将未实现的语音、剧本输入或现场系统包装成可用功能。
 
 ## Evidence on Hand
-当前连续对话实现、验证与未实测项见 DIA_CONVERSATION_LAYER.md。此前 AI 排演见 REHEARSAL_INTELLIGENCE_V01.md，三入口见 THREE_ENTRY_IMPLEMENTATION.md；移除用户照明见 SIMPLIFIED_REHEARSAL.md。历史规划不覆盖本阶段要求。
+本轮实现、Schema、未完成项及证据统一见 DIASTAGE_PRODUCT_BACKBONE_INTEGRATION_REPORT.md。此前连续对话见 DIA_CONVERSATION_LAYER.md，AI 排演见 REHEARSAL_INTELLIGENCE_V01.md，三入口见 THREE_ENTRY_IMPLEMENTATION.md；移除用户照明见 SIMPLIFIED_REHEARSAL.md。历史规划不覆盖本阶段要求。
 
 ## Non-goals
 不做自动导演、模型直接改台、多 Agent、自有模型训练、SFT/DPO/GRPO、实时动作捕捉、原生手机 App、用户照明设计或建筑家装流程。未完成人工评测、真实 API 与各平台真机验收前，不宣称满足大众内测标准。

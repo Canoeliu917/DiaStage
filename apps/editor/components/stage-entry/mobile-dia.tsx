@@ -51,7 +51,13 @@ type Action =
   | { type: 'cancel' }
   | { type: 'select' | 'preview' | 'reject'; interactionId: string; proposalId: string }
 
-export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
+export function MobileDia({
+  session,
+  onExpired,
+}: {
+  session: JoinedRemoteVoiceSession
+  onExpired?: () => void
+}) {
   const [draft, setDraft] = useState('')
   const [status, setStatus] = useState<RemoteDiaStatus | null>(null)
   const [pending, setPending] = useState<RemoteDiaCommandInput | null>(null)
@@ -69,6 +75,8 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
   const request = useRef<AbortController | null>(null)
   const locked = useRef(false)
   const active = useRef(true)
+  const expiryCallback = useRef(onExpired)
+  expiryCallback.current = onExpired
   const key = `diastage:remote-dia:${session.id}`
   const headers = useMemo(
     () => ({ 'x-diastage-remote-token': session.remoteToken }),
@@ -120,10 +128,11 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
           signal: AbortSignal.any([polling.signal, AbortSignal.timeout(10_000)]),
         })
         if (stopped || polling.signal.aborted) return
-        if (response.status === 410) {
+        if ([401, 403, 404, 410].includes(response.status)) {
           setExpired(true)
           setConnected(false)
           stopped = true
+          expiryCallback.current?.()
           return
         }
         const result = await readRemoteVoiceResponse(
@@ -229,7 +238,10 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
         signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]),
       })
       if (!active.current || controller.signal.aborted) return
-      if (response.status === 410) setExpired(true)
+      if ([401, 403, 404, 410].includes(response.status)) {
+        setExpired(true)
+        expiryCallback.current?.()
+      }
       if (response.status >= 400 && response.status < 500 && response.status !== 429) {
         currentPending.current = null
         setPending(null)
@@ -241,7 +253,15 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
       )
     } catch (cause) {
       if (active.current && !controller.signal.aborted)
-        setError(cause instanceof Error ? cause.message : '发送未确认，请检查连接后重试。')
+        setError(
+          cause instanceof Error && cause.name === 'TimeoutError'
+            ? '连接超时，发送尚未确认。请恢复网络后重试同一请求。'
+            : cause instanceof TypeError
+              ? '连接中断，发送尚未确认。请检查网络后重试同一请求。'
+              : cause instanceof Error
+                ? cause.message
+                : '发送未确认，请检查连接后重试。',
+        )
     } finally {
       locked.current = false
       if (active.current) setSending(false)
@@ -254,6 +274,7 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
   const disabled = !online || sending || !!pending || busy
   const voiceBusy =
     showVoice && ['requesting-permission', 'recording', 'transcribing'].includes(voiceState)
+  const selected = snapshot?.proposals.find((p) => p.proposalId === snapshot.selectedProposalId)
   const proposalAction = (type: 'select' | 'preview' | 'reject', proposalId: string) => {
     if (snapshot?.interactionId)
       void transmit({ type, interactionId: snapshot.interactionId, proposalId })
@@ -261,7 +282,6 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
 
   return (
     <section className="mobile-dia" aria-label="Dia 对话">
-      <h2>今天想排什么？</h2>
       <p className="mobile-dia__connection" role="status">
         {expired
           ? '连接已过期，请断开后重新配对。'
@@ -274,17 +294,6 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
       {snapshot?.synthetic && <p className="mobile-dia__synthetic">演示数据 · 非真实模型输出</p>}
       {snapshot && (
         <>
-          <MiniDiaStage snapshot={snapshot} showGhost={online} />
-          <ol className="mobile-dia__messages" aria-label="最近排演对话">
-            {snapshot.thread?.messages.map((message) => (
-              <li key={message.messageId} data-role={message.role}>
-                <span>
-                  {message.role === 'user' ? '你' : message.role === 'dia' ? 'Dia' : '舞台'}
-                </span>
-                <p>{message.content}</p>
-              </li>
-            ))}
-          </ol>
           <div className="mobile-dia__state" role="status" aria-live="polite">
             <p>
               {online
@@ -293,10 +302,34 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
                   : stateLabels[snapshot.state]
                 : '以下为上次同步内容，恢复连接后确认最新状态。'}
             </p>
-            {online && snapshot.statusText && <p>{snapshot.statusText}</p>}
-            <p>你的决定：{decisionLabels[snapshot.decision]}</p>
+            {snapshot.decision !== 'none' && <p>你的决定：{decisionLabels[snapshot.decision]}</p>}
           </div>
         </>
+      )}
+      {selected && snapshot && (
+        <div className="mobile-dia__current">
+          <p>当前方案 · {selected.title}</p>
+          <button
+            type="button"
+            className="mobile-dia__primary"
+            disabled={
+              disabled ||
+              !['proposal-ready', 'ghost-ready', 'waiting-human'].includes(snapshot.state)
+            }
+            onClick={() => proposalAction('preview', selected.proposalId)}
+          >
+            预演到舞台
+          </button>
+          {snapshot.ghost && (
+            <button
+              type="button"
+              disabled={!online || sending || !!pending}
+              onClick={() => void transmit({ type: 'cancel' })}
+            >
+              停止预演
+            </button>
+          )}
+        </div>
       )}
       {pending && (
         <div className="mobile-dia__pending" role="status">
@@ -381,14 +414,7 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
           </div>
         )}
         <section className="mobile-dia__suggestions" aria-label="试着问 Dia">
-          {[
-            '帮我看看这一段',
-            '给我两个排法',
-            '这个人物还能怎么做',
-            '为什么这样排',
-            '换一种',
-            '我自己来',
-          ].map((text) => (
+          {['帮我看看这一段', '给我两个排法', '换一种'].map((text) => (
             <button type="button" key={text} onClick={() => setDraft(text)}>
               {text}
             </button>
@@ -396,6 +422,27 @@ export function MobileDia({ session }: { session: JoinedRemoteVoiceSession }) {
         </section>
       </div>
       {error && <p role="alert">{error}</p>}
+      {snapshot && (
+        <>
+          <details className="mobile-dia__stage-details" open={!!snapshot.ghost && online}>
+            <summary>查看舞台与预演</summary>
+            <MiniDiaStage snapshot={snapshot} showGhost={online} />
+          </details>
+          <details className="mobile-dia__history">
+            <summary>最近排演对话（{snapshot.thread?.messages.length ?? 0}）</summary>
+            <ol className="mobile-dia__messages" aria-label="最近排演对话">
+              {snapshot.thread?.messages.map((message) => (
+                <li key={message.messageId} data-role={message.role}>
+                  <span>
+                    {message.role === 'user' ? '你' : message.role === 'dia' ? 'Dia' : '舞台'}
+                  </span>
+                  <p>{message.content}</p>
+                </li>
+              ))}
+            </ol>
+          </details>
+        </>
+      )}
       <section className="mobile-dia__proposals" aria-label="当前方案">
         {snapshot?.proposals.map((proposal, index) => (
           <article
@@ -473,11 +520,47 @@ export function MiniDiaStage({
   showGhost?: boolean
 }) {
   const { stage } = snapshot
-  const project = (point: [number, number, number]): [number, number] => [
-    15 + (0.5 + (point[0] - stage.origin[0]) / stage.width) * 270,
-    15 + (0.5 + (point[2] - stage.origin[2]) / stage.depth) * 150,
-  ]
   const ghost = showGhost ? snapshot.ghost : null
+  const target = ghost?.venue ?? stage
+  const minX = Math.min(stage.origin[0] - stage.width / 2, target.origin[0] - target.width / 2)
+  const minZ = Math.min(stage.origin[2] - stage.depth / 2, target.origin[2] - target.depth / 2)
+  const width =
+    Math.max(stage.origin[0] + stage.width / 2, target.origin[0] + target.width / 2) - minX
+  const depth =
+    Math.max(stage.origin[2] + stage.depth / 2, target.origin[2] + target.depth / 2) - minZ
+  const project = (point: [number, number, number]): [number, number] => [
+    15 + ((point[0] - minX) / width) * 270,
+    15 + ((point[2] - minZ) / depth) * 150,
+  ]
+  const frame = (venue: typeof target) => {
+    const [x, y] = project([
+      venue.origin[0] - venue.width / 2,
+      0,
+      venue.origin[2] - venue.depth / 2,
+    ])
+    return { x, y, width: (venue.width / width) * 270, height: (venue.depth / depth) * 150 }
+  }
+  const scenery = (objects: NonNullable<RemoteDiaSnapshot['stage']['scenery']>, preview: boolean) =>
+    objects.map((object) => {
+      const [x, y] = project([object.min[0], 0, object.min[1]])
+      return (
+        <rect
+          key={object.id}
+          x={x}
+          y={y}
+          width={((object.max[0] - object.min[0]) / width) * 270}
+          height={((object.max[1] - object.min[1]) / depth) * 150}
+          className={preview ? 'mobile-dia__ghost-scenery' : 'mobile-dia__scenery'}
+          fill={preview ? 'none' : '#999994'}
+          fillOpacity={0.35}
+          stroke={preview ? '#eeeeec' : '#b1b1ab'}
+          strokeWidth={1}
+          strokeDasharray={preview ? '4 3' : undefined}
+        >
+          <title>{`${preview ? '建议：' : ''}${object.name}`}</title>
+        </rect>
+      )
+    })
   return (
     <figure className="mobile-dia__mini">
       <svg
@@ -486,8 +569,21 @@ export function MiniDiaStage({
         aria-label="当前舞台俯视缩略图，虚线表示电脑已确认的预演"
       >
         <title>当前舞台与已确认的预演</title>
-        <rect x="15" y="15" width="270" height="150" className="mobile-dia__stage" />
+        <rect {...frame(stage)} className="mobile-dia__stage" />
         <svg x="15" y="15" width="270" height="150" viewBox="15 15 270 150">
+          {scenery(stage.scenery ?? [], false)}
+          {ghost?.venue && (
+            <rect
+              {...frame(ghost.venue)}
+              fill="none"
+              stroke="#eeeeec"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+            >
+              <title>建议场地边界</title>
+            </rect>
+          )}
+          {scenery(ghost?.scenery ?? [], true)}
           {stage.paths.map((path, index) => (
             <polyline
               key={`${path.performerId}-${index}`}
@@ -508,7 +604,8 @@ export function MiniDiaStage({
               <g key={performer.id}>
                 <circle cx={x} cy={y} r="5" className="mobile-dia__actor" />
                 <text x={x} y={y - 10} textAnchor="middle">
-                  {performer.name}
+                  <title>{performer.name}</title>
+                  {performer.name.length > 8 ? `${performer.name.slice(0, 8)}…` : performer.name}
                 </text>
               </g>
             )
@@ -524,7 +621,9 @@ export function MiniDiaStage({
           观众
         </text>
       </svg>
-      <figcaption>舞台俯视 · 实点为当前人物{ghost ? ' · 虚线为已确认预演' : ''}</figcaption>
+      <figcaption>
+        舞台俯视 · 框线为布景边界，实点为人物{ghost ? ' · 虚线为已确认预演' : ''}
+      </figcaption>
     </figure>
   )
 }

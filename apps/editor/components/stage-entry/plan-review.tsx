@@ -9,11 +9,11 @@ import {
   validateStagePlan,
 } from '@pascal-app/core/stage'
 import { useEffect, useMemo, useState } from 'react'
-import { create } from 'zustand'
 import { stageKindLabels } from '@/lib/stage/labels'
+import { useStagePlanPreview } from '@/lib/stage/plan-preview'
 import './stage-entry.css'
 
-export const useStagePlanPreview = create<{ plan: StagePlan | null }>(() => ({ plan: null }))
+export { useStagePlanPreview } from '@/lib/stage/plan-preview'
 export const EMPTY_STAGE_CONTEXT: SceneContextSummary = {
   documentVersion: 0,
   venue: null,
@@ -163,6 +163,7 @@ export function StagePlanReview({
   onAnswer,
   busy,
   error,
+  onPreview,
 }: {
   plan: StagePlan
   context: SceneContextSummary
@@ -172,6 +173,7 @@ export function StagePlanReview({
   onAnswer?: (questionId: string, answer: string) => void
   busy: boolean
   error?: string
+  onPreview?: (plan: StagePlan) => void
 }) {
   const [excluded, setExcluded] = useState<string[]>([])
   const included = useMemo(
@@ -187,12 +189,15 @@ export function StagePlanReview({
     [plan, excluded],
   )
   const result = useMemo(() => validateStagePlan(included, context), [included, context])
+  const previewed = useStagePlanPreview((state) => state.plan)
+  const previewMatches = !onPreview || JSON.stringify(previewed) === JSON.stringify(result.plan)
   useEffect(() => {
-    if (context.documentVersion > 0) useStagePlanPreview.setState({ plan: result.plan })
+    if (!onPreview && context.documentVersion > 0)
+      useStagePlanPreview.setState({ plan: result.plan })
     return () => {
-      if (context.documentVersion > 0) useStagePlanPreview.setState({ plan: null })
+      if (!onPreview && context.documentVersion > 0) useStagePlanPreview.setState({ plan: null })
     }
-  }, [result.plan, context.documentVersion])
+  }, [result.plan, context.documentVersion, onPreview])
   const update = (next: StagePlan) =>
     onChange({
       ...next,
@@ -460,12 +465,26 @@ export function StagePlanReview({
       )}
       {error && <p role="alert">{error}</p>}
       <div className="stage-entry-actions">
+        {onPreview && (
+          <button
+            type="button"
+            disabled={busy || !result.valid}
+            onClick={() => onPreview(result.plan)}
+          >
+            在舞台上试试搭台
+          </button>
+        )}
         <button type="button" onClick={onBack} disabled={busy}>
           返回修改
         </button>
         <button
           type="button"
-          disabled={busy || !result.valid || (!result.plan.items.length && !result.plan.venue)}
+          disabled={
+            busy ||
+            !previewMatches ||
+            !result.valid ||
+            (!result.plan.items.length && !result.plan.venue)
+          }
           onClick={() => onConfirm(result.plan)}
         >
           {busy ? '正在处理…' : '确认搭台'}

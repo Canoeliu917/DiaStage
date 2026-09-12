@@ -3,8 +3,9 @@
 .rm-heading > span, .rm-footer { color: #a4a4a4; font-size: 10px; letter-spacing: .08em; }
 .rm-heading h2 { margin: 7px 0 5px; font-size: 28px; font-weight: 500; }
 .rm-heading p, .rm-help { color: #b9b9b9; font-size: 12px; }
-.rm-panel button { border: 1px solid #505050; border-radius: 3px; padding: 8px 11px; background: #292929; color: #eee; cursor: pointer; text-align: left; }
-.rm-panel button:hover:not(:disabled) { background: #383838; border-color: #969696; }
+.rm-panel button { min-height:44px; border: 1px solid #505050; border-radius: 3px; padding: 8px 11px; background: #292929; color: #eee; cursor: pointer; text-align: left; }
+.rm-actions button[aria-pressed=true] { background:#eee; color:#181818; border-color:#eee; }
+.rm-panel button:hover:not(:disabled):not([aria-pressed=true]) { background: #383838; border-color: #969696; }
 .rm-panel button:disabled, .rm-panel fieldset:disabled { opacity: .5; cursor: default; }
 .rm-panel :focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .rm-panel .rm-primary { width: 100%; color: #151515; background: #eee; border-color: #eee; font-weight: 600; }

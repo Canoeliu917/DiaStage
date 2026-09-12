@@ -17,13 +17,16 @@ import {
   getRemountCandidates,
   initializeRemount,
   isRemountPreviewCurrent,
+  prepareVersionRemount,
   previewRemount,
   reloadRemount,
+  remountSourceIssues,
   saveRemountConfig,
   undoLastRemount,
   updateRemountInput,
   useRemountDraft,
 } from '@/lib/remount-scene'
+import { listRehearsalVersions } from '@/lib/theatre/rehearsal-versions'
 import { useCameraStudio } from './camera-studio/store'
 import './remount.css'
 
@@ -183,6 +186,15 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
     return getRemountCandidates()
   }, [nodes])
   const scans = Object.values(nodes).filter((node) => node.type === 'scan')
+  const versions = useMemo(() => {
+    void nodes
+    try {
+      return { items: listRehearsalVersions(), error: '' }
+    } catch {
+      return { items: [], error: '版本资料无法读取，原始记录已保留。' }
+    }
+  }, [nodes])
+  const sourceIssues = remountSourceIssues()
   const ready = draft.sceneKey === JSON.stringify([sceneId, roots])
 
   useEffect(() => {
@@ -231,6 +243,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
     plan.calibration.valid &&
     draft.sourceHeightMeasured &&
     errors.length === 0 &&
+    sourceIssues.length === 0 &&
     reviewed &&
     !blocked
 
@@ -274,6 +287,39 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
           </h3>
           {step === 0 && (
             <>
+              <label className="rm-field">
+                <span>复台来源</span>
+                <select
+                  value={draft.sourceVersion?.id ?? ''}
+                  onChange={(event) =>
+                    run(() => {
+                      if (event.target.value) prepareVersionRemount(sceneId, event.target.value)
+                      else
+                        captureProductionLayout(
+                          sceneId,
+                          candidates
+                            .filter((candidate) => candidate.eligible)
+                            .map((candidate) => candidate.nodeId),
+                        )
+                      setReviewed(false)
+                    })
+                  }
+                >
+                  <option value="">当前舞台与排演</option>
+                  {versions.items.map((version) => (
+                    <option key={version.id} value={version.id}>
+                      {version.name} · {new Date(version.createdAt).toLocaleDateString('zh-CN')}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {versions.error && <p role="alert">{versions.error}</p>}
+              {draft.sourceVersion && (
+                <p className="rm-notice">
+                  源版本：{draft.sourceVersion.name}
+                  。历史场地、布景和人物路线已读入草稿；当前场景保持原样。
+                </p>
+              )}
               <VenueFields
                 venue={draft.sourceVenue}
                 heightMeasured={draft.sourceHeightMeasured}
@@ -287,68 +333,77 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                   })
                 }
               />
-              <p className="rm-help">
-                选取本次搬运的布景与机位。子物件随组合一起记录；跟随机位须同时选入其跟随的布景。新舞台的实测净高随配置保存同步至舞台资料。
-              </p>
-              <div className="rm-candidates">
-                {candidates.length === 0 && <p>请先在置景中放置布景或添加机位。</p>}
-                {candidates.map((candidate) => (
-                  <label key={candidate.nodeId} className="rm-candidate">
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(candidate.nodeId)}
-                      disabled={!candidate.eligible}
-                      onChange={(event) =>
-                        setSelected((current) =>
-                          event.target.checked
-                            ? [...current, candidate.nodeId]
-                            : current.filter((id) => id !== candidate.nodeId),
+              {!draft.sourceVersion && (
+                <>
+                  <p className="rm-help">
+                    选取本次搬运的布景与机位，当前人物与路线一并记录。子物件随组合一起记录；跟随机位须同时选入其跟随的布景。
+                  </p>
+                  <div className="rm-candidates">
+                    {candidates.length === 0 && <p>请先在置景中放置布景或添加机位。</p>}
+                    {candidates.map((candidate) => (
+                      <label key={candidate.nodeId} className="rm-candidate">
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(candidate.nodeId)}
+                          disabled={!candidate.eligible}
+                          onChange={(event) =>
+                            setSelected((current) =>
+                              event.target.checked
+                                ? [...current, candidate.nodeId]
+                                : current.filter((id) => id !== candidate.nodeId),
+                            )
+                          }
+                        />
+                        <span>
+                          {candidate.name}
+                          {candidate.reason && <small>{candidate.reason}</small>}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="rm-actions">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelected(
+                          candidates
+                            .filter((candidate) => candidate.eligible)
+                            .map((candidate) => candidate.nodeId),
                         )
                       }
-                    />
-                    <span>
-                      {candidate.name}
-                      {candidate.reason && <small>{candidate.reason}</small>}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <div className="rm-actions">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelected(
-                      candidates
-                        .filter((candidate) => candidate.eligible)
-                        .map((candidate) => candidate.nodeId),
-                    )
-                  }
-                >
-                  全选可搬运物件
+                    >
+                      全选可搬运物件
+                    </button>
+                    <button type="button" onClick={() => setSelected([])}>
+                      清空选择
+                    </button>
+                  </div>
+                  <button
+                    className="rm-primary"
+                    type="button"
+                    onClick={() =>
+                      run(() => {
+                        captureProductionLayout(sceneId, selected)
+                        setMessage(
+                          `已记录 ${useRemountDraft.getState().sourceSnapshots.length} 个物件的原始位置。`,
+                        )
+                        setStep(1)
+                      })
+                    }
+                  >
+                    记录演出布置 →
+                  </button>
+                </>
+              )}
+              {draft.sourceVersion && (
+                <button type="button" className="rm-primary" onClick={() => setStep(1)}>
+                  保留历史源，查看目标场地 →
                 </button>
-                <button type="button" onClick={() => setSelected([])}>
-                  清空选择
-                </button>
-              </div>
-              <button
-                className="rm-primary"
-                type="button"
-                onClick={() =>
-                  run(() => {
-                    captureProductionLayout(sceneId, selected)
-                    setMessage(
-                      `已记录 ${useRemountDraft.getState().sourceSnapshots.length} 个物件的原始位置。`,
-                    )
-                    setStep(1)
-                  })
-                }
-              >
-                记录演出布置 →
-              </button>
+              )}
               {draft.layout && (
                 <p className="rm-help">
-                  已记录 {draft.sourceSnapshots.length}{' '}
-                  个物件。重新记录会以当前场景为源，替换旧快照。
+                  已记录 {draft.sourceSnapshots.length} 个布景、机位与人物标记，
+                  {draft.sourceRehearsal?.paths.length ?? 0} 条排演路线。
                 </p>
               )}
             </>
@@ -434,6 +489,24 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
               <button className="rm-primary" type="button" onClick={makePreview}>
                 {plan ? '重新计算并查看全景' : '生成映射预览'}
               </button>
+              <div className="rm-actions" role="group" aria-label="复台视觉对比">
+                {(
+                  [
+                    ['source', '原版本'],
+                    ['overlay', '叠加对比'],
+                    ['target', '目标方案'],
+                  ] as const
+                ).map(([mode, label]) => (
+                  <button
+                    type="button"
+                    key={mode}
+                    aria-pressed={draft.comparisonMode === mode}
+                    onClick={() => useRemountDraft.setState({ comparisonMode: mode })}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <div className="rm-legend">
                 <span data-tone="source">蓝 · 原位置</span>
                 <span data-tone="safe">绿 · 可落位</span>
@@ -442,9 +515,16 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 <span>灰 · 场地参考</span>
               </div>
               <p className="rm-help">
-                幽灵预览表示布景尺寸包围盒及虚拟机位标记。机位标记不代表真实摄影设备占地；虚线包括机位移动及手工走位线。确认前不改动正式场景。
+                原场地、原布景尺寸代理和人物路线以蓝色显示；新场地为灰色边界，待确认落位为彩色
+                Ghost。虚线包含已保存的排演路线。尺寸代理不复刻材质；确认前不改正式场景。
               </p>
-              {draft.obstacleWarnings.map((warning) => (
+              {sourceIssues.length > 0 && (
+                <p className="rm-notice rm-error" role="alert">
+                  历史版本与当前舞台结构不同：{sourceIssues.join(' ')}{' '}
+                  可以完整比较，暂不能应用。请先在版本面板明确恢复该版本，再复台。
+                </p>
+              )}
+              {[...draft.sourceWarnings, ...draft.obstacleWarnings].map((warning) => (
                 <p className="rm-notice" key={warning}>
                   {warning}
                 </p>
@@ -581,7 +661,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                     更新走位线
                   </button>
                   {draft.sourceSnapshots
-                    .filter((snapshot) => snapshot.sourceKind !== 'camera')
+                    .filter((snapshot) => snapshot.sourceKind === 'node')
                     .map((snapshot) => (
                       <label className="rm-field" key={snapshot.nodeId}>
                         <span>{snapshot.name}</span>
@@ -613,8 +693,13 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
           {step === 4 && (
             <>
               <p className="rm-help">
-                确认后，将预览中的布景和机位作为一次操作写入场景，并保存场地、校准点与原始布局。机位的全部关键帧与注视方向一起映射。已有场景自动保存继续生效。
+                确认后，将布景、人物、路线和机位作为一次操作写入场景，并保存来源版本、校准点与原始布局。时长和实体尺寸保持不变，可一次撤销。
               </p>
+              {sourceIssues.length > 0 && (
+                <p role="alert" className="rm-notice rm-error">
+                  当前结构与历史源不同，不能直接应用。请先在版本面板明确恢复后再复台。
+                </p>
+              )}
               {!plan && <p className="rm-notice">请先生成映射预览。</p>}
               {plan && (
                 <>
@@ -630,7 +715,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 </>
               )}
               <p className="rm-help">
-                碰撞覆盖物件、块体、墙和柱的尺寸包围体。墙体不扣除门窗洞；扫描、未支持的挂接构件及现场人员不作实体碰撞验收。
+                碰撞覆盖布景与墙体的尺寸包围体，人物和路线检测目标边界。墙体不扣除门洞；路线中途的动态避障、扫描和现场人员仍需人工复核。
               </p>
               {draft.obstacleWarnings.map((warning) => (
                 <p className="rm-notice" key={warning}>

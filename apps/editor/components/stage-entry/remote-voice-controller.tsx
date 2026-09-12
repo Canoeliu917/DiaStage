@@ -67,6 +67,7 @@ export function RemoteVoiceController() {
   const [secureContext, setSecureContext] = useState(true)
   const [tab, setTab] = useState<'dia' | 'voice' | 'scan'>('dia')
   const request = useRef<AbortController | null>(null)
+  const sessionExpired = connection === 'expired'
   const transcribeHeaders = useMemo(
     () => (session ? { 'x-diastage-remote-token': session.remoteToken } : undefined),
     [session],
@@ -87,16 +88,22 @@ export function RemoteVoiceController() {
         )
       }
     } catch {
-      sessionStorage.removeItem(STORAGE_KEY)
+      setError('浏览器未允许恢复配对，请重新连接；电脑排演仍保留。')
     }
     return () => request.current?.abort()
   }, [])
   useEffect(() => {
-    if (session) sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ session, draft, pending }))
+    if (session) {
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ session, draft, pending }))
+      } catch {
+        setError('配对和草稿暂未保存在本机，请复制文字后再刷新。')
+      }
+    }
   }, [session, draft, pending])
 
   useEffect(() => {
-    if (!session) return
+    if (!session || sessionExpired) return
     let stopped = false,
       timer: ReturnType<typeof setTimeout> | undefined
     let controller: AbortController | undefined
@@ -110,7 +117,7 @@ export function RemoteVoiceController() {
           headers: { 'x-diastage-remote-token': session.remoteToken },
         })
         if (stopped || activeRequest.signal.aborted) return
-        if (response.status === 410) {
+        if ([401, 403, 404, 410].includes(response.status)) {
           setConnection('expired')
           stopped = true
           return
@@ -154,7 +161,7 @@ export function RemoteVoiceController() {
       controller?.abort()
       document.removeEventListener('visibilitychange', resume)
     }
-  }, [session, pending])
+  }, [session, pending, sessionExpired])
 
   const join = async () => {
     setConnection('connecting')
@@ -227,12 +234,15 @@ export function RemoteVoiceController() {
     request.current?.abort()
     setSending(true)
     try {
-      const response = await fetch(`/api/remote-voice/sessions/${session.id}`, {
-        method: 'DELETE',
-        headers: { 'x-diastage-remote-token': session.remoteToken },
-        signal: AbortSignal.timeout(10_000),
-      })
-      if (!response.ok && response.status !== 410)
+      const response =
+        connection === 'expired'
+          ? null
+          : await fetch(`/api/remote-voice/sessions/${session.id}`, {
+              method: 'DELETE',
+              headers: { 'x-diastage-remote-token': session.remoteToken },
+              signal: AbortSignal.timeout(10_000),
+            })
+      if (response && !response.ok && response.status !== 410)
         throw new Error('断开未获确认，请恢复网络后重试。')
       sessionStorage.removeItem(STORAGE_KEY)
       setSession(null)
@@ -258,7 +268,7 @@ export function RemoteVoiceController() {
         </div>
         {session && (
           <button type="button" disabled={sending} onClick={() => void disconnect()}>
-            断开连接
+            {connection === 'expired' ? '重新配对' : '断开连接'}
           </button>
         )}
       </header>
@@ -267,7 +277,12 @@ export function RemoteVoiceController() {
           回到 Dia 对话
         </button>
       )}
-      {session && tab === 'dia' && <MobileDia key={session.id} session={session} />}
+      {session && connection === 'expired' && (
+        <p role="alert">配对已过期或被断开。请点击“重新配对”，在电脑获取新配对码。</p>
+      )}
+      {session && connection !== 'expired' && tab === 'dia' && (
+        <MobileDia key={session.id} session={session} onExpired={() => setConnection('expired')} />
+      )}
       {!session && tab === 'dia' && (
         <div className="mobile-dia-welcome">
           <h2>今天想排什么？</h2>
@@ -334,7 +349,7 @@ export function RemoteVoiceController() {
             {connection === 'connecting' ? '正在连接…' : '连接舞台'}
           </button>
         </>
-      ) : tab !== 'dia' ? (
+      ) : connection !== 'expired' && tab !== 'dia' ? (
         <>
           <p role="status">
             {
@@ -401,11 +416,7 @@ export function RemoteVoiceController() {
                       说下一条
                     </button>
                   ) : (
-                    <button
-                      type="button"
-                      disabled={sending || connection === 'expired'}
-                      onClick={() => void send()}
-                    >
+                    <button type="button" disabled={sending} onClick={() => void send()}>
                       {sending ? '正在重试…' : '重试发送（不会重复应用）'}
                     </button>
                   )}

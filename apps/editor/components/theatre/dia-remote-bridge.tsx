@@ -1,5 +1,6 @@
 'use client'
 
+import { stageObjectBounds, stageToWorldPosition } from '@pascal-app/core/stage'
 import { useEffect } from 'react'
 import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import type { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
@@ -11,12 +12,23 @@ import {
   type RemoteDiaSnapshot,
   RemoteDiaSnapshotSchema,
 } from '@/lib/remote-voice/dia-protocol'
+import { useStagePlanPreview } from '@/lib/stage/plan-preview'
 import { useRehearsalPlayback } from './state'
 
 export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapshot {
   const state = controller.store.getState(),
     context = controller.currentContext(),
     ghost = useProposalGhost.getState()
+  const build = controller.buildProposal()
+  const plan = useStagePlanPreview.getState().plan
+  const hasBuildGhost =
+    !!build &&
+    !!plan &&
+    build.status === 'previewed' &&
+    build.id === state.thread?.selectedProposalId &&
+    build.sceneVersion === context.sceneVersion &&
+    ['ghost-ready', 'waiting-human'].includes(state.thread?.status ?? '') &&
+    JSON.stringify(plan) === JSON.stringify(build.previewedPlan)
   const hasGhost =
     ghost.visible &&
     ghost.sceneId === controller.sceneId &&
@@ -44,31 +56,50 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
             })),
         }
       : null,
-    interactionId: state.interaction?.interactionId ?? null,
-    proposals:
-      state.interaction?.proposals.map((p) => ({
-        proposalId: p.proposalId,
-        title: p.title,
-        intention: p.intention.slice(0, 500),
-        rationale: p.rationale,
-        changes: p.suggestions.map((s) =>
-          `${context.performers.find((actor) => actor.id === s.performerId)?.name ?? '人物'}：${s.intention}`.slice(
-            0,
-            500,
+    interactionId: build?.id ?? state.interaction?.interactionId ?? null,
+    proposals: build
+      ? [
+          {
+            proposalId: build.id,
+            title: build.parentId ? '搭台修订' : '搭台建议',
+            intention: build.input.slice(0, 500),
+            rationale: '由当前正式舞台与本机规则计算台位，先预演，再在电脑上决定是否采用。',
+            changes: build.plan.items
+              .slice(0, 23)
+              .map((item) => `${item.existingNodeId ? '调整' : '加入'} ${item.displayName}`)
+              .concat(
+                build.plan.items.length > 23
+                  ? [`另有 ${build.plan.items.length - 23} 项，请在电脑上查看。`]
+                  : [],
+              ),
+            alternatives: build.plan.questions.slice(0, 8).map((question) => question.message),
+          },
+        ]
+      : (state.interaction?.proposals.map((p) => ({
+          proposalId: p.proposalId,
+          title: p.title,
+          intention: p.intention.slice(0, 500),
+          rationale: p.rationale,
+          changes: p.suggestions.map((s) =>
+            `${context.performers.find((actor) => actor.id === s.performerId)?.name ?? '人物'}：${s.intention}`.slice(
+              0,
+              500,
+            ),
           ),
-        ),
-        alternatives: p.alternatives.map((a) => a.slice(0, 500)),
-      })) ?? [],
+          alternatives: p.alternatives.map((a) => a.slice(0, 500)),
+        })) ?? []),
     selectedProposalId: state.thread?.selectedProposalId ?? null,
     state: state.thread?.status ?? 'idle',
     statusText: state.notice.slice(0, 500),
     decision:
       state.thread?.status === 'applied'
-        ? state.editing
-          ? 'edit'
-          : state.suggestions.length === controller.proposal()?.suggestions.length
-            ? 'adopt'
-            : 'partial'
+        ? build
+          ? 'adopt'
+          : state.editing
+            ? 'edit'
+            : state.suggestions.length === controller.proposal()?.suggestions.length
+              ? 'adopt'
+              : 'partial'
         : state.thread?.status === 'rejected'
           ? 'reject'
           : 'none',
@@ -79,14 +110,53 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
       origin: context.venue.origin,
       performers: performers(context.performers),
       paths: paths(context.paths),
+      scenery: context.obstacles.map((object) => ({
+        id: object.id,
+        name: object.name.slice(0, 100),
+        min: [object.min[0], object.min[2]],
+        max: [object.max[0], object.max[2]],
+      })),
     },
-    ghost: hasGhost
-      ? {
-          proposalId: ghost.proposalId,
-          performers: performers(ghost.simulation!.performers),
-          paths: paths(ghost.simulation!.paths),
-        }
-      : null,
+    ghost:
+      hasBuildGhost && plan && build
+        ? {
+            proposalId: build.id,
+            performers: [],
+            paths: [],
+            venue: {
+              width: plan.venue?.widthMeters ?? context.venue.width,
+              depth: plan.venue?.depthMeters ?? context.venue.depth,
+              origin: context.venue.origin,
+            },
+            scenery: plan.items
+              .filter((item) => !['camera', 'performer-marker'].includes(item.kind))
+              .map((item) => {
+                const bounds = stageObjectBounds({
+                  ...item,
+                  id: item.proposalId,
+                  name: item.displayName,
+                })
+                const frame = {
+                  origin: context.venue.origin,
+                  depthMeters: plan.venue?.depthMeters ?? context.venue.depth,
+                }
+                const min = stageToWorldPosition({ x: bounds.maxX, y: 0, z: bounds.maxZ }, frame)
+                const max = stageToWorldPosition({ x: bounds.minX, y: 0, z: bounds.minZ }, frame)
+                return {
+                  id: item.proposalId,
+                  name: item.displayName.slice(0, 100),
+                  min: [min[0], min[2]],
+                  max: [max[0], max[2]],
+                }
+              }),
+          }
+        : hasGhost
+          ? {
+              proposalId: ghost.proposalId,
+              performers: performers(ghost.simulation!.performers),
+              paths: paths(ghost.simulation!.paths),
+            }
+          : null,
   })
 }
 
@@ -130,6 +200,7 @@ export function DiaRemoteBridge({
       lastSnapshot = '',
       lastPublished = 0
     const handled = new Set<string>()
+    const receiptKey = `diastage:dia-receipt:${session.id}`
     const abort = new AbortController()
     const endpoint = `/api/remote-voice/sessions/${session.id}/dia`
     const headers = {
@@ -161,6 +232,15 @@ export function DiaRemoteBridge({
         if (command) {
           try {
             if (!handled.has(command.requestId)) {
+              if (!controller.store.getState().ready)
+                throw new Error('电脑正在载入对话，请稍后重试。')
+              // Claim before executing. A refresh in the acknowledgement gap must not replay work.
+              const claimed = Number(sessionStorage.getItem(receiptKey) ?? 0)
+              if (claimed >= command.sequence)
+                throw new Error(
+                  '电脑已接收过这条请求，刷新后不会重复执行。请查看当前对话，需要时重新预演。',
+                )
+              sessionStorage.setItem(receiptKey, String(command.sequence))
               acceptDiaRemoteCommand(controller, command)
               handled.add(command.requestId)
             }

@@ -170,6 +170,7 @@ export function TheatreRuntime({ enabled }: { enabled: boolean }) {
 
   if (!visible || !scene || !document || !sample) return null
   const { venue } = document
+  const roles = ui.showPerformers ? sample.roles : []
   const [x, y, z] = venue.origin
   const w = venue.width / 2,
     d = venue.depth / 2
@@ -196,43 +197,47 @@ export function TheatreRuntime({ enabled }: { enabled: boolean }) {
           <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       )}
-      {ui.input === 'route' && ui.points.length > 1 && (
+      {ui.showRoutes && ui.input === 'route' && ui.points.length > 1 && (
         <StageLine points={ui.points.map((p) => [p[0], p[1] + 0.1, p[2]])} color="#70b8dd" dashed />
       )}
-      <StageLine
-        points={[
-          [x - w, y + 0.025, z - d],
-          [x + w, y + 0.025, z - d],
-          [x + w, y + 0.025, z + d],
-          [x - w, y + 0.025, z + d],
-          [x - w, y + 0.025, z - d],
-        ]}
-        color="#8b8b8b"
-      />
-      <StageLine
-        points={[
-          [x, y + 0.03, z - d],
-          [x, y + 0.03, z + d],
-        ]}
-        color="#777777"
-      />
-      {venueAudiencePositions(venue).map((audience) => (
-        <Html
-          key={audience.id}
-          position={audience.position}
-          center
-          style={{
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap',
-            fontSize: 11,
-            color: '#555',
-            background: '#eee',
-            padding: '2px 6px',
-          }}
-        >
-          {audience.label}
-        </Html>
-      ))}
+      {ui.showVenue && (
+        <>
+          <StageLine
+            points={[
+              [x - w, y + 0.025, z - d],
+              [x + w, y + 0.025, z - d],
+              [x + w, y + 0.025, z + d],
+              [x - w, y + 0.025, z + d],
+              [x - w, y + 0.025, z - d],
+            ]}
+            color="#8b8b8b"
+          />
+          <StageLine
+            points={[
+              [x, y + 0.03, z - d],
+              [x, y + 0.03, z + d],
+            ]}
+            color="#777777"
+          />
+          {venueAudiencePositions(venue).map((audience) => (
+            <Html
+              key={audience.id}
+              position={audience.position}
+              center
+              style={{
+                pointerEvents: 'none',
+                whiteSpace: 'nowrap',
+                fontSize: 11,
+                color: '#555',
+                background: '#eee',
+                padding: '2px 6px',
+              }}
+            >
+              {audience.label}
+            </Html>
+          ))}
+        </>
+      )}
       {ui.showRoutes &&
         scene.paths
           .filter(
@@ -274,7 +279,7 @@ export function TheatreRuntime({ enabled }: { enabled: boolean }) {
             </Html>
           </group>
         ))}
-      {sample.roles.map((pose) => {
+      {roles.map((pose) => {
         const role = scene.roles.find((r) => r.id === pose.roleId)!
         return (
           <group
@@ -388,6 +393,7 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
   if (!enabled || exclusive || !context || !frame || !scene || !document) return null
   const unit = context.unitsPerPixel,
     sample = sampleRehearsal(scene, time)
+  const roles = ui.showPerformers ? sample.roles : []
   const plan = (point: [number, number, number]) => cameraPlanPoint(point, frame)
   const v = document.venue
   const boundary: Vec3[] = [
@@ -425,33 +431,36 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
           const world = new Vector3(point[0], 0, point[1]).applyMatrix4(frame)
           placeSimulationPoint([world.x, v.origin[1], world.z])
         }}
-        stroke="#888"
+        stroke={ui.showVenue ? '#888' : 'none'}
         strokeWidth={unit}
       />
-      <line
-        x1={rear[0]}
-        x2={front[0]}
-        y1={rear[2]}
-        y2={front[2]}
-        stroke="#888"
-        strokeWidth={unit}
-        strokeDasharray={`${5 * unit} ${5 * unit}`}
-      />
-      {venueAudiencePositions(v).map((audience) => {
-        const label = plan(audience.position)
-        return (
-          <text
-            key={audience.id}
-            x={label[0]}
-            y={label[2]}
-            textAnchor="middle"
-            fontSize={12 * unit}
-            fill={context.palette.measurementLabelText}
-          >
-            {audience.label}
-          </text>
-        )
-      })}
+      {ui.showVenue && (
+        <line
+          x1={rear[0]}
+          x2={front[0]}
+          y1={rear[2]}
+          y2={front[2]}
+          stroke="#888"
+          strokeWidth={unit}
+          strokeDasharray={`${5 * unit} ${5 * unit}`}
+        />
+      )}
+      {ui.showVenue &&
+        venueAudiencePositions(v).map((audience) => {
+          const label = plan(audience.position)
+          return (
+            <text
+              key={audience.id}
+              x={label[0]}
+              y={label[2]}
+              textAnchor="middle"
+              fontSize={12 * unit}
+              fill={context.palette.measurementLabelText}
+            >
+              {audience.label}
+            </text>
+          )
+        })}
       {ui.showRoutes &&
         scene.paths
           .filter(
@@ -491,7 +500,7 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
             </g>
           )
         })}
-      {sample.roles.map((pose) => {
+      {roles.map((pose) => {
         const role = scene.roles.find((r) => r.id === pose.roleId)!,
           p = plan(ui.drag?.id === role.id ? ui.drag.position : pose.position),
           end = plan([
@@ -542,6 +551,7 @@ export function TheatreFloorplan({ enabled }: { enabled: boolean }) {
 }
 
 function useGhostSample() {
+  const showGhost = useSimulationSelection((state) => state.showGhost)
   const simulation = useProposalGhost((s) => s.simulation)
   const visible = useProposalGhost((s) => s.visible)
   const time = useProposalGhost((s) => s.time)
@@ -555,7 +565,7 @@ function useGhostSample() {
         : null,
     [document, simulation],
   )
-  return { scene, sample: scene && visible ? sampleRehearsal(scene, time) : null }
+  return { scene, sample: scene && visible && showGhost ? sampleRehearsal(scene, time) : null }
 }
 
 function ProposalGhost3D() {

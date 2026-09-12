@@ -14,6 +14,7 @@ export function migrateStudioPanel(panel: string): string {
     'theatre-observation': 'observe',
     picture: 'display',
     'camera-studio': 'stage-cameras',
+    'stage-command': 'items',
   }
   return aliases[panel] ?? panel
 }

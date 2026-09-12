@@ -5,6 +5,15 @@ const coordinate = z.number().finite().min(-100_000).max(100_000)
 const position = z.tuple([coordinate, coordinate, coordinate])
 const performer = z.strictObject({ id, name: z.string().max(100), position })
 const path = z.strictObject({ performerId: id, points: z.array(position).max(64) })
+const pointXZ = z.tuple([coordinate, coordinate])
+const scenery = z
+  .strictObject({ id, name: z.string().max(100), min: pointXZ, max: pointXZ })
+  .refine((value) => value.min.every((n, axis) => n <= value.max[axis]!), 'Invalid scenery bounds.')
+const venue = {
+  width: z.number().finite().positive().max(100_000),
+  depth: z.number().finite().positive().max(100_000),
+  origin: position,
+}
 
 export const RemoteDiaStateSchema = z.enum([
   'idle',
@@ -61,17 +70,18 @@ export const RemoteDiaSnapshotSchema = z
     decision: z.enum(['none', 'adopt', 'partial', 'edit', 'reject', 'manual-edit']),
     synthetic: z.boolean(),
     stage: z.strictObject({
-      width: z.number().positive().max(100_000),
-      depth: z.number().positive().max(100_000),
-      origin: position,
+      ...venue,
       performers: z.array(performer).max(24),
       paths: z.array(path).max(24),
+      scenery: z.array(scenery).max(128).optional(),
     }),
     ghost: z
       .strictObject({
         proposalId: id,
         performers: z.array(performer).max(24),
         paths: z.array(path).max(24),
+        scenery: z.array(scenery).max(200).optional(),
+        venue: z.strictObject(venue).optional(),
       })
       .nullable(),
   })

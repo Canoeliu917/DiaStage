@@ -82,6 +82,7 @@ import { StageOverviewPanel } from './stage-overview-panel'
 import { StudioNavigation } from './studio-navigation'
 import { useStudioSidebar } from './studio-sidebar'
 import { RehearsalTransport, TheatreFloorplan, TheatreRuntime } from './theatre/runtime'
+import { SceneLayersRuntime } from './theatre/scene-visibility'
 import { useTheatreDocument } from './theatre/state'
 import { VersionViewSync } from './theatre/versions-panel'
 import './theatre/dia-conversation.css'
@@ -152,7 +153,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   const immersive = useEditor(
     (state) => state.isCaptureMode || state.isFirstPersonMode || state.isPreviewMode,
   )
-  const showDia = diaOpen && group === 'rehearse' && !immersive
+  const showDia = diaOpen && !immersive
   const cameraEnabled = ['stage-cameras', 'observe', 'record', 'display'].includes(activePanel)
   const recordingEnabled =
     group === 'rehearse' && ['observe', 'record', 'camera-rehearsal'].includes(activePanel)
@@ -185,7 +186,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   const [stageReady, setStageReady] = useState(false)
   useEffect(() => {
     if (!showDia || !stageReady) return
-    const media = window.matchMedia('(min-width: 801px) and (max-width: 1180px)')
+    const media = window.matchMedia('(min-width: 768px) and (max-width: 1399px)')
     let restore: boolean | undefined
     const adapt = () => {
       if (media.matches && restore === undefined) {
@@ -197,9 +198,13 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
       }
     }
     adapt()
+    const unsubscribe = useSidebarStore.subscribe((next, previous) => {
+      if (media.matches && previous.isCollapsed && !next.isCollapsed) setDiaOpen(false)
+    })
     media.addEventListener('change', adapt)
     return () => {
       media.removeEventListener('change', adapt)
+      unsubscribe()
       if (restore !== undefined) useSidebarStore.getState().setIsCollapsed(restore)
     }
   }, [showDia, stageReady])
@@ -453,6 +458,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
         <div className="studio-workspace" data-studio-group={group}>
           <CameraPersistence sceneId={meta.id} />
           <VersionViewSync />
+          <SceneLayersRuntime key={meta.id} enabled={!immersive} />
           <StageCommandRuntime
             sceneId={meta.id}
             rootId={initialScene.rootNodeIds[0]}
@@ -519,16 +525,14 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                     onGroupChange={onGroupChange}
                     actions={
                       <>
-                        {group === 'rehearse' && (
-                          <button
-                            type="button"
-                            aria-pressed={diaOpen}
-                            className="min-h-11 border px-3"
-                            onClick={() => setDiaOpen(!diaOpen)}
-                          >
-                            {diaOpen ? '收起 Dia' : '和 Dia 一起排'}
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          aria-pressed={diaOpen}
+                          className="min-h-11 border px-3"
+                          onClick={() => setDiaOpen(!diaOpen)}
+                        >
+                          {diaOpen ? '收起 Dia' : '告诉 Dia'}
+                        </button>
                         <span className="studio-save-status" role="status">
                           {
                             {
@@ -601,7 +605,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                       </ViewerErrorBoundary>
                     )}
                     <StagePlacementSystem enabled={group === 'set'} />
-                    <StagePlanPreviewSystem enabled={group === 'set'} />
+                    <StagePlanPreviewSystem enabled={!immersive} />
                   </>
                 }
                 studioSceneSlot={
