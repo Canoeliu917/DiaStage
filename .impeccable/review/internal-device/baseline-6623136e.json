@@ -1,0 +1,101 @@
+{
+  "baseline": "6623136e1435898316bc9cfca8a716649d80702c",
+  "remoteVoice": {
+    "decodedJsBytes": 859545,
+    "scripts": [
+      {
+        "path": "/_next/static/chunks/2qhcgyvj9hp-t.js",
+        "bytes": 24473
+      },
+      {
+        "path": "/_next/static/chunks/1ki4lwyo43rj-.js",
+        "bytes": 38991
+      },
+      {
+        "path": "/_next/static/chunks/turbopack-3olvmgbo4p48z.js",
+        "bytes": 10878
+      },
+      {
+        "path": "/_next/static/chunks/3ovyugu22ggaf.js",
+        "bytes": 160140
+      },
+      {
+        "path": "/_next/static/chunks/2a0k14lxqqa0-.js",
+        "bytes": 19028
+      },
+      {
+        "path": "/_next/static/chunks/2x7nxriybhqeg.js",
+        "bytes": 26598
+      },
+      {
+        "path": "/_next/static/chunks/0-4srap-ffvu1.js",
+        "bytes": 204607
+      },
+      {
+        "path": "/_next/static/chunks/2j764ehn8a86s.js",
+        "bytes": 374830
+      }
+    ]
+  },
+  "phone": {
+    "viewport": [
+      390,
+      844
+    ],
+    "scrollWidth": 390,
+    "controls": [
+      {
+        "text": "语音构台",
+        "box": {
+          "x": 39.390625,
+          "y": 406.65625,
+          "width": 98,
+          "height": 48,
+          "top": 406.65625,
+          "right": 137.390625,
+          "bottom": 454.65625,
+          "left": 39.390625
+        }
+      },
+      {
+        "text": "扫描上传",
+        "box": {
+          "x": 97.390625,
+          "y": 462.65625,
+          "width": 98,
+          "height": 48,
+          "top": 462.65625,
+          "right": 195.390625,
+          "bottom": 510.65625,
+          "left": 97.390625
+        }
+      },
+      {
+        "text": "",
+        "box": {
+          "x": 39.390625,
+          "y": 584.625,
+          "width": 311.21875,
+          "height": 48,
+          "top": 584.625,
+          "right": 350.609375,
+          "bottom": 632.625,
+          "left": 39.390625
+        }
+      },
+      {
+        "text": "连接舞台",
+        "box": {
+          "x": 39.390625,
+          "y": 650.625,
+          "width": 311.21875,
+          "height": 48,
+          "top": 650.625,
+          "right": 350.609375,
+          "bottom": 698.625,
+          "left": 39.390625
+        }
+      }
+    ]
+  }
+}

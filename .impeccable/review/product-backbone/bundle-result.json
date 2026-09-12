@@ -1,0 +1,340 @@
+{
+  "base": "http://127.0.0.1:4328",
+  "startedAt": "2026-09-12T03:28:49.550Z",
+  "buildId": "nGKy6ND2qXtDlq4Vw3M-w",
+  "synthetic": true,
+  "browser": "Chrome headless",
+  "realDevice": "NOT_MEASURED",
+  "measurement": {
+    "unit": "bytes",
+    "metric": "decoded JavaScript response body bytes, not compressed wire size or total build output",
+    "scope": "All received responses whose URL pathname ends in .js, including chunks prefetched during the observation window.",
+    "deduplication": "One completed body per absolute response URL; repeated responses counted once, retaining the largest observed body.",
+    "cache": "New isolated browser context per route; empty cookies/local storage/IndexedDB/browser cache; service workers blocked.",
+    "completion": "Phone initial screen or desktop Dia and visible Viewer canvas mounted, then networkidle (500 ms quiet). No feature clicks.",
+    "baseline": ".impeccable/review/internal-device/baseline-6623136e.json: remoteVoice.decodedJsBytes; same decoded response-body metric. Baseline deduplicated by pathname; current chunk URLs retained for audit.",
+    "desktopBaseline": "NOT_MEASURED: no prior decoded JS measurement for /demo with Dia and Viewer mounted; no increase/decrease is inferred.",
+    "desktopFixture": "/demo creates one new original synthetic scene in the isolated local production service. No existing project is edited."
+  },
+  "remoteVoice": {
+    "status": "PASS",
+    "requestedRoute": "/remote-voice",
+    "finalUrl": "http://127.0.0.1:4328/remote-voice",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "readiness": {
+      "documentReadyState": "complete",
+      "viewport": [
+        390,
+        844
+      ],
+      "visibleCanvases": 0,
+      "diaMounted": false
+    },
+    "observedMs": 921,
+    "decodedJsBytes": 862339,
+    "chunkCount": 8,
+    "responseCount": 8,
+    "duplicateResponseCount": 0,
+    "chunks": [
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/0-4srap-ffvu1.js",
+        "path": "/_next/static/chunks/0-4srap-ffvu1.js",
+        "bytes": 204607,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/1ki4lwyo43rj-.js",
+        "path": "/_next/static/chunks/1ki4lwyo43rj-.js",
+        "bytes": 38991,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2a0k14lxqqa0-.js",
+        "path": "/_next/static/chunks/2a0k14lxqqa0-.js",
+        "bytes": 19028,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2j764ehn8a86s.js",
+        "path": "/_next/static/chunks/2j764ehn8a86s.js",
+        "bytes": 374830,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2nwzsvokk6eka.js",
+        "path": "/_next/static/chunks/2nwzsvokk6eka.js",
+        "bytes": 29392,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2qhcgyvj9hp-t.js",
+        "path": "/_next/static/chunks/2qhcgyvj9hp-t.js",
+        "bytes": 24473,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3ovyugu22ggaf.js",
+        "path": "/_next/static/chunks/3ovyugu22ggaf.js",
+        "bytes": 160140,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/turbopack-3olvmgbo4p48z.js",
+        "path": "/_next/static/chunks/turbopack-3olvmgbo4p48z.js",
+        "bytes": 10878,
+        "status": 200
+      }
+    ],
+    "bodyErrors": [],
+    "pageErrors": [],
+    "comparison": {
+      "baselineCommit": "6623136e1435898316bc9cfca8a716649d80702c",
+      "baselineDecodedJsBytes": 859545,
+      "deltaBytes": 2794,
+      "deltaPercent": 0.3250556980728176,
+      "status": "MEASURED"
+    }
+  },
+  "desktopMountedDiaViewer": {
+    "status": "PASS",
+    "requestedRoute": "/demo",
+    "finalUrl": "http://127.0.0.1:4328/scene/77e42f86f1f0?workspace=rehearse&demo=synthetic",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "readiness": {
+      "documentReadyState": "complete",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "visibleCanvases": 1,
+      "diaMounted": true
+    },
+    "observedMs": 7677,
+    "decodedJsBytes": 5737619,
+    "chunkCount": 34,
+    "responseCount": 34,
+    "duplicateResponseCount": 0,
+    "chunks": [
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/0-4srap-ffvu1.js",
+        "path": "/_next/static/chunks/0-4srap-ffvu1.js",
+        "bytes": 204607,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/0dk6ldlwxtfos.js",
+        "path": "/_next/static/chunks/0dk6ldlwxtfos.js",
+        "bytes": 37888,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/0x-6z7ji8h_5-.js",
+        "path": "/_next/static/chunks/0x-6z7ji8h_5-.js",
+        "bytes": 18995,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/0z2d72x53ac--.js",
+        "path": "/_next/static/chunks/0z2d72x53ac--.js",
+        "bytes": 12996,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/10erk2vqayaiw.js",
+        "path": "/_next/static/chunks/10erk2vqayaiw.js",
+        "bytes": 27817,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/119dwqgop6_0g.js",
+        "path": "/_next/static/chunks/119dwqgop6_0g.js",
+        "bytes": 150,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/13hrqi1zhx92j.js",
+        "path": "/_next/static/chunks/13hrqi1zhx92j.js",
+        "bytes": 1098,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/17u1-qj_4m2ti.js",
+        "path": "/_next/static/chunks/17u1-qj_4m2ti.js",
+        "bytes": 202,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/19wde3ra5ra3t.js",
+        "path": "/_next/static/chunks/19wde3ra5ra3t.js",
+        "bytes": 57924,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/1geme7qk0h_lh.js",
+        "path": "/_next/static/chunks/1geme7qk0h_lh.js",
+        "bytes": 31282,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/1ifcb50xcnqwc.js",
+        "path": "/_next/static/chunks/1ifcb50xcnqwc.js",
+        "bytes": 31788,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/1ki4lwyo43rj-.js",
+        "path": "/_next/static/chunks/1ki4lwyo43rj-.js",
+        "bytes": 38991,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/1vc2rv3mf9t64.js",
+        "path": "/_next/static/chunks/1vc2rv3mf9t64.js",
+        "bytes": 204290,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2_qwz27_ztmyw.js",
+        "path": "/_next/static/chunks/2_qwz27_ztmyw.js",
+        "bytes": 2116074,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/22mhe7s9t2trn.js",
+        "path": "/_next/static/chunks/22mhe7s9t2trn.js",
+        "bytes": 9532,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/24udd_t_gmvu8.js",
+        "path": "/_next/static/chunks/24udd_t_gmvu8.js",
+        "bytes": 101081,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/28sx03u2p887c.js",
+        "path": "/_next/static/chunks/28sx03u2p887c.js",
+        "bytes": 35374,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2a0k14lxqqa0-.js",
+        "path": "/_next/static/chunks/2a0k14lxqqa0-.js",
+        "bytes": 19028,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2j764ehn8a86s.js",
+        "path": "/_next/static/chunks/2j764ehn8a86s.js",
+        "bytes": 374830,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2onmso9rj5os_.js",
+        "path": "/_next/static/chunks/2onmso9rj5os_.js",
+        "bytes": 32500,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2qhcgyvj9hp-t.js",
+        "path": "/_next/static/chunks/2qhcgyvj9hp-t.js",
+        "bytes": 24473,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/2v3j-9jf1uw8b.js",
+        "path": "/_next/static/chunks/2v3j-9jf1uw8b.js",
+        "bytes": 49018,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/38iulf7qcznzk.js",
+        "path": "/_next/static/chunks/38iulf7qcznzk.js",
+        "bytes": 11515,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3dp13umcc0us4.js",
+        "path": "/_next/static/chunks/3dp13umcc0us4.js",
+        "bytes": 2487,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3h3wzzf7y-twl.js",
+        "path": "/_next/static/chunks/3h3wzzf7y-twl.js",
+        "bytes": 11863,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3jyfkwf01ukjn.js",
+        "path": "/_next/static/chunks/3jyfkwf01ukjn.js",
+        "bytes": 52530,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3ncuj6008xf9i.js",
+        "path": "/_next/static/chunks/3ncuj6008xf9i.js",
+        "bytes": 44249,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3ovyugu22ggaf.js",
+        "path": "/_next/static/chunks/3ovyugu22ggaf.js",
+        "bytes": 160140,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3rl33fdsjlhun.js",
+        "path": "/_next/static/chunks/3rl33fdsjlhun.js",
+        "bytes": 14845,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3skwxgvvp36by.js",
+        "path": "/_next/static/chunks/3skwxgvvp36by.js",
+        "bytes": 1759120,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/3tv_z3qhnnpnq.js",
+        "path": "/_next/static/chunks/3tv_z3qhnnpnq.js",
+        "bytes": 41714,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/42krc0m9_vr_y.js",
+        "path": "/_next/static/chunks/42krc0m9_vr_y.js",
+        "bytes": 25567,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/4505e65hx7q7n.js",
+        "path": "/_next/static/chunks/4505e65hx7q7n.js",
+        "bytes": 172773,
+        "status": 200
+      },
+      {
+        "url": "http://127.0.0.1:4328/_next/static/chunks/turbopack-3olvmgbo4p48z.js",
+        "path": "/_next/static/chunks/turbopack-3olvmgbo4p48z.js",
+        "bytes": 10878,
+        "status": 200
+      }
+    ],
+    "bodyErrors": [],
+    "pageErrors": [],
+    "comparison": {
+      "baselineDecodedJsBytes": null,
+      "deltaBytes": null,
+      "deltaPercent": null,
+      "status": "NOT_MEASURED"
+    }
+  },
+  "errors": [],
+  "finishedAt": "2026-09-12T03:28:58.972Z"
+}

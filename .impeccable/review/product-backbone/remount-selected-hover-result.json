@@ -1,0 +1,69 @@
+{
+  "base": "http://127.0.0.1:4327",
+  "scenario": "Real Remount UI selected button hover",
+  "synthetic": true,
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "原版本",
+      "status": "PASS",
+      "before": {
+        "selected": "true",
+        "background": "rgb(238, 238, 238)",
+        "color": "rgb(24, 24, 24)",
+        "border": "rgb(238, 238, 238)"
+      },
+      "hovered": {
+        "selected": "true",
+        "background": "rgb(238, 238, 238)",
+        "color": "rgb(24, 24, 24)",
+        "border": "rgb(238, 238, 238)"
+      }
+    },
+    {
+      "name": "叠加对比",
+      "status": "PASS",
+      "before": {
+        "selected": "true",
+        "background": "rgb(238, 238, 238)",
+        "color": "rgb(24, 24, 24)",
+        "border": "rgb(238, 238, 238)"
+      },
+      "hovered": {
+        "selected": "true",
+        "background": "rgb(238, 238, 238)",
+        "color": "rgb(24, 24, 24)",
+        "border": "rgb(238, 238, 238)"
+      }
+    },
+    {
+      "name": "目标方案",
+      "status": "PASS",
+      "before": {
+        "selected": "true",
+        "background": "rgb(238, 238, 238)",
+        "color": "rgb(24, 24, 24)",
+        "border": "rgb(238, 238, 238)"
+      },
+      "hovered": {
+        "selected": "true",
+        "background": "rgb(238, 238, 238)",
+        "color": "rgb(24, 24, 24)",
+        "border": "rgb(238, 238, 238)"
+      }
+    },
+    {
+      "name": "Unselected button keeps normal hover",
+      "status": "PASS",
+      "hovered": {
+        "selected": "false",
+        "background": "rgb(56, 56, 56)",
+        "color": "rgb(238, 238, 238)",
+        "border": "rgb(150, 150, 150)"
+      }
+    }
+  ],
+  "errors": [],
+  "url": "http://127.0.0.1:4327/scene/9cac5b7d98d6?workspace=rehearse&demo=synthetic",
+  "screenshot": ".impeccable/review/product-backbone/remount-selected-hover.png"
+}

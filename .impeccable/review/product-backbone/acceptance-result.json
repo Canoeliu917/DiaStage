@@ -1,0 +1,492 @@
+{
+  "base": "http://127.0.0.1:4328",
+  "startedAt": "2026-09-12T03:35:03.654Z",
+  "synthetic": true,
+  "realModel": "NOT_RUN",
+  "realDevice": "NOT_RUN",
+  "screenshots": [
+    {
+      "path": ".impeccable/review/product-backbone/desktop-initial.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-build-ghost.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-build-revision.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/tablet-build-revision.png",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-actor-object-ghost.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-reflect-ghost.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-version-readonly.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/tablet-version-readonly.png",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-remount-overlay.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-remount-source.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-remount-target.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-remount-overlay.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/tablet-remount-overlay.png",
+      "viewport": {
+        "width": 820,
+        "height": 1180
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-remount-applied.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/phone-390x844-build-ghost.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/phone-390x844-build-scenery.png",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "simulation": true
+    },
+    {
+      "path": ".impeccable/review/product-backbone/desktop-phone-requested-build-ghost.png",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "simulation": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "Create isolated synthetic stage through /demo",
+      "status": "PASS",
+      "durationMs": 10373,
+      "evidence": {
+        "sceneId": "ce62541a0a42",
+        "url": "http://127.0.0.1:4328/scene/ce62541a0a42?workspace=rehearse&demo=synthetic",
+        "formalHash": "79e9bda53efccf7ffabbd160dfc9976343538040353849b4fdb34d2f92e26b6c",
+        "nodeCount": 4
+      }
+    },
+    {
+      "name": "Build exact request creates four proposed objects with zero formal writes",
+      "status": "PASS",
+      "durationMs": 2133,
+      "evidence": {
+        "notice": "搭台方案已准备好，正式舞台未改变。",
+        "graph": {
+          "beforeVersion": 1,
+          "afterVersion": 1,
+          "beforeHash": "79e9bda53efccf7ffabbd160dfc9976343538040353849b4fdb34d2f92e26b6c",
+          "afterHash": "79e9bda53efccf7ffabbd160dfc9976343538040353849b4fdb34d2f92e26b6c"
+        },
+        "names": [
+          "圆桌",
+          "椅子1",
+          "椅子2",
+          "门"
+        ]
+      }
+    },
+    {
+      "name": "Build follow-up edits same pending table and requires a fresh Ghost",
+      "status": "PASS",
+      "durationMs": 2586,
+      "evidence": {
+        "firstLabels": [
+          "圆桌",
+          "椅子1",
+          "椅子2",
+          "门"
+        ],
+        "beforePosition": "中心线 · 中区 · 距中心线 0.00 米 · 距台口 3.00 米",
+        "afterPosition": "台左 · 中区 · 距中心线 0.30 米 · 距台口 3.00 米",
+        "graph": {
+          "beforeVersion": 1,
+          "afterVersion": 1,
+          "beforeHash": "79e9bda53efccf7ffabbd160dfc9976343538040353849b4fdb34d2f92e26b6c",
+          "afterHash": "79e9bda53efccf7ffabbd160dfc9976343538040353849b4fdb34d2f92e26b6c"
+        }
+      }
+    },
+    {
+      "name": "Confirm Build persists exactly four new objects",
+      "status": "PASS",
+      "durationMs": 2498,
+      "evidence": {
+        "newObjects": [
+          {
+            "id": "block_r6p7lle8srsk6o21",
+            "name": "圆桌",
+            "position": [
+              0.3,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "block_d8vmmjwumicqc5xv",
+            "name": "椅子1",
+            "position": [
+              1.35,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "block_cnlsqql0zj7yo1d4",
+            "name": "椅子2",
+            "position": [
+              -1.35,
+              0,
+              0
+            ]
+          },
+          {
+            "id": "block_4075ctun2phekw85",
+            "name": "门",
+            "position": [
+              -3.25,
+              0,
+              0
+            ]
+          }
+        ],
+        "beforeVersion": 1,
+        "afterVersion": 2
+      }
+    },
+    {
+      "name": "A by door and B by table is proposed through the rehearsal system, never direct write",
+      "status": "PASS",
+      "durationMs": 2121,
+      "evidence": {
+        "notice": "可以先在舞台上试试，再决定是否采用。",
+        "suggestions": "方案 01 · 先试人与物件的站位\n\nA站门边，B靠桌子\n\nA：站在布景旁 · 门 · 净距 0.5 米\nB：站在布景旁 · 圆桌 · 净距 0.5 米\n为什么？\n选这个在舞台上试试\n换几个方向",
+        "graph": {
+          "beforeVersion": 2,
+          "afterVersion": 2,
+          "beforeHash": "63dac9461cfcfc90701d1b88a4126176192efad4d60f3029946e75452d620473",
+          "afterHash": "63dac9461cfcfc90701d1b88a4126176192efad4d60f3029946e75452d620473"
+        }
+      }
+    },
+    {
+      "name": "B less close revises rehearsal with zero formal writes",
+      "status": "PASS",
+      "durationMs": 1914,
+      "evidence": {
+        "notice": "可以先在舞台上试试，再决定是否采用。",
+        "suggestions": "方案 01 · 给人与物件留出距离\n\nB别那么近\n\nA：站在布景旁 · 门 · 净距 0.5 米\nB：站在布景旁 · 圆桌 · 净距 1 米\n为什么？\n选这个在舞台上试试\n换几个方向",
+        "graph": {
+          "beforeVersion": 2,
+          "afterVersion": 2,
+          "beforeHash": "63dac9461cfcfc90701d1b88a4126176192efad4d60f3029946e75452d620473",
+          "afterHash": "63dac9461cfcfc90701d1b88a4126176192efad4d60f3029946e75452d620473"
+        }
+      }
+    },
+    {
+      "name": "Reflect produces discussion; second direction produces a fresh rehearsal Ghost",
+      "status": "PASS",
+      "durationMs": 2155,
+      "evidence": {
+        "discussion": "舞台没有改变，可以继续讨论或手动操作。",
+        "selection": "可以先在舞台上试试，再决定是否采用。",
+        "graph": {
+          "beforeVersion": 2,
+          "afterVersion": 2,
+          "beforeHash": "63dac9461cfcfc90701d1b88a4126176192efad4d60f3029946e75452d620473",
+          "afterHash": "63dac9461cfcfc90701d1b88a4126176192efad4d60f3029946e75452d620473"
+        }
+      }
+    },
+    {
+      "name": "Save a named Version with scene, venue, rehearsal hashes and source time",
+      "status": "PASS",
+      "durationMs": 2614,
+      "evidence": {
+        "id": "afa04031-fa87-470e-98dd-b725aea0b035",
+        "sceneVersion": "snapshot-d681ae1d4935745c",
+        "venueVersion": "venue-e7b3313a0f57ef10",
+        "rehearsalVersion": "rehearsal-bdcb1146f144d1e4",
+        "createdAt": "2026-09-12T03:35:27.989Z"
+      }
+    },
+    {
+      "name": "View historical Version without restoring or changing any formal data",
+      "status": "PASS",
+      "durationMs": 2568,
+      "evidence": {
+        "graph": {
+          "beforeVersion": 3,
+          "afterVersion": 3,
+          "beforeHash": "0b727d1e265c11b59c69728e7f8bb90802959b8a29a6dbad31056fd48084cfc1",
+          "afterHash": "0b727d1e265c11b59c69728e7f8bb90802959b8a29a6dbad31056fd48084cfc1"
+        },
+        "svgRoutes": 2
+      }
+    },
+    {
+      "name": "Version becomes Remount source; manual venue and three-point calibration stay draft-only",
+      "status": "PASS",
+      "durationMs": 2244,
+      "evidence": {
+        "graph": {
+          "beforeVersion": 3,
+          "afterVersion": 3,
+          "beforeHash": "0b727d1e265c11b59c69728e7f8bb90802959b8a29a6dbad31056fd48084cfc1",
+          "afterHash": "0b727d1e265c11b59c69728e7f8bb90802959b8a29a6dbad31056fd48084cfc1"
+        },
+        "sourceValues": [
+          0,
+          0,
+          3,
+          1,
+          0,
+          3,
+          0,
+          0,
+          2
+        ],
+        "targetXTranslationMeters": 10,
+        "text": "REMOUNT / 01\n复台\n\n让同一场戏，抵达另一个空间。\n\n01\n源场地\n02\n目标场地\n03\n空间标定\n04\n映射预览\n05\n实体落位\n06\n复台验收\n04 / 映射预览\n重新计算并查看全景\n原版本\n叠加对比\n目标方案\n蓝 · 原位置\n绿 · 可落位\n黄 · 净距提示\n红 · 冲突\n灰 · 场地参考\n\n原场地、原布景尺寸代理和人物路线以蓝色显示；新场地为灰色边界，待确认落位为彩色 Ghost。虚线包含已保存的排演路线。尺寸代理不复刻材质；确认前不改正式场景。\n\n总体校准误差（均方根）\n0.00 mm\n最大 0.00 mm · 通过\n\n6 个物件 · 0 项冲突 · 0 项提示\n\n圆桌\n可落位\n椅子1\n可落位\n椅子2\n可落位\n门\n可落位\nA\n可落位\nB\n可落位\n检查实体落位 →\n走位线与物件表示\n保存复台配置\n放弃草稿并载入\n\n米 / 弧度 · 确定性坐标映射 · 第一阶段"
+      }
+    },
+    {
+      "name": "Source Target and Overlay controls are visible and switchable",
+      "status": "PASS",
+      "durationMs": 2936,
+      "evidence": {
+        "graph": {
+          "beforeVersion": 3,
+          "afterVersion": 3,
+          "beforeHash": "0b727d1e265c11b59c69728e7f8bb90802959b8a29a6dbad31056fd48084cfc1",
+          "afterHash": "0b727d1e265c11b59c69728e7f8bb90802959b8a29a6dbad31056fd48084cfc1"
+        }
+      }
+    },
+    {
+      "name": "Confirm Remount applies 1:1 once; real conflicts block instead of being ignored",
+      "status": "PASS",
+      "durationMs": 5291,
+      "evidence": {
+        "appliedVersion": 4,
+        "undoVersion": 5,
+        "oneUndoRestoresExactGraph": true,
+        "sceneryObjectsMappedAtOriginalSize": 4,
+        "formalVenueAfterApply": {
+          "id": "a1ab5fb6-855f-41f5-97e1-a08cb95e3e35",
+          "name": "黑匣子 · 8 × 6 米",
+          "type": "black-box",
+          "width": 8,
+          "depth": 6,
+          "height": 4,
+          "origin": [
+            0,
+            0,
+            0
+          ]
+        },
+        "limitation": "Manual target venue is saved in Remount configuration; this applies mapped poses and rehearsal routes, not a replacement of the formal venue geometry. Full target-venue replacement remains PARTIAL."
+      }
+    },
+    {
+      "name": "Paired phone submits Build, requests owner Ghost and receives read-only scenery projection",
+      "status": "PASS",
+      "durationMs": 19844,
+      "evidence": {
+        "sceneId": "9aad0b101c35",
+        "graph": {
+          "beforeVersion": 1,
+          "afterVersion": 1,
+          "beforeHash": "6b5b49ed01397c30fd19347d82cb116e961fe382d9550d1f35c121c60f6e442c",
+          "afterHash": "6b5b49ed01397c30fd19347d82cb116e961fe382d9550d1f35c121c60f6e442c"
+        },
+        "phoneSceneryCount": 4,
+        "phoneAdoptButtons": 0,
+        "actualOwnerConfirmedPreview": true,
+        "actualOwnerAdopted": false,
+        "device": "Chromium mobile viewport simulation; real iPhone NOT_RUN"
+      }
+    },
+    {
+      "name": "No uncaught browser exceptions during completed acceptance",
+      "status": "PASS",
+      "durationMs": 0,
+      "evidence": {
+        "errors": 0
+      }
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "time": "2026-09-12T03:35:04.230Z",
+      "method": "POST",
+      "path": "/api/scenes"
+    },
+    {
+      "time": "2026-09-12T03:35:20.251Z",
+      "method": "PUT",
+      "path": "/api/scenes/ce62541a0a42"
+    },
+    {
+      "time": "2026-09-12T03:35:29.017Z",
+      "method": "PUT",
+      "path": "/api/scenes/ce62541a0a42"
+    },
+    {
+      "time": "2026-09-12T03:35:39.342Z",
+      "method": "PUT",
+      "path": "/api/scenes/ce62541a0a42"
+    },
+    {
+      "time": "2026-09-12T03:35:42.041Z",
+      "method": "PUT",
+      "path": "/api/scenes/ce62541a0a42"
+    },
+    {
+      "time": "2026-09-12T03:35:43.610Z",
+      "method": "POST",
+      "path": "/api/scenes"
+    },
+    {
+      "time": "2026-09-12T03:35:52.330Z",
+      "method": "POST",
+      "path": "/api/remote-voice/sessions"
+    },
+    {
+      "time": "2026-09-12T03:35:52.355Z",
+      "method": "PATCH",
+      "path": "/api/remote-voice/sessions/e586536a-3105-458a-a8ef-9b12347daa8d/dia"
+    },
+    {
+      "time": "2026-09-12T03:35:54.376Z",
+      "method": "PATCH",
+      "path": "/api/remote-voice/sessions/e586536a-3105-458a-a8ef-9b12347daa8d/dia"
+    },
+    {
+      "time": "2026-09-12T03:35:56.387Z",
+      "method": "PATCH",
+      "path": "/api/remote-voice/sessions/e586536a-3105-458a-a8ef-9b12347daa8d/dia"
+    },
+    {
+      "time": "2026-09-12T03:35:58.400Z",
+      "method": "PATCH",
+      "path": "/api/remote-voice/sessions/e586536a-3105-458a-a8ef-9b12347daa8d/dia"
+    },
+    {
+      "time": "2026-09-12T03:36:00.413Z",
+      "method": "PATCH",
+      "path": "/api/remote-voice/sessions/e586536a-3105-458a-a8ef-9b12347daa8d/dia"
+    }
+  ],
+  "fixture": {
+    "creation": "Real /demo UI creates two independent synthetic scenes, one for desktop and one for paired phone; each outgoing POST is amended before its first persistence.",
+    "reason": "Deterministic safe initial blocking permits independent Build and Remount verification without hiding later conflicts.",
+    "performers": {
+      "A": [
+        -2.5,
+        0,
+        2
+      ],
+      "B": [
+        2.5,
+        0,
+        2
+      ]
+    },
+    "routes": "Each performer has a 0.3 m downstage lateral path, 4 seconds; no generated proposal is altered by the harness."
+  },
+  "sceneId": "ce62541a0a42",
+  "phoneSceneId": "9aad0b101c35",
+  "finishedAt": "2026-09-12T03:36:03.365Z",
+  "status": "PASS"
+}

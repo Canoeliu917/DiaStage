@@ -1,0 +1,1703 @@
+{
+  "phase": "matrix",
+  "synthetic": true,
+  "viewportEvidence": "SIMULATION",
+  "realModel": "NOT_RUN",
+  "realIphone": "NOT_RUN",
+  "realIpad": "NOT_RUN",
+  "realAndroid": "NOT_RUN",
+  "errors": [],
+  "requestFailures": [
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/66321a0f-ea3c-40c8-97d1-10634829b297/dia",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "checks": [
+    {
+      "name": "soft keyboard simulation retains text and reachable Send",
+      "status": "PASS",
+      "evidence": {
+        "kind": "SIMULATION",
+        "sendBox": {
+          "x": 114,
+          "y": 226.46875,
+          "width": 112.40625,
+          "height": 48
+        }
+      }
+    },
+    {
+      "name": "phone orientation retains draft and selection",
+      "status": "PASS",
+      "evidence": {
+        "kind": "SIMULATION"
+      }
+    },
+    {
+      "name": "tablet single-side priority and layout restoration",
+      "status": "PASS",
+      "evidence": {
+        "kind": "SIMULATION"
+      }
+    },
+    {
+      "name": "Ghost controls phone 360x800",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 32,
+          "y": 375.859375,
+          "width": 296,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-360x800.png"
+      }
+    },
+    {
+      "name": "Ghost controls phone 375x812",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 32,
+          "y": 382.171875,
+          "width": 311,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-375x812.png"
+      }
+    },
+    {
+      "name": "Ghost controls phone 390x844",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 32,
+          "y": 398.46875,
+          "width": 326,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-390x844.png"
+      }
+    },
+    {
+      "name": "Ghost controls phone 393x852",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 32,
+          "y": 401.75,
+          "width": 329,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-393x852.png"
+      }
+    },
+    {
+      "name": "Ghost controls phone 430x932",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 32,
+          "y": 405.96875,
+          "width": 366,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-430x932.png"
+      }
+    },
+    {
+      "name": "Ghost controls phone 800x360",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 116,
+          "y": 155.859375,
+          "width": 568,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-800x360.png"
+      }
+    },
+    {
+      "name": "Ghost controls phone 812x375",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 122,
+          "y": 163.859375,
+          "width": 568,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-812x375.png"
+      }
+    },
+    {
+      "name": "Ghost controls phone 844x390",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 138,
+          "y": 170.859375,
+          "width": 568,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-844x390.png"
+      }
+    },
+    {
+      "name": "Ghost controls phone 932x430",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 182,
+          "y": 190.859375,
+          "width": 568,
+          "height": 48
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-phone-932x430.png"
+      }
+    },
+    {
+      "name": "Ghost controls tablet 768x1024",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 108,
+          "y": 626.34375,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-tablet-768x1024.png"
+      }
+    },
+    {
+      "name": "Ghost controls tablet 820x1180",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 108,
+          "y": 738.21875,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-tablet-820x1180.png"
+      }
+    },
+    {
+      "name": "Ghost controls tablet 834x1194",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 108,
+          "y": 747.9375,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-tablet-834x1194.png"
+      }
+    },
+    {
+      "name": "Ghost controls tablet 1024x1366",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 803,
+          "y": 591.453125,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-tablet-1024x1366.png"
+      }
+    },
+    {
+      "name": "Ghost controls tablet 1024x768",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 803,
+          "y": 292.453125,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-tablet-1024x768.png"
+      }
+    },
+    {
+      "name": "Ghost controls tablet 1180x820",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 959,
+          "y": 318.453125,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-tablet-1180x820.png"
+      }
+    },
+    {
+      "name": "Ghost controls tablet 1194x834",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 973,
+          "y": 325.453125,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-tablet-1194x834.png"
+      }
+    },
+    {
+      "name": "Ghost controls tablet 1366x1024",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 1145,
+          "y": 420.453125,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-tablet-1366x1024.png"
+      }
+    },
+    {
+      "name": "Ghost controls desktop 1280x720",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 1059,
+          "y": 268.453125,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-desktop-1280x720.png"
+      }
+    },
+    {
+      "name": "Ghost controls desktop 1366x768",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 1145,
+          "y": 292.453125,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-desktop-1366x768.png"
+      }
+    },
+    {
+      "name": "Ghost controls desktop 1440x900",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 1179,
+          "y": 348.015625,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-desktop-1440x900.png"
+      }
+    },
+    {
+      "name": "Ghost controls desktop 1440x1000",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 1179,
+          "y": 398.015625,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-desktop-1440x1000.png"
+      }
+    },
+    {
+      "name": "Ghost controls desktop 1920x1080",
+      "status": "PASS",
+      "evidence": {
+        "box": {
+          "x": 1659,
+          "y": 438.015625,
+          "width": 74,
+          "height": 44
+        },
+        "screenshot": ".impeccable/review/internal-device/ghost-desktop-1920x1080.png"
+      }
+    },
+    {
+      "name": "tablet orientation preserves Thread selection draft and Ghost",
+      "status": "PASS",
+      "evidence": {
+        "kind": "SIMULATION"
+      }
+    }
+  ],
+  "matrix": [
+    {
+      "device": "phone",
+      "width": 360,
+      "height": 800,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 32,
+          "y": 439.859375,
+          "width": 296,
+          "height": 88
+        },
+        "firstSend": {
+          "x": 114,
+          "y": 539.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 32,
+          "y": 343.859375,
+          "width": 296,
+          "height": 48
+        },
+        "input": {
+          "x": 32,
+          "y": 355.859375,
+          "width": 296,
+          "height": 88
+        },
+        "send": {
+          "x": 114,
+          "y": 375.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 32,
+          "y": 343.859375,
+          "width": 296,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 360,
+        "scrollWidth": 360
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-360x800.png"
+    },
+    {
+      "device": "phone",
+      "width": 375,
+      "height": 812,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 32,
+          "y": 441.171875,
+          "width": 311,
+          "height": 88
+        },
+        "firstSend": {
+          "x": 114,
+          "y": 541.171875,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 32,
+          "y": 345.171875,
+          "width": 311,
+          "height": 48
+        },
+        "input": {
+          "x": 32,
+          "y": 362.171875,
+          "width": 311,
+          "height": 88
+        },
+        "send": {
+          "x": 114,
+          "y": 382.171875,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 32,
+          "y": 345.171875,
+          "width": 311,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 375,
+        "scrollWidth": 375
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-375x812.png"
+    },
+    {
+      "device": "phone",
+      "width": 390,
+      "height": 844,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 32,
+          "y": 442.46875,
+          "width": 326,
+          "height": 88
+        },
+        "firstSend": {
+          "x": 114,
+          "y": 542.46875,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 32,
+          "y": 346.46875,
+          "width": 326,
+          "height": 48
+        },
+        "input": {
+          "x": 32,
+          "y": 378.46875,
+          "width": 326,
+          "height": 88
+        },
+        "send": {
+          "x": 114,
+          "y": 398.46875,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 32,
+          "y": 346.46875,
+          "width": 326,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 390,
+        "scrollWidth": 390
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-390x844.png"
+    },
+    {
+      "device": "phone",
+      "width": 393,
+      "height": 852,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 32,
+          "y": 442.75,
+          "width": 329,
+          "height": 88
+        },
+        "firstSend": {
+          "x": 114,
+          "y": 542.75,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 32,
+          "y": 346.75,
+          "width": 329,
+          "height": 48
+        },
+        "input": {
+          "x": 32,
+          "y": 381.75,
+          "width": 329,
+          "height": 88
+        },
+        "send": {
+          "x": 114,
+          "y": 401.75,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 32,
+          "y": 346.75,
+          "width": 329,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 393,
+        "scrollWidth": 393
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-393x852.png"
+    },
+    {
+      "device": "phone",
+      "width": 430,
+      "height": 932,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 32,
+          "y": 445.96875,
+          "width": 366,
+          "height": 88
+        },
+        "firstSend": {
+          "x": 114,
+          "y": 545.96875,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 32,
+          "y": 349.96875,
+          "width": 366,
+          "height": 48
+        },
+        "input": {
+          "x": 32,
+          "y": 421.96875,
+          "width": 366,
+          "height": 88
+        },
+        "send": {
+          "x": 114,
+          "y": 441.96875,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 32,
+          "y": 349.96875,
+          "width": 366,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 430,
+        "scrollWidth": 430
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-430x932.png"
+    },
+    {
+      "device": "phone",
+      "width": 800,
+      "height": 360,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 116,
+          "y": 450.859375,
+          "width": 568,
+          "height": 74
+        },
+        "firstSend": {
+          "x": 198,
+          "y": 536.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 116,
+          "y": 354.859375,
+          "width": 568,
+          "height": 48
+        },
+        "input": {
+          "x": 116,
+          "y": 142.859375,
+          "width": 568,
+          "height": 74
+        },
+        "send": {
+          "x": 198,
+          "y": 155.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 116,
+          "y": 155.859375,
+          "width": 568,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": false,
+        "send": false,
+        "preview": false
+      },
+      "overflow": {
+        "width": 800,
+        "scrollWidth": 800
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-800x360.png"
+    },
+    {
+      "device": "phone",
+      "width": 812,
+      "height": 375,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 122,
+          "y": 450.859375,
+          "width": 568,
+          "height": 74
+        },
+        "firstSend": {
+          "x": 204,
+          "y": 536.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 122,
+          "y": 354.859375,
+          "width": 568,
+          "height": 48
+        },
+        "input": {
+          "x": 122,
+          "y": 150.859375,
+          "width": 568,
+          "height": 74
+        },
+        "send": {
+          "x": 204,
+          "y": 163.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 122,
+          "y": 163.859375,
+          "width": 568,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": false,
+        "send": false,
+        "preview": false
+      },
+      "overflow": {
+        "width": 812,
+        "scrollWidth": 812
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-812x375.png"
+    },
+    {
+      "device": "phone",
+      "width": 844,
+      "height": 390,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 138,
+          "y": 450.859375,
+          "width": 568,
+          "height": 74
+        },
+        "firstSend": {
+          "x": 220,
+          "y": 536.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 138,
+          "y": 354.859375,
+          "width": 568,
+          "height": 48
+        },
+        "input": {
+          "x": 138,
+          "y": 157.859375,
+          "width": 568,
+          "height": 74
+        },
+        "send": {
+          "x": 220,
+          "y": 170.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 138,
+          "y": 170.859375,
+          "width": 568,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": false,
+        "send": false,
+        "preview": false
+      },
+      "overflow": {
+        "width": 844,
+        "scrollWidth": 844
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-844x390.png"
+    },
+    {
+      "device": "phone",
+      "width": 932,
+      "height": 430,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 182,
+          "y": 450.859375,
+          "width": 568,
+          "height": 74
+        },
+        "firstSend": {
+          "x": 264,
+          "y": 536.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "firstPreview": {
+          "x": 182,
+          "y": 354.859375,
+          "width": 568,
+          "height": 48
+        },
+        "input": {
+          "x": 182,
+          "y": 177.859375,
+          "width": 568,
+          "height": 74
+        },
+        "send": {
+          "x": 264,
+          "y": 190.859375,
+          "width": 112.40625,
+          "height": 48
+        },
+        "preview": {
+          "x": 182,
+          "y": 190.859375,
+          "width": 568,
+          "height": 48
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": false,
+        "send": false,
+        "preview": true
+      },
+      "overflow": {
+        "width": 932,
+        "scrollWidth": 932
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/phone-932x430.png"
+    },
+    {
+      "device": "tablet",
+      "width": 768,
+      "height": 1024,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 14,
+          "y": 836.21875,
+          "width": 740,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 14,
+          "y": 919,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 18,
+          "y": 93.859375,
+          "width": 732,
+          "height": 44
+        },
+        "input": {
+          "x": 14,
+          "y": 836.21875,
+          "width": 740,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 14,
+          "y": 919,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 18,
+          "y": 626.859375,
+          "width": 732,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 105.390625,
+          "width": 648,
+          "height": 333.140625
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 768,
+        "scrollWidth": 768
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/tablet-768x1024.png"
+    },
+    {
+      "device": "tablet",
+      "width": 820,
+      "height": 1180,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 14,
+          "y": 988.21875,
+          "width": 792,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 14,
+          "y": 1071,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 18,
+          "y": 697.734375,
+          "width": 784,
+          "height": 44
+        },
+        "input": {
+          "x": 14,
+          "y": 988.21875,
+          "width": 792,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 14,
+          "y": 1071,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 18,
+          "y": 737.734375,
+          "width": 784,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 137.390625,
+          "width": 700,
+          "height": 372.015625
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 820,
+        "scrollWidth": 820
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/tablet-820x1180.png"
+    },
+    {
+      "device": "tablet",
+      "width": 834,
+      "height": 1194,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 14,
+          "y": 1002.21875,
+          "width": 806,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 14,
+          "y": 1085,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 18,
+          "y": 744.453125,
+          "width": 798,
+          "height": 44
+        },
+        "input": {
+          "x": 14,
+          "y": 1002.21875,
+          "width": 806,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 14,
+          "y": 1085,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 18,
+          "y": 748.453125,
+          "width": 798,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 137.390625,
+          "width": 714,
+          "height": 378.734375
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 834,
+        "scrollWidth": 834
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/tablet-834x1194.png"
+    },
+    {
+      "device": "tablet",
+      "width": 1024,
+      "height": 1366,
+      "orientation": "portrait",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 713,
+          "y": 1168.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 713,
+          "y": 1251,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 713,
+          "y": 272.96875,
+          "width": 293,
+          "height": 44
+        },
+        "input": {
+          "x": 713,
+          "y": 1168.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 713,
+          "y": 1251,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 713,
+          "y": 591.96875,
+          "width": 293,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 137.390625,
+          "width": 574,
+          "height": 1171.609375
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1024,
+        "scrollWidth": 1024
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/tablet-1024x1366.png"
+    },
+    {
+      "device": "tablet",
+      "width": 1024,
+      "height": 768,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 713,
+          "y": 570.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 713,
+          "y": 653,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 713,
+          "y": 591.96875,
+          "width": 293,
+          "height": 44
+        },
+        "input": {
+          "x": 713,
+          "y": 570.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 713,
+          "y": 653,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 713,
+          "y": 292.96875,
+          "width": 293,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 137.390625,
+          "width": 574,
+          "height": 573.609375
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1024,
+        "scrollWidth": 1024
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/tablet-1024x768.png"
+    },
+    {
+      "device": "tablet",
+      "width": 1180,
+      "height": 820,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 869,
+          "y": 622.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 869,
+          "y": 705,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 869,
+          "y": 292.96875,
+          "width": 293,
+          "height": 44
+        },
+        "input": {
+          "x": 869,
+          "y": 622.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 869,
+          "y": 705,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 869,
+          "y": 318.96875,
+          "width": 293,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 151,
+          "width": 730,
+          "height": 612
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1180,
+        "scrollWidth": 1180
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/tablet-1180x820.png"
+    },
+    {
+      "device": "tablet",
+      "width": 1194,
+      "height": 834,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 883,
+          "y": 636.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 883,
+          "y": 719,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 883,
+          "y": 318.96875,
+          "width": 293,
+          "height": 44
+        },
+        "input": {
+          "x": 883,
+          "y": 636.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 883,
+          "y": 719,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 883,
+          "y": 325.96875,
+          "width": 293,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 151,
+          "width": 744,
+          "height": 626
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1194,
+        "scrollWidth": 1194
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/tablet-1194x834.png"
+    },
+    {
+      "device": "tablet",
+      "width": 1366,
+      "height": 1024,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 1055,
+          "y": 826.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 1055,
+          "y": 909,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 1055,
+          "y": 325.96875,
+          "width": 293,
+          "height": 44
+        },
+        "input": {
+          "x": 1055,
+          "y": 826.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 1055,
+          "y": 909,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 1055,
+          "y": 420.96875,
+          "width": 293,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 151,
+          "width": 916,
+          "height": 816
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1366,
+        "scrollWidth": 1366
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/tablet-1366x1024.png"
+    },
+    {
+      "device": "desktop",
+      "width": 1280,
+      "height": 720,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 969,
+          "y": 522.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 969,
+          "y": 605,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 969,
+          "y": 420.96875,
+          "width": 293,
+          "height": 44
+        },
+        "input": {
+          "x": 969,
+          "y": 522.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 969,
+          "y": 605,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 969,
+          "y": 268.96875,
+          "width": 293,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 151,
+          "width": 830,
+          "height": 512
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1280,
+        "scrollWidth": 1280
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/desktop-1280x720.png"
+    },
+    {
+      "device": "desktop",
+      "width": 1366,
+      "height": 768,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 1055,
+          "y": 570.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 1055,
+          "y": 653,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 1055,
+          "y": 268.96875,
+          "width": 293,
+          "height": 44
+        },
+        "input": {
+          "x": 1055,
+          "y": 570.21875,
+          "width": 293,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 1055,
+          "y": 653,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 1055,
+          "y": 292.96875,
+          "width": 293,
+          "height": 44
+        },
+        "stage": {
+          "x": 120,
+          "y": 151,
+          "width": 916,
+          "height": 560
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1366,
+        "scrollWidth": 1366
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/desktop-1366x768.png"
+    },
+    {
+      "device": "desktop",
+      "width": 1440,
+      "height": 900,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 1089,
+          "y": 702.21875,
+          "width": 333,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 1089,
+          "y": 785,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 1089,
+          "y": 271.53125,
+          "width": 333,
+          "height": 44
+        },
+        "input": {
+          "x": 1089,
+          "y": 702.21875,
+          "width": 333,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 1089,
+          "y": 785,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 1089,
+          "y": 347.53125,
+          "width": 333,
+          "height": 44
+        },
+        "stage": {
+          "x": 384,
+          "y": 88,
+          "width": 686,
+          "height": 755
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/desktop-1440x900.png"
+    },
+    {
+      "device": "desktop",
+      "width": 1440,
+      "height": 1000,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 1089,
+          "y": 802.21875,
+          "width": 333,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 1089,
+          "y": 885,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 1089,
+          "y": 347.53125,
+          "width": 333,
+          "height": 44
+        },
+        "input": {
+          "x": 1089,
+          "y": 802.21875,
+          "width": 333,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 1089,
+          "y": 885,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 1089,
+          "y": 397.53125,
+          "width": 333,
+          "height": 44
+        },
+        "stage": {
+          "x": 384,
+          "y": 88,
+          "width": 686,
+          "height": 855
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/desktop-1440x1000.png"
+    },
+    {
+      "device": "desktop",
+      "width": 1920,
+      "height": 1080,
+      "orientation": "landscape",
+      "status": "PASS",
+      "boxes": {
+        "firstInput": {
+          "x": 1569,
+          "y": 882.21875,
+          "width": 333,
+          "height": 74.78125
+        },
+        "firstSend": {
+          "x": 1569,
+          "y": 965,
+          "width": 48,
+          "height": 44
+        },
+        "firstPreview": {
+          "x": 1569,
+          "y": 397.53125,
+          "width": 333,
+          "height": 44
+        },
+        "input": {
+          "x": 1569,
+          "y": 882.21875,
+          "width": 333,
+          "height": 74.78125
+        },
+        "send": {
+          "x": 1569,
+          "y": 965,
+          "width": 48,
+          "height": 44
+        },
+        "preview": {
+          "x": 1569,
+          "y": 437.53125,
+          "width": 333,
+          "height": 44
+        },
+        "stage": {
+          "x": 384,
+          "y": 88,
+          "width": 1166,
+          "height": 935
+        }
+      },
+      "issues": [],
+      "firstScreen": {
+        "input": true,
+        "send": true,
+        "preview": true
+      },
+      "overflow": {
+        "width": 1920,
+        "scrollWidth": 1920
+      },
+      "touchTargets": [],
+      "cardOverflow": [],
+      "screenshot": ".impeccable/review/internal-device/desktop-1920x1080.png"
+    }
+  ],
+  "conversationFirstRenderMs": 7673,
+  "sceneFixture": "independent synthetic farewell",
+  "status": "PASS"
+}

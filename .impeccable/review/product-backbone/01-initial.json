@@ -1,0 +1,240 @@
+{
+  "id": "ce62541a0a42",
+  "name": "告别 · 原创演示",
+  "projectId": null,
+  "ownerId": null,
+  "thumbnailUrl": null,
+  "version": 1,
+  "createdAt": "2026-09-12T03:35:04.235Z",
+  "updatedAt": "2026-09-12T03:35:04.235Z",
+  "sizeBytes": 2548,
+  "nodeCount": 4,
+  "editorUrl": "/editor/ce62541a0a42",
+  "url": "/editor/ce62541a0a42",
+  "published": true,
+  "graphHash": "6ed4943103e66c1b6a6ee8d900a44c8b0231adef4b1f3954ade8108d3bf3bf33",
+  "graph": {
+    "nodes": {
+      "site_s7fa0w2w11wwyybr": {
+        "object": "node",
+        "id": "site_s7fa0w2w11wwyybr",
+        "type": "site",
+        "name": "黑匣子 · 8 × 6 米",
+        "parentId": null,
+        "visible": true,
+        "metadata": {
+          "diastageTheatre": {
+            "version": 2,
+            "production": {
+              "id": "9a3459b9-f771-4d83-a2c9-9e55aea46319",
+              "name": "告别 · 原创演示"
+            },
+            "venue": {
+              "id": "a1ab5fb6-855f-41f5-97e1-a08cb95e3e35",
+              "name": "黑匣子 · 8 × 6 米",
+              "type": "black-box",
+              "width": 8,
+              "depth": 6,
+              "height": 4,
+              "origin": [
+                0,
+                0,
+                0
+              ]
+            },
+            "rehearsalSimulation": {
+              "version": 1,
+              "performers": [
+                {
+                  "id": "d4b80daf-6afa-4f79-b631-f037d9a0593b",
+                  "name": "A",
+                  "color": "#555555",
+                  "position": [
+                    -2.5,
+                    0,
+                    2
+                  ],
+                  "facing": 1.5707963267948966,
+                  "visible": true
+                },
+                {
+                  "id": "6af15d65-e0bc-42e2-8984-8bb42ac8de9c",
+                  "name": "B",
+                  "color": "#999999",
+                  "position": [
+                    2.5,
+                    0,
+                    2
+                  ],
+                  "facing": -1.5707963267948966,
+                  "visible": true
+                }
+              ],
+              "paths": [
+                {
+                  "id": "backbone-fixture-route-0",
+                  "performerId": "d4b80daf-6afa-4f79-b631-f037d9a0593b",
+                  "points": [
+                    [
+                      -2.5,
+                      0,
+                      2
+                    ],
+                    [
+                      -2.2,
+                      0,
+                      2
+                    ]
+                  ],
+                  "durationSeconds": 4,
+                  "visible": true
+                },
+                {
+                  "id": "backbone-fixture-route-1",
+                  "performerId": "6af15d65-e0bc-42e2-8984-8bb42ac8de9c",
+                  "points": [
+                    [
+                      2.5,
+                      0,
+                      2
+                    ],
+                    [
+                      2.2,
+                      0,
+                      2
+                    ]
+                  ],
+                  "durationSeconds": 4,
+                  "visible": true
+                }
+              ],
+              "durationSeconds": 20
+            }
+          },
+          "diastageSyntheticDemo": {
+            "schemaVersion": 1,
+            "provenance": "synthetic",
+            "originalContent": true,
+            "script": "两个人在告别。A想走。B不想让他走。",
+            "privateProjectData": true,
+            "trainingAuthorized": false,
+            "trainingEligible": false,
+            "rightsStatus": "cleared"
+          }
+        },
+        "polygon": {
+          "type": "polygon",
+          "points": [
+            [
+              -4,
+              -3
+            ],
+            [
+              4,
+              -3
+            ],
+            [
+              4,
+              3
+            ],
+            [
+              -4,
+              3
+            ]
+          ]
+        },
+        "children": [
+          "building_e8f5eh2aheqfp1je"
+        ]
+      },
+      "building_e8f5eh2aheqfp1je": {
+        "object": "node",
+        "id": "building_e8f5eh2aheqfp1je",
+        "type": "building",
+        "name": "舞台空间",
+        "parentId": "site_s7fa0w2w11wwyybr",
+        "visible": true,
+        "metadata": {},
+        "children": [
+          "level_98q6c1oxh4y8vp5r"
+        ],
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "rotation": [
+          0,
+          0,
+          0
+        ]
+      },
+      "level_98q6c1oxh4y8vp5r": {
+        "object": "node",
+        "id": "level_98q6c1oxh4y8vp5r",
+        "type": "level",
+        "name": "表演区",
+        "parentId": "building_e8f5eh2aheqfp1je",
+        "visible": true,
+        "metadata": {},
+        "children": [
+          "slab_9sdt5wxu0ol991gg"
+        ],
+        "level": 0,
+        "baseElevation": 0,
+        "height": 4
+      },
+      "slab_9sdt5wxu0ol991gg": {
+        "object": "node",
+        "id": "slab_9sdt5wxu0ol991gg",
+        "type": "slab",
+        "name": "表演区地面",
+        "parentId": "level_98q6c1oxh4y8vp5r",
+        "visible": true,
+        "metadata": {
+          "theatreKind": "stage-floor"
+        },
+        "material": {
+          "preset": "custom",
+          "properties": {
+            "color": "#626262",
+            "roughness": 1,
+            "metalness": 0,
+            "opacity": 1,
+            "transparent": false,
+            "side": "front"
+          }
+        },
+        "polygon": [
+          [
+            -4,
+            -3
+          ],
+          [
+            4,
+            -3
+          ],
+          [
+            4,
+            3
+          ],
+          [
+            -4,
+            3
+          ]
+        ],
+        "holes": [],
+        "holeMetadata": [],
+        "elevation": 0,
+        "thickness": 0.05,
+        "recessed": false
+      }
+    },
+    "rootNodeIds": [
+      "site_s7fa0w2w11wwyybr"
+    ],
+    "collections": {},
+    "materials": {},
+    "installedPlugins": []
+  }
+}

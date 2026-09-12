@@ -1,0 +1,43 @@
+{
+  "phase": "gesture",
+  "synthetic": true,
+  "viewportEvidence": "SIMULATION",
+  "realModel": "NOT_RUN",
+  "realIphone": "NOT_RUN",
+  "realIpad": "NOT_RUN",
+  "realAndroid": "NOT_RUN",
+  "errors": [],
+  "requestFailures": [
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/004ae0e2-6596-4b9a-a843-d36f95914ebf/dia",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "checks": [
+    {
+      "name": "pointercancel discards drag without formal writes",
+      "status": "PASS"
+    },
+    {
+      "name": "blur discards drag without formal writes",
+      "status": "PASS"
+    },
+    {
+      "name": "scroll discards drag without formal writes",
+      "status": "PASS"
+    },
+    {
+      "name": "single touch and second-finger interruption do not commit a partial actor move",
+      "status": "PASS"
+    },
+    {
+      "name": "completed drag writes once, only after release",
+      "status": "PASS"
+    }
+  ],
+  "matrix": [],
+  "conversationFirstRenderMs": 7659,
+  "sceneFixture": "independent synthetic farewell",
+  "status": "PASS"
+}

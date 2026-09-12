@@ -1,0 +1,780 @@
+{
+  "phase": "resources",
+  "synthetic": true,
+  "viewportEvidence": "SIMULATION",
+  "realModel": "NOT_RUN",
+  "realIphone": "NOT_RUN",
+  "realIpad": "NOT_RUN",
+  "realAndroid": "NOT_RUN",
+  "errors": [],
+  "requestFailures": [
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scene/1493e7ac4f70",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scene/8be043126b8c",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scene/960475e7210c",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scene/1493e7ac4f70",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scene/8be043126b8c",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scene/960475e7210c",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scene/9012b129bb89",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/1493e7ac4f70/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/adad2be4-1326-4fed-934d-9b6aa9f68952/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "checks": [
+    {
+      "name": "20 client-navigation Ghost cycles release resources",
+      "status": "PASS",
+      "evidence": {
+        "cycles": 20,
+        "baseline": {
+          "cycle": 5,
+          "timeOrigin": 1789182956170.2,
+          "beforeDiscard": {
+            "documents": 4,
+            "nodes": 2130,
+            "jsEventListeners": 1484
+          },
+          "timers": 0,
+          "intervals": 0,
+          "frames": 0,
+          "objectUrls": 1,
+          "audioContexts": 0,
+          "tracks": 0,
+          "fetches": 0,
+          "dom": 599,
+          "documents": 4,
+          "nodes": 2130,
+          "jsEventListeners": 1484
+        },
+        "last": {
+          "cycle": 20,
+          "timeOrigin": 1789182956170.2,
+          "beforeDiscard": {
+            "documents": 4,
+            "nodes": 2229,
+            "jsEventListeners": 1560
+          },
+          "timers": 0,
+          "intervals": 0,
+          "frames": 0,
+          "objectUrls": 1,
+          "audioContexts": 0,
+          "tracks": 0,
+          "fetches": 0,
+          "dom": 617,
+          "documents": 4,
+          "nodes": 2229,
+          "jsEventListeners": 1560
+        },
+        "evidence": "REAL desktop browser; synthetic content; instrumented counts, not a GPU memory certification"
+      }
+    },
+    {
+      "name": "fake microphone cancel background unmount and route change release hardware",
+      "status": "PASS",
+      "evidence": {
+        "kind": "SIMULATION fake Chromium microphone, background event, no real recording or transcription"
+      }
+    }
+  ],
+  "matrix": [],
+  "conversationFirstRenderMs": 7736,
+  "resourceSamples": [
+    {
+      "cycle": 1,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 3,
+        "nodes": 2075,
+        "jsEventListeners": 1462
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 581,
+      "documents": 3,
+      "nodes": 2075,
+      "jsEventListeners": 1462
+    },
+    {
+      "cycle": 2,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2079,
+        "jsEventListeners": 1467
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 581,
+      "documents": 4,
+      "nodes": 2079,
+      "jsEventListeners": 1467
+    },
+    {
+      "cycle": 3,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2084,
+        "jsEventListeners": 1472
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 581,
+      "documents": 4,
+      "nodes": 2084,
+      "jsEventListeners": 1472
+    },
+    {
+      "cycle": 4,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2089,
+        "jsEventListeners": 1477
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 581,
+      "documents": 4,
+      "nodes": 2089,
+      "jsEventListeners": 1477
+    },
+    {
+      "cycle": 5,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2130,
+        "jsEventListeners": 1484
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2130,
+      "jsEventListeners": 1484
+    },
+    {
+      "cycle": 6,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2135,
+        "jsEventListeners": 1489
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2135,
+      "jsEventListeners": 1489
+    },
+    {
+      "cycle": 7,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2140,
+        "jsEventListeners": 1494
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2140,
+      "jsEventListeners": 1494
+    },
+    {
+      "cycle": 8,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2145,
+        "jsEventListeners": 1499
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2145,
+      "jsEventListeners": 1499
+    },
+    {
+      "cycle": 9,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2150,
+        "jsEventListeners": 1504
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2150,
+      "jsEventListeners": 1504
+    },
+    {
+      "cycle": 10,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2155,
+        "jsEventListeners": 1509
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2155,
+      "jsEventListeners": 1509
+    },
+    {
+      "cycle": 11,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2160,
+        "jsEventListeners": 1514
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2160,
+      "jsEventListeners": 1514
+    },
+    {
+      "cycle": 12,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2165,
+        "jsEventListeners": 1519
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2165,
+      "jsEventListeners": 1519
+    },
+    {
+      "cycle": 13,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2170,
+        "jsEventListeners": 1524
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2170,
+      "jsEventListeners": 1524
+    },
+    {
+      "cycle": 14,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2175,
+        "jsEventListeners": 1529
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 599,
+      "documents": 4,
+      "nodes": 2175,
+      "jsEventListeners": 1529
+    },
+    {
+      "cycle": 15,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2204,
+        "jsEventListeners": 1535
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 617,
+      "documents": 4,
+      "nodes": 2204,
+      "jsEventListeners": 1535
+    },
+    {
+      "cycle": 16,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2209,
+        "jsEventListeners": 1540
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 617,
+      "documents": 4,
+      "nodes": 2209,
+      "jsEventListeners": 1540
+    },
+    {
+      "cycle": 17,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2214,
+        "jsEventListeners": 1545
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 617,
+      "documents": 4,
+      "nodes": 2214,
+      "jsEventListeners": 1545
+    },
+    {
+      "cycle": 18,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2219,
+        "jsEventListeners": 1550
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 617,
+      "documents": 4,
+      "nodes": 2219,
+      "jsEventListeners": 1550
+    },
+    {
+      "cycle": 19,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2224,
+        "jsEventListeners": 1555
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 617,
+      "documents": 4,
+      "nodes": 2224,
+      "jsEventListeners": 1555
+    },
+    {
+      "cycle": 20,
+      "timeOrigin": 1789182956170.2,
+      "beforeDiscard": {
+        "documents": 4,
+        "nodes": 2229,
+        "jsEventListeners": 1560
+      },
+      "timers": 0,
+      "intervals": 0,
+      "frames": 0,
+      "objectUrls": 1,
+      "audioContexts": 0,
+      "tracks": 0,
+      "fetches": 0,
+      "dom": 617,
+      "documents": 4,
+      "nodes": 2229,
+      "jsEventListeners": 1560
+    }
+  ],
+  "sceneFixture": "independent synthetic farewell",
+  "status": "PASS"
+}
