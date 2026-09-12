@@ -254,7 +254,14 @@ test('a receipt with mismatched interaction identity cannot promote prepared fee
   const { journal, adopt, flush } = await setup()
   const adoption = await adopt('approach')
   await flush()
-  await saveFeedback({ ...adoption, interactionId: 'different-interaction', status: 'prepared' })
+  await saveFeedback({
+    ...adoption,
+    interactionId: 'different-interaction',
+    ...(adoption.envelope
+      ? { envelope: { ...adoption.envelope, interactionId: 'different-interaction' } }
+      : {}),
+    status: 'prepared',
+  })
   disposers.push(observeRehearsalFeedback(journal.id))
   await new Promise((resolve) => setTimeout(resolve, 30))
   const events = (await readFeedbackLog(journal.id)).events

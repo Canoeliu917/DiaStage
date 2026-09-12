@@ -1,23 +1,94 @@
 import { SceneContextSummarySchema, StagePlanSchema } from '@pascal-app/core/stage'
 import { z } from 'zod'
-import type { ThreadMessage } from './schema'
+import { InteractionEnvelopeSchema } from './interaction-envelope'
+import { RehearsalContextSchema, type ThreadMessage } from './schema'
 
-export const DiaBuildProposalSchema = z.strictObject({
-  id: z.string().uuid(),
-  parentId: z.string().uuid().nullable(),
-  createdAt: z.iso.datetime(),
-  input: z.string().min(1).max(2000),
-  sceneVersion: z.string().min(1),
-  context: SceneContextSummarySchema,
-  plan: StagePlanSchema,
-  originalPlan: StagePlanSchema,
-  previewedPlan: StagePlanSchema.nullable(),
-  status: z.enum(['proposed', 'previewed', 'prepared', 'applied', 'rejected']),
-  finalSceneVersion: z.string().nullable(),
-  privateProjectData: z.literal(true),
-  trainingAuthorized: z.literal(false),
-})
+export const DiaBuildProposalSchema = z
+  .strictObject({
+    id: z.string().uuid(),
+    sceneId: z.string().min(1).optional(),
+    envelope: InteractionEnvelopeSchema.optional(),
+    parentId: z.string().uuid().nullable(),
+    createdAt: z.iso.datetime(),
+    input: z.string().min(1).max(2000),
+    sceneVersion: z.string().min(1),
+    sourceContentVersion: z.string().optional(),
+    context: SceneContextSummarySchema,
+    plan: StagePlanSchema,
+    originalPlan: StagePlanSchema,
+    previewedPlan: StagePlanSchema.nullable(),
+    status: z.enum(['proposed', 'previewed', 'prepared', 'applied', 'rejected']),
+    finalSceneVersion: z.string().nullable(),
+    privateProjectData: z.literal(true),
+    trainingAuthorized: z.literal(false),
+  })
+  .superRefine((proposal, ctx) => {
+    const envelope = proposal.envelope
+    if (
+      envelope &&
+      (envelope.capability !== 'build' ||
+        envelope.interactionId !== proposal.id ||
+        envelope.sceneId !== proposal.sceneId ||
+        envelope.sceneVersion !== proposal.sceneVersion ||
+        envelope.status !== proposal.status ||
+        envelope.createdAt !== proposal.createdAt ||
+        (envelope.parentInteractionId ?? null) !== proposal.parentId)
+    )
+      ctx.addIssue({ code: 'custom', message: '搭台建议与交互引用不一致，原记录已保留' })
+  })
 export type DiaBuildProposal = z.infer<typeof DiaBuildProposalSchema>
+
+export const BuildFeedbackSchema = z
+  .strictObject({
+    eventId: z.string().min(1),
+    sceneId: z.string().min(1),
+    interactionId: z.string().uuid(),
+    createdAt: z.iso.datetime(),
+    kind: z.enum([
+      'proposal',
+      'revision',
+      'edit',
+      'preview',
+      'adopt',
+      'undo',
+      'redo',
+      'manual-edit',
+      'final-state',
+      'version-link',
+      'reject',
+    ]),
+    status: z.enum(['recorded', 'prepared', 'applied']),
+    proposal: DiaBuildProposalSchema,
+    envelope: InteractionEnvelopeSchema,
+    resultSceneVersion: z.string().optional(),
+    resultContentVersion: z.string().optional(),
+    journalSequence: z.number().int().nonnegative().optional(),
+    finalState: z.enum(['applied', 'undone', 'modified']).optional(),
+    finalContext: RehearsalContextSchema.extend({
+      performers: RehearsalContextSchema.shape.performers.element.array().max(24),
+    }).optional(),
+    versionId: z.string().optional(),
+    privateProjectData: z.literal(true),
+    trainingAuthorized: z.literal(false),
+    trainingEligible: z.literal(false),
+  })
+  .superRefine((event, ctx) => {
+    if (
+      event.interactionId !== event.proposal.id ||
+      (event.kind === 'adopt' && event.eventId !== event.interactionId) ||
+      event.envelope.interactionId !== event.interactionId ||
+      event.envelope.sceneId !== event.sceneId ||
+      event.proposal.sceneId !== event.sceneId ||
+      event.envelope.capability !== 'build' ||
+      event.envelope.sceneVersion !== event.proposal.sceneVersion ||
+      event.envelope.status !==
+        (event.kind === 'adopt' || event.status === 'applied'
+          ? event.status
+          : event.proposal.status)
+    )
+      ctx.addIssue({ code: 'custom', message: '搭台反馈与交互引用不一致，原记录已保留' })
+  })
+export type BuildFeedback = z.infer<typeof BuildFeedbackSchema>
 
 /** Routing selects a controlled capability; it never grants scene-write authority. */
 export function diaIntent(text: string, hasBuildDraft = false, performerNames: string[] = []) {

@@ -20,6 +20,7 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
     context = controller.currentContext(),
     ghost = useProposalGhost.getState()
   const build = controller.buildProposal()
+  const envelope = build ? build.envelope : state.interaction?.envelope
   const plan = useStagePlanPreview.getState().plan
   const hasBuildGhost =
     !!build &&
@@ -57,6 +58,7 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
         }
       : null,
     interactionId: build?.id ?? state.interaction?.interactionId ?? null,
+    ...(envelope ? { envelope } : {}),
     proposals: build
       ? [
           {

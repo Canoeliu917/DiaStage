@@ -7,6 +7,7 @@ import {
 } from '@pascal-app/core/stage'
 import { createStore } from 'zustand/vanilla'
 import { waitForLocalScene } from '../scene-journal'
+import { sceneContentVersion } from '../scene-signature'
 import { executeStageCommands } from '../stage/command-executor'
 import { currentStageContext, stageSite } from '../stage/context'
 import { draftContext, mergeDraftPlan } from '../stage/creation-policy'
@@ -22,6 +23,12 @@ import {
   previewProposal,
   useProposalGhost,
 } from './authority'
+import {
+  buildFeedbackEvent,
+  committedBuild,
+  reconcileBuildFeedback,
+  saveBuildFeedback,
+} from './build-feedback'
 import { buildDiaContext } from './context'
 import {
   conversationContext,
@@ -41,6 +48,7 @@ import {
 } from './conversation-storage'
 import { type DiaBuildProposal, diaIntent, discussStage } from './dia-backbone'
 import { readFeedbackLog, saveFeedback, saveInteraction } from './feedback'
+import { type InteractionEnvelope, InteractionEnvelopeSchema } from './interaction-envelope'
 import { LOCAL_REHEARSAL_MODEL_VERSION, localRehearsalOutput } from './local-rehearsal'
 import { requestProposal } from './proposal-client'
 import { createInteraction } from './proposal-generator'
@@ -127,6 +135,21 @@ export class DiaConversation {
         readFeedbackLog(this.sceneId),
       ])
       if (this.disposed || epoch !== this.epoch) return
+      const committedBuilds = await reconcileBuildFeedback(this.sceneId, useScene.getState().nodes)
+      if (saved)
+        saved.builds = saved.builds.map((proposal) => {
+          const receipt = committedBuilds.find((event) => event.interactionId === proposal.id)
+          return receipt
+            ? {
+                ...proposal,
+                status: 'applied',
+                finalSceneVersion: receipt.resultSceneVersion ?? proposal.finalSceneVersion,
+                ...(proposal.envelope
+                  ? { envelope: { ...proposal.envelope, status: 'applied' } }
+                  : {}),
+              }
+            : proposal
+        })
       let version = 'stage-not-ready'
       try {
         version = this.currentContext().sceneVersion ?? version
@@ -146,6 +169,7 @@ export class DiaConversation {
       if (interrupted) thread.status = 'failed'
       else if (['ghost-ready', 'waiting-human'].includes(thread.status))
         thread.status = 'proposal-ready'
+      if (build?.status === 'applied') thread.status = 'applied'
       const stale =
         !!(interaction || build) &&
         thread.status === 'proposal-ready' &&
@@ -659,6 +683,8 @@ export class DiaConversation {
   }
 
   private replaceBuild(proposal: DiaBuildProposal) {
+    if (proposal.envelope)
+      proposal = { ...proposal, envelope: { ...proposal.envelope, status: proposal.status } }
     this.store.setState((state) => ({
       builds: state.builds.map((p) => (p.id === proposal.id ? proposal : p)),
     }))
@@ -674,6 +700,10 @@ export class DiaConversation {
       return
     useStagePlanPreview.setState({ plan: null })
     this.replaceBuild({ ...proposal, plan, previewedPlan: null, status: 'proposed' })
+    if (proposal.envelope)
+      void saveBuildFeedback(buildFeedbackEvent(this.sceneId, this.buildProposal()!, 'edit')).catch(
+        (error) => this.fail(error),
+      )
     this.status('proposal-ready', '搭台建议已调整，先预演再采用。')
     void this.persist().catch((error) => this.fail(error))
   }
@@ -701,12 +731,16 @@ export class DiaConversation {
       const result = validateStagePlan(plan, current)
       if (!result.valid)
         throw new Error(result.warnings.map((w) => w.message).join('；') || '请先补齐方案信息。')
-      this.replaceBuild({
+      const updated: DiaBuildProposal = {
         ...proposal,
+        sceneId: this.sceneId,
+        envelope: this.buildEnvelope(proposal, 'previewed'),
         plan: result.plan,
         previewedPlan: result.plan,
         status: 'previewed',
-      })
+      }
+      this.replaceBuild(updated)
+      await saveBuildFeedback(buildFeedbackEvent(this.sceneId, updated, 'preview'))
       await this.persist()
       signal.throwIfAborted()
       this.assertBuildCurrent(proposal)
@@ -719,6 +753,15 @@ export class DiaConversation {
   adoptBuild(plan: StagePlan) {
     return this.act('applying', async (signal) => {
       const proposal = this.buildProposal()
+      const committed = proposal && (await committedBuild(this.sceneId, proposal.id))
+      signal.throwIfAborted()
+      if (proposal && committed) {
+        await reconcileBuildFeedback(this.sceneId, useScene.getState().nodes)
+        signal.throwIfAborted()
+        this.replaceBuild({ ...proposal, status: 'applied' })
+        this.status('applied', '该搭台方案已有正式回执；没有重复应用。撤销后的场景保持原样。')
+        return
+      }
       const preview = useStagePlanPreview.getState().plan
       if (
         proposal?.status !== 'previewed' ||
@@ -730,7 +773,14 @@ export class DiaConversation {
       signal.throwIfAborted()
       assertTheatreWritable()
       this.assertBuildCurrent(proposal)
-      this.replaceBuild({ ...proposal, status: 'prepared' })
+      const prepared = {
+        ...proposal,
+        status: 'prepared' as const,
+        envelope: this.buildEnvelope(proposal, 'prepared'),
+      }
+      const feedback = buildFeedbackEvent(this.sceneId, prepared, 'adopt', 'prepared')
+      this.replaceBuild(prepared)
+      await saveBuildFeedback(feedback)
       await this.persist()
       signal.throwIfAborted()
       await checkCurrentScene(this.sceneId)
@@ -748,7 +798,7 @@ export class DiaConversation {
         issuedAt: new Date().toISOString(),
       })
       if (!compiled.ok) throw new Error('搭台方案未通过边界与冲突检查。')
-      const result = executeStageCommands(compiled.commands)
+      const result = executeStageCommands(compiled.commands, undefined, prepared.envelope)
       if (!result.ok) throw new Error(result.error)
       useStagePlanPreview.setState({ plan: null })
       const siteId = stageSite().id
@@ -766,8 +816,10 @@ export class DiaConversation {
         },
         signal,
       )
+      await reconcileBuildFeedback(this.sceneId, useScene.getState().nodes)
+      signal.throwIfAborted()
       this.replaceBuild({
-        ...proposal,
+        ...prepared,
         status: 'applied',
         finalSceneVersion: this.currentContext().sceneVersion ?? null,
       })
@@ -782,11 +834,14 @@ export class DiaConversation {
   }
 
   private rejectBuild() {
-    return this.act('waiting-human', async () => {
+    return this.act('waiting-human', async (signal) => {
       const proposal = this.buildProposal()
       if (!proposal) return
       useStagePlanPreview.setState({ plan: null })
       this.replaceBuild({ ...proposal, status: 'rejected' })
+      if (proposal.envelope)
+        await saveBuildFeedback(buildFeedbackEvent(this.sceneId, this.buildProposal()!, 'reject'))
+      signal.throwIfAborted()
       this.message('system-state', '已放下搭台建议，正式舞台没有改变。', proposal.sceneVersion)
       this.status('rejected', '已放下这个方向，可以重新告诉 Dia 想法。')
       await this.event('proposal_rejected')
@@ -855,7 +910,15 @@ export class DiaConversation {
         else {
           const { prepareVersionRemount } = await import('../remount-scene')
           signal.throwIfAborted()
-          prepareVersionRemount(this.sceneId, selected.id)
+          prepareVersionRemount(this.sceneId, selected.id, {
+            schemaVersion: 1,
+            interactionId: crypto.randomUUID(),
+            sceneId: this.sceneId,
+            capability: 'remount',
+            sceneVersion: context.sceneVersion!,
+            status: 'proposed',
+            createdAt: new Date().toISOString(),
+          })
         }
       }
       this.navigate?.(intent === 'version' ? 'versions' : 'remount')
@@ -894,6 +957,7 @@ export class DiaConversation {
       createdAt: new Date().toISOString(),
       input: text,
       sceneVersion: context.sceneVersion!,
+      sourceContentVersion: sceneContentVersion(useScene.getState()),
       context: formal,
       plan,
       originalPlan: structuredClone(plan),
@@ -903,12 +967,22 @@ export class DiaConversation {
       privateProjectData: true,
       trainingAuthorized: false,
     }
+    proposal.sceneId = this.sceneId
+    proposal.envelope = this.buildEnvelope(proposal, 'proposed')
+    await saveBuildFeedback(
+      buildFeedbackEvent(this.sceneId, proposal, parent ? 'revision' : 'proposal'),
+    )
+    signal.throwIfAborted()
     this.store.setState((state) => ({
       builds: [...state.builds, proposal],
       activeBuildId: proposal.id,
       interaction: null,
       draft: '',
-      thread: { ...state.thread!, selectedProposalId: proposal.id, activeInteractionId: null },
+      thread: {
+        ...state.thread!,
+        selectedProposalId: proposal.id,
+        activeInteractionId: proposal.id,
+      },
     }))
     this.message(
       'dia',
@@ -919,5 +993,21 @@ export class DiaConversation {
     await this.persist()
     await this.event('proposal_generated')
     return true
+  }
+
+  private buildEnvelope(
+    proposal: DiaBuildProposal,
+    status: InteractionEnvelope['status'],
+  ): InteractionEnvelope {
+    return InteractionEnvelopeSchema.parse({
+      schemaVersion: 1,
+      interactionId: proposal.id,
+      sceneId: this.sceneId,
+      capability: 'build',
+      sceneVersion: proposal.sceneVersion,
+      status,
+      createdAt: proposal.createdAt,
+      parentInteractionId: proposal.parentId,
+    })
   }
 }

@@ -249,6 +249,77 @@ test('Dia schemas reject scene writes, adopt, unbounded display data, and incons
   ).toBe(false)
 })
 
+test('common envelopes preserve legacy snapshots and enforce actionable scene and interaction references', () => {
+  const legacy = snapshot()
+  expect(RemoteDiaSnapshotSchema.parse(legacy)).toEqual(legacy)
+  const envelope = {
+    schemaVersion: 1 as const,
+    interactionId: legacy.interactionId!,
+    sceneId: legacy.sceneId,
+    capability: 'rehearse' as const,
+    sceneVersion: legacy.sceneVersion,
+    status: 'proposed' as const,
+    createdAt: '2026-09-12T00:00:00.000Z',
+  }
+  const current = { ...legacy, envelope }
+  expect(RemoteDiaSnapshotSchema.parse(current)).toEqual(current)
+  for (const changed of [
+    { ...envelope, interactionId: 'another-interaction' },
+    { ...envelope, sceneId: 'another-scene' },
+    { ...envelope, sceneVersion: 'another-version' },
+    { ...envelope, capability: 'adopt' },
+  ])
+    expect(RemoteDiaSnapshotSchema.safeParse({ ...current, envelope: changed }).success).toBe(false)
+  expect(
+    RemoteDiaSnapshotSchema.safeParse({ ...current, selectedProposalId: 'not-in-interaction' })
+      .success,
+  ).toBe(false)
+  // Historical source versions stay historical after adoption or manual scene changes.
+  for (const state of ['applied', 'rejected', 'stale'] as const)
+    expect(
+      RemoteDiaSnapshotSchema.parse({ ...current, state, sceneVersion: 'current-scene-version' })
+        .envelope,
+    ).toEqual(envelope)
+})
+
+test('Build and Rehearse envelopes share the paired reference gate without granting Remote Adopt', () => {
+  for (const capability of ['build', 'rehearse'] as const) {
+    const { channels, owner, remote, publish } = setup()
+    const current = snapshot()
+    current.envelope = {
+      schemaVersion: 1,
+      interactionId: current.interactionId!,
+      sceneId: current.sceneId,
+      capability,
+      sceneVersion: current.sceneVersion,
+      status: 'proposed',
+      createdAt: '2026-09-12T00:00:00.000Z',
+    }
+    publish(current)
+    expect(channels.remoteStatus(owner.id, remote.remoteToken).status.snapshot).toEqual(current)
+    const preview = {
+      type: 'preview' as const,
+      requestId: crypto.randomUUID(),
+      sequence: 1,
+      sceneVersion: current.sceneVersion,
+      interactionId: current.interactionId!,
+      proposalId: current.selectedProposalId!,
+    }
+    for (const invalid of [
+      { ...preview, sceneVersion: 'stale' },
+      { ...preview, interactionId: 'foreign' },
+      { ...preview, proposalId: 'foreign' },
+    ])
+      expect(() => channels.send(owner.id, remote.remoteToken, invalid)).toThrow()
+    expect(RemoteDiaCommandInputSchema.safeParse({ ...preview, type: 'adopt' }).success).toBe(false)
+    channels.send(owner.id, remote.remoteToken, preview)
+    expect(channels.remoteStatus(owner.id, remote.remoteToken).status.snapshot?.ghost).toBeNull()
+    expect(channels.ownerStatus(owner.id, owner.ownerToken).status.pendingCommand?.type).toBe(
+      'preview',
+    )
+  }
+})
+
 test('Build projection carries bounded scenery and confirmed Ghost without extending remote authority', () => {
   const { channels, owner, remote, publish } = setup()
   const build = snapshot()

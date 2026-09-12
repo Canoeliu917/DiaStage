@@ -37,10 +37,17 @@ import { useViewer } from '@pascal-app/viewer'
 import { z } from 'zod'
 import { create } from 'zustand'
 import { validateCameraProject } from '@/components/camera-studio/model'
+import { buildDiaContext } from '../rehearsal-intelligence/context'
+import {
+  type InteractionEnvelope,
+  InteractionEnvelopeSchema,
+} from '../rehearsal-intelligence/interaction-envelope'
 import { objectSnapshot, worldPose } from '../remount-scene'
+import { sceneContentVersion } from '../scene-signature'
 import { stageFloorUpdates, THEATRE_METADATA_KEY } from '../theatre/scene-adapter'
 import { runtimeTheatreDocument, StageSceneDocumentSchema } from '../theatre/simulation'
 import { readStageDocument } from '../theatre/simulation-store'
+import { makeVersionSource, VERSION_SOURCE_KEY } from '../theatre/version-source'
 import {
   CAMERA_METADATA,
   cameraContextObject,
@@ -162,12 +169,25 @@ function proposal(
   }
 }
 
-export function executeStageCommands(input: unknown, scriptImport?: unknown): StageExecutionResult {
+export function executeStageCommands(
+  input: unknown,
+  scriptImport?: unknown,
+  diaEnvelope?: InteractionEnvelope,
+): StageExecutionResult {
   try {
     const commands = StageCommandSchema.array().min(1).max(500).parse(input)
     const meta = commands[0]!.meta,
       state = useScene.getState(),
       site = stageSite()
+    const envelope =
+      diaEnvelope === undefined ? undefined : InteractionEnvelopeSchema.parse(diaEnvelope)
+    if (
+      envelope &&
+      (envelope.capability !== 'build' ||
+        envelope.interactionId !== meta.transactionId ||
+        envelope.status !== 'prepared')
+    )
+      throw new Error('搭台命令与人工确认交互不一致')
     const cacheKey = `${site.id}:${meta.transactionId}`
     const remote = /^remote:([a-f0-9-]{36}):(\d+)$/.exec(meta.transactionId)
     const receipts = remoteReceiptsSchema.parse(site.metadata.remoteCommandReceipts ?? [])
@@ -206,6 +226,7 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
     const doc = structuredClone(readStageDocument())
     if (!doc) throw new Error('请先建立空舞台')
     if (commands.some((command) => command.type === 'GroupObjects')) {
+      if (envelope) throw new Error('组合需要作为独立手动操作')
       if (commands.length !== 1 || commands[0]!.type !== 'GroupObjects')
         throw new Error('组合请作为独立的一轮操作提交')
       const group = commands[0]!
@@ -617,6 +638,19 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
           .join('；'),
       )
     const data = StageSceneDocumentSchema.parse(doc)
+    const source = envelope
+      ? makeVersionSource({
+          source: 'dia-build',
+          sceneId: envelope.sceneId,
+          envelope: { ...envelope, status: 'applied' },
+          resultSceneVersion: buildDiaContext(envelope.sceneId, data, nodes, {
+            intention: '搭台正式结果',
+            script: '',
+            directorIntention: '',
+            selectedPerformerId: null,
+          }).sceneVersion!,
+        })
+      : undefined
     const changes: NodeChanges = { create: [], update: [], delete: [...removed] }
     for (const id of changed) {
       const node = nodes[id]!
@@ -645,7 +679,30 @@ export function executeStageCommands(input: unknown, scriptImport?: unknown): St
       changes.update!.push(...stageFloorUpdates(runtimeTheatreDocument(data), nodes, site.id))
     executing = true
     try {
-      state.applyNodeChanges(changes)
+      runAsSingleSceneHistoryStep(useScene, () => {
+        state.applyNodeChanges(changes)
+        if (source) {
+          // Hash the normalized result (including parent children and material slots) before
+          // this existing commit transaction publishes its single durable journal entry.
+          const current = useScene.getState()
+          const resultContentVersion = sceneContentVersion(current)
+          const savedSite = current.nodes[site.id]!
+          current.updateNode(site.id, {
+            metadata: {
+              ...savedSite.metadata,
+              [VERSION_SOURCE_KEY]: { ...source, resultContentVersion },
+              diastageBuildDecision: {
+                eventId: meta.transactionId,
+                proposalId: meta.transactionId,
+                interactionId: source.interactionId,
+                nodeIds: [...new Set(resultIds)],
+                resultSceneVersion: source.resultSceneVersion,
+                resultContentVersion,
+              },
+            },
+          })
+        }
+      })
       if (removed.size) authorizeSceneNodeDrop(useScene.getState())
     } finally {
       executing = false

@@ -1,8 +1,9 @@
+import { BuildFeedbackSchema } from './dia-backbone'
 import { type Feedback, FeedbackSchema, type Interaction, InteractionSchema } from './schema'
 
 function openLog(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('diastage-rehearsal-feedback', 2)
+    const request = indexedDB.open('diastage-rehearsal-feedback', 3)
     request.onupgradeneeded = () => {
       for (const [name, keyPath] of [
         ['interactions', 'interactionId'],
@@ -10,6 +11,7 @@ function openLog(): Promise<IDBDatabase> {
         ['consent', 'sceneId'],
         ['threads', 'sceneId'],
         ['product-events', 'eventId'],
+        ['build-events', 'eventId'],
       ] as const) {
         if (request.result.objectStoreNames.contains(name)) continue
         const store = request.result.createObjectStore(name, { keyPath })
@@ -43,7 +45,14 @@ async function put(store: string, record: object) {
 }
 export const saveInteraction = (interaction: Interaction) =>
   put('interactions', InteractionSchema.parse({ ...interaction, trainingAuthorized: false }))
-export const saveFeedback = (event: Feedback) => put('events', FeedbackSchema.parse(event))
+export const saveFeedback = (event: Feedback) =>
+  put(
+    'events',
+    FeedbackSchema.parse({
+      ...event,
+      ...(event.envelope ? { envelope: { ...event.envelope, status: event.status } } : {}),
+    }),
+  )
 export async function readFeedback(eventId: string) {
   const db = await openLog()
   try {
@@ -78,10 +87,11 @@ export async function readFeedbackLog(sceneId: string) {
         request.onsuccess = () => resolve(request.result)
         request.onerror = () => reject(request.error)
       })
-    const [interactions, events, consent] = await Promise.all([
+    const [interactions, events, consent, buildEvents] = await Promise.all([
       get('interactions'),
       get('events'),
       get('consent'),
+      get('build-events'),
     ])
     return {
       interactions: interactions
@@ -91,6 +101,7 @@ export async function readFeedbackLog(sceneId: string) {
         .map((x) => FeedbackSchema.parse(x))
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
       consent,
+      buildEvents: buildEvents.map((event) => BuildFeedbackSchema.parse(event)),
     }
   } finally {
     db.close()
@@ -101,12 +112,19 @@ export async function clearFeedbackLog(sceneId: string) {
   try {
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(
-        ['interactions', 'events', 'consent', 'threads', 'product-events'],
+        ['interactions', 'events', 'consent', 'threads', 'product-events', 'build-events'],
         'readwrite',
       )
       tx.oncomplete = () => resolve()
       tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('反馈删除失败'))
-      for (const name of ['interactions', 'events', 'consent', 'threads', 'product-events']) {
+      for (const name of [
+        'interactions',
+        'events',
+        'consent',
+        'threads',
+        'product-events',
+        'build-events',
+      ]) {
         const cursor = tx.objectStore(name).index('sceneId').openCursor(sceneId)
         cursor.onsuccess = () => {
           const value = cursor.result

@@ -28,10 +28,21 @@ export function createInteraction(input: unknown, output: unknown, modelVersion:
   const parent = conversation?.previousInteraction?.proposals.find(
     (proposal) => proposal.proposalId === conversation.selectedProposalId,
   )
+  const interactionId = crypto.randomUUID()
   return InteractionSchema.parse({
-    interactionId: crypto.randomUUID(),
+    interactionId,
     sceneId: context.sceneId,
     createdAt,
+    envelope: {
+      schemaVersion: 1,
+      interactionId,
+      sceneId: context.sceneId,
+      capability: 'rehearse',
+      sceneVersion: metadata.sceneVersion,
+      status: 'proposed',
+      createdAt,
+      parentInteractionId: parent ? conversation!.previousInteraction!.interactionId : null,
+    },
     ...metadata,
     inputContext: context,
     dramaticState: result.dramaticState,

@@ -53,6 +53,12 @@ import {
   validateCameraProject,
 } from '../components/camera-studio/model'
 import { isLegacyLight } from './legacy-lighting'
+import { sceneFactsVersion } from './rehearsal-intelligence/conversation'
+import {
+  type InteractionEnvelope,
+  InteractionEnvelopeSchema,
+} from './rehearsal-intelligence/interaction-envelope'
+import { sceneContentVersion } from './scene-signature'
 import { isTheatreVisibilityOverride } from './theatre/presentation'
 import { getRehearsalVersion, rehearsalVersionHashes } from './theatre/rehearsal-versions'
 import { parseSnapshot, THEATRE_METADATA_KEY } from './theatre/scene-adapter'
@@ -62,6 +68,7 @@ import {
   StageSceneDocumentSchema,
 } from './theatre/simulation'
 import { readStageDocument } from './theatre/simulation-store'
+import { makeVersionSource, VERSION_SOURCE_KEY } from './theatre/version-source'
 
 const CAMERA_METADATA_KEY = 'diastageCameraStudio'
 const cameraSnapshotSchema = z.unknown().transform((input, context): Shot => {
@@ -81,6 +88,10 @@ type SourceSnapshot = z.infer<typeof SourceSnapshotSchema>
 
 export const RemountMetadataSchema = z.object({
   version: z.literal(1),
+  envelope: InteractionEnvelopeSchema.refine(
+    (envelope) => envelope.capability === 'remount',
+    '映射引用必须属于复台交互。',
+  ).optional(),
   sourceVenue: VenueProfileSchema,
   sourceHeightMeasured: z.boolean().default(true),
   targetVenue: VenueProfileSchema,
@@ -235,6 +246,7 @@ export function reloadRemount(sceneId: string): void {
     saved.sourceHeightMeasured = false
   useRemountDraft.setState({
     ...saved,
+    envelope: saved.envelope,
     sceneKey: key,
     loadedMetadataSignature: metadataSignature(),
     plan: null,
@@ -608,6 +620,7 @@ export function captureProductionLayout(sceneId: string, nodeIds: string[]): voi
   const sourceReferences = referenceObjects(nodes, included, sourceWarnings)
   useRemountDraft.setState({
     layout,
+    envelope: undefined,
     sourceVenue,
     ...(draft.sourceVersion ? { sourceHeightMeasured: defaults().sourceHeightMeasured } : {}),
     sourceSnapshots,
@@ -620,9 +633,23 @@ export function captureProductionLayout(sceneId: string, nodeIds: string[]): voi
   })
 }
 
-export function prepareVersionRemount(sceneId: string, versionId: string): void {
+export function prepareVersionRemount(
+  sceneId: string,
+  versionId: string,
+  envelope?: InteractionEnvelope,
+): void {
   assertWritable()
   initializeRemount(sceneId)
+  if (envelope) {
+    InteractionEnvelopeSchema.parse(envelope)
+    if (
+      envelope.capability !== 'remount' ||
+      envelope.sceneId !== sceneId ||
+      envelope.status !== 'proposed' ||
+      envelope.sceneVersion !== remountSceneVersion(sceneId, useScene.getState().nodes)
+    )
+      throw new Error('复台交互引用与当前场景不匹配，请重新选择来源版本。')
+  }
   const version = getRehearsalVersion(versionId)
   const snapshot = parseSnapshot(version.stageGraph)
   const sourceSnapshots: SourceSnapshot[] = []
@@ -675,6 +702,7 @@ export function prepareVersionRemount(sceneId: string, versionId: string): void 
   const targetVenue = defaults().sourceVenue
   const sourceReferences = referenceObjects(snapshot.nodes, included, sourceWarnings)
   useRemountDraft.setState({
+    envelope,
     sourceVenue: {
       id,
       name,
@@ -875,11 +903,56 @@ export function obstacleSnapshot(
   })
 }
 
+export function sceneObstacles(nodes: SceneNodes) {
+  const obstacles: { id: string; name: string; min: Vec3; max: Vec3 }[] = []
+  const miters = new Map<string | null, WallMiterData>()
+  for (const node of Object.values(nodes)) {
+    if (
+      !['item', 'block', 'stair', 'wall'].includes(node.type) ||
+      node.visible === false ||
+      node.metadata.isTransient ||
+      node.metadata.isNew
+    )
+      continue
+    const obstacle = obstacleSnapshot(node, nodes, miters)
+    if (!obstacle) continue
+    const corners = getObjectCorners(obstacle)
+    obstacles.push({
+      id: node.id,
+      name: (node.name || '布景').slice(0, 160),
+      min: [0, 1, 2].map((axis) => Math.min(...corners.map((p) => p[axis]!))) as Vec3,
+      max: [0, 1, 2].map((axis) => Math.max(...corners.map((p) => p[axis]!))) as Vec3,
+    })
+  }
+  return obstacles
+}
+
+function remountSceneVersion(sceneId: string, nodes: SceneNodes) {
+  const document = readStageDocument(nodes)
+  if (!document) return null
+  return sceneFactsVersion({
+    sceneId,
+    productionId: document.production.id,
+    venue: document.venue,
+    ...document.rehearsalSimulation,
+    obstacles: sceneObstacles(nodes),
+  })
+}
+
 export function previewRemount(sceneId: string): DeploymentPlan {
   assertWritable()
   const draft = draftFor(sceneId)
   assertMeasuredHeight(draft)
   const nodes = useScene.getState().nodes
+  // A previously applied reference is history; a new manual mapping cannot reuse its authority.
+  const envelope = draft.envelope?.status === 'applied' ? undefined : draft.envelope
+  if (
+    envelope &&
+    (envelope.sceneId !== sceneId ||
+      !['proposed', 'previewed', 'prepared'].includes(envelope.status) ||
+      envelope.sceneVersion !== remountSceneVersion(sceneId, nodes))
+  )
+    throw new Error('复台交互引用已过期，请重新选择来源版本。')
   const objects = validatedSources(draft, nodes)
   const selected = new Set(objects.map((entry) => entry.nodeId))
   const obstacles: RemountObject[] = []
@@ -944,6 +1017,7 @@ export function previewRemount(sceneId: string): DeploymentPlan {
   }
   const { materials, collections, installedPlugins } = useScene.getState()
   useRemountDraft.setState({
+    envelope: envelope ? { ...envelope, status: 'previewed' } : undefined,
     plan,
     previewNodes: nodes,
     previewDocument: { materials, collections, installedPlugins },
@@ -990,7 +1064,7 @@ function metadataUpdate(
   lastPlan = draft.lastPlan,
   cameras?: CameraProject,
   rehearsal?: RehearsalSimulation,
-) {
+): { id: AnyNodeId; data: { metadata: Record<string, unknown> } } {
   const site = currentSite()
   const remount = RemountMetadataSchema.parse(
     JSON.parse(JSON.stringify(RemountMetadataSchema.parse({ ...draft, lastPlan }))),
@@ -1055,6 +1129,14 @@ export function applyRemount(sceneId: string, guardBlocked = false): void {
   const plan = DeploymentPlanSchema.parse(draft.plan)
   if (!plan.calibration.valid || plan.conflicts.some((conflict) => conflict.severity === 'error'))
     throw new Error('请先解决标定误差或物理冲突。')
+  if (
+    draft.envelope &&
+    (draft.envelope.sceneId !== sceneId ||
+      draft.envelope.status !== 'previewed' ||
+      draft.envelope.sceneVersion !== remountSceneVersion(sceneId, nodes))
+  )
+    throw new Error('复台交互引用已过期，请重新生成映射预览。')
+  const envelope = draft.envelope ? { ...draft.envelope, status: 'applied' as const } : undefined
   const placed = new Map(plan.placements.map((placement) => [placement.nodeId, placement]))
   const cameras = canonicalCameras()
   let cameraChanged = false
@@ -1124,13 +1206,38 @@ export function applyRemount(sceneId: string, guardBlocked = false): void {
         ),
       })),
     })
-  updates.push(
-    metadataUpdate(draft, plan, cameraChanged ? cameras : undefined, rehearsal ?? undefined),
+  const siteUpdate = metadataUpdate(
+    { ...draft, envelope },
+    plan,
+    cameraChanged ? cameras : undefined,
+    rehearsal ?? undefined,
   )
+  const stagedNodes = { ...nodes }
+  for (const update of [...updates, siteUpdate])
+    stagedNodes[update.id] = { ...nodes[update.id]!, ...update.data } as AnyNode
+  const resultSceneVersion = remountSceneVersion(sceneId, stagedNodes)
+  if (resultSceneVersion) {
+    siteUpdate.data.metadata[VERSION_SOURCE_KEY] = makeVersionSource({
+      source: envelope ? 'dia-remount' : 'manual',
+      sceneId,
+      resultSceneVersion,
+      resultContentVersion: sceneContentVersion({ ...useScene.getState(), nodes: stagedNodes }),
+      ...(envelope ? { envelope } : {}),
+      ...(draft.sourceVersion ? { sourceVersion: draft.sourceVersion.id } : {}),
+    })
+  }
+  if (envelope)
+    siteUpdate.data.metadata.diastageRemountDecision = {
+      eventId: envelope.interactionId,
+      proposalId: envelope.interactionId,
+      interactionId: envelope.interactionId,
+    }
+  updates.push(siteUpdate)
   const previousEntry = useScene.temporal.getState().pastStates.at(-1)
   useScene.getState().applyNodeChanges({ update: updates })
   const entry = useScene.temporal.getState().pastStates.at(-1)
   useRemountDraft.setState({
+    envelope,
     loadedMetadataSignature: metadataSignature(),
     lastPlan: plan,
     plan: null,

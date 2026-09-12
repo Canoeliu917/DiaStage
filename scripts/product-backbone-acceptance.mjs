@@ -7,7 +7,7 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:4327';
 assert.ok(['127.0.0.1', 'localhost'].includes(new URL(base).hostname), 'Only an isolated local synthetic database may be used');
 const label = process.env.ACCEPTANCE_RUN || 'dev';
 assert.match(label, /^[a-z0-9-]+$/);
-const out = label === 'production' ? '.impeccable/review/product-backbone' : `.tmp-product-backbone-${label}`;
+const out = `.tmp-product-backbone-${label}`;
 await mkdir(out, { recursive: true });
 const result = {
   base, startedAt: new Date().toISOString(), synthetic: true,
@@ -194,6 +194,37 @@ try {
   });
   if (!built) throw new Error('Build could not be adopted; later formal-state acceptance cannot run');
 
+  await check('Build receipt, feedback and interaction survive a real browser reload without reapply', async () => {
+    const site = Object.values(built.graph.nodes).find(node => node.type === 'site');
+    const receipt = site.metadata.diastageBuildDecision;
+    const source = site.metadata.diastageVersionSource;
+    assert.equal(receipt.interactionId, source.interactionId);
+    assert.equal(source.envelope.capability, 'build');
+    assert.equal(source.envelope.status, 'applied');
+    assert.ok(source.resultContentVersion);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await diaVisible();
+    await panel.getByRole('textbox', { name: '你想试什么？', exact: true }).waitFor();
+    const events = await page.evaluate(async id => {
+      const db = await new Promise((resolve, reject) => {
+        const request = indexedDB.open('diastage-rehearsal-feedback');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      try {
+        return await new Promise((resolve, reject) => {
+          const request = db.transaction('build-events').objectStore('build-events').index('sceneId').getAll(id);
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      } finally { db.close(); }
+    }, sceneId);
+    assert.equal(events.find(event => event.eventId === receipt.eventId)?.status, 'applied');
+    for (const kind of ['proposal', 'revision', 'preview', 'adopt', 'final-state'])
+      assert.ok(events.some(event => event.kind === kind), `Missing Build lineage ${kind}`);
+    return { interactionId: receipt.interactionId, eventKinds: [...new Set(events.map(event => event.kind))], graph: await unchanged(built, '04b-build-reloaded') };
+  });
+
   await check('A by door and B by table is proposed through the rehearsal system, never direct write', async () => {
     const before = await scene();
     const notice = await send('A站门边，B靠桌子');
@@ -246,6 +277,8 @@ try {
     const version = versions(savedVersion.graph)[0];
     versionId = version.id;
     for (const key of ['sceneVersion', 'venueVersion', 'rehearsalVersion', 'createdAt']) assert.ok(version[key], `Missing ${key}`);
+    assert.equal(version.source, 'dia-build');
+    assert.equal(version.interactionId, Object.values(built.graph.nodes).find(node => node.type === 'site').metadata.diastageBuildDecision.interactionId);
     assert.equal(version.rehearsalSimulation.paths.length, 2);
     return { id: versionId, sceneVersion: version.sceneVersion, venueVersion: version.venueVersion, rehearsalVersion: version.rehearsalVersion, createdAt: version.createdAt };
   });
@@ -299,15 +332,16 @@ try {
     });
     await check('Confirm Remount applies 1:1 once; real conflicts block instead of being ignored', async () => {
       const rm = page.locator('.rm-panel');
-      await rm.getByRole('button', { name: /05\s*实体落位/ }).click();
+      await rm.getByRole('button', { name: /05\s*应用映射/ }).click();
       await rm.getByLabel('我已核对位置、尺寸、净距提示与现场条件', { exact: true }).check();
-      const confirmation = rm.getByRole('button', { name: '确认复台', exact: true });
+      const confirmation = rm.getByRole('button', { name: '确认应用映射', exact: true });
       if (!await confirmation.isEnabled()) {
         result.remountBlocked = { expectedProtection: true, text: await rm.innerText(), graph: await unchanged(beforeRemount, '13-remount-blocked') };
         throw new Error(`Remount cannot be applied: ${result.remountBlocked.text}`);
       }
       await confirmation.click();
       const applied = await persisted('13-remount-applied', graph => digest(graph) !== digest(beforeRemount.graph));
+      assert.deepEqual(doc(applied.graph).venue, doc(beforeRemount.graph).venue, 'Mapping must not pretend to replace formal Venue');
       const beforeSim = doc(beforeRemount.graph).rehearsalSimulation, afterSim = doc(applied.graph).rehearsalSimulation;
       const scenery = Object.values(beforeRemount.graph.nodes).filter(node => !baseline.graph.nodes[node.id]);
       scenery.forEach(node => {
@@ -323,7 +357,7 @@ try {
         assert.deepEqual(afterSim.paths[index].points, path.points.map(point => [point[0] + 10, point[1], point[2]]));
       });
       await screenshot('desktop-remount-applied');
-      await rm.getByRole('button', { name: '撤销本次复台', exact: true }).click();
+      await rm.getByRole('button', { name: '撤销本次映射', exact: true }).click();
       const undone = await persisted('14-remount-undone', graph => digest(graph) === digest(beforeRemount.graph));
       return {
         appliedVersion: applied.version, undoVersion: undone.version, oneUndoRestoresExactGraph: true,

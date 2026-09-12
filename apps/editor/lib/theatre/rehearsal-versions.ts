@@ -2,9 +2,12 @@ import { useScene } from '@pascal-app/core'
 import { z } from 'zod'
 import { create } from 'zustand'
 import { validateCameraProject } from '../../components/camera-studio/model'
+import { InteractionEnvelopeSchema } from '../rehearsal-intelligence/interaction-envelope'
+import { hashSceneValue } from '../scene-signature'
 import { parseSnapshot } from './scene-adapter'
 import { StageSnapshotSchema } from './schema'
 import { StageSceneDocumentSchema } from './simulation'
+import { VersionSourceSchema } from './version-source'
 
 export const REHEARSAL_VERSIONS_KEY = 'diastageRehearsalVersions'
 export const VersionDisplaySchema = z.object({
@@ -28,39 +31,48 @@ export const VersionCameraSchema = z.object({
   }),
   selectedId: z.string().nullable(),
 })
-export const RehearsalVersionSchema = z.object({
-  id: z.string(),
-  name: z.string().trim().min(1),
-  createdAt: z.string(),
-  note: z.string().max(240).default(''),
-  restoredFrom: z.string().optional(),
-  sceneVersion: z.string().optional(),
-  venueVersion: z.string().optional(),
-  rehearsalVersion: z.string().optional(),
-  sourceVersion: z.string().optional(),
-  interactionId: z.string().optional(),
-  stageGraph: StageSnapshotSchema,
-  venue: StageSceneDocumentSchema.shape.venue,
-  rehearsalSimulation: StageSceneDocumentSchema.shape.rehearsalSimulation,
-  cameraState: VersionCameraSchema,
-  displayState: VersionDisplaySchema,
-})
+export const RehearsalVersionSchema = z
+  .object({
+    id: z.string(),
+    name: z.string().trim().min(1),
+    createdAt: z.string(),
+    note: z.string().max(240).default(''),
+    restoredFrom: z.string().optional(),
+    sceneVersion: z.string().optional(),
+    venueVersion: z.string().optional(),
+    rehearsalVersion: z.string().optional(),
+    sourceVersion: z.string().optional(),
+    interactionId: z.string().optional(),
+    envelope: InteractionEnvelopeSchema.optional(),
+    source: VersionSourceSchema.optional(),
+    stageGraph: StageSnapshotSchema,
+    venue: StageSceneDocumentSchema.shape.venue,
+    rehearsalSimulation: StageSceneDocumentSchema.shape.rehearsalSimulation,
+    cameraState: VersionCameraSchema,
+    displayState: VersionDisplaySchema,
+  })
+  .superRefine((version, ctx) => {
+    if (version.source?.startsWith('dia-') && !version.interactionId)
+      ctx.addIssue({ code: 'custom', message: 'Dia 版本缺少正式交互来源' })
+    if (
+      version.envelope &&
+      (version.envelope.interactionId !== version.interactionId ||
+        version.source !== `dia-${version.envelope.capability}` ||
+        version.envelope.status !== 'applied')
+    )
+      ctx.addIssue({ code: 'custom', message: '版本与正式交互来源不一致' })
+    if (version.source === 'restore' && !version.sourceVersion)
+      ctx.addIssue({ code: 'custom', message: '恢复版本缺少原版本引用' })
+  })
 export type RehearsalVersion = z.infer<typeof RehearsalVersionSchema>
 
 export function rehearsalVersionHashes(
   version: Pick<RehearsalVersion, 'stageGraph' | 'venue' | 'rehearsalSimulation'>,
 ) {
-  const hash = (label: string, input: unknown) => {
-    const text = JSON.stringify(input)
-    let value = 14695981039346656037n
-    for (let index = 0; index < text.length; index++)
-      value = BigInt.asUintN(64, (value ^ BigInt(text.charCodeAt(index))) * 1099511628211n)
-    return `${label}-${value.toString(16).padStart(16, '0')}`
-  }
   return {
-    sceneVersion: hash('snapshot', version.stageGraph),
-    venueVersion: hash('venue', version.venue),
-    rehearsalVersion: hash('rehearsal', version.rehearsalSimulation),
+    sceneVersion: hashSceneValue('snapshot', version.stageGraph),
+    venueVersion: hashSceneValue('venue', version.venue),
+    rehearsalVersion: hashSceneValue('rehearsal', version.rehearsalSimulation),
   }
 }
 

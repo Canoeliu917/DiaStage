@@ -30,7 +30,7 @@ import { listRehearsalVersions } from '@/lib/theatre/rehearsal-versions'
 import { useCameraStudio } from './camera-studio/store'
 import './remount.css'
 
-const STEPS = ['源场地', '目标场地', '空间标定', '映射预览', '实体落位', '复台验收']
+const STEPS = ['源场地', '目标场地', '空间标定', '映射预览', '应用映射', '映射记录']
 const xyz = (point: Vec3) => point.map((value) => value.toFixed(3)).join(' / ')
 
 function NumberField({
@@ -250,9 +250,9 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
   return (
     <div className="rm-panel">
       <header className="rm-heading">
-        <span>REMOUNT / 01</span>
-        <h2>复台</h2>
-        <p>让同一场戏，抵达另一个空间。</p>
+        <span>REMOUNT PREVIEW / MAPPING</span>
+        <h2>复台映射预览</h2>
+        <p>校准、对比与应用位置映射；正式场地暂不切换。</p>
       </header>
       <nav className="rm-steps" aria-label="复台步骤">
         {STEPS.map((label, index) => (
@@ -437,6 +437,9 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 场地宽度以中心线为中心，深度从台口线向台后延伸。扫描层仅用于目视参考。
                 请开启扫描参考的模型显示，并等待加载完成。
               </p>
+              <p className="rm-notice">
+                目标场地是映射参考。应用后仍保留当前正式场地的身份、边界和地面，不会将其替换为这里的目标场地。
+              </p>
               <div className="rm-metric">
                 <span>空间映射比例</span>
                 <strong>1 : 1</strong>
@@ -605,7 +608,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                     )
                   })}
                   <button className="rm-primary" type="button" onClick={() => setStep(4)}>
-                    检查实体落位 →
+                    检查并应用映射 →
                   </button>
                 </>
               )}
@@ -693,7 +696,10 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
           {step === 4 && (
             <>
               <p className="rm-help">
-                确认后，将布景、人物、路线和机位作为一次操作写入场景，并保存来源版本、校准点与原始布局。时长和实体尺寸保持不变，可一次撤销。
+                确认仅将布景、人物、路线和机位的位置映射作为一次操作写入场景，并保存来源版本、校准点与原始布局。时长和实体尺寸保持不变，可一次撤销。
+              </p>
+              <p className="rm-notice">
+                正式场地的身份、边界和地面保持原样。这里不是完成新场地的正式复台或现场验收。
               </p>
               {sourceIssues.length > 0 && (
                 <p role="alert" className="rm-notice rm-error">
@@ -737,13 +743,13 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 onClick={() =>
                   run(() => {
                     applyRemount(sceneId, blocked)
-                    setMessage('已确认复台。场景自动保存中，可一次撤销。')
+                    setMessage('已应用映射，正式场地未切换。场景自动保存中，可一次撤销。')
                     setReviewed(false)
                     setStep(5)
                   })
                 }
               >
-                确认复台
+                确认应用映射
               </button>
               <button type="button" onClick={() => setStep(3)}>
                 返回映射预览
@@ -753,7 +759,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
           {step === 5 && (
             <>
               <div className="rm-metric">
-                <span>数字落位记录</span>
+                <span>映射操作记录</span>
                 <strong>
                   {draft.lastPlan ? `${draft.lastPlan.placements.length} 个物件` : '尚未确认'}
                 </strong>
@@ -764,7 +770,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
               {draft.lastPlan && (
                 <p className="rm-help">
                   比例 1 : 1 · 校准误差 {(draft.lastPlan.calibration.rmsError * 1000).toFixed(2)}{' '}
-                  mm。现场复测、逐件签收与验收清单将在第二阶段接入。
+                  mm。该记录仅表示位置映射，未替换正式场地，也不表示现场验收通过。
                 </p>
               )}
               <button
@@ -773,11 +779,11 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 onClick={() =>
                   run(() => {
                     if (undoLastRemount(sceneId, blocked))
-                      setMessage('本次复台已一次撤销，原始布局仍可重新预览。')
+                      setMessage('本次映射已一次撤销，原始布局仍可重新预览。')
                   })
                 }
               >
-                撤销本次复台
+                撤销本次映射
               </button>
               <p className="rm-help">
                 若已继续编辑，可通过编辑器历史记录撤销。选入的机位关键帧、注视点与跟随偏移随布景一起复台，也一起撤销。

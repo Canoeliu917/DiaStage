@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { InteractionEnvelopeSchema } from '../rehearsal-intelligence/interaction-envelope'
 
 const id = z.string().min(1).max(160)
 const coordinate = z.number().finite().min(-100_000).max(100_000)
@@ -52,6 +53,7 @@ export const RemoteDiaSnapshotSchema = z
       })
       .nullable(),
     interactionId: id.nullable(),
+    envelope: InteractionEnvelopeSchema.optional(),
     proposals: z
       .array(
         z.strictObject({
@@ -96,6 +98,18 @@ export const RemoteDiaSnapshotSchema = z
           !['ghost-ready', 'waiting-human'].includes(value.state)))
     ) {
       ctx.addIssue({ code: 'custom', message: 'Interaction projection is inconsistent.' })
+    }
+    if (
+      value.envelope &&
+      (value.envelope.sceneId !== value.sceneId ||
+        value.envelope.interactionId !== value.interactionId ||
+        (['proposal-ready', 'ghost-ready', 'waiting-human'].includes(value.state) &&
+          value.envelope.sceneVersion !== value.sceneVersion))
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Interaction envelope does not match this projection.',
+      })
     }
   })
 export type RemoteDiaSnapshot = z.infer<typeof RemoteDiaSnapshotSchema>

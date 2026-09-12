@@ -6,6 +6,7 @@ import {
   RehearsalSimulationSchema,
 } from '../theatre/simulation'
 import { DimensionIdSchema, ONTOLOGY_VERSION, PROMPT_VERSION } from './dimensions'
+import { InteractionEnvelopeSchema } from './interaction-envelope'
 
 const id = z.string().min(1).max(160)
 const sentence = z.string().trim().min(1).max(600)
@@ -170,46 +171,68 @@ export const RehearsalContextSchema = z.strictObject({
   obstacles: z.array(ObstacleSchema).max(128),
   activeDimensions: z.array(DimensionIdSchema).length(8),
 })
-export const InteractionSchema = z.strictObject({
-  interactionId: id,
-  sceneId: id,
-  sceneVersion: id.optional(),
-  createdAt: z.iso.datetime(),
-  modelVersion: id,
-  promptVersion,
-  ontologyVersion: z.literal(ONTOLOGY_VERSION),
-  activeDimensions: z.array(DimensionIdSchema).length(8),
-  inputContext: RehearsalContextSchema,
-  dramaticState: z.array(DramaticStateSchema).max(24),
-  proposals: z.array(RehearsalProposalSchema).min(1).max(3),
-  privateProjectData: z.literal(true),
-  trainingAuthorized: z.boolean(),
-  rightsStatus: RightsStatusSchema.default('unknown'),
-  trainingEligible: z.literal(false).default(false),
-})
-export const FeedbackSchema = z.strictObject({
-  eventId: id,
-  interactionId: id,
-  proposalId: id,
-  sceneId: id,
-  createdAt: z.iso.datetime(),
-  previewed: z.boolean(),
-  decision: z.enum(['preview', 'adopt', 'partial', 'edit', 'reject', 'manual-edit']),
-  originalProposal: RehearsalProposalSchema,
-  // Old local records did not retain the exact preview; absence must not invent one.
-  previewedProposal: RehearsalProposalSchema.nullable().default(null),
-  privateProjectData: z.literal(true).default(true),
-  trainingAuthorized: z.boolean().default(false),
-  rightsStatus: RightsStatusSchema.default('unknown'),
-  trainingEligible: z.literal(false).default(false),
-  humanEdit: z.array(SuggestionSchema).max(12).nullable(),
-  finalResult: RehearsalSimulationSchema.nullable(),
-  reasonTags: z
-    .array(z.enum(['intention', 'space', 'too-prescriptive', 'unsupported', 'other']))
-    .max(5),
-  optionalUserNote: z.string().max(1000),
-  status: z.enum(['recorded', 'prepared', 'applied', 'failed']),
-})
+export const InteractionSchema = z
+  .strictObject({
+    interactionId: id,
+    sceneId: id,
+    sceneVersion: id.optional(),
+    envelope: InteractionEnvelopeSchema.optional(),
+    createdAt: z.iso.datetime(),
+    modelVersion: id,
+    promptVersion,
+    ontologyVersion: z.literal(ONTOLOGY_VERSION),
+    activeDimensions: z.array(DimensionIdSchema).length(8),
+    inputContext: RehearsalContextSchema,
+    dramaticState: z.array(DramaticStateSchema).max(24),
+    proposals: z.array(RehearsalProposalSchema).min(1).max(3),
+    privateProjectData: z.literal(true),
+    trainingAuthorized: z.boolean(),
+    rightsStatus: RightsStatusSchema.default('unknown'),
+    trainingEligible: z.literal(false).default(false),
+  })
+  .refine(
+    (value) =>
+      !value.envelope ||
+      (value.envelope.interactionId === value.interactionId &&
+        value.envelope.sceneId === value.sceneId &&
+        value.envelope.capability === 'rehearse' &&
+        value.envelope.createdAt === value.createdAt &&
+        (!value.sceneVersion || value.envelope.sceneVersion === value.sceneVersion)),
+    '排演交互的公共引用与原记录不一致',
+  )
+export const FeedbackSchema = z
+  .strictObject({
+    eventId: id,
+    interactionId: id,
+    proposalId: id,
+    sceneId: id,
+    envelope: InteractionEnvelopeSchema.optional(),
+    createdAt: z.iso.datetime(),
+    previewed: z.boolean(),
+    decision: z.enum(['preview', 'adopt', 'partial', 'edit', 'reject', 'manual-edit']),
+    originalProposal: RehearsalProposalSchema,
+    // Old local records did not retain the exact preview; absence must not invent one.
+    previewedProposal: RehearsalProposalSchema.nullable().default(null),
+    privateProjectData: z.literal(true).default(true),
+    trainingAuthorized: z.boolean().default(false),
+    rightsStatus: RightsStatusSchema.default('unknown'),
+    trainingEligible: z.literal(false).default(false),
+    humanEdit: z.array(SuggestionSchema).max(12).nullable(),
+    finalResult: RehearsalSimulationSchema.nullable(),
+    reasonTags: z
+      .array(z.enum(['intention', 'space', 'too-prescriptive', 'unsupported', 'other']))
+      .max(5),
+    optionalUserNote: z.string().max(1000),
+    status: z.enum(['recorded', 'prepared', 'applied', 'failed']),
+  })
+  .refine(
+    (value) =>
+      !value.envelope ||
+      (value.envelope.interactionId === value.interactionId &&
+        value.envelope.sceneId === value.sceneId &&
+        value.envelope.capability === 'rehearse'),
+    '反馈的公共引用与排演交互不一致',
+  )
 export type RehearsalContext = z.infer<typeof RehearsalContextSchema>
 export type RehearsalProposal = z.infer<typeof RehearsalProposalSchema>
 export type Suggestion = z.infer<typeof SuggestionSchema>

@@ -6,12 +6,17 @@ import {
   subscribeLocalScene,
   waitForLocalScene,
 } from '../scene-journal'
+import { sceneContentVersion } from '../scene-signature'
 import { assertTheatreWritable, THEATRE_METADATA_KEY } from '../theatre/scene-adapter'
 import { type RehearsalSimulation, StageSceneDocumentSchema } from '../theatre/simulation'
 import { readStageDocument } from '../theatre/simulation-store'
-import { buildRehearsalContext } from './context'
+import { makeVersionSource, VERSION_SOURCE_KEY } from '../theatre/version-source'
+import { observeBuildFeedback } from './build-feedback'
+import { buildDiaContext, buildRehearsalContext } from './context'
+import { sceneFactsVersion } from './conversation'
 import { saveProductEvent } from './conversation-storage'
 import { readFeedback, readFeedbackLog, saveFeedback } from './feedback'
+import { type InteractionEnvelope, InteractionEnvelopeSchema } from './interaction-envelope'
 import { compileProposal } from './proposal-compiler'
 import { validateProposal } from './proposal-validator'
 import { type Feedback, type Interaction, type RehearsalProposal, SuggestionSchema } from './schema'
@@ -88,6 +93,9 @@ export async function isCommittedRehearsalDecision(sceneId: string, event: Feedb
 
 /** Receipts reconcile interrupted feedback writes; preferences observe only durable scene commits. */
 export function observeRehearsalFeedback(sceneId: string) {
+  const stopBuildFeedback = observeBuildFeedback(sceneId, (message) =>
+    useProposalGhost.setState({ feedbackError: message }),
+  )
   let queue = Promise.resolve()
   let previousEventId: string | null = null
   let initialized = false
@@ -238,6 +246,7 @@ export function observeRehearsalFeedback(sceneId: string) {
       })
   })
   return () => {
+    stopBuildFeedback()
     stopChanges()
     stopHistory()
     stopLocal()
@@ -261,6 +270,21 @@ function currentContext(interaction: Interaction) {
     throw new Error('人物、路线或布景已变化，请重新生成建议，避免覆盖你的调整')
   return { document, context }
 }
+function rehearsalEnvelope(
+  interaction: Interaction,
+  status: InteractionEnvelope['status'],
+): InteractionEnvelope {
+  return InteractionEnvelopeSchema.parse({
+    schemaVersion: 1,
+    interactionId: interaction.interactionId,
+    sceneId: interaction.sceneId,
+    capability: 'rehearse',
+    sceneVersion: interaction.sceneVersion ?? sceneFactsVersion(interaction.inputContext),
+    createdAt: interaction.createdAt,
+    ...interaction.envelope,
+    status,
+  })
+}
 export function makeFeedback(
   interaction: Interaction,
   proposal: RehearsalProposal,
@@ -274,6 +298,7 @@ export function makeFeedback(
     eventId: crypto.randomUUID(),
     interactionId: interaction.interactionId,
     sceneId: interaction.sceneId,
+    envelope: rehearsalEnvelope(interaction, 'recorded'),
     proposalId: proposal.proposalId,
     createdAt: new Date().toISOString(),
     previewed,
@@ -425,13 +450,34 @@ async function commitHumanDecision(
     eventId: event.eventId,
     proposalId: original.proposalId,
     interactionId: interaction.interactionId,
+    envelope: rehearsalEnvelope(interaction, 'applied'),
   }
+  const source = makeVersionSource({
+    source: 'dia-rehearse',
+    sceneId: interaction.sceneId,
+    resultSceneVersion: sceneFactsVersion(
+      buildDiaContext(interaction.sceneId, next, state.nodes, interaction.inputContext),
+    ),
+    resultContentVersion: sceneContentVersion({
+      ...state,
+      nodes: {
+        ...state.nodes,
+        [site.id]: { ...site, metadata: { ...site.metadata, [THEATRE_METADATA_KEY]: next } },
+      },
+    }),
+    envelope: receipt.envelope,
+  })
   state.applyNodeChanges({
     update: [
       {
         id: site.id,
         data: {
-          metadata: { ...site.metadata, [THEATRE_METADATA_KEY]: next, [DECISION_KEY]: receipt },
+          metadata: {
+            ...site.metadata,
+            [THEATRE_METADATA_KEY]: next,
+            [DECISION_KEY]: receipt,
+            [VERSION_SOURCE_KEY]: source,
+          },
         },
       },
     ],

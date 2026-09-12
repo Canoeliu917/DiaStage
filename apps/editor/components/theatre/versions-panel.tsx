@@ -12,7 +12,10 @@ import { useViewer, ViewerErrorBoundary } from '@pascal-app/viewer'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
+import { buildDiaContext } from '@/lib/rehearsal-intelligence/context'
+import { sceneFactsVersion } from '@/lib/rehearsal-intelligence/conversation'
 import { objectSnapshot, prepareVersionRemount } from '@/lib/remount-scene'
+import { sceneContentVersion } from '@/lib/scene-signature'
 import { stageKind } from '@/lib/stage/context'
 import {
   VersionCameraSchema as cameraSchema,
@@ -32,20 +35,40 @@ import {
 } from '@/lib/theatre/scene-adapter'
 import { StageSceneDocumentSchema } from '@/lib/theatre/simulation'
 import { readStageDocument } from '@/lib/theatre/simulation-store'
+import {
+  makeVersionSource,
+  readVersionSource,
+  VERSION_SOURCE_KEY,
+  VersionSourceLinkSchema,
+} from '@/lib/theatre/version-source'
 import { useCameraStudio } from '../camera-studio/store'
 import { useSimulationSelection } from './simulation-panel'
 
 const VIEW = 'diastageRestoredView'
+const SOURCE_LABEL = {
+  manual: '手动整理',
+  'dia-build': 'Dia 搭台',
+  'dia-rehearse': 'Dia 排演',
+  'dia-remount': 'Dia 复台映射',
+  restore: '恢复历史版本',
+}
+const VERSION_FACTS_INPUT = {
+  intention: '保留当前正式版本',
+  script: '',
+  directorIntention: '',
+  selectedPerformerId: null,
+}
 function siteNode() {
   const state = useScene.getState()
   const site = state.rootNodeIds.map((id) => state.nodes[id]).find((n) => n?.type === 'site')
   if (!site) throw new Error('请先打开剧目')
   return site
 }
-export function saveRehearsalVersion(name: string, note = '') {
+export function saveRehearsalVersion(name: string, note = '', sceneId?: string) {
   assertTheatreWritable()
   const doc = readStageDocument()
   if (!doc) throw new Error('请先建立舞台')
+  const currentGraph = useScene.getState()
   const stage = parseSnapshot(captureStageSnapshot())
   const clean = archiveLegacyLighting(stage)
   for (const node of Object.values(clean.nodes)) {
@@ -56,6 +79,18 @@ export function saveRehearsalVersion(name: string, note = '') {
   const viewer = useViewer.getState(),
     camera = useCameraStudio.getState(),
     site = siteNode()
+  const recordedSource = site.metadata[VERSION_SOURCE_KEY]
+  const sourceReceipt =
+    recordedSource === undefined ? null : VersionSourceLinkSchema.parse(recordedSource)
+  const source = sourceReceipt
+    ? readVersionSource(recordedSource, {
+        sceneId: sceneId ?? sourceReceipt.sceneId,
+        resultContentVersion: sceneContentVersion(currentGraph),
+        resultSceneVersion: sceneFactsVersion(
+          buildDiaContext(sceneId ?? sourceReceipt.sceneId, doc, clean.nodes, VERSION_FACTS_INPUT),
+        ),
+      })
+    : null
   const version = versionSchema.parse({
     id: crypto.randomUUID(),
     name,
@@ -69,12 +104,10 @@ export function saveRehearsalVersion(name: string, note = '') {
       venue: doc.venue,
       rehearsalSimulation: doc.rehearsalSimulation,
     }),
-    ...(typeof site.metadata.diastageRehearsalDecision === 'object' &&
-    site.metadata.diastageRehearsalDecision !== null &&
-    'interactionId' in site.metadata.diastageRehearsalDecision &&
-    typeof site.metadata.diastageRehearsalDecision.interactionId === 'string'
-      ? { interactionId: site.metadata.diastageRehearsalDecision.interactionId }
-      : {}),
+    source: source?.source ?? 'manual',
+    ...(source?.interactionId ? { interactionId: source.interactionId } : {}),
+    ...(source?.envelope ? { envelope: source.envelope } : {}),
+    ...(source?.sourceVersion ? { sourceVersion: source.sourceVersion } : {}),
     cameraState: { project: camera.project, selectedId: camera.selectedShotId },
     displayState: {
       viewMode: useEditor.getState().viewMode,
@@ -92,7 +125,7 @@ export function saveRehearsalVersion(name: string, note = '') {
     .getState()
     .updateNode(site.id, { metadata: { ...site.metadata, [VERSIONS]: [...versions, version] } })
 }
-export function restoreRehearsalVersion(id: string) {
+export function restoreRehearsalVersion(id: string, sceneId?: string) {
   assertTheatreWritable()
   const site = siteNode(),
     doc = readStageDocument()
@@ -110,6 +143,9 @@ export function restoreRehearsalVersion(id: string) {
     createdAt: new Date().toISOString(),
     restoredFrom: version.id,
     sourceVersion: version.id,
+    source: 'restore',
+    interactionId: undefined,
+    envelope: undefined,
   })
   const snapshot = parseSnapshot(version.stageGraph)
   const root = snapshot.rootNodeIds.map((id) => snapshot.nodes[id]).find((n) => n?.type === 'site')
@@ -125,6 +161,19 @@ export function restoreRehearsalVersion(id: string) {
     }),
     [VIEW]: { camera: version.cameraState, display: version.displayState },
     diastageCameraStudio: version.cameraState.project,
+  }
+  delete root.metadata[VERSION_SOURCE_KEY]
+  if (sceneId) {
+    const restoredDocument = StageSceneDocumentSchema.parse(root.metadata[THEATRE_METADATA_KEY])
+    root.metadata[VERSION_SOURCE_KEY] = makeVersionSource({
+      source: 'restore',
+      sceneId,
+      sourceVersion: version.id,
+      resultContentVersion: sceneContentVersion(snapshot),
+      resultSceneVersion: sceneFactsVersion(
+        buildDiaContext(sceneId, restoredDocument, snapshot.nodes, VERSION_FACTS_INPUT),
+      ),
+    })
   }
   // Store the previous view with the undo frame, so one scene undo restores all three stores.
   const viewer = useViewer.getState(),
@@ -227,7 +276,7 @@ export function VersionsPanel({ sceneId }: { sceneId: string }) {
         <button
           type="button"
           disabled={!name.trim()}
-          onClick={() => run(() => saveRehearsalVersion(name, note))}
+          onClick={() => run(() => saveRehearsalVersion(name, note, sceneId))}
         >
           保存当前版本
         </button>
@@ -269,6 +318,8 @@ export function VersionsPanel({ sceneId }: { sceneId: string }) {
           </p>
           <details>
             <summary>版本来源</summary>
+            <p>{preview.source ? SOURCE_LABEL[preview.source] : '旧版本 · 未记录来源'}</p>
+            {preview.interactionId && <p>关联交互 {preview.interactionId}</p>}
             <p>场景 {preview.sceneVersion ?? rehearsalVersionHashes(preview).sceneVersion}</p>
             <p>场地 {preview.venueVersion ?? rehearsalVersionHashes(preview).venueVersion}</p>
             <p>
@@ -295,7 +346,7 @@ export function VersionsPanel({ sceneId }: { sceneId: string }) {
               disabled={readOnly}
               onClick={() =>
                 run(() => {
-                  restoreRehearsalVersion(preview.id)
+                  restoreRehearsalVersion(preview.id, sceneId)
                   useVersionPreview.setState({ selectedId: null })
                 })
               }

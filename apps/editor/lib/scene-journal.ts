@@ -8,9 +8,16 @@ type Patch = {
 }
 type Head = { id: string; version: number; sequence: number; acknowledged: number }
 type Entry = { id: string; sequence: number; patch: Patch }
-type DecisionReceipt = { eventId: string; proposalId: string; interactionId: string }
+type DecisionReceipt = {
+  eventId: string
+  proposalId: string
+  interactionId: string
+  nodeIds?: string[]
+  resultSceneVersion?: string
+  resultContentVersion?: string
+}
 
-function decisionReceipt(node: unknown): DecisionReceipt | null {
+function decisionReceipts(node: unknown): DecisionReceipt[] {
   if (
     !node ||
     typeof node !== 'object' ||
@@ -18,27 +25,44 @@ function decisionReceipt(node: unknown): DecisionReceipt | null {
     node.type !== 'site' ||
     !('metadata' in node) ||
     !node.metadata ||
-    typeof node.metadata !== 'object' ||
-    !('diastageRehearsalDecision' in node.metadata)
+    typeof node.metadata !== 'object'
   )
-    return null
-  const receipt = node.metadata.diastageRehearsalDecision
-  if (
-    !receipt ||
-    typeof receipt !== 'object' ||
-    !('eventId' in receipt) ||
-    typeof receipt.eventId !== 'string' ||
-    !('proposalId' in receipt) ||
-    typeof receipt.proposalId !== 'string' ||
-    !('interactionId' in receipt) ||
-    typeof receipt.interactionId !== 'string'
+    return []
+  const metadata = node.metadata as Record<string, unknown>
+  return ['diastageRehearsalDecision', 'diastageBuildDecision', 'diastageRemountDecision'].flatMap(
+    (key) => {
+      const receipt = metadata[key]
+      if (
+        !receipt ||
+        typeof receipt !== 'object' ||
+        !('eventId' in receipt) ||
+        typeof receipt.eventId !== 'string' ||
+        !('proposalId' in receipt) ||
+        typeof receipt.proposalId !== 'string' ||
+        !('interactionId' in receipt) ||
+        typeof receipt.interactionId !== 'string'
+      )
+        return []
+      return [
+        {
+          eventId: receipt.eventId,
+          proposalId: receipt.proposalId,
+          interactionId: receipt.interactionId,
+          ...('nodeIds' in receipt &&
+          Array.isArray(receipt.nodeIds) &&
+          receipt.nodeIds.every((id) => typeof id === 'string')
+            ? { nodeIds: receipt.nodeIds }
+            : {}),
+          ...('resultSceneVersion' in receipt && typeof receipt.resultSceneVersion === 'string'
+            ? { resultSceneVersion: receipt.resultSceneVersion }
+            : {}),
+          ...('resultContentVersion' in receipt && typeof receipt.resultContentVersion === 'string'
+            ? { resultContentVersion: receipt.resultContentVersion }
+            : {}),
+        },
+      ]
+    },
   )
-    return null
-  return {
-    eventId: receipt.eventId,
-    proposalId: receipt.proposalId,
-    interactionId: receipt.interactionId,
-  }
 }
 
 export async function readLocalDecisionReceipt(
@@ -92,20 +116,26 @@ function broadcastCommit(sceneId: string) {
   }
 }
 
-let durable: { id: string; nodes: SceneGraph['nodes'] } | undefined
+let durable:
+  | { id: string; graph: SceneGraph; nodes: SceneGraph['nodes']; sequence: number }
+  | undefined
 const persistedListeners = new Set<() => void>()
-function publishLocalCommit(id: string, graph: SceneGraph) {
-  durable = { id, nodes: graph.nodes }
+function publishLocalCommit(id: string, graph: SceneGraph, sequence: number) {
+  durable = { id, graph, nodes: graph.nodes, sequence }
   for (const listener of persistedListeners) listener()
+}
+
+export function localSceneSequence(sceneId: string, nodes: SceneGraph['nodes']) {
+  return durable?.id === sceneId && durable.nodes === nodes ? durable.sequence : undefined
 }
 
 /** Observe committed snapshots, never pointer-move notifications. */
 export function subscribeLocalScene(
   sceneId: string,
-  listener: (nodes: SceneGraph['nodes']) => void,
+  listener: (nodes: SceneGraph['nodes'], graph: SceneGraph, sequence: number) => void,
 ) {
   const notify = () => {
-    if (durable?.id === sceneId) listener(durable.nodes)
+    if (durable?.id === sceneId) listener(durable.nodes, durable.graph, durable.sequence)
   }
   persistedListeners.add(notify)
   notify()
@@ -262,13 +292,13 @@ export class SceneJournal {
       this.head = head
     }
     for (const node of Object.values(graph.nodes)) {
-      const receipt = decisionReceipt(node)
-      if (receipt) tx.objectStore('receipts').put({ id: this.id, ...receipt })
+      for (const receipt of decisionReceipts(node))
+        tx.objectStore('receipts').put({ id: this.id, ...receipt })
     }
     await done
     this.graph = graph
     this.revisions.set(graph, this.head!.sequence)
-    publishLocalCommit(this.id, graph)
+    publishLocalCommit(this.id, graph, this.head!.sequence)
     return { graph, pending, conflict }
   }
 
@@ -299,15 +329,15 @@ export class SceneJournal {
       tx.objectStore('heads').put(head)
       // Keep proof of a committed adoption through Undo, refresh and server acknowledgement.
       for (const node of Object.values(patch.put)) {
-        const receipt = decisionReceipt(node)
-        if (receipt) tx.objectStore('receipts').put({ id: this.id, ...receipt })
+        for (const receipt of decisionReceipts(node))
+          tx.objectStore('receipts').put({ id: this.id, ...receipt })
       }
     }
     await done
     this.head = head
     this.graph = graph
     this.revisions.set(graph, head.sequence)
-    publishLocalCommit(this.id, graph)
+    publishLocalCommit(this.id, graph, head.sequence)
     if (changed) broadcastCommit(this.id)
   }
 

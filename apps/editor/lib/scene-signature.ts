@@ -25,3 +25,66 @@ export function sceneGraphSignature(graph: PersistedSceneGraph): string {
     installedPlugins: graph.installedPlugins ?? [],
   })
 }
+
+export function hashSceneValue(label: string, input: unknown): string {
+  const text = JSON.stringify(input)
+  let value = 14695981039346656037n
+  for (let index = 0; index < text.length; index++)
+    value = BigInt.asUintN(64, (value ^ BigInt(text.charCodeAt(index))) * 1099511628211n)
+  return `${label}-${value.toString(16).padStart(16, '0')}`
+}
+
+const BOOKKEEPING_METADATA = new Set([
+  'diastageVersionSource',
+  'diastageBuildDecision',
+  'diastageRehearsalDecision',
+  'diastageRemountDecision',
+  'diastageRehearsalVersions',
+  'diastageRestoredView',
+  'stageTransaction',
+  'remoteCommandReceipts',
+  'remount',
+  // Saved rehearsal snapshots already omit the read-only compatibility archive.
+  'legacy',
+])
+
+function record(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+function ordered(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(ordered)
+  if (!record(value)) return value
+  return Object.fromEntries(
+    Object.keys(value)
+      .sort()
+      .filter((key) => value[key] !== undefined)
+      .map((key) => [key, ordered(value[key])]),
+  )
+}
+
+/** Exact persisted content, excluding receipts and saved previews that cannot change the stage. */
+export function sceneContentVersion(graph: PersistedSceneGraph): string {
+  const nodes = Object.fromEntries(
+    Object.entries(graph.nodes).map(([id, node]) => [
+      id,
+      record(node) && record(node.metadata)
+        ? {
+            ...node,
+            metadata: Object.fromEntries(
+              Object.entries(node.metadata).filter(([key]) => !BOOKKEEPING_METADATA.has(key)),
+            ),
+          }
+        : node,
+    ]),
+  )
+  return hashSceneValue(
+    'content-v1',
+    ordered({
+      nodes,
+      rootNodeIds: graph.rootNodeIds,
+      collections: graph.collections ?? {},
+      materials: graph.materials ?? {},
+      installedPlugins: graph.installedPlugins ?? [],
+    }),
+  )
+}
