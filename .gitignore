@@ -67,3 +67,12 @@ og-test
 **/data/*.db*
 /.tmp-*
 /.local/
+
+# Generated review matrices/intermediate snapshots stay local; only curated final evidence is tracked.
+/.impeccable/review/**
+!/.impeccable/review/**/
+!/.impeccable/review/evidence-manifest.json
+!/.impeccable/review/final/desktop.png
+!/.impeccable/review/final/tablet.png
+!/.impeccable/review/final/phone.png
+!/.impeccable/review/final/summary.json

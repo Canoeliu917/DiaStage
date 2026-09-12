@@ -1,0 +1,848 @@
+{
+  "schemaVersion": 1,
+  "policy": "Track only curated final desktop/tablet/phone, summaries and key recovery. All scripts retained. No history rewrite.",
+  "baseline": "b2abdbbc52b09fb5e97569adbf49b7d1bacd6708",
+  "before": {
+    "bytes": 14880560.0,
+    "files": 156
+  },
+  "archived": {
+    "localRoot": ".tmp-evidence-archive-b2abdbbc",
+    "retrieval": "On this computer, use localRoot + path relative to .impeccable/review. Else git show b2abdbbc:<original path> retrieves the historical file; no history was rewritten.",
+    "bytes": 14819745,
+    "files": 149,
+    "entries": [
+      {
+        "path": ".impeccable/review/conversation/browser-result.json",
+        "sha256": "5e9dbfc3d077b8dca9e0162c6f0ee73d4e8acfc04a6a9e8f158e975a344069ab",
+        "bytes": 236
+      },
+      {
+        "path": ".impeccable/review/conversation/desktop.png",
+        "sha256": "a247be63e352fca6f3710433dd7bbeb528b52df75ae4f06c6eedee235b9af5b1",
+        "bytes": 167864
+      },
+      {
+        "path": ".impeccable/review/conversation/phone-home.png",
+        "sha256": "ad7085c95c1a0952370c1269cf61c29835977c61c79b5fa9ee3d2e58cba3c92f",
+        "bytes": 89394
+      },
+      {
+        "path": ".impeccable/review/conversation/phone.png",
+        "sha256": "e4cd8a3941d665db69cb60cc54c67eec61f9837d2f7491dc3732925cd718c9c6",
+        "bytes": 199318
+      },
+      {
+        "path": ".impeccable/review/conversation/tablet.png",
+        "sha256": "3d220cd8d1be5328823735b0a5c288a4d53c2bf27368c387de56998084368a1b",
+        "bytes": 146996
+      },
+      {
+        "path": ".impeccable/review/desktop-library.png",
+        "sha256": "471c22be5a84d87ea15058ed7e866a5fbc8f6a252c848c8dce85dfd4081234ec",
+        "bytes": 32681
+      },
+      {
+        "path": ".impeccable/review/desktop-space.png",
+        "sha256": "170bed8e62783961e148af641d084c5b0ebd6ef70e8fe0246d465765437e32f6",
+        "bytes": 58300
+      },
+      {
+        "path": ".impeccable/review/desktop.png",
+        "sha256": "b8723e843f0456b5ae6ebab1efa3a9812cb7e7a00e3522e26723fbe6d4ae1d57",
+        "bytes": 64665
+      },
+      {
+        "path": ".impeccable/review/internal-device/baseline-6623136e.json",
+        "sha256": "ad3afdfa40c2df11631b313024037604315a6b0f73cb9492d6b2d4c7ee22b054",
+        "bytes": 2198
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-1280x720.png",
+        "sha256": "eb4ea8f467599dbeff4c9eaf0d066b8e1fabd0504288e3de408c945d20ccfc79",
+        "bytes": 88679
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-1366x768.png",
+        "sha256": "8b203a942c90d1ec44822f741f52f07f8b1e8941031b04b68c71972fc131fdc5",
+        "bytes": 95235
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-1440x1000.png",
+        "sha256": "f0b605238afabd879fde4fb1e60352a0acab77b58c657cde80cc348d34375f61",
+        "bytes": 155615
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-1440x900.png",
+        "sha256": "a6a96a8be200f74e63830364d134f341ef918e6a43366fdfb47a59a8216779a6",
+        "bytes": 149437
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-1920x1080.png",
+        "sha256": "034f209f8d98948d1b0f5440b86bfb75e4a7789805b723bc94c10e3f0487101a",
+        "bytes": 167390
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-conversation.png",
+        "sha256": "aac523afc6406558d7f0058fea1ce57329fa3f8dedbcb3026f209be6a890c313",
+        "bytes": 136415
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-demo-first.png",
+        "sha256": "3cfdd37dace2e7259c803ec5187a9679917142de063d3a81a579d4a5829c0469",
+        "bytes": 144986
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-ghost.png",
+        "sha256": "52e28ead7511f1a6a39389053c17e993562bab905d3cc4198aad669de9d45cf2",
+        "bytes": 142462
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-home.png",
+        "sha256": "9e05097f76dc9fb7fa0a216b9f21931937e22f5eda57540172634cfd1ad31954",
+        "bytes": 75327
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-professional.png",
+        "sha256": "84aa892e2dbadbeb6059e4ba888b4f5fa6e777e47f6f332c0c9e79d54c7c9f70",
+        "bytes": 140777
+      },
+      {
+        "path": ".impeccable/review/internal-device/desktop-proposal.png",
+        "sha256": "73cba1423cf206fb3acb2c98122a861f402f1c3e143ac647a1b34382e2a35e18",
+        "bytes": 144969
+      },
+      {
+        "path": ".impeccable/review/internal-device/gesture-result.json",
+        "sha256": "71046dfe511829f45daa06ba3b7b7db361fd8edf98a77834beeee562cd2cccfd",
+        "bytes": 1053
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-desktop-1280x720.png",
+        "sha256": "c8bc2153e50a051ed7257047d1d3d72f73adf1897ec14e5b34e6926b436fe066",
+        "bytes": 83571
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-desktop-1366x768.png",
+        "sha256": "48ada429c9ea9544af72ed9d1503b9207e5612afe8e7105da6ad68658867d7f8",
+        "bytes": 89318
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-desktop-1440x1000.png",
+        "sha256": "8390e35caf99500a43842cb4637c3516e6938fb10a71c2c380c4f8b62e397fe1",
+        "bytes": 149623
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-desktop-1440x900.png",
+        "sha256": "6805a23abf4e1414cc4a961635925d3ebb8fa68925953fcfde64f6493b350a6e",
+        "bytes": 138594
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-desktop-1920x1080.png",
+        "sha256": "8c3389c38423555ee92426bb0300b5d835f7d49d3b7a1b13b3a215ef84acc0d5",
+        "bytes": 157643
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-360x800.png",
+        "sha256": "f66b25c1f75703b390b3f779f25e1933ae03e9ab9903aee71d677587dfcf3329",
+        "bytes": 47788
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-375x812.png",
+        "sha256": "7b9d721ec1a3eaf06268b6927721112cf40fb27763efce6773bdae84114cedd4",
+        "bytes": 44684
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-390x844.png",
+        "sha256": "42cea10120e800a2f20b6b621c305334415f9dfacb23e2cd2219a3e8bf28639a",
+        "bytes": 45770
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-393x852.png",
+        "sha256": "f2d25651ed75c7f1671fda45ff2b5a8bfa9d73aeaaf78d7bc3e8ef806f6c6056",
+        "bytes": 45969
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-430x932.png",
+        "sha256": "427f591e6b0fe9e02fa548e22613f1b5bb4c9e5eeef82c04241173176f56fd77",
+        "bytes": 49559
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-800x360.png",
+        "sha256": "1fde9b4ce33bddedc8c6493cf9c05dc912f401d906668dcb836af67fa34bab64",
+        "bytes": 26476
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-812x375.png",
+        "sha256": "2ac7439e20d66acce91f4c3e38c04ac046ad1737be4e1ed750f31b047609cd16",
+        "bytes": 27895
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-844x390.png",
+        "sha256": "325f81fb3fd7bdb861cdeb97a6119546b80c9768d6fbfaaa0c90aa6332db2666",
+        "bytes": 28211
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-phone-932x430.png",
+        "sha256": "f9f09b4d4449430acd45a094dad879d73ad28cb27df5096674a0e2bab0df0f3e",
+        "bytes": 32282
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-tablet-1024x1366.png",
+        "sha256": "8c448c19d8fdfc786dcdf546f1270b1fcefb6dc027fb98e9b49cf148941ae594",
+        "bytes": 129129
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-tablet-1024x768.png",
+        "sha256": "9033d7d55a3c680077a77fd7cdfdee15385855de319a8f01927f5a00d4f6ef17",
+        "bytes": 91372
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-tablet-1180x820.png",
+        "sha256": "97a50a5dd65a1959b954a48474795b2cc19de661a9199be1dab35d0d185f02c4",
+        "bytes": 90000
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-tablet-1194x834.png",
+        "sha256": "fed6e765424adc90a95ca9aea0bb52fde0f86d23f82c60cbe1f4b20bf8cd614b",
+        "bytes": 91965
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-tablet-1366x1024.png",
+        "sha256": "166e0b1bbb3d47a1cf5fc6646a75d00b7136a3f786d825b9777c3f979170c98e",
+        "bytes": 108957
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-tablet-768x1024.png",
+        "sha256": "8e456bb4325e214ef8e26185060d80499f6b3dd133db1232bb6e66ff7776cd77",
+        "bytes": 85854
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-tablet-820x1180.png",
+        "sha256": "ce67a808aa8cf63f483b13c3e4d177c2f6ba9c29c562f51797391924874d752c",
+        "bytes": 89170
+      },
+      {
+        "path": ".impeccable/review/internal-device/ghost-tablet-834x1194.png",
+        "sha256": "b37a1964be6ef2a07511fc79666f392add10e7f33281c66394b4288eac3558d6",
+        "bytes": 90650
+      },
+      {
+        "path": ".impeccable/review/internal-device/matrix-result.json",
+        "sha256": "679c51e790cf51ed9a5e1a76ae7e8ca21e660b0dcf684e78c65362e3b11a5548",
+        "bytes": 37557
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-12-3d.png",
+        "sha256": "a1679ad0b44999c5ef8cc1808e76ecbacdfb50411109467ec5109e8f35ae7a1d",
+        "bytes": 188541
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-12-mini.png",
+        "sha256": "0285df87bbc475a7bcf76d68cbf2e0166d931280feda8956823a90f6de8fb22d",
+        "bytes": 56258
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-2-3d.png",
+        "sha256": "62b9a9b33fa899b28ce9bdad78a2392cbcd190a8f6131a6e982c4a4ded512b4f",
+        "bytes": 160261
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-2-mini.png",
+        "sha256": "8c0c33cbc84c8896d90d42d414e838f3a8b2b934f454e8ab5d0650855af3ecc4",
+        "bytes": 51297
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-24-3d.png",
+        "sha256": "40e7b7cb31492ee267139b55b9c09aa8afeedc94e838c6bb430426409e72ab13",
+        "bytes": 198517
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-24-mini.png",
+        "sha256": "0285df87bbc475a7bcf76d68cbf2e0166d931280feda8956823a90f6de8fb22d",
+        "bytes": 56258
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-6-3d.png",
+        "sha256": "676194f8291ce84f65f051e32618653f0bd0950b22bba5f6cfe7a8895b1fe3f5",
+        "bytes": 182128
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-6-mini.png",
+        "sha256": "17897f251eb105007024394957271f695e945e26797d1e6a2bf688dea1401799",
+        "bytes": 54571
+      },
+      {
+        "path": ".impeccable/review/internal-device/performers-result.json",
+        "sha256": "38a003f21aa32759625f234ca2cf168162b2e02cc4e3919545941a33af2f89be",
+        "bytes": 3021
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-360x800.png",
+        "sha256": "549a448a5429c35ce98630fb8c82104e8d8f3a497b1efbc183adf4fb4906f1dc",
+        "bytes": 47651
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-375x812.png",
+        "sha256": "913559b2e44a46d53794af3a683f21bd625785e3fb658fcf007ec5b9342c6819",
+        "bytes": 49898
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-390x844.png",
+        "sha256": "b055cdc0c449b39719665a2dbaa5b36f17e5cd490752a0a1c9c481f2205e632e",
+        "bytes": 51436
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-393x852.png",
+        "sha256": "92caac368b20f1a5894b05370bef0d67817ea5d2d9771704d152ab0beed38b50",
+        "bytes": 52495
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-430x932.png",
+        "sha256": "9e9894815dfc274faf5007abd086ffc954febcb7fb7f1694b1b17f6e9e48a0c2",
+        "bytes": 60509
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-800x360.png",
+        "sha256": "2ba50790646877cfd71ee38968978c4b1cc1f8a5c0daac0f5bbf5e726981de0f",
+        "bytes": 21419
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-812x375.png",
+        "sha256": "4a7d2570001ba950e0ab9f5d7dda190fcb9fca16c9e3ac18c433f8959705b920",
+        "bytes": 22432
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-844x390.png",
+        "sha256": "4faf8b653b77658f2a99a68bdc09bd2910f04a9f8b94a1b671d709d7d984957c",
+        "bytes": 24000
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-932x430.png",
+        "sha256": "397347c5caad9e7339a38d5590c1a57be1038438ebaed5ac427917760d24a480",
+        "bytes": 26358
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-conversation.png",
+        "sha256": "b055cdc0c449b39719665a2dbaa5b36f17e5cd490752a0a1c9c481f2205e632e",
+        "bytes": 51436
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-demo-first.png",
+        "sha256": "6b4341758a141ce989c8f438ec050c9812f72090bb9c703f10b40992784d7afb",
+        "bytes": 57691
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-ghost.png",
+        "sha256": "1353a2f9425f15d3b7ae9ff07f7a7d754144fcba6d6d47bd916255212858afe9",
+        "bytes": 48423
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-home.png",
+        "sha256": "4e848455cbea9e3ccaed2170b96ee6bb5e93fc2fa6ebdf486b1dca5e9320a738",
+        "bytes": 54654
+      },
+      {
+        "path": ".impeccable/review/internal-device/phone-proposal.png",
+        "sha256": "b055cdc0c449b39719665a2dbaa5b36f17e5cd490752a0a1c9c481f2205e632e",
+        "bytes": 51436
+      },
+      {
+        "path": ".impeccable/review/internal-device/resources-result.json",
+        "sha256": "33b5a75eabcbb5f9c2b64cbca9e9652c88b57a8640a7ba052ac84b9e66006d33",
+        "bytes": 17950
+      },
+      {
+        "path": ".impeccable/review/internal-device/screens-result.json",
+        "sha256": "8dc6b1dc16d442b49bf0d05b39c06f92d1dff9be4f546595f9e5e6b94b2a9ab3",
+        "bytes": 2147
+      },
+      {
+        "path": ".impeccable/review/internal-device/soft-keyboard-simulation.png",
+        "sha256": "0218eff7d12f6bb6abc7386024de4fc45e11e7568d7ad685cc2769c06d199da3",
+        "bytes": 32885
+      },
+      {
+        "path": ".impeccable/review/internal-device/stress-result.json",
+        "sha256": "d33990d8f5221a25eadd15da013e4bb54e0f85ed9609a13584798c00654c0fbc",
+        "bytes": 1111
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-1024x1366.png",
+        "sha256": "a4f434b2d415de077aafb4fd7da80a0a8e6a60300b9314fa44626359613f8c1d",
+        "bytes": 139405
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-1024x768.png",
+        "sha256": "c189f036f55f81ae0bbf1af34ee129e6540af01d602f87f986cd75714c56c8bb",
+        "bytes": 96863
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-1180x820.png",
+        "sha256": "2d3ade97f817c8f6fa5b47a7253f76af5ad0d0476cfb73f3e0b90019ceb4c535",
+        "bytes": 98429
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-1194x834.png",
+        "sha256": "b01c89d1c55f57291e83d7cf93b6f19d3067239ebd51b8f73d3ff3fc09b6c0fa",
+        "bytes": 99516
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-1366x1024.png",
+        "sha256": "921d78f87d5daf94f5c9c8354cbc0de4c6701c012eff84442a8f79960bc260b4",
+        "bytes": 112356
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-768x1024.png",
+        "sha256": "18cf1e71151553852a0504df23c0cf98a8d29832ed4cf7dcb2ca9bfaa4a578b8",
+        "bytes": 81473
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-820x1180.png",
+        "sha256": "2652d37afc37275e1e48d8f42b3fdef40945dc8840567c49060c5d2dd8ff9b51",
+        "bytes": 92546
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-834x1194.png",
+        "sha256": "69fec969b16717a5c12b1444e240e5db6f21b6aba5f32f946a1fc5064816914a",
+        "bytes": 95400
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-conversation.png",
+        "sha256": "c21e2f8c3d125b43d9ae9a5cf8476b9176ff6a3c3bbe120f37b31aec97e23234",
+        "bytes": 85384
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-demo-first.png",
+        "sha256": "06422ab5d04a57927d9d6986d8295402e74c76d9a293fa123fbdbb6655f74608",
+        "bytes": 96007
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-ghost.png",
+        "sha256": "502942b7dbee70502057862de175e783812b5cac6caccd18f53d9625fd53a710",
+        "bytes": 91931
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-home.png",
+        "sha256": "9a5019044c3bf1e899b730f76a8eafddfa8df8c481178c928661007e9f23b4f1",
+        "bytes": 88563
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-professional.png",
+        "sha256": "1132c09cf897b4bfca08bfa6b79935f9aa584dae71ef94ba9dd9bf5f295b2aeb",
+        "bytes": 88094
+      },
+      {
+        "path": ".impeccable/review/internal-device/tablet-proposal.png",
+        "sha256": "ab04cb726f64b7b383e345d94373d33508d27f53d81e07e5655cbeba4fe7cb9b",
+        "bytes": 88622
+      },
+      {
+        "path": ".impeccable/review/mobile-camera.png",
+        "sha256": "1749c5c6cbe42bc82184469f4fceb0284bff835ce85afcfffa893fa82f5f7786",
+        "bytes": 34902
+      },
+      {
+        "path": ".impeccable/review/mobile-library.png",
+        "sha256": "91dbc8c47c365825af34226196d29e7576b156b682461d87fa11b168cda99829",
+        "bytes": 19554
+      },
+      {
+        "path": ".impeccable/review/mobile.png",
+        "sha256": "82c1488940deae88fbea29e952f3b1046117c3a5f9f7948910266e6425484f43",
+        "bytes": 35977
+      },
+      {
+        "path": ".impeccable/review/product-backbone/01-initial.json",
+        "sha256": "5976d61497ff16b23c12fb83bc667f9f3df821f7a3c00e28262e4bfddd75e07c",
+        "bytes": 6104
+      },
+      {
+        "path": ".impeccable/review/product-backbone/02-build-ghost.json",
+        "sha256": "5976d61497ff16b23c12fb83bc667f9f3df821f7a3c00e28262e4bfddd75e07c",
+        "bytes": 6104
+      },
+      {
+        "path": ".impeccable/review/product-backbone/03-build-revision-ghost.json",
+        "sha256": "5976d61497ff16b23c12fb83bc667f9f3df821f7a3c00e28262e4bfddd75e07c",
+        "bytes": 6104
+      },
+      {
+        "path": ".impeccable/review/product-backbone/04-build-adopted.json",
+        "sha256": "db4ebaf884e7f0111fa50486b41c9dc6a135627d337b17a5afb0ae1760014e3a",
+        "bytes": 173617
+      },
+      {
+        "path": ".impeccable/review/product-backbone/05-actor-ghost.json",
+        "sha256": "db4ebaf884e7f0111fa50486b41c9dc6a135627d337b17a5afb0ae1760014e3a",
+        "bytes": 173617
+      },
+      {
+        "path": ".impeccable/review/product-backbone/06-actor-revision-ghost.json",
+        "sha256": "db4ebaf884e7f0111fa50486b41c9dc6a135627d337b17a5afb0ae1760014e3a",
+        "bytes": 173617
+      },
+      {
+        "path": ".impeccable/review/product-backbone/07-reflect-ghost.json",
+        "sha256": "db4ebaf884e7f0111fa50486b41c9dc6a135627d337b17a5afb0ae1760014e3a",
+        "bytes": 173617
+      },
+      {
+        "path": ".impeccable/review/product-backbone/08-version-saved.json",
+        "sha256": "f83136b36304792453d0389ee2e090a446dcbecd08043c763de0085d06a28ba3",
+        "bytes": 431387
+      },
+      {
+        "path": ".impeccable/review/product-backbone/09-version-viewed.json",
+        "sha256": "f83136b36304792453d0389ee2e090a446dcbecd08043c763de0085d06a28ba3",
+        "bytes": 431387
+      },
+      {
+        "path": ".impeccable/review/product-backbone/10-remount-preview.json",
+        "sha256": "f83136b36304792453d0389ee2e090a446dcbecd08043c763de0085d06a28ba3",
+        "bytes": 431387
+      },
+      {
+        "path": ".impeccable/review/product-backbone/11-remount-before-adopt.json",
+        "sha256": "f83136b36304792453d0389ee2e090a446dcbecd08043c763de0085d06a28ba3",
+        "bytes": 431387
+      },
+      {
+        "path": ".impeccable/review/product-backbone/12-remount-comparison.json",
+        "sha256": "f83136b36304792453d0389ee2e090a446dcbecd08043c763de0085d06a28ba3",
+        "bytes": 431387
+      },
+      {
+        "path": ".impeccable/review/product-backbone/13-remount-applied.json",
+        "sha256": "ae67e572863d00db51f923c3d565e9300d680c73dff498802b5a7ef21186aa90",
+        "bytes": 522649
+      },
+      {
+        "path": ".impeccable/review/product-backbone/14-remount-undone.json",
+        "sha256": "a98736ca5c8361a10945a9f0ad02a38a17d9b502019d7357d65524ee3f669eeb",
+        "bytes": 431387
+      },
+      {
+        "path": ".impeccable/review/product-backbone/15-phone-initial.json",
+        "sha256": "afd5b58da0a289b952b26e8a90373924e4f825bd12c8a1894609cdded2e4b487",
+        "bytes": 6104
+      },
+      {
+        "path": ".impeccable/review/product-backbone/16-phone-build-ghost.json",
+        "sha256": "afd5b58da0a289b952b26e8a90373924e4f825bd12c8a1894609cdded2e4b487",
+        "bytes": 6104
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-actor-object-ghost.png",
+        "sha256": "ccdf31c7e57c8a1e874a54886419235b183e4fd7c32366d95c7e723aef2ba0bc",
+        "bytes": 161772
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-build-ghost.png",
+        "sha256": "90fac87184d789f777948e7440c6dd3ba992db4a41617e2618b764d0d8433414",
+        "bytes": 195629
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-build-revision.png",
+        "sha256": "d954928b837d6d221d6ec393d7274023e71f2dd6cc8731177dc534d8d6ff0850",
+        "bytes": 199917
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-initial.png",
+        "sha256": "77175479d563f629db4a1f0b76c6633d5dc589cda050c8d8b76e2d07435d850e",
+        "bytes": 150417
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-phone-requested-build-ghost.png",
+        "sha256": "62340778da9664c5e08612d427bb902ea470412d68ef8d4088f3fa9faa270243",
+        "bytes": 168145
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-reflect-ghost.png",
+        "sha256": "e63a489cb30f64193a382f2162edcf8eff29d9237e27944af060e9464c47960e",
+        "bytes": 160965
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-remount-applied.png",
+        "sha256": "457fb45eaca729b5bc7898ff7d667779a4b5b8e55f26c5e65ddc4634452bd8ab",
+        "bytes": 96607
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-remount-overlay.png",
+        "sha256": "93f92be3118fa9c2ffcbc653c35eb1c1cfc6094b515e9b523c146ec7d153d1c0",
+        "bytes": 112297
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-remount-source.png",
+        "sha256": "07766fc0d61c070e2b5ed8d08ae523d457889406240999077e0768f78c510fb8",
+        "bytes": 108917
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-remount-target.png",
+        "sha256": "501142f153cd616a2fe0f28237347abbf08a3042f7d8f241cf268da9eb5602f2",
+        "bytes": 102716
+      },
+      {
+        "path": ".impeccable/review/product-backbone/desktop-version-readonly.png",
+        "sha256": "41b215649c01d65df320e8b83f8b0c9132ded2c0e53d1a62403555eceb4a4a87",
+        "bytes": 159293
+      },
+      {
+        "path": ".impeccable/review/product-backbone/phone-390x844-build-ghost.png",
+        "sha256": "0c1031552aa3a67bfa18e887e091cf0fedaa38ffa1af92ae54618ea06edb6b43",
+        "bytes": 49185
+      },
+      {
+        "path": ".impeccable/review/product-backbone/phone-390x844-build-scenery.png",
+        "sha256": "22e5c7a94870d57bd0b718f48bfce7b4c9c6449751efdb6088247c87d1967459",
+        "bytes": 53802
+      },
+      {
+        "path": ".impeccable/review/product-backbone/remount-selected-hover-result.json",
+        "sha256": "e37c83eebff26261325e25fd83a029639eb249374222f1371092f733d1b8c699",
+        "bytes": 1844
+      },
+      {
+        "path": ".impeccable/review/product-backbone/remount-selected-hover.png",
+        "sha256": "2c88f4c651c95b46b69345f2e9ae4f109c3a1d28c29e2e0d5e96e534516007d5",
+        "bytes": 131162
+      },
+      {
+        "path": ".impeccable/review/product-backbone/tablet-build-revision.png",
+        "sha256": "b993d5a90ed63fb0398edc7ce3085f0d59aeb5a01783f139dcf1c3e209901373",
+        "bytes": 127050
+      },
+      {
+        "path": ".impeccable/review/product-backbone/tablet-remount-overlay.png",
+        "sha256": "748a160e6ee78b027341ebe4891932da248340ae240193748e09bc20d29debe8",
+        "bytes": 126077
+      },
+      {
+        "path": ".impeccable/review/product-backbone/tablet-version-readonly.png",
+        "sha256": "f5123fcd64f7704e04622c8a08d8c72d5b2b4ca383a0a5ce8ba0128e3e51ee89",
+        "bytes": 97854
+      },
+      {
+        "path": ".impeccable/review/user-703.png",
+        "sha256": "a2ffd6bfcb86e4976cb50fc86a78630c4e0845cf480cb21acefd71afd0f873c5",
+        "bytes": 44910
+      },
+      {
+        "path": ".impeccable/review/v01/desktop-analysis.png",
+        "sha256": "3f05bcbca69b642c27425b64fe84ba813341cc44695499640ea12ca5474cb15b",
+        "bytes": 99926
+      },
+      {
+        "path": ".impeccable/review/v01/desktop-entry.png",
+        "sha256": "3cb3d31b844e9f32ebc4982658a184468ecc7db0e1e8f343732e2fc357f92994",
+        "bytes": 110005
+      },
+      {
+        "path": ".impeccable/review/v01/desktop-hardening-browser.json",
+        "sha256": "ba9594e172b3f37e4850d1c6c4c72778f4b54aeaa31263322f4907b4150b6971",
+        "bytes": 996
+      },
+      {
+        "path": ".impeccable/review/v01/desktop-hardening-performance.json",
+        "sha256": "f081c81c923285e8d5d4acfe6870bd3066287241d2c7a4bfbacbd5f2d6b2bef5",
+        "bytes": 8890
+      },
+      {
+        "path": ".impeccable/review/v01/desktop-hardening.png",
+        "sha256": "4dd75662118ea5c7aaba36c405546dcb0900d75460665de18105cedc9043059d",
+        "bytes": 92747
+      },
+      {
+        "path": ".impeccable/review/v01/desktop-professional.png",
+        "sha256": "8e53f8056339739c0f77abc8ad65141745af5c8ac4c6400ebfd2ac53fbc3852d",
+        "bytes": 103681
+      },
+      {
+        "path": ".impeccable/review/v01/desktop-proposal.png",
+        "sha256": "606280fccb5407360330f1a870c10213016c840c246e35d7dd917879a79abc96",
+        "bytes": 104462
+      },
+      {
+        "path": ".impeccable/review/v01/desktop-simple.png",
+        "sha256": "35c8314b83ff49d1a760939bdc71f69cbb2154ff0d158a63c4da33d7dce69b42",
+        "bytes": 103418
+      },
+      {
+        "path": ".impeccable/review/v01/desktop.png",
+        "sha256": "5f40ce30bf2376265ed759c0d3d0675519d380030efa22b8886b695defb725e2",
+        "bytes": 97446
+      },
+      {
+        "path": ".impeccable/review/v01/detector.json",
+        "sha256": "c9ac68f4b0775545de600044e44fe7e2b53996b82a320cb89ce8c21ec5bcb648",
+        "bytes": 9255
+      },
+      {
+        "path": ".impeccable/review/v01/drag-result.json",
+        "sha256": "67bd0365b8917577c4825791fdaaa272aeb1f5c6c4d179cef67d5fc29ef452f1",
+        "bytes": 897
+      },
+      {
+        "path": ".impeccable/review/v01/mobile-analysis.png",
+        "sha256": "9b73136a656eb4ac09eaa9ee6cda7fc1bbec2807ba88531b09dce62cc89eb254",
+        "bytes": 38792
+      },
+      {
+        "path": ".impeccable/review/v01/mobile-entry.png",
+        "sha256": "f306cba6de7ae002a921e6826fc0f4c581a3dc455ab51912abdb6da6501256e4",
+        "bytes": 46667
+      },
+      {
+        "path": ".impeccable/review/v01/mobile-professional.png",
+        "sha256": "5022d47ede88b2c723eb149180c8db61f6c36b0846e3685f4ec3c4e407c2e947",
+        "bytes": 41371
+      },
+      {
+        "path": ".impeccable/review/v01/mobile-proposal.png",
+        "sha256": "7f66bbc5c9fa56920c335540134ae0e66ed23c38a5a6ba7c0d9d9c355616c4ef",
+        "bytes": 44443
+      },
+      {
+        "path": ".impeccable/review/v01/mobile-simple.png",
+        "sha256": "6484bdce546a2e82d2c80f40ef69254a5959ba6583e5c6347be44b323af8847a",
+        "bytes": 41352
+      },
+      {
+        "path": ".impeccable/review/v01/mobile.png",
+        "sha256": "b29152193c9b045891a1b48f03f94ba834cc3232e2584bf1d3356ecc0146e2ba",
+        "bytes": 39089
+      },
+      {
+        "path": ".impeccable/review/v01/responsive-result.json",
+        "sha256": "69c6b05ffcade06586abb09fbbccb7340d4a0d6bf1eae398065c4509a24d6dfb",
+        "bytes": 4705
+      },
+      {
+        "path": ".impeccable/review/v01/review.md",
+        "sha256": "636ccb9734edd8834c8e0cee5645728e789611f621856d1193465bce5a43544f",
+        "bytes": 1278
+      },
+      {
+        "path": ".impeccable/review/v01/tablet-analysis.png",
+        "sha256": "b6435213c2dafba3af885f934084a44e1793bbb5c63117c462bae8447466b79c",
+        "bytes": 114737
+      },
+      {
+        "path": ".impeccable/review/v01/tablet-entry.png",
+        "sha256": "0e880f80c284a7f476c805833d4ed4620871e43a528af749851757dcd0d326d9",
+        "bytes": 123859
+      },
+      {
+        "path": ".impeccable/review/v01/tablet-professional.png",
+        "sha256": "9bac12883f2dbb4e5b226384d6615f561b8f31da4e5bbeebc2b0fe66ccc4717c",
+        "bytes": 112596
+      },
+      {
+        "path": ".impeccable/review/v01/tablet-proposal.png",
+        "sha256": "447ac92350b164a303314894d8924486954cbc5d5ca46a37a1703c36d4a4a640",
+        "bytes": 112477
+      },
+      {
+        "path": ".impeccable/review/v01/tablet-simple.png",
+        "sha256": "7d44ede95483d37f80ca79eab6c3589c06ab4799bb71c46b728e9cd3edc3c3cb",
+        "bytes": 112131
+      },
+      {
+        "path": ".impeccable/review/v01/tablet.png",
+        "sha256": "0a4f1a0fff5af18a329fc0ac3fbbe6b5615ff2e932ab463dd5097e497df78672",
+        "bytes": 112474
+      },
+      {
+        "path": ".impeccable/review/v01/verification.json",
+        "sha256": "59622cbd65eea24fd4a42b07bc5cea558d56d3ddd1ad7235817233ad1ac76969",
+        "bytes": 1694
+      }
+    ]
+  },
+  "retained": [
+    {
+      "path": ".impeccable/review/internal-device/faults-result.json",
+      "sha256": "54689b2893b268989d5acf89c8f98309e7e4ce61e9de79cf770590767cde286f",
+      "bytes": 4001,
+      "kind": "historical-summary-or-recovery",
+      "baseline": "b2abdbbc",
+      "note": "Historical evidence; not a rerun on Closure. References to intermediate files resolve through this manifest archive."
+    },
+    {
+      "path": ".impeccable/review/internal-device/recovery-result.json",
+      "sha256": "87860510c7db1a9eeab0aa50325773a6ce7be084298c9ecd8a3e31bd9106a212",
+      "bytes": 4279,
+      "kind": "historical-summary-or-recovery",
+      "baseline": "b2abdbbc",
+      "note": "Historical evidence; not a rerun on Closure. References to intermediate files resolve through this manifest archive."
+    },
+    {
+      "path": ".impeccable/review/product-backbone/acceptance-result.json",
+      "sha256": "0bc6874b0396ad88ba6d041d21d98607444fe40f80dc5f62b93bf9108ce1d98a",
+      "bytes": 15612,
+      "kind": "historical-summary-or-recovery",
+      "baseline": "b2abdbbc",
+      "note": "Historical evidence; not a rerun on Closure. References to intermediate files resolve through this manifest archive."
+    },
+    {
+      "path": ".impeccable/review/product-backbone/bundle-result.json",
+      "sha256": "7ce5f6d78b701be56d81ee86e26ecd8949843e74707dbc7ef4ad36e98fb46a24",
+      "bytes": 11364,
+      "kind": "historical-summary-or-recovery",
+      "baseline": "b2abdbbc",
+      "note": "Historical evidence; not a rerun on Closure. References to intermediate files resolve through this manifest archive."
+    },
+    {
+      "path": ".impeccable/review/product-backbone/evidence-manifest.json",
+      "sha256": "a26726b68abf32fb775f082a657b83fc7d8ebc2242e3be0997f62a0b03553ee5",
+      "bytes": 22721,
+      "kind": "historical-summary-or-recovery",
+      "baseline": "b2abdbbc",
+      "note": "Historical evidence; not a rerun on Closure. References to intermediate files resolve through this manifest archive."
+    },
+    {
+      "path": ".impeccable/review/product-backbone/validation-result.json",
+      "sha256": "6c99b8d456e1fcc7bdb15853735b7656aba1e92771476e01f94e8bb89bf503b1",
+      "bytes": 2636,
+      "kind": "historical-summary-or-recovery",
+      "baseline": "b2abdbbc",
+      "note": "Historical evidence; not a rerun on Closure. References to intermediate files resolve through this manifest archive."
+    },
+    {
+      "path": ".impeccable/review/v01/desktop-adopt-recovery.json",
+      "sha256": "535b9ec5dc105a55c113447ebc5791b32ffcb467fb4a3cd37a53d5c7b2f8b7e2",
+      "bytes": 202,
+      "kind": "historical-summary-or-recovery",
+      "baseline": "b2abdbbc",
+      "note": "Historical evidence; not a rerun on Closure. References to intermediate files resolve through this manifest archive."
+    },
+    {
+      "path": ".impeccable/review/final/desktop.png",
+      "sha256": "d954928b837d6d221d6ec393d7274023e71f2dd6cc8731177dc534d8d6ff0850",
+      "bytes": 199917,
+      "kind": "closure-final-synthetic"
+    },
+    {
+      "path": ".impeccable/review/final/phone.png",
+      "sha256": "22e5c7a94870d57bd0b718f48bfce7b4c9c6449751efdb6088247c87d1967459",
+      "bytes": 53802,
+      "kind": "closure-final-synthetic"
+    },
+    {
+      "path": ".impeccable/review/final/summary.json",
+      "sha256": "611da2a97d1f19b1e69b074cf143edafb37a0c0b13df1142ac5923a049d45e5e",
+      "bytes": 3472,
+      "kind": "closure-final-synthetic"
+    },
+    {
+      "path": ".impeccable/review/final/tablet.png",
+      "sha256": "a947dd757c7ac4d7a2df475a944848eab3415677dfe042ea3f3c6da04bd35878",
+      "bytes": 123576,
+      "kind": "closure-final-synthetic"
+    }
+  ],
+  "generatedOutput": ".tmp-product-backbone-<run> (ignored); product-backbone-acceptance.mjs",
+  "unrelatedLocalScreenshots": "v01/home.png and v01/plan.png left untouched and untracked",
+  "realModel": "NOT_RUN",
+  "realDevices": "NOT_RUN"
+}

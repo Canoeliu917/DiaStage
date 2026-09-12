@@ -3,11 +3,13 @@
 **DiaStage: Theatre Rehearsal & Stage Previs**\
 **戏剧排演与舞台复现**
 
-DiaStage 是一个以真实舞台空间为基础，记录从搭台、排演到复台全过程的戏剧创作系统。Dia 是贯穿其中的智能伙伴，把人的自然语言转化成可预演、可修改、可保留的舞台方案。
+DiaStage 是一个以真实舞台空间为基础，从搭台、排演到复台持续工作的戏剧创作系统。Dia 是贯穿全过程的统一智能入口，把人的自然语言转化成可预演、可修改、可保留的舞台方案。
 
-**把戏说给 Dia。** 从场地，到搭台，到排演，再到复台。工程骨架为 **Venue → Build → Rehearse → Version → Remount**，用户仍只有置景、排演、复台三个工作区，Dia 贯穿其中。
+**把戏说给 Dia。** 核心产品过程为 **Venue → Build → Rehearse → Remount（场地 → 搭台 → 排演 → 复台）**，用户只有置景、排演、复台三个工作区。
 
-Dialogue / Diagonal / Diagram / Diary 是品牌解释，不是四个 Agent 或工作区。完整映射、已实现能力及限制见 [PRODUCT.md](PRODUCT.md) 与 [本轮整合报告](DIASTAGE_PRODUCT_BACKBONE_INTEGRATION_REPORT.md)。
+**Version / History / Journal 贯穿全过程，并为 Remount 提供历史来源。** 它们是 Diary 基础设施，不是额外的用户工作区；Feedback、Human Authority、Scene Store 同样贯穿各阶段。
+
+Dialogue / Diagonal / Diagram / Diary 是品牌解释，不是 Product Backbone、工程模块或 Agent。完整映射见 [PRODUCT.md](PRODUCT.md)，当前验收与冻结门禁见 [Freeze Report](DIASTAGE_PRODUCT_BACKBONE_FREEZE_REPORT.md)。
 
 ## 工作区
 
@@ -15,7 +17,7 @@ Dialogue / Diagonal / Diagram / Diary 是品牌解释，不是四个 Agent 或�
 | --- | --- |
 | 置景 | 选择场地，放置景片、台块与家具，摆放舞台镜头 |
 | 排演 | 模拟人物站位和移动，显示、观察、记录并保存排演版本 |
-| 复台 | 记录源场、校准目标场地，预览真实尺度落位并确认应用 |
+| 复台 | Remount Preview / Mapping：记录源场、校准目标，预览真实尺度落位并确认应用映射；不替换正式场地 |
 
 **观察与记录**属于排演。人物位置和路线由模拟排演数据定义。
 

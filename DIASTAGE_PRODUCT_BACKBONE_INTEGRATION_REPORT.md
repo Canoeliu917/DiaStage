@@ -1,5 +1,7 @@
 # DiaStage Product Backbone Integration Report
 
+> 历史基线报告：技术状态与测试数字保留为 b2abdbbc 时点。2026-09-12 的层级修正仅更新下文产品表达；当前 Closure / 冻结状态见 [Freeze Report](DIASTAGE_PRODUCT_BACKBONE_FREEZE_REPORT.md)。Version / History / Journal 为横向基础设施，不是第五个产品阶段。已收紧的旧中间证据可按 [总 manifest](.impeccable/review/evidence-manifest.json) 在本机归档或基线 commit 中取回。
+
 ## 1. 基本信息
 
 - 日期：2026-09-12。
@@ -12,7 +14,7 @@
 
 ## 2. 本轮目标
 
-保留 **Venue → Build → Rehearse → Version → Remount**，将已存在的能力接入同一个 Dia。补充文件只统一产品定义、品牌表达与入口，不新增四个 Agent 或四个工作区。
+产品过程为 **Venue → Build → Rehearse → Remount**，将已存在的能力接入同一个 Dia。**Version / History / Journal 贯穿全过程，并为 Remount 提供历史来源。** 补充文件只统一产品定义、品牌表达与入口，不新增四个 Agent 或四个工作区。
 
 > AI proposes. The stage previews. Humans decide.
 
@@ -45,7 +47,7 @@
 
 ## 4. 当前产品骨架
 
-`Venue → Build → Rehearse → Version → Remount` 操作同一个正式 Scene。DiaConversation 负责生命周期和路由，现有编译器、校验器、人工决定与 Scene Store 执行各自职责。
+`Venue → Build → Rehearse → Remount` 操作同一个正式 Scene；Version / History / Journal 贯穿所有阶段。DiaConversation 负责生命周期和路由，现有编译器、校验器、人工决定与 Scene Store 执行各自职责。
 
 - Build：确定性文字 → StagePlan → 校验 → 同 Viewer Ghost → 人工采用。
 - Rehearse：实时事实 → 本机受控站位 / 既有模型接口 → Proposal → 原 Ghost / Authority。
@@ -318,7 +320,7 @@ Cue、完整 Timeline、Scan 语义提取、RAG 与原生 App 继续延后。
 
 ## Brand / Product / Engineering Mapping
 
-正式产品定义：**DiaStage 是一个以真实舞台空间为基础，记录从搭台、排演到复台全过程的戏剧创作系统。**
+正式产品定义：**DiaStage 是一个以真实舞台空间为基础，从搭台、排演到复台持续工作的戏剧创作系统。**
 
 Dia 定义：**Dia 是贯穿其中的智能伙伴，把人的自然语言转化成可预演、可修改、可保留的舞台方案。**
 
@@ -329,7 +331,7 @@ Dia 定义：**Dia 是贯穿其中的智能伙伴，把人的自然语言转化�
 | Diagram — 可看见、比较和修改的舞台 | 场地/搭台/Ghost | Venue / Build / Scene / Preview |
 | Diary — 记住一场戏怎样被排出来 | 版本/历史/复台 | Version / Journal / Feedback / Remount |
 
-品牌解释为 **Dialogue → Diagonal → Diagram → Diary**；产品工作区仍为 **置景 / 排演 / 复台**；工程继续 **Venue → Build → Rehearse → Version → Remount**。三层互相解释，没有强行统一命名，没有新增四个运行时能力枚举或四个 Agent。
+品牌解释为 **Dialogue → Diagonal → Diagram → Diary**；产品工作区为 **置景 / 排演 / 复台**；核心产品过程为 **Venue → Build → Rehearse → Remount**。Version / History / Journal / Feedback 是贯穿全过程的 Diary 基础设施。四个层级分别表达，不新增运行时能力枚举或 Agent。
 
 ## 文件清单附录
 
