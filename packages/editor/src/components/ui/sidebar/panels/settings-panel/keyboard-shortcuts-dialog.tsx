@@ -193,8 +193,13 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       },
       {
         keys: ['Middle click'],
-        action: '平移摄像机',
-        note: '按住鼠标中键拖动，或按住空格键并用鼠标左键拖动。',
+        action: '环绕观察舞台',
+        note: '在三维视图中按住滚轮拖动，围绕当前观察中心旋转视角，道具本身不动。',
+      },
+      {
+        keys: ['Shift', 'Middle click'],
+        action: '平移观察视角',
+        note: '按住 Shift 和滚轮拖动；Alt+中键也可平移。滚动滚轮拉近或拉远。',
       },
       {
         keys: ['Right click'],
@@ -231,7 +236,7 @@ export function KeyboardShortcutsDialog() {
         <DialogHeader className="shrink-0 border-b px-6 py-4">
           <DialogTitle>用户指南与快捷键</DialogTitle>
           <DialogDescription>
-            UE5 标准指南及当前版本快捷键。标准适配尚未完成，请留意功能状态。
+            以 UE5 为主的操作指南，另提供中键环绕。完整 UE5 键位适配尚未完成。
           </DialogDescription>
         </DialogHeader>
 
