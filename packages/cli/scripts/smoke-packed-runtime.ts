@@ -108,14 +108,28 @@ try {
   try {
     await mcpClient.connect(mcpTransport)
     const tools = await mcpClient.listTools()
-    if (!tools.tools.some((tool) => tool.name === 'save_scene')) {
-      throw new Error('managed MCP did not expose save_scene')
-    }
-    const saved = await mcpClient.callTool({
-      name: 'save_scene',
-      arguments: { id: 'smoke-project', name: 'Smoke project' },
+    if (
+      tools.tools
+        .map((tool) => tool.name)
+        .sort()
+        .join(',') !== 'export_json,get_node,get_scene'
+    )
+      throw new Error('managed MCP must retain the read-only theatre profile')
+    const read = await mcpClient.callTool({ name: 'get_scene', arguments: {} })
+    if (read.isError || !read.structuredContent) throw new Error('managed MCP scene read failed')
+    const denied = await mcpClient.callTool({ name: 'save_scene', arguments: {} })
+    if (!denied.isError) throw new Error('managed MCP unexpectedly permits unconfirmed mutation')
+    // Project writes belong to the application's validated scene API.
+    const saved = await fetch(`${started.url}/api/scenes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Origin: started.url },
+      body: JSON.stringify({
+        id: 'smoke-project',
+        name: 'Smoke project',
+        graph: read.structuredContent,
+      }),
     })
-    if (saved.isError) throw new Error(`managed MCP save_scene failed: ${JSON.stringify(saved)}`)
+    if (!saved.ok) throw new Error(`packed scene save failed: ${await saved.text()}`)
   } finally {
     await mcpClient.close()
   }
