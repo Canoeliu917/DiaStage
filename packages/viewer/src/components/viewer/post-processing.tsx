@@ -560,17 +560,15 @@ const PostProcessingPasses = ({
           primaryObjects: outliner.selectedObjects,
           secondaryObjects: outliner.hoveredObjects,
           primaryEdgeThickness: uniform(1),
-          secondaryEdgeThickness: uniform(1.5),
+          secondaryEdgeThickness: uniform(1),
         })
 
-        // Selected: white visible, yellow hidden
-        const selectedVisibleColor = uniform(new Color(0xff_ff_ff))
-        const selectedHiddenColor = uniform(new Color(0xf3_ff_47))
-        const selectedStrength = uniform(3)
-        const selectedOutline = outlineNode.primaryVisibleEdge
-          .mul(selectedVisibleColor)
-          .add(outlineNode.primaryHiddenEdge.mul(selectedHiddenColor))
-          .mul(selectedStrength)
+        // A thin neutral line; hidden edges remain quieter than visible edges.
+        const selectedColor = uniform(new Color(0x74_77_77))
+        const selectedOpacity = outlineNode.primaryVisibleEdge
+          .max(outlineNode.primaryHiddenEdge.mul(0.35))
+          .mul(0.85)
+          .clamp(0, 1)
 
         // Hovered: blue visible, yellow hidden, pulsing
         const pulsePeriod = uniform(3)
@@ -588,7 +586,7 @@ const PostProcessingPasses = ({
           .max(outlineNode.secondaryHiddenEdge)
         visualAlpha = visualAlpha.max(outlineAlpha)
         compositeWithOutlines = vec4(
-          add(sceneColor.rgb, selectedOutline.add(hoverOutline)),
+          add(mix(sceneColor.rgb, selectedColor, selectedOpacity), hoverOutline),
           sceneColor.a,
         )
       }

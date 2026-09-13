@@ -1,5 +1,5 @@
-import { getObjectCorners, objectSeparation, rotatePoint } from '../remount/geometry'
-import type { RemountObject } from '../remount/schema'
+import { rotatePoint } from '../remount/geometry'
+import { prepareStageCollision, stageCollisionsTouch } from './collision'
 import {
   type CommandMeta,
   CommandMetaSchema,
@@ -17,49 +17,37 @@ import {
 
 type SpatialItem = Pick<
   SceneContextObject,
-  'id' | 'name' | 'kind' | 'dimensionsMeters' | 'transform'
->
+  'id' | 'name' | 'kind' | 'dimensionsMeters' | 'transform' | 'collisionGeometry'
+> & { libraryAssetId?: string | null; stepCount?: number | null }
 const radians = Math.PI / 180
 const tolerance = 1e-6
 function boundedWarnings(warnings: PlanWarning[]): PlanWarning[] {
   return warnings.length <= 400
     ? warnings
     : [
-        ...warnings.slice(0, 399),
-        {
-          code: 'invalid-plan',
-          message: '冲突较多，请分批检查或减少布景后重新预览。',
-          itemIds: [],
-          blocking: true,
-        },
-      ]
+        ...warnings.filter((item) => item.blocking),
+        ...warnings.filter((item) => !item.blocking),
+      ].slice(0, 400)
 }
 
-function asObject(item: SpatialItem): RemountObject {
-  const { position: p, rotationDegrees: r } = item.transform
-  const d = item.dimensionsMeters
+function spatialItem(item: StageItemProposal, previous?: SceneContextObject): SpatialItem {
+  const geometry = item.collisionGeometry ?? (!item.libraryAssetId && previous?.collisionGeometry)
   return {
-    nodeId: item.id,
-    name: item.name,
-    representation: item.kind === 'performer-marker' ? 'virtual' : 'physical',
-    dimensions: [d.width, d.height, d.depth],
-    boundsCenter: [0, d.height / 2, 0],
-    position: [p.x, p.y, p.z],
-    rotation: [r.x * radians, r.y * radians, r.z * radians],
+    ...item,
+    id: item.proposalId,
+    name: item.displayName,
+    stepCount: item.stepCount ?? previous?.stepCount,
+    collisionGeometry: geometry || undefined,
   }
 }
 
-function spatialItem(item: StageItemProposal): SpatialItem {
-  return { ...item, id: item.proposalId, name: item.displayName }
-}
-
 export function stageObjectBounds(item: SpatialItem) {
-  const corners = getObjectCorners(asObject(item))
+  const { bounds } = prepareStageCollision(item)
   return {
-    minX: Math.min(...corners.map((p) => p[0])),
-    maxX: Math.max(...corners.map((p) => p[0])),
-    minZ: Math.min(...corners.map((p) => p[2])),
-    maxZ: Math.max(...corners.map((p) => p[2])),
+    minX: bounds[0]![0],
+    maxX: bounds[0]![1],
+    minZ: bounds[2]![0],
+    maxZ: bounds[2]![1],
   }
 }
 
@@ -229,7 +217,9 @@ export function validateStagePlan(
   const sourceContext = SceneContextSummarySchema.parse(sceneContext)
   const plan = resolveStagePlan(input, sourceContext)
   const context = contextForVenue(sourceContext, plan.venue)
-  const warnings = [...plan.warnings]
+  const warnings = plan.warnings.filter(
+    (item) => item.code !== 'collision' && item.code !== 'clearance',
+  )
   const venue = plan.venue ?? context.venue
   if (!venue) warnings.push(warning('missing-venue', '请先明确舞台宽度与深度。', []))
   const unique = (ids: string[], label: string) => {
@@ -297,18 +287,26 @@ export function validateStagePlan(
   const changed = new Set(
     plan.items.flatMap((item) => (item.existingNodeId ? [item.existingNodeId] : [])),
   )
-  const proposed = plan.items.map(spatialItem)
+  const proposed = plan.items.map((item) =>
+    spatialItem(item, oldItems.get(item.existingNodeId ?? '')),
+  )
   const others = context.objects.filter((item) => !changed.has(item.id))
+  const geometry = new Map(
+    [...proposed, ...others].map((item) => [item, prepareStageCollision(item)]),
+  )
   const outside = (item: SpatialItem) =>
     venue &&
-    getObjectCorners(asObject(item)).some(
-      ([x, y, z]) =>
-        Math.abs(x) > venue.widthMeters / 2 + tolerance ||
-        y < -tolerance ||
-        z < -tolerance ||
-        z > venue.depthMeters + tolerance ||
-        (venue.heightMeters !== null && y > venue.heightMeters + tolerance),
-    )
+    geometry
+      .get(item)!
+      .parts.flatMap((part) => part.vertices)
+      .some(
+        ([x, y, z]) =>
+          Math.abs(x) > venue.widthMeters / 2 + tolerance ||
+          (['camera', 'performer-marker'].includes(item.kind) && y < -tolerance) ||
+          z < -tolerance ||
+          z > venue.depthMeters + tolerance ||
+          (venue.heightMeters !== null && y > venue.heightMeters + tolerance),
+      )
   const resized =
     plan.venue &&
     (!context.venue ||
@@ -328,33 +326,24 @@ export function validateStagePlan(
           item.id,
         ]),
       )
+    if (
+      venue &&
+      !['camera', 'performer-marker'].includes(item.kind) &&
+      geometry.get(item)!.bounds[1]![0] < -tolerance
+    )
+      warnings.push(warning('collision', `${item.name} 与舞台地面穿插。`, [item.id], false))
   }
   const checkPair = (a: SpatialItem, b: SpatialItem) => {
-    if (warnings.length > 400) return
-    if (a.kind === 'performer-marker' || b.kind === 'performer-marker') return
-    const separation = objectSeparation(asObject(a), asObject(b))
-    if (separation.intersects) {
+    if (warnings.length >= 400) return
+    if (
+      ['performer-marker', 'camera'].includes(a.kind) ||
+      ['performer-marker', 'camera'].includes(b.kind)
+    )
+      return
+    if (stageCollisionsTouch(geometry.get(a)!, geometry.get(b)!)) {
       warnings.push(
-        warning('collision', `${a.name} 与 ${b.name} 的声明体积发生穿插，请调整台位。`, [
-          a.id,
-          b.id,
-        ]),
+        warning('collision', `${a.name} 与 ${b.name} 接触或重叠。`, [a.id, b.id], false),
       )
-    }
-    const door = a.kind === 'door-flat' ? a : b.kind === 'door-flat' ? b : null
-    const obstacle = door === a ? b : a
-    if (door && !['door-flat', 'window-flat', 'scenic-flat', 'curtain'].includes(obstacle.kind)) {
-      const passage = asObject(door)
-      passage.dimensions[2] += 2 * (context.doorClearanceMeters ?? 0.6)
-      if (objectSeparation(passage, asObject(obstacle)).intersects) {
-        warnings.push(
-          warning(
-            'clearance',
-            `${door.name} 前后通行空间被 ${obstacle.name} 占用，请保留出入口。`,
-            [door.id, obstacle.id],
-          ),
-        )
-      }
     }
   }
   // ponytail: pair checks are quadratic; spatial indexing is only needed beyond the 200-item plan limit.

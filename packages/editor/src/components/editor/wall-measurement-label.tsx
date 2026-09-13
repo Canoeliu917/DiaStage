@@ -4,6 +4,8 @@ import {
   type AnyNode,
   type AnyNodeId,
   calculateLevelMiters,
+  getItemBoundsCenter,
+  getScaledDimensions,
   getWallCurveLength,
   getWallEffectiveHeightForNodes,
   getWallMiterBoundaryPoints,
@@ -15,14 +17,15 @@ import {
   pointToKey,
   sampleWallCenterline,
   sceneRegistry,
+  useLiveNodeOverrides,
   useScene,
   type WallMiterData,
   type WallNode,
 } from '@pascal-app/core'
 import { getSceneTheme, useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
-import { createPortal, useFrame } from '@react-three/fiber'
-import { useMemo, useState } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { formatLinearMeasurement } from '../../lib/measurements'
 
@@ -66,11 +69,15 @@ type WallFaceLine = {
 
 export function WallMeasurementLabel() {
   const selectedIds = useViewer((state) => state.selection.selectedIds)
+  const showMeasurements = useViewer((state) => state.showMeasurements && !state.isExporting)
   const nodes = useScene((state) => state.nodes)
 
   const selectedId = selectedIds.length === 1 ? selectedIds[0] : null
   const selectedNode = selectedId ? nodes[selectedId as AnyNodeId] : null
-  const measurableNode = selectedNode?.type === 'item' ? selectedNode : null
+  const override = useLiveNodeOverrides((state) => (selectedId ? state.get(selectedId) : undefined))
+  const measurableNode =
+    selectedNode?.type === 'item' ? ({ ...selectedNode, ...override } as ItemNode) : null
+  const ref = useRef<THREE.Group>(null)
 
   const [objectState, setObjectState] = useState<{
     id: AnyNodeId
@@ -79,17 +86,28 @@ export function WallMeasurementLabel() {
   const selectedObject = selectedId && objectState?.id === selectedId ? objectState.object : null
 
   useFrame(() => {
-    if (!selectedId || selectedObject) return
+    if (!selectedId) return
 
     const nextObject = sceneRegistry.nodes.get(selectedId)
-    if (nextObject) {
+    if (nextObject && nextObject !== selectedObject) {
       setObjectState({ id: selectedId as AnyNodeId, object: nextObject })
+    }
+    if (nextObject && ref.current) {
+      nextObject.updateWorldMatrix(true, false)
+      ref.current.matrix.copy(nextObject.matrixWorld)
+      ref.current.matrixWorldNeedsUpdate = true
     }
   })
 
-  if (!(measurableNode && selectedObject)) return null
+  if (!(showMeasurements && measurableNode && selectedObject)) return null
 
-  return createPortal(<SelectedMeasurementAnnotation node={measurableNode} />, selectedObject)
+  // Keep visual guides outside the registered item subtree so picking, bounds,
+  // contact checks and exports continue to see only the actual prop geometry.
+  return (
+    <group ref={ref} matrixAutoUpdate={false}>
+      <SelectedMeasurementAnnotation node={measurableNode} />
+    </group>
+  )
 }
 
 function getLevelWalls(wall: WallNode, nodes: Record<string, AnyNode>): WallNode[] {
@@ -473,11 +491,13 @@ function MeasurementLabel({
   position,
   color,
   shadowColor,
+  compact = false,
 }: {
   label: string
   position: Vec3
   color: string
   shadowColor: string
+  compact?: boolean
 }) {
   return (
     <Html
@@ -487,10 +507,15 @@ function MeasurementLabel({
       zIndexRange={[20, 0]}
     >
       <div
-        className="whitespace-nowrap font-bold font-mono text-[15px]"
+        className={
+          compact
+            ? 'rounded border px-2 py-1 whitespace-nowrap text-xs font-medium shadow-sm'
+            : 'whitespace-nowrap font-bold font-mono text-[15px]'
+        }
         style={{
-          color,
-          textShadow: `-1.5px -1.5px 0 ${shadowColor}, 1.5px -1.5px 0 ${shadowColor}, -1.5px 1.5px 0 ${shadowColor}, 1.5px 1.5px 0 ${shadowColor}, 0 0 4px ${shadowColor}, 0 0 4px ${shadowColor}`,
+          color: compact ? `var(--dia-text, ${color})` : color,
+          backgroundColor: compact ? `var(--dia-panel, ${shadowColor})` : undefined,
+          textShadow: compact ? undefined : `-1.5px -1.5px 0 ${shadowColor}, 1.5px -1.5px 0 ${shadowColor}, -1.5px 1.5px 0 ${shadowColor}, 1.5px 1.5px 0 ${shadowColor}, 0 0 4px ${shadowColor}, 0 0 4px ${shadowColor}`,
         }}
       >
         {label}
@@ -504,7 +529,35 @@ function SelectedMeasurementAnnotation({ node }: { node: WallNode | ItemNode }) 
     return <WallMeasurementAnnotation wall={node} />
   }
 
-  return null
+  return <ItemMeasurementAnnotation node={node} />
+}
+
+function ItemMeasurementAnnotation({ node }: { node: ItemNode }) {
+  const unit = useViewer((state) => state.unit)
+  const metricNotation = useViewer((state) => state.metricNotation)
+  const isNight = useViewer((state) => getSceneTheme(state.sceneTheme).appearance === 'dark')
+  const color = isNight ? '#ffffff' : '#111111'
+  const shadowColor = isNight ? '#111111' : '#ffffff'
+  const [w, h, d] = getScaledDimensions(node)
+  const [x, y, z] = getItemBoundsCenter(node)
+  const dimensions = [
+    { name: '宽', size: w },
+    { name: '深', size: d },
+    { name: '高', size: h },
+  ]
+  return (
+    <group name="item-measurement-guides">
+      <MeasurementLabel
+        compact
+        color={color}
+        shadowColor={shadowColor}
+        label={dimensions
+          .map(({ name, size }) => `${name} ${formatLinearMeasurement(size, unit, metricNotation)}`)
+          .join(' · ')}
+        position={[x, y + h / 2 + 0.18, z]}
+      />
+    </group>
+  )
 }
 
 function WallMeasurementAnnotation({ wall }: { wall: WallNode }) {

@@ -78,18 +78,18 @@ test('loading another scene clears temporary pose and camera edit history', () =
   expect(useCameraStudio.getState().stageDraft).toBeNull()
 })
 
-test('recording blocks camera edits while playback controls remain available', () => {
+test('Beta refuses recording and animation while fixed camera observation remains available', () => {
   const state = useCameraStudio.getState()
   state.setRecording(true)
+  expect(useCameraStudio.getState().recording).toBe(false)
   const before = useCameraStudio.getState().project
-  state.updateShot(shot.id, { name: '不可提交' })
-  state.removeShot(shot.id)
-  expect(useCameraStudio.getState().project).toBe(before)
   state.setRuntime({ canvas: null, capture: null, runtimeReady: true })
   state.seek(2)
-  expect(useCameraStudio.getState().time).toBe(2)
+  expect(useCameraStudio.getState().time).toBe(0)
+  expect(useCameraStudio.getState().previewing).toBe(true)
   state.play()
-  expect(useCameraStudio.getState().playing).toBe(true)
+  expect(useCameraStudio.getState().playing).toBe(false)
+  expect(useCameraStudio.getState().project).toBe(before)
   state.stop()
   expect(useCameraStudio.getState().playing).toBe(false)
 })

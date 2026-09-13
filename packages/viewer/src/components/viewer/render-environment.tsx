@@ -8,5 +8,5 @@ export const useNeutralRenderEnvironment = () => useContext(NeutralRenderEnviron
 export const StableRenderMode = createContext(false)
 export const useStableRenderMode = () => useContext(StableRenderMode)
 export function stableRenderBudget(coarse: boolean) {
-  return { fps: coarse ? 24 : 30, dpr: coarse ? 1 : 1.25 }
+  return { fps: coarse ? 30 : 60, dpr: coarse ? 1 : 1.25 }
 }

@@ -6,6 +6,7 @@ import {
   emitter,
   type GridEvent,
   getSelectableKinds,
+  getNodeLock,
   type ItemNode,
   isRegistrySelectable,
   type NodeEvent,
@@ -73,6 +74,7 @@ import { swallowNextClick } from './node-arrow-handles'
 import { setEditorThreeContext } from './three-context-bridge'
 
 const isNodeInCurrentLevel = (node: AnyNode): boolean => {
+  if (getNodeLock(useScene.getState().nodes, node.id, true)) return false
   const currentLevelId = useViewer.getState().selection.levelId
   if (!currentLevelId) return true // No level selected, allow all
   const nodeLevelId = resolveLevelId(node, useScene.getState().nodes)
@@ -294,12 +296,11 @@ const HIGHLIGHT_PROFILES = {
     emissiveIntensity: 0.46,
   },
   selection: {
-    // Keep the real material/texture readable: no albedo tint, just a gentle
-    // indigo emissive glow so it reads as selected.
-    color: new Color('#818cf8'),
+    // Neutral, faint feedback on a disposable clone; authored materials stay intact.
+    color: new Color('#747777'),
     blend: 0,
-    emissiveBlend: 0.4,
-    emissiveIntensity: 0.12,
+    emissiveBlend: 0.12,
+    emissiveIntensity: 0.035,
   },
 } as const
 
@@ -364,7 +365,11 @@ function createHighlightedMaterial(material: Material, kind: HighlightKind): Mat
     )
   }
 
-  if (typeof highlightedMaterial.opacity === 'number' && highlightedMaterial.opacity < 1) {
+  if (
+    kind === 'delete' &&
+    typeof highlightedMaterial.opacity === 'number' &&
+    highlightedMaterial.opacity < 1
+  ) {
     highlightedMaterial.transparent = true
     highlightedMaterial.opacity = Math.min(1, highlightedMaterial.opacity + 0.08)
   }
@@ -948,6 +953,7 @@ export const SelectionManager = () => {
     if (movingNode || isCurveReshape) return
 
     const onPointerDown = (event: NodeEvent) => {
+      if (getNodeLock(useScene.getState().nodes, event.node.id, true)) return
       if (!selectionEnabled(useInteractionScope.getState().scope)) return
       const pointer = pointerEventFromNodeEvent(event)
       if (pointer.button !== 0) return
@@ -1118,7 +1124,7 @@ export const SelectionManager = () => {
         }
       }
       if (wantsMove) {
-        glDomElement.style.cursor = 'move'
+        glDomElement.style.cursor = 'grab'
         owns = true
       } else if (owns) {
         glDomElement.style.cursor = ''
@@ -1271,6 +1277,7 @@ export const SelectionManager = () => {
       // body click so only the reshape tool handles the release. (Scoped to
       // `endpoint`: hole-edit relies on node clicks to exit, just below.)
       const activeScope = useInteractionScope.getState().scope
+      if (getNodeLock(useScene.getState().nodes, event.node.id, true)) return
       if (activeScope.kind === 'mesh-editing') return
       if (activeScope.kind === 'reshaping' && activeScope.reshape === 'endpoint') return
 
@@ -1365,6 +1372,7 @@ export const SelectionManager = () => {
           useEditor.getState().mode !== 'delete' &&
           !hasModifier &&
           isAlreadySole &&
+          nodeRegistry.get(nodeToSelect.type)?.capabilities?.movable?.directDrag !== true &&
           !getMovingNode() &&
           canDirectMoveNode(nodeToSelect)
         ) {
@@ -1544,6 +1552,7 @@ export const SelectionManager = () => {
     }
 
     const onDoubleClick = (event: NodeEvent) => {
+      if (getNodeLock(useScene.getState().nodes, event.node.id, true)) return
       if (useInteractionScope.getState().scope.kind === 'mesh-editing') return
       let node = resolveCanvasSelectionNode({
         node: resolveSelectModeNodeTarget(event),
@@ -1807,7 +1816,7 @@ const SelectionMaterialSync = () => {
 
     for (const [id, kind] of activeHighlightKindsRef.current.entries()) {
       const node = useScene.getState().nodes[id as AnyNodeId]
-      if (node?.type === 'wall') {
+      if (node?.type === 'wall' || getNodeLock(useScene.getState().nodes, id, true)) {
         continue
       }
 
@@ -1981,14 +1990,14 @@ const EditorOutlinerSync = () => {
     // 2. Sync with the imperative outliner arrays (mutate in place to keep references)
     outliner.selectedObjects.length = 0
     for (const id of idsToHighlight) {
-      if (!nodes[id as AnyNodeId]) continue
+      if (!nodes[id as AnyNodeId] || getNodeLock(nodes, id, true)) continue
       const obj = sceneRegistry.nodes.get(id)
       if (obj?.parent) outliner.selectedObjects.push(obj)
     }
 
     outliner.hoveredObjects.length = 0
     if (hoveredId) {
-      if (!nodes[hoveredId as AnyNodeId]) {
+      if (!nodes[hoveredId as AnyNodeId] || getNodeLock(nodes, hoveredId, true)) {
         useViewer.setState({ hoveredId: null })
       } else {
         const obj = sceneRegistry.nodes.get(hoveredId)

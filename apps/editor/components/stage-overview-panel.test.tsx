@@ -221,6 +221,29 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     selectedIds: ['item_upper'],
   })
   calls.length = 0
+  const doubleClick = view.row('上层座椅').props?.onDoubleClick as (event: {
+    target: { closest: () => null }
+  }) => void
+  doubleClick({ target: { closest: () => null } })
+  assert.deepEqual(calls, ['mode', 'route', 'selection', 'open:build'])
+  const upper = scene.getState().nodes.item_upper!
+  scene.setState({
+    nodes: {
+      ...scene.getState().nodes,
+      item_upper: { ...upper, metadata: { ...upper.metadata, stageLocked: true } },
+    },
+  })
+  const lockedNodes = scene.getState().nodes
+  calls.length = 0
+  const lockedDoubleClick = render().row('上层座椅').props?.onDoubleClick as typeof doubleClick
+  lockedDoubleClick({ target: { closest: () => null } })
+  assert.deepEqual(calls, ['mode', 'route', 'selection', 'open:build'])
+  assert.equal(
+    scene.getState().nodes,
+    lockedNodes,
+    'viewing locked properties never edits the scene',
+  )
+  calls.length = 0
   view.button('下层座椅').onClick()
   assert.deepEqual(calls, ['updateNode'])
   assert.equal(scene.getState().nodes.item_lower?.visible, false)

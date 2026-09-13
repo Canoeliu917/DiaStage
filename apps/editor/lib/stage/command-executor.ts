@@ -4,6 +4,7 @@ import {
   type BlockNode,
   cloneNodesInto,
   GROUND_SUPPORT_ID,
+  getNodeLock,
   getFloorPlacedElevation,
   ItemNode,
   installSceneMutationHandler,
@@ -55,6 +56,7 @@ import {
   currentStageContext,
   stageFrame,
   stageKind,
+  stageNodeCollisionGeometry,
   stageRevision,
   stageSite,
 } from './context'
@@ -94,8 +96,40 @@ function positioned(nodes: Nodes, id: string): ItemNode | BlockNode | StairNode 
   const node = nodes[id as AnyNodeId]
   if (!node || (node.type !== 'block' && node.type !== 'item' && node.type !== 'stair'))
     throw new Error('对象不存在，或需要通过原来的布景工具编辑')
-  if (node.metadata.stageLocked) throw new Error(`「${node.name || '布景'}」已锁定，请先解锁`)
+  const locked = getNodeLock(nodes, id, true)
+  if (locked) throw new Error(`「${locked.name || '舞台对象'}」已锁定，请先解锁`)
   return node
+}
+
+function assertUnlockedChanges(
+  changes: NodeChanges,
+  nodes: Nodes,
+  lockCommands = new Set<string>(),
+) {
+  const reject = (id: string, descendants = false) => {
+    const locked = getNodeLock(nodes, id, descendants)
+    if (locked) throw new Error(`「${locked.name || '舞台对象'}」已锁定，请先解锁`)
+  }
+  for (const id of changes.delete ?? []) reject(id, true)
+  for (const { node, parentId } of changes.create ?? []) {
+    const parent = parentId ?? node.parentId
+    if (parent) reject(parent)
+  }
+  for (const { id, data } of changes.update ?? []) {
+    if (lockCommands.has(id)) continue
+    reject(id)
+    const original = nodes[id]
+    if (
+      original &&
+      Object.entries(data).some(
+        ([key, value]) =>
+          !['id', 'name', 'metadata'].includes(key) &&
+          JSON.stringify(value) !==
+            JSON.stringify((original as unknown as Record<string, unknown>)[key]),
+      )
+    )
+      reject(id, true)
+  }
 }
 function localPose(
   node: ItemNode | BlockNode | StairNode,
@@ -148,17 +182,20 @@ function proposal(
   existing: boolean,
 ): StageItemProposal {
   const snapshot = objectSnapshot(node, nodes)
+  const dimensionsMeters = {
+    width: snapshot.dimensions[0],
+    height: snapshot.dimensions[1],
+    depth: snapshot.dimensions[2],
+  }
   return {
     proposalId: node.id,
     existingNodeId: existing ? node.id : null,
     kind: stageKind(node) ?? 'neutral-block',
     displayName: node.name || '台件',
     libraryAssetId: null,
-    dimensionsMeters: {
-      width: snapshot.dimensions[0],
-      height: snapshot.dimensions[1],
-      depth: snapshot.dimensions[2],
-    },
+    dimensionsMeters,
+    collisionGeometry: stageNodeCollisionGeometry(node, dimensionsMeters),
+    ...(node.type === 'stair' ? { stepCount: node.stepCount } : {}),
     transform: {
       position: worldToStagePosition(sceneryCenter(node, snapshot), frame),
       rotationDegrees: worldToStageRotation(snapshot.rotation),
@@ -270,10 +307,6 @@ export function executeStageCommands(
     for (const command of commands) {
       if (command.type === 'SetDoorClearance') {
         clearanceMeters = command.meters
-        for (const object of context.objects) {
-          const n = nodes[object.id as AnyNodeId]
-          if (n?.type === 'item' || n?.type === 'block') spatial.add(n.id)
-        }
         continue
       }
       if (command.type === 'GroupObjects') throw new Error('组合必须独立提交')
@@ -327,6 +360,7 @@ export function executeStageCommands(
         const id = actualId(command.nodeId),
           old = cameras.shots.find((c) => c.id === id)
         if (command.type === 'SetCamera' && !old) throw new Error('摄影机不存在')
+        if (old?.stageLocked) throw new Error(`「${old.name}」已锁定，请先解锁`)
         if (command.type === 'AddCamera' && old) throw new Error('摄影机编号重复')
         const keyframe = {
           id: old?.keyframes[0]?.id ?? crypto.randomUUID(),
@@ -353,6 +387,7 @@ export function executeStageCommands(
       if (command.type === 'AddPerformerMarker' || command.type === 'SetPerformerPosition') {
         const id = actualId(command.nodeId),
           old = doc.rehearsalSimulation.performers.find((p) => p.id === id)
+        if (old?.stageLocked) throw new Error(`「${old.name}」已锁定，请先解锁`)
         const position = stageToWorldPosition(command.position, frame),
           facing = stageToWorldRotation({ x: 0, y: command.facingDegrees, z: 0 })[1]
         if (command.type === 'SetPerformerPosition' && !old) throw new Error('人物不存在')
@@ -378,6 +413,17 @@ export function executeStageCommands(
         command.type === 'DuplicateObject' ? command.sourceNodeId : command.nodeId,
       )
       if (command.type === 'SetObjectLock') {
+        const performer = doc.rehearsalSimulation.performers.find((p) => p.id === id)
+        const shot = cameras.shots.find((c) => c.id === id)
+        if (performer || shot) {
+          if (performer) performer.stageLocked = command.locked
+          if (shot) {
+            shot.stageLocked = command.locked
+            cameraChanged = true
+          }
+          resultIds.push(id)
+          continue
+        }
         const node = nodes[id as AnyNodeId]
         if (!node) throw new Error('对象不存在')
         update({ ...node, metadata: { ...node.metadata, stageLocked: command.locked } })
@@ -385,6 +431,7 @@ export function executeStageCommands(
         continue
       }
       const camera = cameras.shots.find((c) => c.id === id)
+      if (camera?.stageLocked) throw new Error(`「${camera.name}」已锁定，请先解锁`)
       if (camera && command.type === 'MoveObject') {
         const next = stageToWorldPosition(command.position, frame),
           delta = subtract(next, camera.keyframes[0]!.position)
@@ -677,6 +724,15 @@ export function executeStageCommands(
     })
     if (venueChanged)
       changes.update!.push(...stageFloorUpdates(runtimeTheatreDocument(data), nodes, site.id))
+    assertUnlockedChanges(
+      changes,
+      state.nodes,
+      new Set(
+        commands.flatMap((command) =>
+          command.type === 'SetObjectLock' ? [actualId(command.nodeId)] : [],
+        ),
+      ),
+    )
     executing = true
     try {
       runAsSingleSceneHistoryStep(useScene, () => {
@@ -735,15 +791,7 @@ export function connectStageCommandExecutor() {
       const state = useScene.getState(),
         frame = stageFrame(),
         context = currentStageContext()
-      const locked = [...(changes.delete ?? []), ...(changes.update ?? []).map((op) => op.id)].find(
-        (id) => state.nodes[id]?.metadata.stageLocked,
-      )
-      if (locked) {
-        useStageCommandNotice.setState({
-          error: `「${state.nodes[locked]?.name || '布景'}」已锁定，请先解锁`,
-        })
-        return false
-      }
+      assertUnlockedChanges(changes, state.nodes)
       // Remount validates against the calibrated destination, not the original rehearsal venue.
       if (
         changes.update?.some(

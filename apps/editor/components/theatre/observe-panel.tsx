@@ -48,7 +48,10 @@ export function ObservePanel() {
         从此机位观察
       </button>
       <button type="button" onClick={() => openStudioPanel('stage-cameras')}>
-        摆放舞台镜头
+        管理舞台机位
+      </button>
+      <button type="button" disabled={!camera.previewing} onClick={camera.stop}>
+        返回自由观察
       </button>
       <button type="button" onClick={() => useRehearsalPlayback.getState().play()}>
         播放模拟排演

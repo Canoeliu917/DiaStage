@@ -1,0 +1,23 @@
+.dia-stage-layout { position: relative; }
+.dia-dock.dia-resizable-dock { position: relative; width: min(var(--dia-dock-width), 50vw); }
+.dia-dock-controls { position: absolute; top: 10px; right: 10px; z-index: 2; display: flex; gap: 4px; }
+.dia-dock-controls button, .dia-restore-tab { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 30px; min-height: 30px; border: 1px solid var(--dia-border); border-radius: 4px; background: var(--dia-raised); color: var(--dia-text); cursor: pointer; }
+.dia-dock-controls button:hover:not(:disabled), .dia-restore-tab:hover { background: var(--dia-hover); }
+.dia-dock-controls button:disabled { opacity: .35; cursor: default; }
+.dia-stage-layout .dia-dock.dia-resizable-dock .dia-panel .dia-panel-header { padding-right: 84px; }
+.dia-restore-tab { position: absolute; top: 8px; right: 10px; z-index: 110; min-height: 36px; padding: 6px 10px; box-shadow: 0 2px 10px color-mix(in srgb, var(--dia-ink) 27%, transparent); }
+.dia-dock-resizer { position: absolute; top: 0; bottom: 0; left: -8px; z-index: 100; display: flex; align-items: center; justify-content: center; width: 16px; cursor: col-resize; touch-action: none; }
+.dia-dock-resizer span { width: 4px; height: 32px; border-radius: 4px; background: var(--dia-muted); }
+.dia-dock-resizer[aria-disabled=true] { cursor: default; }
+.dia-dock-resizer:focus-visible, .dia-dock-controls button:focus-visible, .dia-restore-tab:focus-visible, .editor-pane-controls button:focus-visible { outline: 2px solid var(--dia-text); outline-offset: 2px; }
+.editor-pane-controls { background: var(--dia-panel); }
+.editor-pane-controls button[aria-pressed=true] { background: var(--dia-hover); }
+.studio-workspace .dia-editor .editor-sidebar-split { min-width: 160px; max-width: calc(100% - 280px); }
+.editor-sidebar-split [data-layout-pane] > [hidden] { display: none; }
+.editor-sidebar-split [data-layout-pane=overview] .stage-overview-heading > div:first-child { float: right; margin-left: 6px; }
+.editor-sidebar-split [data-layout-pane=overview] .stage-overview-heading h2 { display: none; }
+@media(max-width:999px) {
+  .dia-dock.dia-resizable-dock { width: 100%; }
+  .dia-dock-resizer { display: none; }
+  .dia-dock-controls { top: 4px; right: 6px; }
+}

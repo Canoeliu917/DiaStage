@@ -35,6 +35,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { markToolCancelConsumed } from '../../../hooks/use-keyboard'
 import { commitFreshPlacementSubtree } from '../../../lib/fresh-planar-placement'
 import { stripPlacementMetadataFlags } from '../../../lib/placement-metadata'
+import { hasPlacementPolicy, placementFeedback } from '../../../lib/placement-policy'
 import { resolvePrioritizedPlanarCursorPosition } from '../../../lib/planar-cursor-placement'
 import { resolveAttachmentPreviewRotation } from '../../../lib/rigid-plan-svg-transform'
 import { movementSfxStepKey } from '../../../lib/sfx/movement-tick'
@@ -441,6 +442,16 @@ export function MoveRegistryNodeTool({ node }: { node: AnyNode }) {
     // override so the user can drop on top of an existing item on purpose. Only
     // shelves show the box, so this no-ops for every other movable kind.
     const recomputeValidity = () => {
+      const feedback = placementFeedback({
+        ...node,
+        position: lastCursorRef.current,
+        rotation: toCommitRotation(rotationRef.current),
+      } as AnyNode)
+      if (feedback) {
+        validRef.current = feedback.valid
+        setValid(feedback.valid && !feedback.contact)
+        return
+      }
       if (!boxDimensions && !movableValidityConfig) return
       if (altRef.current) {
         validRef.current = true
@@ -940,6 +951,7 @@ export function MoveRegistryNodeTool({ node }: { node: AnyNode }) {
     // item placement keys (and the "Rotate" hints the move HUD shows). Applied
     // imperatively + mirrored to the live transform; committed on drop.
     const onKeyDown = (e: KeyboardEvent) => {
+      if (hasPlacementPolicy()) return
       // Hold Alt (free place) to force placement on an invalid (red) footprint,
       // matching the GLB item tool. Recolour the box to green while held.
       if (e.key === 'Alt') {

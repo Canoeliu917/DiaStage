@@ -2,6 +2,11 @@
 
 import { useScene } from '@pascal-app/core'
 import {
+  type SceneContextSummary,
+  type StageItemProposal,
+  stageCollisionGeometry,
+  stageLayoutObjects,
+  stageObjectFootprints,
   stagePositionLabel,
   stageToWorldPosition,
   stageToWorldRotation,
@@ -13,8 +18,19 @@ import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import { Plane, Raycaster, Vector2, Vector3 } from 'three'
-import { currentStageContext, stageFrame } from '@/lib/stage/context'
+import {
+  BufferGeometry,
+  DoubleSide,
+  Float32BufferAttribute,
+  Plane,
+  Raycaster,
+  Vector2,
+  Vector3,
+} from 'three'
+import { stageContactIds } from '@/lib/stage/contacts'
+import { stageFrame } from '@/lib/stage/context'
+import { useStageContext } from '@/lib/stage/live-context'
+import { DIA_COLORS } from '@/lib/visual-system'
 import {
   cameraFloorplanMatrix,
   cameraPlanPoint,
@@ -40,15 +56,19 @@ function moveAtWorld(world: Vector3) {
   const point = worldToStagePosition([world.x, world.y, world.z], stageFrame())
   updateStagePlacement({ ...point, y: draft.item.transform.position.y })
 }
-function preview() {
-  const draft = useStagePlacement.getState().draft
+export function stagePlacementPreview(
+  draft: ReturnType<typeof useStagePlacement.getState>['draft'],
+  context: SceneContextSummary,
+) {
   if (!draft) return null
-  const context = currentStageContext()
-  const result = validateStagePlan(placementPlan(draft), context)
+  const plan = placementPlan(draft)
+  const result = validateStagePlan(plan, context)
+  const contacts = stageContactIds(stageLayoutObjects(context, plan))
+  const contact = contacts.has(draft.item.existingNodeId ?? draft.item.proposalId)
   return {
     draft,
     context,
-    color: result.valid ? '#86a998' : '#c67b73',
+    color: !result.valid || contact ? DIA_COLORS.error : DIA_COLORS.blue,
     valid: result.valid,
     message: result.warnings
       .filter((warning) => warning.blocking)
@@ -57,9 +77,51 @@ function preview() {
   }
 }
 
+function PlacementVolume({ item, color }: { item: StageItemProposal; color: string }) {
+  const { kind, dimensionsMeters, collisionGeometry, libraryAssetId, stepCount } = item
+  const geometry = useMemo(() => {
+    const positions: number[] = []
+    for (const part of stageCollisionGeometry({
+      kind,
+      dimensionsMeters,
+      collisionGeometry,
+      libraryAssetId,
+      stepCount,
+    })) {
+      for (const face of part.faces) {
+        for (let i = 1; i < face.length - 1; i++) {
+          positions.push(
+            ...part.vertices[face[0]!]!,
+            ...part.vertices[face[i]!]!,
+            ...part.vertices[face[i + 1]!]!,
+          )
+        }
+      }
+    }
+    const mesh = new BufferGeometry()
+    mesh.setAttribute('position', new Float32BufferAttribute(positions, 3))
+    return mesh
+  }, [kind, dimensionsMeters, collisionGeometry, libraryAssetId, stepCount])
+  useEffect(() => () => geometry.dispose(), [geometry])
+  return [false, true].map((wireframe) => (
+    <mesh key={String(wireframe)} geometry={geometry} raycast={() => null}>
+      <meshBasicMaterial
+        color={color}
+        side={DoubleSide}
+        wireframe={wireframe}
+        transparent
+        opacity={wireframe ? 0.8 : 0.28}
+        depthWrite={false}
+      />
+    </mesh>
+  ))
+}
+
 export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
   const active = usePlacementEnabled(enabled)
   const draft = useStagePlacement((state) => state.draft)
+  const context = useStageContext()
+  const state = useMemo(() => stagePlacementPreview(draft, context), [draft, context])
   const { camera, gl } = useThree()
   const raycaster = useMemo(() => new Raycaster(), [])
   useEffect(() => {
@@ -100,10 +162,9 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
     }
   }, [active, camera, gl, raycaster])
   if (!active || !draft) return null
-  const state = preview()
   if (!state?.context.venue) return null
   const frame = stageFrame()
-  const { width, height, depth } = draft.item.dimensionsMeters
+  const { height } = draft.item.dimensionsMeters
   const point = draft.item.transform.position
   const position = stageToWorldPosition(point, frame)
   const rotation = stageToWorldRotation(draft.item.transform.rotationDegrees)
@@ -128,23 +189,11 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       <group position={position} rotation={rotation}>
-        <mesh position={[0, height / 2, 0]} raycast={() => null}>
-          <boxGeometry args={[width, height, depth]} />
-          <meshBasicMaterial color={state.color} transparent opacity={0.28} depthWrite={false} />
-        </mesh>
-        <mesh position={[0, height / 2, 0]} raycast={() => null}>
-          <boxGeometry args={[width, height, depth]} />
-          <meshBasicMaterial
-            color={state.color}
-            wireframe
-            transparent
-            opacity={0.85}
-            depthWrite={false}
-          />
-        </mesh>
+        {!draft.item.existingNodeId && <PlacementVolume item={draft.item} color={state.color} />}
         <Html position={[0, height + 0.15, 0]} center style={{ pointerEvents: 'none' }}>
           <div className="stage-ghost-label">
             {draft.item.displayName} · {stagePositionLabel(point, venue.depthMeters)}
+            {draft.item.libraryAssetId !== null && !draft.item.existingNodeId && ' · 轮廓参考'}
             <br />
             距中心线 {Math.abs(point.x).toFixed(2)} 米 · 距台口 {point.z.toFixed(2)} 米
             {!state.valid && (
@@ -163,6 +212,8 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
 export function StagePlacementFloorplan({ enabled }: { enabled: boolean }) {
   const active = usePlacementEnabled(enabled)
   const draft = useStagePlacement((state) => state.draft)
+  const scene = useStageContext()
+  const state = useMemo(() => stagePlacementPreview(draft, scene), [draft, scene])
   const context = useFloorplanRender()
   const nodes = useScene((state) => state.nodes)
   const levelId = useViewer((state) => state.selection.levelId)
@@ -195,7 +246,6 @@ export function StagePlacementFloorplan({ enabled }: { enabled: boolean }) {
     }
   }, [active, frame, hasDraft])
   if (!active || !draft || !context || !frame) return null
-  const state = preview()
   if (!state?.context.venue) return null
   const stage = stageFrame(),
     venue = state.context.venue
@@ -203,24 +253,8 @@ export function StagePlacementFloorplan({ enabled }: { enabled: boolean }) {
     const p = cameraPlanPoint(stageToWorldPosition({ x, y: 0, z }, stage), frame)
     return `${p[0]},${p[2]}`
   }
-  const { position, rotationDegrees } = draft.item.transform
-  const dimensions = draft.item.dimensionsMeters
-  const angle = (rotationDegrees.y * Math.PI) / 180
-  const footprint = [
-    [-1, -1],
-    [1, -1],
-    [1, 1],
-    [-1, 1],
-  ]
-    .map(([x, z]) => {
-      const dx = (x! * dimensions.width) / 2,
-        dz = (z! * dimensions.depth) / 2
-      return project(
-        position.x + dx * Math.cos(angle) + dz * Math.sin(angle),
-        position.z - dx * Math.sin(angle) + dz * Math.cos(angle),
-      )
-    })
-    .join(' ')
+  const { position } = draft.item.transform
+  const footprints = draft.item.existingNodeId ? [] : stageObjectFootprints(draft.item)
   const label = cameraPlanPoint(stageToWorldPosition(position, stage), frame)
   const unit = context.unitsPerPixel
   const move = (clientX: number, clientY: number) => {
@@ -252,14 +286,17 @@ export function StagePlacementFloorplan({ enabled }: { enabled: boolean }) {
         }}
       />
       <g pointerEvents="none">
-        <polygon
-          points={footprint}
-          fill={state.color}
-          fillOpacity={0.3}
-          stroke={state.color}
-          strokeWidth={2 * unit}
-          strokeDasharray={`${5 * unit} ${3 * unit}`}
-        />
+        {footprints.map((footprint, index) => (
+          <polygon
+            key={index}
+            points={footprint.map(([x, z]) => project(x, z)).join(' ')}
+            fill={state.color}
+            fillOpacity={0.3}
+            stroke={state.color}
+            strokeWidth={2 * unit}
+            strokeDasharray={`${5 * unit} ${3 * unit}`}
+          />
+        ))}
         <text
           x={label[0]}
           y={label[2] - 18 * unit}

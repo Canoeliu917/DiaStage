@@ -142,7 +142,10 @@ if (!process.env.SIDEBAR_SPLIT_TEST) {
     return {
       tree,
       separator: () => {
-        const found = tree.find((node) => node.props.role === 'separator')
+        const found = tree.find(
+          (node) =>
+            node.props.role === 'separator' && node.props['aria-orientation'] === 'horizontal',
+        )
         assert.ok(found, 'desktop split separator is present')
         return found.props
       },
@@ -192,57 +195,133 @@ if (!process.env.SIDEBAR_SPLIT_TEST) {
   assert.ok(view.has('data-panel', 'build'))
   assert.ok(view.has('data-viewer'))
   assert.equal(view.separator()['aria-orientation'], 'horizontal')
-  assert.equal(view.separator()['aria-valuemin'], 30)
-  assert.equal(view.separator()['aria-valuemax'], 70)
+  assert.equal(view.separator()['aria-valuemin'], 15)
+  assert.equal(view.separator()['aria-valuemax'], 85)
+  assert.ok(
+    view.tree.findIndex((node) => node.props['data-layout-pane'] === 'tools') <
+      view.tree.findIndex((node) => node.props['data-layout-pane'] === 'overview'),
+    'tools are above the overview',
+  )
   assert.equal(ratio(), 50)
   key('ArrowUp')
   assert.equal(ratio(), 45)
   key('ArrowDown')
   assert.equal(ratio(), 50)
   key('Home')
-  assert.equal(ratio(), 30)
+  assert.equal(ratio(), 15)
   key('ArrowUp')
-  assert.equal(ratio(), 30)
+  assert.equal(ratio(), 15)
   key('End')
-  assert.equal(ratio(), 70)
+  assert.equal(ratio(), 85)
   key('ArrowDown')
-  assert.equal(ratio(), 70)
+  assert.equal(ratio(), 85)
 
   for (const panel of ['picture', 'camera-rehearsal', 'build']) {
     activate(panel)
     view = render()
     assert.equal(topRenders, 1, 'changing the lower panel never duplicates or hides the upper slot')
     assert.ok(view.has('data-panel', panel))
-    assert.equal(view.separator()['aria-valuenow'], 70)
+    assert.equal(view.separator()['aria-valuenow'], 85)
   }
   activate('build')
   assert.equal(sidebar.isCollapsed, false, 'the active lower tab cannot hide the upper overview')
   assert.ok(render().has('data-top'))
   pointer('onPointerDown', 500)
   assert.ok(captured.has(1))
-  assert.equal(ratio(), 70, 'grabbing the divider does not jump its position')
+  assert.equal(ratio(), 85, 'grabbing the divider does not jump its position')
   pointer('onPointerMove', 400)
-  assert.equal(ratio(), 60)
+  assert.equal(ratio(), 75)
   pointer('onPointerUp', 400)
-  assert.equal(ratio(), 60)
+  assert.equal(ratio(), 75)
   assert.equal(captured.size, 0)
   for (const cancellation of ['onPointerCancel', 'onLostPointerCapture', 'Escape']) {
     pointer('onPointerDown', 500)
     pointer('onPointerMove', 9000)
-    assert.equal(ratio(), 70)
+    assert.equal(ratio(), 85)
     if (cancellation === 'Escape') key('Escape')
     else pointer(cancellation)
-    assert.equal(ratio(), 60, `${cancellation} restores the starting split`)
+    assert.equal(ratio(), 75, `${cancellation} restores the starting split`)
   }
   pointer('onPointerDown', 500)
   pointer('onPointerMove', -9000)
-  assert.equal(ratio(), 30)
+  assert.equal(ratio(), 15)
   pointer('onPointerUp')
+
+  function click(label: string) {
+    const control = render().tree.find(
+      (node) => node.type === 'button' && node.props['aria-label'] === label,
+    )
+    assert.ok(control, `missing control: ${label}`)
+    ;(control.props.onClick as () => void)()
+  }
+  for (const [pane, title] of [
+    ['tools', '工具区'],
+    ['overview', '舞台总览'],
+  ]) {
+    click(`锁定${title}布局`)
+    assert.equal(render().separator()['aria-disabled'], true)
+    key('End')
+    pointer('onPointerDown')
+    pointer('onPointerMove', 9000)
+    assert.equal(ratio(), 15, 'locking either pane blocks shared resizing')
+    click(`隐藏${title}`)
+    assert.equal(
+      render().tree.find((node) => node.props['data-layout-pane'] === pane)?.props['data-hidden'],
+      false,
+    )
+    click(`解锁${title}布局`)
+    click(`隐藏${title}`)
+    assert.equal(
+      render().tree.find((node) => node.props['data-layout-pane'] === pane)?.props['data-hidden'],
+      true,
+    )
+    assert.equal(render().separator().hidden, true)
+    click(`展开${title}`)
+  }
 
   view = render(false)
   assert.equal(topRenders, 0)
-  assert.ok(!view.tree.some((node) => node.props.role === 'separator'))
+  assert.ok(
+    !view.tree.some(
+      (node) => node.props.role === 'separator' && node.props['aria-orientation'] === 'horizontal',
+    ),
+  )
   assert.ok(view.has('data-rail', 'desktop') && view.has('data-panel', 'build'))
+  function dockClick(label: string) {
+    const button = render(false).tree.find(
+      (node) => node.type === 'button' && node.props['aria-label'] === label,
+    )
+    assert.ok(button)
+    ;(button.props.onClick as () => void)()
+  }
+  dockClick('锁定左侧栏布局')
+  let resize = render(false).tree.find((node) => node.props.role === 'separator')!
+  assert.equal(resize.props['aria-disabled'], true)
+  const initialWidth = sidebar.width
+  ;(resize.props.onKeyDown as (event: object) => void)({
+    key: 'End',
+    preventDefault() {},
+    stopPropagation() {},
+  })
+  assert.equal(sidebar.width, initialWidth)
+  activate('build')
+  assert.equal(sidebar.isCollapsed, false, 'locked Dock cannot collapse through the active tab')
+  dockClick('隐藏左侧栏')
+  assert.equal(sidebar.isCollapsed, false)
+  dockClick('解锁左侧栏布局')
+  resize = render(false).tree.find((node) => node.props.role === 'separator')!
+  ;(resize.props.onKeyDown as (event: object) => void)({
+    key: 'ArrowRight',
+    preventDefault() {},
+    stopPropagation() {},
+  })
+  assert.equal(sidebar.width, initialWidth + 20)
+  dockClick('隐藏左侧栏')
+  assert.equal(sidebar.isCollapsed, true)
+  render(false)
+  activate('build')
+  assert.equal(sidebar.isCollapsed, false, 'the rail restores the same single Dock')
+  render(false)
   activate('build')
   assert.equal(sidebar.isCollapsed, true, 'without a top slot the original collapse action remains')
   view = render(false)

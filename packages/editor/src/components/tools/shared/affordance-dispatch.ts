@@ -14,6 +14,27 @@ import { type ComponentType, lazy } from 'react'
  * mount the legacy fallback in that case.
  */
 const lazyToolCache = new WeakMap<() => Promise<unknown>, ComponentType>()
+const readyTools = new WeakMap<() => Promise<unknown>, ComponentType<any>>()
+const loadingTools = new WeakMap<() => Promise<unknown>, Promise<{ default: ComponentType<any> }>>()
+
+/** Warm a host's core manipulation tools before the first pointer gesture. */
+export function preloadRegistryAffordanceTool(kind: string, affordance: string) {
+  const loader = nodeRegistry.get(kind)?.affordanceTools?.[affordance]
+  if (!loader) return
+  const pending = loadingTools.get(loader)
+  if (pending) return pending
+  const loading = loader()
+    .then((module) => {
+      readyTools.set(loader, module.default)
+      return module
+    })
+    .catch((error) => {
+      loadingTools.delete(loader)
+      throw error
+    })
+  loadingTools.set(loader, loading)
+  return loading
+}
 
 export function getRegistryAffordanceTool(
   kind: string,
@@ -22,9 +43,11 @@ export function getRegistryAffordanceTool(
   const def = nodeRegistry.get(kind)
   const loader = def?.affordanceTools?.[affordance]
   if (!loader) return null
+  const ready = readyTools.get(loader)
+  if (ready) return ready
   const cached = lazyToolCache.get(loader)
   if (cached) return cached
-  const Comp = lazy(loader as () => Promise<{ default: ComponentType<any> }>)
+  const Comp = lazy(() => preloadRegistryAffordanceTool(kind, affordance)!)
   lazyToolCache.set(loader, Comp as unknown as ComponentType)
   return Comp as unknown as ComponentType<any>
 }

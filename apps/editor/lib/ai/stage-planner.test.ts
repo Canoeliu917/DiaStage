@@ -2,17 +2,33 @@ import { expect, test } from 'bun:test'
 import { type SceneContextSummary, type StagePlan, StagePlanSchema } from '@pascal-app/core/stage'
 import { zodTextFormat } from 'openai/helpers/zod'
 import { AiError } from './api'
+import { StageModelPlanSchema } from './stage-model-schema'
 import { type ModelPlanner, type PlanRequest, planStageRequest } from './stage-planner'
 
 const context: SceneContextSummary = {
   documentVersion: 7,
   venue: { type: 'proscenium', widthMeters: 8, depthMeters: 6, heightMeters: 4 },
-  objects: [],
+  objects: [
+    {
+      id: 'existing-table',
+      name: '圆桌',
+      kind: 'round-table',
+      dimensionsMeters: { width: 0.9, height: 0.75, depth: 0.9 },
+      transform: { position: { x: 0, y: 0, z: 3 }, rotationDegrees: { x: 0, y: 0, z: 0 } },
+    },
+    {
+      id: 'second-table',
+      name: '第二张圆桌',
+      kind: 'round-table',
+      dimensionsMeters: { width: 0.9, height: 0.75, depth: 0.9 },
+      transform: { position: { x: 2, y: 0, z: 3 }, rotationDegrees: { x: 0, y: 0, z: 0 } },
+    },
+  ],
   selectedObjectIds: [],
 }
 const request: PlanRequest = {
   source: 'typed-command',
-  input: '我希望在台后放一张尺寸为一米见方的桌子',
+  input: '请将当前圆桌移到靠后台的合适位置',
   sceneContext: context,
   priorAnswers: [],
 }
@@ -24,11 +40,11 @@ const sample = (): StagePlan => ({
   items: [
     {
       proposalId: 'table-1',
-      existingNodeId: null,
-      kind: 'table',
-      displayName: '桌子',
+      existingNodeId: 'existing-table',
+      kind: 'round-table',
+      displayName: '圆桌',
       libraryAssetId: null,
-      dimensionsMeters: { width: 1, height: 0.75, depth: 1 },
+      dimensionsMeters: { width: 0.9, height: 0.75, depth: 0.9 },
       transform: { position: { x: 0, y: 0, z: 4 }, rotationDegrees: { x: 0, y: 0, z: 0 } },
       certainty: 'stated',
       assumptionIds: [],
@@ -46,9 +62,23 @@ test('simple commands, clarification, and unsupported domains stay offline', asy
   const neverCall: ModelPlanner = async () => {
     throw new Error('model must not be called')
   }
-  const plan = await planStageRequest({ ...request, input: '添加桌子' }, signal(), neverCall)
-  expect(plan.items[0]?.kind).toBe('table')
-  expect(plan.items[0]?.transform.position.z).toBe(3)
+  const plan = await planStageRequest(
+    { ...request, input: '圆桌往台前移动30厘米' },
+    signal(),
+    neverCall,
+  )
+  expect(plan.items[0]?.kind).toBe('round-table')
+  expect(plan.items[0]?.transform.position.z).toBe(2.7)
+  const ambiguous = await planStageRequest({ ...request, input: '添加桌子' }, signal(), neverCall)
+  expect(ambiguous.items).toEqual([])
+  expect(ambiguous.questions.length).toBeGreaterThan(0)
+  const added = await planStageRequest({ ...request, input: '添加圆桌' }, signal(), neverCall)
+  expect(added.items).toHaveLength(1)
+  expect(added.items[0]).toMatchObject({
+    libraryAssetId: 'SCN-TABLE-090',
+    dimensionsMeters: { width: 0.9, height: 0.75, depth: 0.9 },
+  })
+  expect(added.questions).toEqual([])
   const unclear = await planStageRequest({ ...request, input: '门在窗旁边' }, signal(), neverCall)
   expect(unclear.questions.length).toBeGreaterThan(0)
   const forbidden = await planStageRequest(
@@ -57,11 +87,11 @@ test('simple commands, clarification, and unsupported domains stay offline', asy
     neverCall,
   )
   expect(forbidden.items).toEqual([])
-  expect(forbidden.questions[0]?.id).toBe('unsupported-domain')
+  expect(forbidden.questions[0]?.message).toContain('暂未开放灯光')
 })
 
 test('SDK strict schema rejects unknown fields and is serializable', () => {
-  const format = zodTextFormat(StagePlanSchema, 'stage_plan')
+  const format = zodTextFormat(StageModelPlanSchema, 'stage_plan')
   expect(format.strict).toBe(true)
   expect(format.schema.additionalProperties).toBe(false)
   expect(() => JSON.stringify(format.schema)).not.toThrow()
@@ -144,7 +174,11 @@ test('model plans receive deterministic relation, bounds, collision, and referen
     plan.warnings.some((warning) => warning.code === 'out-of-bounds' && warning.blocking),
   ).toBe(true)
   const collision = sample()
-  collision.items.push({ ...structuredClone(collision.items[0]!), proposalId: 'other' })
+  collision.items.push({
+    ...structuredClone(collision.items[0]!),
+    proposalId: 'other',
+    existingNodeId: 'second-table',
+  })
   expect(
     (await planStageRequest(request, signal(), async () => collision)).warnings.some(
       (warning) => warning.code === 'collision',
@@ -157,7 +191,7 @@ test('model plans receive deterministic relation, bounds, collision, and referen
       (warning) => warning.code === 'missing-reference',
     ),
   ).toBe(true)
-  expect(context.objects).toEqual([])
+  expect(context.objects[0]!.transform.position).toEqual({ x: 0, y: 0, z: 3 })
 })
 
 test('cancelled model output never returns a usable plan', async () => {

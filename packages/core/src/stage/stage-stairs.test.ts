@@ -45,7 +45,7 @@ test('offline stage-right three-step command keeps count through compilation', (
   const plan = parseStageText('在台右增加三级台阶', context)!
   expect(plan.questions).toEqual([])
   expect(plan.items[0]?.stepCount).toBe(3)
-  expect(plan.items[0]?.transform.position.x).toBeCloseTo(3.1)
+  expect(plan.items[0]?.transform.position.x).toBeCloseTo(3.4)
   const compiled = compileStagePlan(plan, context, {
     transactionId: 'stairs',
     issuedAt: '2026-09-10T00:00:00Z',
@@ -76,6 +76,6 @@ test('offline stage-right three-step command keeps count through compilation', (
   const moved = parseStageText('把台阶移到平台前方', placed)!
   expect(moved.questions).toEqual([])
   expect(moved.items[0]?.stepCount).toBe(3)
-  expect(moved.items[0]?.transform.position.z).toBeCloseTo(1.75)
+  expect(moved.items[0]?.transform.position.z).toBeCloseTo(2.05)
   expect(moved.items[0]?.transform.position.x).toBe(0)
 })

@@ -84,12 +84,15 @@ export type {
   Control,
   Effect,
   Interactive,
+  ItemFoldControls,
   SliderControl,
   TemperatureControl,
   ToggleControl,
 } from './nodes/item'
 export {
+  getItemBoundsCenter,
   getScaledDimensions,
+  ItemFoldControlsSchema,
   ItemNode,
   isLowProfileItemSurface,
   LOW_PROFILE_ITEM_SURFACE_MAX_HEIGHT,

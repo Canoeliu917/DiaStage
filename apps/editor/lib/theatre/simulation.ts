@@ -15,6 +15,7 @@ export const PerformerMarkerSchema = z.object({
   position: Vec3Schema,
   facing: z.number().finite(),
   visible: z.boolean(),
+  stageLocked: z.boolean().optional(),
 })
 export const RehearsalPathSchema = z.object({
   id: z.string().min(1),
@@ -54,6 +55,22 @@ export const StageSceneDocumentSchema = z.object({
 export type StageSceneDocument = z.infer<typeof StageSceneDocumentSchema>
 export type PerformerMarker = z.infer<typeof PerformerMarkerSchema>
 export type RehearsalSimulation = z.infer<typeof RehearsalSimulationSchema>
+
+export function assertPerformerLocks(previous: StageSceneDocument, next: StageSceneDocument) {
+  for (const performer of previous.rehearsalSimulation.performers) {
+    if (!performer.stageLocked) continue
+    const updated = next.rehearsalSimulation.performers.find((entry) => entry.id === performer.id)
+    const paths = (document: StageSceneDocument) =>
+      document.rehearsalSimulation.paths.filter((path) => path.performerId === performer.id)
+    if (
+      !updated ||
+      JSON.stringify({ ...performer, stageLocked: undefined }) !==
+        JSON.stringify({ ...updated, stageLocked: undefined }) ||
+      JSON.stringify(paths(previous)) !== JSON.stringify(paths(next))
+    )
+      throw new Error(`${performer.name}已固定，请先解除固定。`)
+  }
+}
 
 export function createStageSceneDocument(name = '未命名剧目'): StageSceneDocument {
   return {

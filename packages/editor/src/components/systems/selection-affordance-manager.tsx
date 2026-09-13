@@ -3,6 +3,7 @@
 import {
   type AnyNodeId,
   createSceneApi,
+  getNodeLock,
   runAsSingleSceneHistoryStep,
   useScene,
 } from '@pascal-app/core'
@@ -34,6 +35,7 @@ export function SelectionAffordanceManager() {
     return s.nodes[selectedIds[0] as AnyNodeId] ?? null
   })
   const readOnly = useScene((s) => s.readOnly)
+  const locked = useScene((s) => !!(selectedIds[0] && getNodeLock(s.nodes, selectedIds[0], true)))
   const sceneApi = useMemo(() => createSceneApi(useScene), [])
   const historyApi = useMemo<SelectionAffordanceHistoryApi>(
     () => ({
@@ -73,7 +75,7 @@ export function SelectionAffordanceManager() {
     return getRegistryAffordanceTool(selectedNode.type, 'selection')
   }, [selectedNode])
 
-  if (!(Component && selectedNode)) return null
+  if (!(Component && selectedNode) || locked) return null
   return (
     <Suspense fallback={null}>
       <Component

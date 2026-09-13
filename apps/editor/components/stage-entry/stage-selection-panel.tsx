@@ -21,7 +21,8 @@ export function StageSelectionPanel() {
   if (!selected.length || draft || readOnly || propertiesInSidebar) return null
   const close = () => useViewer.getState().setSelection({ selectedIds: [] })
   const node = selected.length === 1 ? nodes[selected[0] as AnyNodeId] : undefined
-  const scenery = node && (node.type === 'block' || node.type === 'item') && stageKind(node)
+  const scenery = node && ['block', 'item', 'stair'].includes(node.type) && stageKind(node)
+  if (!mobile && scenery) return null
   const title = node?.name || (node ? '物件属性' : `已选 ${selected.length} 个物件`)
   const content = node ? (
     scenery ? (

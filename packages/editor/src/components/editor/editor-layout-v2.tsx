@@ -1,5 +1,6 @@
 'use client'
 
+import { EyeOff, LockKeyhole, LockKeyholeOpen, PanelTopOpen } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useIsMobile } from '../../hooks/use-mobile'
 import useEditor from '../../store/use-editor'
@@ -14,8 +15,8 @@ const SIDEBAR_COLLAPSE_THRESHOLD = 220
 // Matches the rail in <IconRail>; the resize math is relative to it.
 const RAIL_WIDTH = 96
 const SPLIT_HANDLE_HEIGHT = 8
-const SPLIT_MIN = 0.3
-const SPLIT_MAX = 0.7
+const SPLIT_MIN = 0.15
+const SPLIT_MAX = 0.85
 
 // ── Left column: resizable panel with tab bar ────────────────────────────────
 
@@ -38,9 +39,52 @@ function LeftColumn({
   const setIsDragging = useSidebarStore((s) => s.setIsDragging)
   const activePanel = useEditor((s) => s.activeSidebarPanel)
   const setActivePanel = useEditor((s) => s.setActiveSidebarPanel)
+  const hasSlot = sidebarTopSlot != null
 
-  const isResizing = useRef(false)
-  const [topRatio, setTopRatio] = useState(0.5)
+  const isResizing = useRef<{ startX: number; startWidth: number } | null>(null)
+  const [layout, setLayout] = useState({
+    topRatio: 0.5,
+    toolsHidden: false,
+    overviewHidden: false,
+    toolsLocked: false,
+    overviewLocked: false,
+  })
+  const [hydrated, setHydrated] = useState(false)
+  const { topRatio, toolsHidden, overviewHidden, toolsLocked, overviewLocked } = layout
+  const widthLocked = toolsLocked || (hasSlot && overviewLocked)
+  useEffect(() => {
+    if (widthLocked && isCollapsed) setIsCollapsed(false)
+  }, [widthLocked, isCollapsed, setIsCollapsed])
+  const splitVisible = !toolsHidden && !overviewHidden
+  const setTopRatio = useCallback((next: number | ((ratio: number) => number)) => {
+    setLayout((previous) => ({
+      ...previous,
+      topRatio: typeof next === 'function' ? next(previous.topRatio) : next,
+    }))
+  }, [])
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('diastage:sidebar-panes') ?? 'null')
+      if (stored && typeof stored === 'object')
+        setLayout({
+          topRatio:
+            typeof stored.topRatio === 'number' && Number.isFinite(stored.topRatio)
+              ? Math.max(SPLIT_MIN, Math.min(SPLIT_MAX, stored.topRatio))
+              : 0.5,
+          toolsHidden: stored.toolsHidden === true,
+          overviewHidden: stored.overviewHidden === true,
+          toolsLocked: stored.toolsLocked === true,
+          overviewLocked: stored.overviewLocked === true,
+        })
+    } catch {}
+    setHydrated(true)
+  }, [])
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      localStorage.setItem('diastage:sidebar-panes', JSON.stringify(layout))
+    } catch {}
+  }, [layout, hydrated])
   const splitContainer = useRef<HTMLDivElement>(null)
   const splitDrag = useRef<{
     pointerId: number
@@ -49,21 +93,24 @@ function LeftColumn({
     height: number
     target: HTMLDivElement
   } | null>(null)
-  const showTop = sidebarTopSlot != null && !isCollapsed
+  const showTop = hasSlot && !isCollapsed
 
-  const finishSplitDrag = useCallback((cancel: boolean) => {
-    const drag = splitDrag.current
-    if (!drag) return
-    splitDrag.current = null
-    if (cancel) setTopRatio(drag.startRatio)
-    if (drag.target.hasPointerCapture(drag.pointerId)) {
-      drag.target.releasePointerCapture(drag.pointerId)
-    }
-  }, [])
+  const finishSplitDrag = useCallback(
+    (cancel: boolean) => {
+      const drag = splitDrag.current
+      if (!drag) return
+      splitDrag.current = null
+      if (cancel) setTopRatio(drag.startRatio)
+      if (drag.target.hasPointerCapture(drag.pointerId)) {
+        drag.target.releasePointerCapture(drag.pointerId)
+      }
+    },
+    [setTopRatio],
+  )
 
   useEffect(() => {
-    if (!showTop) finishSplitDrag(true)
-  }, [showTop, finishSplitDrag])
+    if (!showTop || !splitVisible || widthLocked) finishSplitDrag(true)
+  }, [showTop, splitVisible, widthLocked, finishSplitDrag])
 
   useEffect(() => {
     return () => {
@@ -102,13 +149,14 @@ function LeftColumn({
 
   const handleResizerDown = useCallback(
     (e: React.PointerEvent) => {
+      if (widthLocked || e.button !== 0) return
       e.preventDefault()
-      isResizing.current = true
+      isResizing.current = { startX: e.clientX, startWidth: width }
       setIsDragging(true)
       document.body.style.cursor = 'col-resize'
       document.body.style.userSelect = 'none'
     },
-    [setIsDragging],
+    [setIsDragging, widthLocked, width],
   )
 
   // Rail click: reopen a collapsed panel, collapse when re-clicking the open
@@ -129,7 +177,7 @@ function LeftColumn({
         return
       }
       if (id === activePanel) {
-        if (sidebarTopSlot != null) return
+        if (hasSlot || widthLocked) return
         setIsCollapsed(true)
         return
       }
@@ -140,7 +188,8 @@ function LeftColumn({
       isCollapsed,
       width,
       activePanel,
-      sidebarTopSlot,
+      hasSlot,
+      widthLocked,
       setIsCollapsed,
       setWidth,
       setActivePanel,
@@ -149,10 +198,10 @@ function LeftColumn({
 
   useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
-      if (!isResizing.current) return
-      // The panel starts after the rail.
-      const newWidth = e.clientX - RAIL_WIDTH
-      if (newWidth < SIDEBAR_COLLAPSE_THRESHOLD) {
+      const drag = isResizing.current
+      if (!drag || widthLocked) return
+      const newWidth = drag.startWidth + e.clientX - drag.startX
+      if (!hasSlot && newWidth < SIDEBAR_COLLAPSE_THRESHOLD) {
         setIsCollapsed(true)
       } else {
         setIsCollapsed(false)
@@ -160,22 +209,25 @@ function LeftColumn({
       }
     }
     const handlePointerUp = () => {
-      isResizing.current = false
+      isResizing.current = null
       setIsDragging(false)
       document.body.style.cursor = ''
       document.body.style.userSelect = ''
     }
     window.addEventListener('pointermove', handlePointerMove)
     window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('pointercancel', handlePointerUp)
     return () => {
       window.removeEventListener('pointermove', handlePointerMove)
       window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('pointercancel', handlePointerUp)
+      if (isResizing.current) handlePointerUp()
     }
-  }, [setWidth, setIsCollapsed, setIsDragging])
+  }, [setWidth, setIsCollapsed, setIsDragging, widthLocked, hasSlot])
 
   const tools = (
     <div
-      className={`${showTop ? 'editor-sidebar-bottom ' : ''}relative z-10 flex h-full min-h-0 flex-shrink-0 bg-sidebar text-sidebar-foreground`}
+      className={`${showTop ? 'editor-sidebar-bottom ' : 'editor-sidebar-single '}relative z-10 flex h-full min-h-0 flex-shrink-0 bg-sidebar text-sidebar-foreground`}
     >
       <IconRail
         activeTab={activePanel}
@@ -187,22 +239,55 @@ function LeftColumn({
         <div
           className="editor-sidebar-tool-panel relative flex h-full min-h-0 flex-col"
           style={{
-            width,
+            width: showTop ? undefined : width,
+            flex: showTop ? 1 : undefined,
+            minWidth: 0,
             transition: isDragging ? 'none' : 'width 150ms ease',
           }}
         >
+          {!hasSlot && paneControls('tools', '左侧栏')}
           <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
             {renderTabContent(activePanel)}
             {sidebarOverlay && <div className="absolute inset-0 z-50">{sidebarOverlay}</div>}
           </div>
 
           {/* Resize handle + hit area */}
-          <div
-            className="absolute inset-y-0 -right-3 z-[100] flex w-6 cursor-col-resize items-center justify-center"
-            onPointerDown={handleResizerDown}
-          >
-            <div className="h-8 w-1 rounded-full bg-neutral-500" />
-          </div>
+          {!showTop && (
+            <div
+              role="separator"
+              aria-label="调整左侧栏宽度"
+              aria-orientation="vertical"
+              aria-disabled={widthLocked}
+              aria-valuemin={SIDEBAR_MIN_WIDTH}
+              aria-valuemax={SIDEBAR_MAX_WIDTH}
+              aria-valuenow={Math.round(width)}
+              tabIndex={widthLocked ? -1 : 0}
+              className="absolute inset-y-0 -right-3 z-[100] flex w-6 cursor-col-resize items-center justify-center"
+              style={{ cursor: widthLocked ? 'default' : undefined }}
+              onPointerDown={handleResizerDown}
+              onKeyDown={(event) => {
+                if (widthLocked || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key))
+                  return
+                event.preventDefault()
+                event.stopPropagation()
+                setWidth(
+                  event.key === 'Home'
+                    ? SIDEBAR_MIN_WIDTH
+                    : event.key === 'End'
+                      ? SIDEBAR_MAX_WIDTH
+                      : Math.max(
+                          SIDEBAR_MIN_WIDTH,
+                          Math.min(
+                            SIDEBAR_MAX_WIDTH,
+                            width + (event.key === 'ArrowLeft' ? -20 : 20),
+                          ),
+                        ),
+                )
+              }}
+            >
+              <div className="h-8 w-1 rounded-full bg-neutral-500" />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -210,25 +295,75 @@ function LeftColumn({
 
   if (!showTop) return tools
 
+  function paneControls(pane: 'tools' | 'overview', title: string) {
+    const hidden = !hasSlot ? isCollapsed : pane === 'tools' ? toolsHidden : overviewHidden
+    const locked = pane === 'tools' ? toolsLocked : overviewLocked
+    return (
+      <header className="editor-pane-controls editor-dock-controls flex h-9 shrink-0 items-center justify-between gap-2 border-border/50 border-b px-2 text-xs">
+        <span>{title}</span>
+        <div className="flex gap-1">
+          <button
+            type="button"
+            aria-label={`${locked ? '解锁' : '锁定'}${title}布局`}
+            aria-pressed={locked}
+            title={locked ? '解锁后可调整大小或隐藏' : '锁定大小和显示，内容仍可操作'}
+            className="flex h-7 w-7 items-center justify-center rounded hover:bg-accent"
+            onClick={() => setLayout((previous) => ({ ...previous, [`${pane}Locked`]: !locked }))}
+          >
+            {locked ? <LockKeyhole size={14} /> : <LockKeyholeOpen size={14} />}
+          </button>
+          <button
+            type="button"
+            aria-label={`${hidden ? '展开' : '隐藏'}${title}`}
+            disabled={locked}
+            aria-expanded={!hidden}
+            className="flex h-7 w-7 items-center justify-center rounded hover:bg-accent disabled:opacity-35"
+            onClick={() => {
+              if (locked) return
+              if (!hasSlot) setIsCollapsed(true)
+              else setLayout((previous) => ({ ...previous, [`${pane}Hidden`]: !hidden }))
+            }}
+          >
+            {hidden ? <PanelTopOpen size={15} /> : <EyeOff size={15} />}
+          </button>
+        </div>
+      </header>
+    )
+  }
+
   return (
     <div
       className="editor-sidebar-split relative z-10 grid h-full min-h-0 flex-shrink-0 bg-sidebar text-sidebar-foreground"
       ref={splitContainer}
       style={{
-        width: RAIL_WIDTH + width,
+        width: toolsHidden && overviewHidden ? 160 : RAIL_WIDTH + width,
         transition: isDragging ? 'none' : 'width 150ms ease',
-        gridTemplateRows: `minmax(0, ${topRatio}fr) ${SPLIT_HANDLE_HEIGHT}px minmax(0, ${1 - topRatio}fr)`,
+        gridTemplateRows: `${toolsHidden ? '36px' : `minmax(0, ${overviewHidden ? 1 : topRatio}fr)`} ${splitVisible ? SPLIT_HANDLE_HEIGHT : 0}px ${overviewHidden ? '36px' : `minmax(0, ${toolsHidden ? 1 : 1 - topRatio}fr)`}`,
+        alignContent: toolsHidden && overviewHidden ? 'start' : undefined,
       }}
     >
-      <div className="min-h-0 min-w-0 overflow-auto">{sidebarTopSlot}</div>
+      <section
+        className="flex min-h-0 min-w-0 flex-col"
+        data-layout-pane="tools"
+        data-hidden={toolsHidden}
+        data-locked={toolsLocked}
+      >
+        {paneControls('tools', '工具区')}
+        <div className="min-h-0 flex-1" hidden={toolsHidden}>
+          {tools}
+        </div>
+      </section>
       <div
         aria-label="调整舞台总览与工具区高度"
         aria-orientation="horizontal"
         aria-valuemax={SPLIT_MAX * 100}
         aria-valuemin={SPLIT_MIN * 100}
         aria-valuenow={Math.round(topRatio * 100)}
+        aria-disabled={widthLocked}
+        hidden={!splitVisible}
         className="relative z-20 flex touch-none cursor-row-resize select-none items-center justify-center border-y border-border/50 bg-sidebar hover:bg-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-[-2px]"
         onKeyDown={(event) => {
+          if (widthLocked) return
           if (event.key === 'Escape') {
             if (!splitDrag.current) return
             event.preventDefault()
@@ -254,7 +389,7 @@ function LeftColumn({
           if (splitDrag.current?.pointerId === event.pointerId) finishSplitDrag(true)
         }}
         onPointerDown={(event) => {
-          if (event.button !== 0 || splitDrag.current) return
+          if (widthLocked || event.button !== 0 || splitDrag.current) return
           const height =
             (splitContainer.current?.getBoundingClientRect().height ?? 0) - SPLIT_HANDLE_HEIGHT
           if (height <= 0) return
@@ -285,11 +420,58 @@ function LeftColumn({
           if (splitDrag.current?.pointerId === event.pointerId) finishSplitDrag(false)
         }}
         role="separator"
-        tabIndex={0}
+        tabIndex={widthLocked || !splitVisible ? -1 : 0}
+        style={{
+          display: splitVisible ? undefined : 'none',
+          cursor: widthLocked ? 'default' : undefined,
+        }}
       >
         <span aria-hidden="true" className="h-0.5 w-8 bg-neutral-500" />
       </div>
-      {tools}
+      <section
+        className="flex min-h-0 min-w-0 flex-col"
+        data-layout-pane="overview"
+        data-hidden={overviewHidden}
+        data-locked={overviewLocked}
+      >
+        {paneControls('overview', '舞台总览')}
+        <div className="min-h-0 flex-1 overflow-hidden" hidden={overviewHidden}>
+          {sidebarTopSlot}
+        </div>
+      </section>
+      <div
+        aria-label="调整左侧栏宽度"
+        aria-orientation="vertical"
+        aria-disabled={widthLocked}
+        aria-valuemin={SIDEBAR_MIN_WIDTH}
+        aria-valuemax={SIDEBAR_MAX_WIDTH}
+        aria-valuenow={Math.round(width)}
+        role="separator"
+        tabIndex={widthLocked || (toolsHidden && overviewHidden) ? -1 : 0}
+        className="absolute inset-y-0 -right-2 z-[100] flex w-4 touch-none items-center justify-center"
+        style={{
+          cursor: widthLocked ? 'default' : 'col-resize',
+          display: toolsHidden && overviewHidden ? 'none' : undefined,
+        }}
+        onPointerDown={handleResizerDown}
+        onKeyDown={(event) => {
+          if (widthLocked || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+          event.preventDefault()
+          event.stopPropagation()
+          setWidth(
+            event.key === 'Home'
+              ? SIDEBAR_MIN_WIDTH
+              : event.key === 'End'
+                ? SIDEBAR_MAX_WIDTH
+                : Math.max(
+                    SIDEBAR_MIN_WIDTH,
+                    Math.min(SIDEBAR_MAX_WIDTH, width + (event.key === 'ArrowLeft' ? -20 : 20)),
+                  ),
+          )
+        }}
+      >
+        <span aria-hidden="true" className="h-8 w-1 rounded-full bg-neutral-500" />
+      </div>
     </div>
   )
 }

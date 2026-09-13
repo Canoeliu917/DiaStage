@@ -7,6 +7,7 @@ import {
   type Cursor,
   createSceneApi,
   DEFAULT_ANGLE_STEP,
+  getNodeLock,
   type HandleDescriptor,
   type HandlePortal,
   type LatchHandle,
@@ -211,6 +212,7 @@ export function NodeArrowHandles() {
   const isCurveReshape = useIsCurveReshape()
 
   const selectedId = selectedIds.length === 1 ? selectedIds[0] : activeRotateNodeId
+  const locked = useScene((state) => !!selectedId && !!getNodeLock(state.nodes, selectedId, true))
   const rawNode = useScene((state) => {
     if (!selectedId) return null
     return state.nodes[selectedId as AnyNodeId] ?? null
@@ -248,6 +250,7 @@ export function NodeArrowHandles() {
 
   const shouldRender =
     Boolean(node && descriptors?.length) &&
+    !locked &&
     !isFloorplanHovered &&
     mode !== 'delete' &&
     // Any whole-node move (placement or press-drag) hides the rig: the item is

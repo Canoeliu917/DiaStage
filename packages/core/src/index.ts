@@ -88,6 +88,7 @@ export {
   SECTIONAL_GARAGE_RENDER_OPEN_SCALE,
 } from './lib/door-operation'
 export { getDefaultLevelName, getLevelDisplayName } from './lib/level-name'
+export { getNodeLock } from './lib/node-lock'
 export {
   areMeasurementPointsCoplanar,
   closestMeasurementFeatureBinding,

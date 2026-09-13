@@ -1,6 +1,7 @@
 import {
   type AnyNode,
   type AnyNodeId,
+  getNodeLock,
   isRegistrySelectable,
   type LevelNode,
   nodeRegistry,
@@ -23,7 +24,13 @@ export function collectSelectableCandidateIds(): string[] {
   const result: string[] = []
   const seen = new Set<string>()
   const addNode = (node: AnyNode | undefined) => {
-    if (!node || seen.has(node.id) || (node as { visible?: boolean }).visible === false) return
+    if (
+      !node ||
+      seen.has(node.id) ||
+      (node as { visible?: boolean }).visible === false ||
+      getNodeLock(nodes, node.id, true)
+    )
+      return
     seen.add(node.id)
     result.push(node.id)
   }

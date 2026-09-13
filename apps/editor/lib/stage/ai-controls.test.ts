@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test'
 import { type AnyNodeId, clearSceneHistory, useScene } from '@pascal-app/core'
-import { compileStagePlan, parseStageText } from '@pascal-app/core/stage'
+import { compileStagePlan, parseStageText, type StageCommand } from '@pascal-app/core/stage'
 import { useViewer } from '@pascal-app/viewer'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import {
@@ -30,13 +30,31 @@ afterEach(() => {
   clearSceneHistory()
 })
 
-function apply(text: string) {
+function legacyAddition(
+  kind: 'window-flat' | 'door-flat' | 'chair',
+  name: string,
+): Extract<StageCommand, { type: 'AddScenery' }> {
+  return {
+    type: 'AddScenery',
+    meta: commandMeta(),
+    nodeId: crypto.randomUUID(),
+    name,
+    kind,
+    libraryAssetId: null,
+    dimensionsMeters:
+      kind === 'chair'
+        ? { width: 0.5, height: 0.85, depth: 0.5 }
+        : { width: 1, height: 2.1, depth: 0.15 },
+    transform: { position: { x: 0, y: 0, z: 3 }, rotationDegrees: { x: 0, y: 0, z: 0 } },
+  }
+}
+
+function apply(input: string | StageCommand) {
   const context = currentStageContext()
-  const plan = parseStageText(text, context)
-  const compiled = compileStagePlan(plan, context, {
-    transactionId: crypto.randomUUID(),
-    issuedAt: new Date().toISOString(),
-  })
+  const compiled =
+    typeof input === 'string'
+      ? compileStagePlan(parseStageText(input, context), context, commandMeta())
+      : { ok: true, commands: [input] }
   expect(compiled.ok).toBe(true)
   const result = executeStageCommands(compiled.commands)
   expect(result.ok).toBe(true)
@@ -58,7 +76,7 @@ test('local controls do not interpret quoted or compound requests as authorizati
 
 test('AI transaction is one undo step; deletion preview writes nothing and requires execution', () => {
   const before = useScene.getState().nodes
-  apply('添加窗景片')
+  apply(legacyAddition('window-flat', '窗景片'))
   const after = useScene.getState().nodes
   const deletion = deleteRecentlyAdded('删除刚才添加的窗景片。')
   expect(deletion).toHaveLength(1)
@@ -69,7 +87,7 @@ test('AI transaction is one undo step; deletion preview writes nothing and requi
 })
 
 test('AI undo refuses to undo later unrelated edits or a different project', () => {
-  apply('添加窗景片')
+  apply(legacyAddition('window-flat', '窗景片'))
   const graph = createTheatreSceneGraph()
   useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
   const before = useScene.getState().nodes
@@ -77,9 +95,9 @@ test('AI undo refuses to undo later unrelated edits or a different project', () 
   expect(useScene.getState().nodes).toBe(before)
 })
 test('grouping uses existing scene collections and is one reversible transaction', () => {
-  const first = apply('添加窗景片')
+  const first = apply(legacyAddition('window-flat', '窗景片'))
   apply('把窗景片向台右移两米')
-  const second = apply('添加椅子')
+  const second = apply(legacyAddition('chair', '椅子'))
   const before = useScene.getState()
   const result = executeStageCommands([
     {
@@ -105,8 +123,8 @@ test('grouping uses existing scene collections and is one reversible transaction
   expect(useScene.getState().nodes).toEqual(before.nodes)
 })
 
-test('selected duplicates are one transaction and collision or locked objects reject the entire batch', () => {
-  const first = apply('添加椅子')
+test('selected duplicates are one transaction and out-of-bounds or locked objects reject the entire batch', () => {
+  const first = apply(legacyAddition('chair', '椅子'))
   useViewer.getState().setSelection({ selectedIds: first.nodeIds as AnyNodeId[] })
   const before = useScene.getState().nodes
   const commands = localSceneryOperation('复制选中布景两个沿横向按30厘米净距排列')!
@@ -127,16 +145,11 @@ test('selected duplicates are one transaction and collision or locked objects re
 })
 
 test('registered same-kind asset replacement preserves node ID, dimensions and undo; proxy conversion rejects', () => {
-  const context = currentStageContext()
-  const plan = parseStageText('添加椅子', context)!
   const chairs = SCENERY_LIBRARY.filter((entry) => entry.kind === 'chair')
   expect(chairs.length).toBeGreaterThan(1)
-  plan.items[0]!.libraryAssetId = chairs[0]!.asset.id
-  const compiled = compileStagePlan(plan, context, {
-    transactionId: crypto.randomUUID(),
-    issuedAt: new Date().toISOString(),
-  })
-  const added = executeStageCommands(compiled.commands)
+  const added = executeStageCommands([
+    { ...legacyAddition('chair', '椅子'), libraryAssetId: chairs[0]!.asset.id },
+  ])
   expect(added.ok).toBe(true)
   const id = added.nodeIds[0]!
   const dimensions = currentStageContext().objects.find(
@@ -163,24 +176,24 @@ test('registered same-kind asset replacement preserves node ID, dimensions and u
   expect(useScene.getState().nodes).toBe(before)
 })
 
-test('door clearance is saved through the scene store and blocks later invalid placement', () => {
-  const door = apply('添加门景片')
+test('saved legacy door clearance cannot prevent later close placement', () => {
+  expect(currentStageContext().doorClearanceMeters).toBe(0)
+  expect(localSceneryOperation('保持0米通道')?.[0]).toMatchObject({
+    type: 'SetDoorClearance',
+    meters: 0,
+  })
+  const door = apply(legacyAddition('door-flat', '门景片'))
   const old = useScene.getState().nodes
   const result = executeStageCommands(localSceneryOperation('保持1.2米通道'))
   expect(result.ok).toBe(true)
   expect(currentStageContext().doorClearanceMeters).toBe(1.2)
   const context = currentStageContext()
-  const plan = parseStageText('添加椅子', context)!
   const doorPosition = context.objects.find((object) => object.id === door.nodeIds[0])!.transform
     .position
-  plan.relations = []
-  plan.items[0]!.transform.position = { ...doorPosition, z: doorPosition.z + 1 }
-  expect(
-    compileStagePlan(plan, context, {
-      transactionId: 'clearance',
-      issuedAt: new Date().toISOString(),
-    }).ok,
-  ).toBe(false)
+  const chair = legacyAddition('chair', '椅子')
+  chair.transform.position = { ...doorPosition, z: doorPosition.z + 1 }
+  expect(executeStageCommands([chair]).ok).toBe(true)
+  useScene.temporal.getState().undo()
   rememberAiTransaction(result, Object.keys(old), '锁定通道')
   undoLastAiTransaction()
   expect(useScene.getState().nodes).toEqual(old)

@@ -10,12 +10,12 @@ import {
   type SaveStatus,
   type SceneGraph,
   useEditor,
-  useSidebarStore,
 } from '@pascal-app/editor'
 import { NeutralRenderEnvironment, StableRenderMode, ViewerErrorBoundary } from '@pascal-app/viewer'
 import dynamic from 'next/dynamic'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { BETA_EXPERT_MEDIA_ENABLED } from '@/lib/beta-capabilities'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
 import { bindRehearsalScene, clearProposalGhost } from '@/lib/rehearsal-intelligence/authority'
@@ -26,8 +26,13 @@ import { migrateStageDocument } from '@/lib/theatre/simulation'
 import { cn } from '@/lib/utils'
 import { validateCameraProject } from './camera-studio/model'
 import { CameraPersistence } from './camera-studio/persistence'
+import { DiaDock } from './dia-dock'
 import { StageCommandRuntime } from './stage-entry/runtime'
 
+const StagePlacementRuntime = dynamic(
+  () => import('./stage-entry/manual-stage-panel').then((m) => m.StagePlacementRuntime),
+  { ssr: false },
+)
 const StagePlacementSystem = dynamic(
   () => import('./stage-entry/placement-system').then((m) => m.StagePlacementSystem),
   { ssr: false },
@@ -38,6 +43,18 @@ const StagePlacementFloorplan = dynamic(
 )
 const StagePlanPreviewSystem = dynamic(
   () => import('./stage-entry/plan-preview-system').then((m) => m.StagePlanPreviewSystem),
+  { ssr: false },
+)
+const StageContactSystem = dynamic(
+  () => import('./stage-entry/contact-system').then((m) => m.StageContactSystem),
+  { ssr: false },
+)
+const FoldingSystem = dynamic(
+  () => import('./stage-entry/folding-system').then((m) => m.FoldingSystem),
+  { ssr: false },
+)
+const StagePlanPreviewFloorplan = dynamic(
+  () => import('./stage-entry/plan-preview-floorplan').then((m) => m.StagePlanPreviewFloorplan),
   { ssr: false },
 )
 const StageSelectionPanel = dynamic(
@@ -78,7 +95,6 @@ const RemountPreviewSystem = dynamic(
   { ssr: false },
 )
 
-import { StageOverviewPanel } from './stage-overview-panel'
 import { StudioNavigation } from './studio-navigation'
 import { useStudioSidebar } from './studio-sidebar'
 import { RehearsalTransport, TheatreFloorplan, TheatreRuntime } from './theatre/runtime'
@@ -127,7 +143,6 @@ function isLightPreviewQuery(searchParams: URLSearchParams): boolean {
 }
 
 export function SceneLoader({ initialScene, meta, modelConfigured = false }: SceneLoaderProps) {
-  const [diaOpen, setDiaOpen] = useState(true)
   const [stableMode, setStableMode] = useState(true)
   useEffect(() => {
     try {
@@ -147,16 +162,17 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
       }),
     [meta.id, journal],
   )
-  const { group, onGroupChange, sidebarTabs } = useStudioSidebar(meta.id)
+  const { group, onGroupChange, sidebarTabs, sidebarTopSlot } = useStudioSidebar(meta.id)
   const { document } = useTheatreDocument()
   const activePanel = useEditor((state) => state.activeSidebarPanel)
   const immersive = useEditor(
     (state) => state.isCaptureMode || state.isFirstPersonMode || state.isPreviewMode,
   )
-  const showDia = diaOpen && !immersive
   const cameraEnabled = ['stage-cameras', 'observe', 'record', 'display'].includes(activePanel)
   const recordingEnabled =
-    group === 'rehearse' && ['observe', 'record', 'camera-rehearsal'].includes(activePanel)
+    BETA_EXPERT_MEDIA_ENABLED &&
+    group === 'rehearse' &&
+    ['observe', 'record', 'camera-rehearsal'].includes(activePanel)
   const searchParams = useSearchParams()
   const initialWorkspace = useRef(searchParams.get('workspace'))
   useEffect(() => {
@@ -184,30 +200,6 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [stageReady, setStageReady] = useState(false)
-  useEffect(() => {
-    if (!showDia || !stageReady) return
-    const media = window.matchMedia('(min-width: 768px) and (max-width: 1399px)')
-    let restore: boolean | undefined
-    const adapt = () => {
-      if (media.matches && restore === undefined) {
-        restore = useSidebarStore.getState().isCollapsed
-        useSidebarStore.getState().setIsCollapsed(true)
-      } else if (!media.matches && restore !== undefined) {
-        useSidebarStore.getState().setIsCollapsed(restore)
-        restore = undefined
-      }
-    }
-    adapt()
-    const unsubscribe = useSidebarStore.subscribe((next, previous) => {
-      if (media.matches && previous.isCollapsed && !next.isCollapsed) setDiaOpen(false)
-    })
-    media.addEventListener('change', adapt)
-    return () => {
-      media.removeEventListener('change', adapt)
-      unsubscribe()
-      if (restore !== undefined) useSidebarStore.getState().setIsCollapsed(restore)
-    }
-  }, [showDia, stageReady])
   const handleLoaderChange = useCallback((visible: boolean) => setStageReady(!visible), [])
   const exportBackup = useCallback(() => {
     const url = URL.createObjectURL(
@@ -458,7 +450,8 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
         <div className="studio-workspace" data-studio-group={group}>
           <CameraPersistence sceneId={meta.id} />
           <VersionViewSync />
-          <SceneLayersRuntime key={meta.id} enabled={!immersive} />
+          <SceneLayersRuntime key={`layers:${meta.id}`} enabled={!immersive} />
+          <StagePlacementRuntime key={`placement:${meta.id}`} />
           <StageCommandRuntime
             sceneId={meta.id}
             rootId={initialScene.rootNodeIds[0]}
@@ -525,14 +518,6 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                     onGroupChange={onGroupChange}
                     actions={
                       <>
-                        <button
-                          type="button"
-                          aria-pressed={diaOpen}
-                          className="min-h-11 border px-3"
-                          onClick={() => setDiaOpen(!diaOpen)}
-                        >
-                          {diaOpen ? '收起 Dia' : '告诉 Dia'}
-                        </button>
                         <span className="studio-save-status" role="status">
                           {
                             {
@@ -584,7 +569,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 projectId={meta.projectId ?? 'default'}
                 viewerRuntimeSlot={
                   <>
-                    {recordingEnabled && (
+                    {(cameraEnabled || recordingEnabled) && (
                       <ViewerErrorBoundary fallback={null} scope="recording-runtime">
                         <CameraStudioRuntime />
                       </ViewerErrorBoundary>
@@ -604,8 +589,12 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                         <CameraStageSystem enabled />
                       </ViewerErrorBoundary>
                     )}
-                    <StagePlacementSystem enabled={group === 'set'} />
+                    <StagePlacementSystem enabled={!immersive} />
+                    <FoldingSystem enabled={!immersive} />
                     <StagePlanPreviewSystem enabled={!immersive} />
+                    <ViewerErrorBoundary fallback={null} scope="stage-contact-feedback">
+                      <StageContactSystem enabled={!immersive} />
+                    </ViewerErrorBoundary>
                   </>
                 }
                 studioSceneSlot={
@@ -619,11 +608,12 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                   <>
                     <TheatreFloorplan enabled={group !== 'remount'} />
                     {cameraEnabled && <CameraStageFloorplan enabled />}
-                    <StagePlacementFloorplan enabled={group === 'set'} />
+                    <StagePlacementFloorplan enabled={!immersive} />
+                    <StagePlanPreviewFloorplan enabled={!immersive} />
                   </>
                 }
                 sidebarTabs={sidebarTabs}
-                sidebarTopSlot={<StageOverviewPanel key={meta.id} sceneId={meta.id} />}
+                sidebarTopSlot={sidebarTopSlot}
                 showPluginPanels={false}
                 showLevelSelector={false}
                 viewerToolbarLeft={<EditorViewerToolbarLeft />}
@@ -641,7 +631,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 </ViewerErrorBoundary>
               )}
             </div>
-            <aside className="dia-dock" hidden={!showDia} aria-label="Dia 对话工作区">
+            <DiaDock hidden={immersive}>
               {stageReady && (
                 <ViewerErrorBoundary
                   scope="dia-conversation"
@@ -658,7 +648,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                   />
                 </ViewerErrorBoundary>
               )}
-            </aside>
+            </DiaDock>
           </div>
           {recordingEnabled && (
             <ViewerErrorBoundary

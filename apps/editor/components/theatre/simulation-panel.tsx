@@ -58,6 +58,18 @@ export function useStageDocument() {
 export function placeSimulationPoint(point: Vec3) {
   const state = useSimulationSelection.getState()
   if (!state.selectedId || useScene.getState().readOnly) return
+  if (
+    readStageDocument()?.rehearsalSimulation.performers.find(
+      (entry) => entry.id === state.selectedId,
+    )?.stageLocked
+  ) {
+    useSimulationSelection.setState({
+      input: 'select',
+      points: [],
+      error: '人物已固定，请先解除固定。',
+    })
+    return
+  }
   if (state.input === 'route') useSimulationSelection.setState({ points: [...state.points, point] })
   else if (state.input === 'position') {
     try {
@@ -96,10 +108,11 @@ function NumberField({
   )
 }
 
-export function VenuePanel() {
+export function VenuePanel({ initialExpanded = false }: { initialExpanded?: boolean } = {}) {
   const { document, error } = useStageDocument()
   const nodes = useScene((state) => state.nodes)
   const [notice, setNotice] = useState('')
+  const [expanded, setExpanded] = useState(initialExpanded)
   const readOnly = useScene((s) => s.readOnly)
   const heightMeasured = useScene(
     (state) =>
@@ -125,91 +138,120 @@ export function VenuePanel() {
     }
   }
   return (
-    <section className="theatre-panel" aria-label="舞台与场地">
-      <h2>舞台与场地</h2>
-      <p>台左与台右以演员面向观众为准；台前靠近观众，台后远离观众。</p>
-      <fieldset disabled={readOnly}>
-        <div className="th-templates">
-          {VENUE_TEMPLATES.map((t) => (
-            <button
-              key={t.type}
-              type="button"
-              aria-pressed={document?.venue.type === t.type}
-              onClick={() =>
-                change((d) => {
-                  d.venue = { ...t, id: d.venue.id, origin: [...t.origin] }
-                })
-              }
-            >
-              {t.name}
-            </button>
-          ))}
-        </div>
-        {document && (
-          <>
-            <label>
-              剧目名称
-              <input
-                value={document.production.name}
-                onChange={(e) => {
-                  if (e.target.value.trim())
-                    change((d) => {
-                      d.production.name = e.target.value
-                    })
-                }}
-              />
-            </label>
-            <div className="th-grid">
-              {(['width', 'depth', 'height'] as const).map((key, i) => (
-                <NumberField
-                  key={key}
-                  label={['宽（米）', '深（米）', '实测净高（米）'][i]!}
-                  value={key === 'height' && !heightMeasured ? null : document.venue[key]}
-                  onChange={(value) => {
-                    const result = executeStageCommands([
-                      {
-                        type: 'CreateStage',
-                        meta: commandMeta(),
-                        venue: {
-                          type: document.venue.type === 'arena' ? 'other' : document.venue.type,
-                          widthMeters: key === 'width' ? value : document.venue.width,
-                          depthMeters: key === 'depth' ? value : document.venue.depth,
-                          heightMeters:
-                            key === 'height'
-                              ? value
-                              : heightMeasured
-                                ? document.venue.height
-                                : null,
-                        },
-                      },
-                    ])
-                    setNotice(result.error ?? '')
+    <section className="theatre-panel studio-venue" aria-label="舞台与场地">
+      {document && (
+        <button
+          className="studio-venue-summary"
+          type="button"
+          aria-expanded={expanded}
+          aria-label="展开或收起场地设置"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <span>
+            {VENUE_TEMPLATES.find((entry) => entry.type === document.venue.type)?.name.split(
+              ' · ',
+            )[0] ?? document.venue.name}{' '}
+            · {document.venue.width}×{document.venue.depth}m
+          </span>
+          <span aria-hidden="true">{expanded ? '−' : '+'}</span>
+        </button>
+      )}
+      <div className="studio-venue-form" hidden={!!document && !expanded}>
+        <h2>舞台与场地</h2>
+        <p>台左与台右以演员面向观众为准；台前靠近观众，台后远离观众。</p>
+        <fieldset disabled={readOnly}>
+          <div className="th-templates">
+            {[
+              ...VENUE_TEMPLATES.filter((entry) => entry.type !== 'arena'),
+              {
+                name: '自定义场地',
+                type: 'other' as const,
+                width: document?.venue.width ?? 10,
+                depth: document?.venue.depth ?? 8,
+                height: document?.venue.height ?? 4,
+                origin: document?.venue.origin ?? [0, 0, 0],
+              },
+            ].map((t) => (
+              <button
+                key={t.type}
+                type="button"
+                aria-pressed={document?.venue.type === t.type}
+                onClick={() =>
+                  change((d) => {
+                    d.venue = { ...t, id: d.venue.id, origin: [...t.origin] }
+                  })
+                }
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+          {document && (
+            <>
+              <label>
+                剧目名称
+                <input
+                  value={document.production.name}
+                  onChange={(e) => {
+                    if (e.target.value.trim())
+                      change((d) => {
+                        d.production.name = e.target.value
+                      })
                   }}
                 />
-              ))}
-            </div>
-            <p>中心线经过舞台中央；台口线位于舞台前沿。</p>
-            {foundation.model && (
-              <details>
-                <summary>场地参考 · 随正式舞台同步</summary>
-                <p>
-                  出入口参考 {foundation.model.entranceNodeIds.length} · 墙体{' '}
-                  {foundation.model.wallNodeIds.length} · 平台{' '}
-                  {foundation.model.platformNodeIds.length} · 舞台台阶{' '}
-                  {foundation.model.stairNodeIds.length} · 扫描参考{' '}
-                  {foundation.model.scanReferenceNodeIds.length}
-                </p>
-                <p>
-                  出入口参考来自门与门景片，请人工确认可通行。扫描用于对照，不会自动推断障碍或尺寸。
-                </p>
-              </details>
-            )}
-            {!heightMeasured && <p>净高未测量，可继续置景；进入复台预览前必须补齐实测净高。</p>}
-          </>
-        )}
-      </fieldset>
-      {(error || notice) && <p role="alert">{error || notice}</p>}
-      {foundation.error && <p role="alert">{foundation.error}</p>}
+              </label>
+              <div className="th-grid">
+                {(['width', 'depth', 'height'] as const).map((key, i) => (
+                  <NumberField
+                    key={key}
+                    label={['宽（米）', '深（米）', '实测净高（米）'][i]!}
+                    value={key === 'height' && !heightMeasured ? null : document.venue[key]}
+                    onChange={(value) => {
+                      const result = executeStageCommands([
+                        {
+                          type: 'CreateStage',
+                          meta: commandMeta(),
+                          venue: {
+                            type: document.venue.type === 'arena' ? 'other' : document.venue.type,
+                            widthMeters: key === 'width' ? value : document.venue.width,
+                            depthMeters: key === 'depth' ? value : document.venue.depth,
+                            heightMeters:
+                              key === 'height'
+                                ? value
+                                : heightMeasured
+                                  ? document.venue.height
+                                  : null,
+                          },
+                        },
+                      ])
+                      setNotice(result.error ?? '')
+                    }}
+                  />
+                ))}
+              </div>
+              <p>可直接输入场地宽深，尺寸不受预设限制。滚轮只缩放观察视角。</p>
+              {foundation.model && (
+                <details>
+                  <summary>场地参考 · 随正式舞台同步</summary>
+                  <p>
+                    出入口参考 {foundation.model.entranceNodeIds.length} · 墙体{' '}
+                    {foundation.model.wallNodeIds.length} · 平台{' '}
+                    {foundation.model.platformNodeIds.length} · 舞台台阶{' '}
+                    {foundation.model.stairNodeIds.length} · 扫描参考{' '}
+                    {foundation.model.scanReferenceNodeIds.length}
+                  </p>
+                  <p>
+                    出入口参考来自门与门景片，请人工确认可通行。扫描用于对照，不会自动推断障碍或尺寸。
+                  </p>
+                </details>
+              )}
+              {!heightMeasured && <p>净高未测量，可继续置景；进入复台预览前必须补齐实测净高。</p>}
+            </>
+          )}
+        </fieldset>
+        {(error || notice) && <p role="alert">{error || notice}</p>}
+        {foundation.error && <p role="alert">{foundation.error}</p>}
+      </div>
     </section>
   )
 }
@@ -319,7 +361,7 @@ export function SimulationPanel(_props: { sceneId?: string }) {
           </label>
         )}
         {selected && document && (
-          <>
+          <fieldset className="min-w-0 border-0 p-0" disabled={selected.stageLocked}>
             <label>
               人物名称
               <input
@@ -482,7 +524,7 @@ export function SimulationPanel(_props: { sceneId?: string }) {
                 </button>
               </>
             )}
-          </>
+          </fieldset>
         )}
         <label>
           <input

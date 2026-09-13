@@ -112,8 +112,8 @@ export function localSceneryOperation(text: string): StageCommand[] | null {
   const context = aiCommandContext(input)
   if (clearance) {
     const meters = parseStageLength(clearance[1]!)
-    if (meters === null || meters < 0.6 || meters > 10)
-      throw new Error('通道净距须为0.6至10米；本轮锁定门景片前后两侧各自的净距。')
+    if (meters === null || meters < 0 || meters > 10)
+      throw new Error('请输入0至10米的通道记录值；该记录不会限制布景落位。')
     return [{ type: 'SetDoorClearance', meta: commandMeta('typed-command'), meters }]
   }
   if (namedLock && !lock) {

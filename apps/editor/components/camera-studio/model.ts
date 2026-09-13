@@ -13,6 +13,7 @@ const motionKeyframe = z.object({ time: z.number().finite().nonnegative(), posit
 const shotSchema = z.object({
   id: identifier,
   name: z.string().min(1),
+  stageLocked: z.boolean().optional(),
   duration: z.number().finite().positive(),
   keyframes: z.array(cameraKeyframe).min(1),
   follow: z
@@ -38,6 +39,18 @@ export type Shot = z.infer<typeof shotSchema>
 export type CameraProject = z.infer<typeof projectSchema>
 export type MotionTrack = NonNullable<Shot['motion']>
 export type CameraPose = Pick<CameraKeyframe, 'position' | 'lookAt' | 'fov'>
+
+export function changedLockedShot(previous: CameraProject, next: CameraProject): Shot | undefined {
+  return previous.shots.find((shot) => {
+    if (!shot.stageLocked) return false
+    const updated = next.shots.find((entry) => entry.id === shot.id)
+    return (
+      !updated ||
+      JSON.stringify({ ...shot, stageLocked: undefined }) !==
+        JSON.stringify({ ...updated, stageLocked: undefined })
+    )
+  })
+}
 
 export function validateCameraProject(input: unknown): CameraProject {
   const project = projectSchema.parse(input)

@@ -1,4 +1,5 @@
 import type { ContinuationContext } from '../../../lib/continuation'
+import { hasPlacementPolicy } from '../../../lib/placement-policy'
 import type { SnapContext } from '../../../lib/snapping-mode'
 import { ContextualHelperPanel } from './contextual-helper-panel'
 
@@ -21,13 +22,14 @@ export function ItemHelper({
   showForce,
   continuationContext = null,
 }: ItemHelperProps) {
+  const advisoryContact = hasPlacementPolicy()
   return (
     <ContextualHelperPanel
       continuationContext={continuationContext}
       hints={[
         { keys: ['Left click'], label: '放置' },
-        { keys: ['R', 'T'], label: '旋转' },
-        ...(showForce ? [{ keys: ['Alt'], label: '强制放置' }] : []),
+        ...(!advisoryContact ? [{ keys: ['R', 'T'], label: '旋转' }] : []),
+        ...(showForce && !advisoryContact ? [{ keys: ['Alt'], label: '强制放置' }] : []),
         { keys: [showEsc ? 'Esc' : 'Right click'], label: '取消' },
       ]}
       snapContext={snapContext}

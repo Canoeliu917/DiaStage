@@ -12,6 +12,7 @@ import { CAMERA_METADATA, currentStageContext } from '../stage/context'
 import { createManualStageGraph } from '../stage/initial-stage'
 import { useStagePlanPreview } from '../stage/plan-preview'
 import { bindRehearsalScene } from './authority'
+import { withLegacyTable } from './build-fixture'
 import { DiaConversation } from './conversation-controller'
 import * as storage from './conversation-storage'
 import { readConversation } from './conversation-storage'
@@ -37,7 +38,9 @@ async function stage(
     depthMeters: 6,
     heightMeters: 4,
   }),
+  includeLegacyTable = true,
 ) {
+  if (includeLegacyTable) graph = withLegacyTable(graph)
   const cameras = { version: 1 as const, shots: [] }
   graph.nodes[graph.rootNodeIds[0]!]!.metadata[CAMERA_METADATA] = cameras
   useCameraStudio.getState().setProject(cameras)
@@ -63,42 +66,40 @@ test('actorless Venue Build revision Ghost adopt once undo and durable lineage',
   const { dia, sceneId } = await stage()
   const before = useScene.getState().nodes
   expect(dia.currentContext().performers).toHaveLength(0)
-  expect(currentStageContext().objects).toHaveLength(0)
-  await dia.send('给我一张圆桌，两把椅子，台右一扇门')
+  expect(currentStageContext().objects).toHaveLength(1)
+  await dia.send('圆桌往台右移动30厘米')
   const first = dia.buildProposal()!
-  expect(first.plan.items.map((p) => p.kind)).toEqual([
-    'round-table',
-    'chair',
-    'chair',
-    'door-flat',
-  ])
+  expect(first.plan.items.map((p) => p.kind)).toEqual(['round-table'])
   expect(first.plan.questions).toEqual([])
   expect(useScene.getState().nodes).toBe(before)
   await dia.preview()
   expect(dia.store.getState().thread!.status).toBe('waiting-human')
-  expect(useStagePlanPreview.getState().plan!.items).toHaveLength(4)
+  expect(useStagePlanPreview.getState().plan!.items).toHaveLength(1)
   expect(useScene.getState().nodes).toBe(before)
-  await dia.send('桌子往台左一点')
+  await dia.send('圆桌往台左移动10厘米')
   const revision = dia.buildProposal()!
   expect(revision.parentId).toBe(first.id)
-  expect(revision.plan.items).toHaveLength(4)
-  expect(revision.plan.items[0]!.transform.position.x).toBeCloseTo(-0.3)
+  expect(revision.plan.items).toHaveLength(1)
+  expect(revision.plan.items[0]!.transform.position.x).toBeCloseTo(
+    first.plan.items[0]!.transform.position.x - 0.1,
+  )
   expect(useStagePlanPreview.getState().plan).toBeNull()
   await dia.adopt()
   expect(useScene.getState().nodes).toBe(before)
   await dia.preview()
   await dia.adopt()
   expect(dia.store.getState().thread!.status).toBe('applied')
-  expect(currentStageContext().objects).toHaveLength(4)
+  expect(currentStageContext().objects).toHaveLength(1)
   expect((await readConversation(sceneId))!.builds.at(-1)!.status).toBe('applied')
   useScene.temporal.getState().undo()
-  expect(currentStageContext().objects).toHaveLength(0)
+  expect(currentStageContext().objects).toHaveLength(1)
+  expect(currentStageContext().objects[0]!.transform.position.x).toBeCloseTo(0)
 })
 
 test('Build restored without Ghost; edits invalidate adoption; reject and reflect stay read only', async () => {
   const { dia, sceneId } = await stage()
   const before = useScene.getState().nodes
-  await dia.send('给我一张圆桌')
+  await dia.send('圆桌往台左移动30厘米')
   await dia.preview()
   dia.dispose()
   const reopened = new DiaConversation(sceneId, () => null)
@@ -145,7 +146,7 @@ test('cancel during product event persistence cannot publish a late Build', asyn
     }
     return actual(event)
   })
-  const pending = dia.send('给我一张圆桌')
+  const pending = dia.send('圆桌往台左移动30厘米')
   await reached.promise
   dia.cancel()
   gate.resolve()
@@ -158,7 +159,7 @@ test('cancel during product event persistence cannot publish a late Build', asyn
 test('Build IDs cannot become Rehearsal revision parents or remain the mobile selection', async () => {
   const { dia } = await stage(createSyntheticDemoScene())
   const before = useScene.getState().nodes
-  await dia.send('给我一张圆桌')
+  await dia.send('圆桌往台左移动30厘米')
   const buildId = dia.buildProposal()!.id
   await dia.send('给我两个排法')
   const { interaction, thread, activeBuildId } = dia.store.getState()
@@ -174,7 +175,7 @@ test('Build IDs cannot become Rehearsal revision parents or remain the mobile se
 for (const change of ['clear-preview', 'start-drag', 'other-window'] as const) {
   test(`Build adoption rechecks ${change} after the prepared record is saved`, async () => {
     const { dia, sceneId } = await stage()
-    await dia.send('给我一张圆桌')
+    await dia.send('圆桌往台左移动30厘米')
     await dia.preview()
     const before = useScene.getState().nodes
     const reached = Promise.withResolvers<void>()
@@ -212,7 +213,7 @@ for (const change of ['clear-preview', 'start-drag', 'other-window'] as const) {
 }
 
 test('a discussed direction uses the local rehearsal rules without changing the stage', async () => {
-  const { dia } = await stage(createSyntheticDemoScene())
+  const { dia } = await stage(createSyntheticDemoScene(), false)
   const before = useScene.getState().nodes
   await dia.send('为什么这一段感觉很平？')
   await dia.send('第二个方向试试')

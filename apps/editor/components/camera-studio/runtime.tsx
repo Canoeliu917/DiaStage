@@ -16,6 +16,7 @@ import type { CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import { type Object3D, PerspectiveCamera, Vector3 } from 'three'
+import { cameraObservationShot } from './beta-observation'
 import { type CameraKeyframe, type Shot, sampleMotion, sampleShot, type Vec3 } from './model'
 import { useCameraStudio } from './store'
 
@@ -206,11 +207,12 @@ export function CameraStudioRuntime() {
     if (!viewReady) return
     const state = useCameraStudio.getState()
     if (!state.previewing) return
-    const shot = state.project.shots.find((shot) => shot.id === state.selectedShotId)
-    if (!shot) {
+    const storedShot = state.project.shots.find((shot) => shot.id === state.selectedShotId)
+    if (!storedShot) {
       fail('当前机位已不存在，预演已停止')
       return
     }
+    const shot = cameraObservationShot(storedShot)
     if (!session.current && !begin(shot)) return
     const saved = session.current!
     if (saved.camera !== camera || saved.controls !== controls) {

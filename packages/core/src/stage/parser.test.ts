@@ -38,10 +38,18 @@ const context: SceneContextSummary = {
   selectedObjectIds: ['chair-1'],
 }
 const sample =
-  '建立一个宽8米、深6米的镜框式舞台。舞台中区放一个双人沙发，沙发台右30厘米放一块窗景片，窗景片台右紧邻一块门景片。'
+  '建立一个宽8米、深6米的镜框式舞台。舞台中区放一个双人沙发，沙发台右30厘米放一块窗景片，窗景片台右紧邻一块单门景片。'
 const transaction = { transactionId: 'test', issuedAt: '2026-09-10T00:00:00Z' }
 
 describe('deterministic Chinese stage input', () => {
+  test('unspecified clearances are zero while explicit distances remain exact', () => {
+    const plan = parseStageText('一张圆桌，两把硬椅', { ...context, objects: [] })!
+    expect(plan.relations.every((relation) => relation.gapMeters === 0)).toBe(true)
+    expect(plan.items[1]!.transform.position.x).toBeCloseTo(-0.675)
+    expect(plan.items[2]!.transform.position.x).toBeCloseTo(0.675)
+    const edge = parseStageText('台右增加单门景片', { ...context, objects: [] })!
+    expect(edge.relations[0]!.gapMeters).toBe(0)
+  })
   test('Chinese digits, decimals, half and metres/centimetres stay numeric', () => {
     for (const [input, value] of [
       ['二十', 20],
@@ -79,14 +87,18 @@ describe('deterministic Chinese stage input', () => {
       heightMeters: null,
     })
     expect(full.items.map((item) => item.kind)).toEqual(['sofa', 'window-flat', 'door-flat'])
-    expect(full.items[0]!.dimensionsMeters).toEqual({ width: 2, height: 0.85, depth: 0.9 })
-    expect(full.items[1]!.dimensionsMeters).toEqual({ width: 1.2, height: 2.1, depth: 0.15 })
-    expect(full.items[1]!.transform.position.x).toBeCloseTo(1.9, 10)
-    expect(full.items[2]!.transform.position.x).toBeCloseTo(2.95, 10)
+    expect(full.items[0]!.dimensionsMeters).toEqual({ width: 1.75, height: 0.85, depth: 0.8 })
+    expect(full.items[1]!.dimensionsMeters).toEqual({
+      width: 1.3,
+      height: 2.4,
+      depth: 0.08200000000000002,
+    })
+    expect(full.items[1]!.transform.position.x).toBeCloseTo(1.825, 10)
+    expect(full.items[2]!.transform.position.x).toBeCloseTo(3.125, 10)
     expect(compileStagePlan(full, empty, transaction).ok).toBe(true)
     expect(full.assumptions).toHaveLength(3)
     const short = parseStageText(
-      '8×6米舞台，中区双人沙发，沙发台右0.3米为窗景片，窗景片台右紧邻门景片',
+      '8×6米舞台，中区双人沙发，沙发台右0.3米为窗景片，窗景片台右紧邻单门景片',
       empty,
     )!
     expect(short.items.map((item) => item.transform)).toEqual(
@@ -182,9 +194,9 @@ describe('deterministic Chinese stage input', () => {
     expect(compileStagePlan(forbidden, empty, transaction).commands).toEqual([])
   })
   test('missing stage measurements have a deterministic clarification path', () => {
-    const result = parseStageText('舞台中区放一把椅子', empty)!
+    const result = parseStageText('舞台中区放一把硬椅', empty)!
     expect(result.questions.map((question) => question.id)).toEqual(['venue-宽', 'venue-深'])
-    const answered = parseStageText('舞台中区放一把椅子', empty, [
+    const answered = parseStageText('舞台中区放一把硬椅', empty, [
       { questionId: 'venue-宽', answer: '8米' },
       { questionId: 'venue-深', answer: '六' },
     ])!

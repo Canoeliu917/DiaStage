@@ -542,10 +542,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
         <section aria-label="布景操作确认">
           <p>待确认操作：{text}。确认后写入，可撤销。</p>
           {deletion.some((command) => command.type === 'SetDoorClearance') && (
-            <p>
-              通道约束作用于所有门景片前后两侧，各侧均保留所输入的净距；后续手动及 AI
-              布景调整都须遵守。
-            </p>
+            <p>此数值仅作舞台记录，布景仍可自由接触或重叠落位。</p>
           )}
           <button
             type="button"

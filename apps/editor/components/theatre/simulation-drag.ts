@@ -34,7 +34,7 @@ export function useSimulationDrag(enabled: boolean) {
       nodes = useScene.getState().nodes
     const performer = document?.rehearsalSimulation.performers.find((p) => p.id === id)
     const start = project(event.clientX, event.clientY)
-    if (!document || !performer || !start) {
+    if (!document || !performer || performer.stageLocked || !start) {
       release()
       return
     }

@@ -187,6 +187,41 @@ describe('movingFootprintAnchors', () => {
       movingFootprintAnchors(node({ id: 'w', type: 'wall', position: [0, 0, 0] }), 1, 1),
     ).toEqual([])
   })
+
+  test('keeps a declared off-center footprint offset when moving and rotating its pivot', () => {
+    const definition = floorPlacedDef('offset-box')
+    definition.capabilities.floorPlaced!.footprint = (value) => {
+      const item = value as unknown as {
+        position: [number, number, number]
+        rotation: [number, number, number]
+      }
+      const angle = item.rotation[1]
+      return {
+        dimensions: [2, 1, 4],
+        rotation: item.rotation,
+        position: [
+          item.position[0] - 2 * Math.cos(angle) + Math.sin(angle),
+          0,
+          item.position[2] + 2 * Math.sin(angle) + Math.cos(angle),
+        ],
+      }
+    }
+    registerNode(definition)
+    const item = node({
+      id: 'offset',
+      type: 'offset-box',
+      position: [1, 0, 2],
+      rotation: [0, 0, 0],
+    })
+    const before = JSON.stringify(item)
+    expect(footprintAABB(item)).toEqual({ minX: -2, maxX: 0, minZ: 1, maxZ: 5 })
+    const anchors = movingFootprintAnchors(item, 10, 20, Math.PI / 2)
+    expect(Math.min(...anchors.map((anchor) => anchor.x))).toBeCloseTo(9)
+    expect(Math.max(...anchors.map((anchor) => anchor.x))).toBeCloseTo(13)
+    expect(Math.min(...anchors.map((anchor) => anchor.z))).toBeCloseTo(21)
+    expect(Math.max(...anchors.map((anchor) => anchor.z))).toBeCloseTo(23)
+    expect(JSON.stringify(item)).toBe(before)
+  })
 })
 
 describe('movingAlignmentAnchors', () => {

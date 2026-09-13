@@ -74,6 +74,31 @@ export class ItemGLTFLoader extends GLTFLoader {
     super(new LoadingManager())
     this.hostManager = manager ?? DefaultLoadingManager
     this.retryDelaysMs = retryDelaysMs
+    this.register((parser) => {
+      const labels = new Map<number, string>()
+      return {
+        name: 'authored-pivot-label',
+        beforeRoot: () => {
+          // This loader's pivot extension expects a numeric vector, not an authored origin label.
+          parser.json.nodes?.forEach((node: { extras?: { pivot?: unknown } }, index: number) => {
+            if (typeof node.extras?.pivot !== 'string') return
+            labels.set(index, node.extras.pivot)
+            delete node.extras.pivot
+          })
+          return null
+        },
+        afterRoot: (gltf) => {
+          for (const scene of gltf.scenes)
+            scene.traverse((node) => {
+              const index = parser.associations.get(node)?.nodes
+              const label = index === undefined ? undefined : labels.get(index)
+              if (label !== undefined) node.userData.pivot = label
+            })
+          for (const [index, label] of labels) parser.json.nodes[index].extras.pivot = label
+          return null
+        },
+      }
+    })
   }
 
   override load(

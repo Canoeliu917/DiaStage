@@ -5,6 +5,7 @@ import {
   type FloorplanPoint,
   type GeometryContext,
   getBlockFaceFrame,
+  getItemBoundsCenter,
   getScaledDimensions,
   type ItemNode,
   useLiveTransforms,
@@ -158,8 +159,10 @@ export function buildItemContextualDimensions(
   const [width, , depth] = getScaledDimensions(node)
   if (width <= 1e-6 || depth <= 1e-6) return null
 
-  const centerLocalZ = node.asset.attachTo === 'wall-side' ? depth / 2 : 0
-  const [centerOffsetX, centerOffsetY] = rotateVec(0, centerLocalZ, transform.rotation)
+  const [centerLocalX, , centerZ] = getItemBoundsCenter(node)
+  const centerLocalZ =
+    !node.asset.boundsCenter && node.asset.attachTo === 'wall-side' ? depth / 2 : centerZ
+  const [centerOffsetX, centerOffsetY] = rotateVec(centerLocalX, centerLocalZ, transform.rotation)
   const cx = transform.x + centerOffsetX
   const cy = transform.y + centerOffsetY
   const halfWidth = width / 2
@@ -213,8 +216,10 @@ export function buildItemFloorplan(node: ItemNode, ctx: GeometryContext): Floorp
   // a half-depth out along the item's local +Z. After the front/back π flip in
   // `transform.rotation`, +depth/2 always points off the wall for either side;
   // a negative offset would lay the footprint across the wall onto the far side.
-  const centerLocalZ = node.asset.attachTo === 'wall-side' ? depth / 2 : 0
-  const [centerOffsetX, centerOffsetY] = rotateVec(0, centerLocalZ, transform.rotation)
+  const [centerLocalX, , centerZ] = getItemBoundsCenter(node)
+  const centerLocalZ =
+    !node.asset.boundsCenter && node.asset.attachTo === 'wall-side' ? depth / 2 : centerZ
+  const [centerOffsetX, centerOffsetY] = rotateVec(centerLocalX, centerLocalZ, transform.rotation)
   const cx = transform.x + centerOffsetX
   const cy = transform.y + centerOffsetY
 

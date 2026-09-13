@@ -1,6 +1,32 @@
-import { type AssetInput, isObject } from '@pascal-app/core'
+import {
+  type AssetInput,
+  getItemBoundsCenter,
+  getScaledDimensions,
+  type ItemNode,
+  isObject,
+} from '@pascal-app/core'
+import { hasPlacementPolicy } from '../../../lib/placement-policy'
 import { resolveSnapFlags } from '../../../lib/snapping-mode'
 import useEditor, { getActiveSnappingMode } from '../../../store/use-editor'
+import type { PreviewBounds } from '../shared/placement-box-geometry'
+
+export function getItemPlacementBounds(
+  item: ItemNode | null,
+  asset: AssetInput | null | undefined,
+): PreviewBounds {
+  const dimensions = item ? getScaledDimensions(item) : (asset?.dimensions ?? [1, 1, 1])
+  const source = item?.asset ?? asset
+  const center = item
+    ? getItemBoundsCenter(item)
+    : [...(source?.boundsCenter ?? [0, dimensions[1] / 2, 0])]
+  if (!source?.boundsCenter && source?.attachTo === 'wall-side') center[2] = dimensions[2] / 2
+  return {
+    min: dimensions.map((value, axis) => center[axis]! - value / 2) as [number, number, number],
+    max: dimensions.map((value, axis) => center[axis]! + value / 2) as [number, number, number],
+    dimensions: dimensions as [number, number, number],
+    center: center as [number, number, number],
+  }
+}
 
 // Sentinel returned when the active context's snapping mode disables grid snap.
 // The snap helpers below treat any `step <= 0` as "no grid snap" and pass the
@@ -67,6 +93,7 @@ export function getGridAlignedDimensions(
   attachTo: AssetInput['attachTo'] | null | undefined,
   step = getGridSnapStep(),
 ): [number, number, number] {
+  if (hasPlacementPolicy()) return scaledDims
   const [w, h, d] = scaledDims
   if (attachTo === 'wall' || attachTo === 'wall-side') {
     return [snapUpToGridStep(w, step), snapUpToGridStep(h, step), d]

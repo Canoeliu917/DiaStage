@@ -106,4 +106,31 @@ describe('selectable candidates', () => {
 
     expect(collectSelectableCandidateIds()).toContain('reference_test')
   })
+
+  test('a locked object or locked descendant excludes the whole object from box selection', () => {
+    const nodes = {
+      building_test: { id: 'building_test', type: 'building', children: ['level_test'] },
+      level_test: {
+        id: 'level_test',
+        type: 'level',
+        parentId: 'building_test',
+        children: ['reference_test', 'reference_free'],
+      },
+      reference_test: {
+        id: 'reference_test',
+        type: 'stage-reference',
+        parentId: 'level_test',
+        children: ['reference_child'],
+      },
+      reference_child: {
+        id: 'reference_child',
+        type: 'stage-reference',
+        parentId: 'reference_test',
+        metadata: { stageLocked: true },
+      },
+      reference_free: { id: 'reference_free', type: 'stage-reference', parentId: 'level_test' },
+    }
+    useScene.setState({ nodes } as never)
+    expect(collectSelectableCandidateIds()).toEqual(['reference_free'])
+  })
 })

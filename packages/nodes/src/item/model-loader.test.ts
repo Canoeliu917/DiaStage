@@ -58,6 +58,47 @@ describe('classifyItemModelLoadFailure', () => {
 })
 
 describe('ItemGLTFLoader', () => {
+  test('preserves authored pivot labels and child transforms without interpreting text as coordinates', async () => {
+    const gltf = await new ItemGLTFLoader().parseAsync(
+      JSON.stringify({
+        asset: { version: '2.0' },
+        scene: 0,
+        scenes: [{ nodes: [0] }],
+        nodes: [
+          { children: [1], extras: { pivot: 'first_panel_left_floor' } },
+          { translation: [-0.45, 0, 0] },
+        ],
+      }),
+      '',
+    )
+    const root = gltf.scene.children[0]!
+    expect(root.position.toArray()).toEqual([0, 0, 0])
+    expect(root.children[0]!.position.toArray()).toEqual([-0.45, 0, 0])
+    expect(root.userData.pivot).toBe('first_panel_left_floor')
+    expect(gltf.parser.json.nodes[0].extras.pivot).toBe('first_panel_left_floor')
+    root.updateWorldMatrix(true, true)
+    expect(root.children[0]!.matrixWorld.elements.every(Number.isFinite)).toBe(true)
+  })
+
+  test('keeps the existing numeric pivot extension intact', async () => {
+    const gltf = await new ItemGLTFLoader().parseAsync(
+      JSON.stringify({
+        asset: { version: '2.0' },
+        scene: 0,
+        scenes: [{ nodes: [0] }],
+        nodes: [
+          { children: [1], translation: [1, 2, 3], extras: { pivot: [1, 2, 3] } },
+          { translation: [-1, -2, -3] },
+        ],
+      }),
+      '',
+    )
+    const root = gltf.scene.children[0]!
+    expect(root.position.toArray()).toEqual([0, 0, 0])
+    expect(root.children[0]!.position.toArray()).toEqual([0, 0, 0])
+    expect(root.pivot?.toArray()).toEqual([1, 2, 3])
+  })
+
   test('resolves missing responses as an unavailable item instead of rejecting', async () => {
     const consoleError = spyOn(console, 'error').mockImplementation(() => {})
     try {

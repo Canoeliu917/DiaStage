@@ -2,6 +2,7 @@ import { useScene } from '@pascal-app/core'
 import { assertTheatreWritable, stageFloorUpdates, THEATRE_METADATA_KEY } from './scene-adapter'
 import { type Vec3, Vec3Schema } from './schema'
 import {
+  assertPerformerLocks,
   createStageSceneDocument,
   migrateStageDocument,
   runtimeTheatreDocument,
@@ -25,6 +26,7 @@ export function writeStageDocument(input: StageSceneDocument) {
   const site = state.rootNodeIds.map((id) => state.nodes[id]).find((node) => node?.type === 'site')
   if (!site) throw new Error('请等待舞台载入')
   const previous = readStageDocument()
+  if (previous) assertPerformerLocks(previous, document)
   state.applyNodeChanges({
     update: [
       { id: site.id, data: { metadata: { ...site.metadata, [THEATRE_METADATA_KEY]: document } } },

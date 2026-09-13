@@ -43,6 +43,23 @@ export const StageTransformSchema = z.strictObject({
   rotationDegrees: StagePointSchema,
 })
 export type StageTransform = z.infer<typeof StageTransformSchema>
+export const StageCollisionGeometrySchema = z
+  .array(
+    z
+      .strictObject({
+        vertices: z
+          .array(z.tuple([z.number().finite(), z.number().finite(), z.number().finite()]))
+          .min(4)
+          .max(1000),
+        faces: z.array(z.array(z.number().int().nonnegative()).min(3).max(1000)).min(4).max(1000),
+      })
+      .refine((part) =>
+        part.faces.every((face) => face.every((index) => index < part.vertices.length)),
+      ),
+  )
+  .min(1)
+  .max(200)
+export type StageCollisionGeometry = z.infer<typeof StageCollisionGeometrySchema>
 export const VenueProposalSchema = z.strictObject({
   type: z.enum(['proscenium', 'black-box', 'thrust', 'classroom', 'other']),
   widthMeters: DimensionSchema,
@@ -58,6 +75,7 @@ export const StageItemProposalSchema = z.strictObject({
   displayName: NameSchema,
   libraryAssetId: IdSchema.nullable(),
   dimensionsMeters: StageDimensionsSchema,
+  collisionGeometry: StageCollisionGeometrySchema.optional(),
   stepCount: z.number().int().min(1).max(200).nullable().optional(),
   transform: StageTransformSchema,
   certainty: CertaintySchema,
@@ -129,11 +147,12 @@ export const SceneContextObjectSchema = z.strictObject({
   kind: StageItemKindSchema,
   transform: StageTransformSchema,
   dimensionsMeters: StageDimensionsSchema,
+  collisionGeometry: StageCollisionGeometrySchema.optional(),
   stepCount: z.number().int().min(1).max(200).optional(),
 })
 export type SceneContextObject = z.infer<typeof SceneContextObjectSchema>
 export const SceneContextSummarySchema = z.strictObject({
-  doorClearanceMeters: z.number().finite().min(0.6).max(10).optional(),
+  doorClearanceMeters: z.number().finite().min(0).max(10).optional(),
   documentVersion: z.number().int().nonnegative(),
   venue: VenueProposalSchema.nullable(),
   objects: z.array(SceneContextObjectSchema).max(1000),
@@ -160,7 +179,7 @@ export const StageCommandSchema = z.discriminatedUnion('type', [
   z.strictObject({
     type: z.literal('SetDoorClearance'),
     ...meta,
-    meters: z.number().finite().min(0.6).max(10),
+    meters: z.number().finite().min(0).max(10),
   }),
   z.strictObject({
     type: z.literal('GroupObjects'),

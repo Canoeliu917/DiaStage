@@ -317,8 +317,7 @@ interface ViewerProps {
    */
   sceneReadyMaxWaitMs?: number
   /**
-   * Frame cap for the render loop, in frames per second. Defaults to 50, the
-   * value the viewer has always used.
+   * Frame cap for the render loop, in frames per second. Defaults to 60.
    *
    * The viewer runs `frameloop="never"` and advances frames itself through
    * `<FrameLimiter>`, so this cap is the only thing setting the cadence and a
@@ -353,7 +352,7 @@ function Viewer({
   sceneReadyKey,
   onSceneReadyChange,
   sceneReadyMaxWaitMs,
-  maxFps = 50,
+  maxFps = 60,
   disablePostFx = false,
   renderPaused = false,
 }: ViewerProps) {

@@ -1,9 +1,11 @@
 import {
+  getItemBoundsCenter,
   getScaledDimensions,
   type HandleDescriptor,
   type ItemNode as ItemNodeType,
   type NodeDefinition,
 } from '@pascal-app/core'
+import { rotatePoint } from '@pascal-app/core/remount'
 import type { FloorplanNodeExtension } from '@pascal-app/editor'
 import { buildItemContextualDimensions, buildItemFloorplan } from './floorplan'
 import { itemFloorplanMoveTarget } from './floorplan-move'
@@ -43,8 +45,9 @@ function itemRotateHandle(): HandleDescriptor<ItemNodeType> {
       // registered item mesh carries position + rotation only (scale lives on
       // an inner mesh), so the scaled footprint maps straight to world.
       position: (n) => {
-        const [w, h, d] = getScaledDimensions(n)
-        return [w / 2 + GIZMO_SIDE_OFFSET, h / 2, d / 2 + GIZMO_FRONT_OFFSET]
+        const [w, , d] = getScaledDimensions(n)
+        const [cx, cy, cz] = getItemBoundsCenter(n)
+        return [cx + w / 2 + GIZMO_SIDE_OFFSET, cy, cz + d / 2 + GIZMO_FRONT_OFFSET]
       },
       // Fixed −45° tilt leans the curve toward the item's front face.
       rotationY: () => -Math.PI / 4,
@@ -53,9 +56,10 @@ function itemRotateHandle(): HandleDescriptor<ItemNodeType> {
       kind: 'ring',
       radius: (n) => {
         const [w, , d] = getScaledDimensions(n)
-        return Math.hypot(w / 2, d / 2) + ROTATE_RING_OFFSET
+        const [cx, , cz] = getItemBoundsCenter(n)
+        return Math.hypot(Math.abs(cx) + w / 2, Math.abs(cz) + d / 2) + ROTATE_RING_OFFSET
       },
-      y: (n) => getScaledDimensions(n)[1] / 2,
+      y: (n) => getItemBoundsCenter(n)[1],
     },
   }
 }
@@ -74,8 +78,9 @@ function itemMoveHandle(): HandleDescriptor<ItemNodeType> {
       // Past the item's left edge at mid-height, mirroring the rotate grip on
       // the right so the two never overlap on small items.
       position: (n) => {
-        const [w, h, d] = getScaledDimensions(n)
-        return [-(w / 2 + GIZMO_SIDE_OFFSET), h / 2, d / 2 + GIZMO_FRONT_OFFSET]
+        const [w, , d] = getScaledDimensions(n)
+        const [cx, cy, cz] = getItemBoundsCenter(n)
+        return [cx - w / 2 - GIZMO_SIDE_OFFSET, cy, cz + d / 2 + GIZMO_FRONT_OFFSET]
       },
     },
   }
@@ -168,7 +173,7 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
   kind: 'item',
   snapProfile: 'item',
   facingIndicator: true,
-  schemaVersion: 2,
+  schemaVersion: 3,
   schema: ItemNode,
   category: 'furnish',
   surfaceRole: 'furnishing',
@@ -209,7 +214,9 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
       top: {
         height: (node) => {
           const item = node as ItemNodeType
-          return (item.asset.surface?.height ?? item.asset.dimensions[1]) * item.scale[1]
+          return item.asset.surface
+            ? item.asset.surface.height * item.scale[1]
+            : getItemBoundsCenter(item)[1] + getScaledDimensions(item)[1] / 2
         },
       },
     },
@@ -225,7 +232,19 @@ export const itemDefinition: NodeDefinition<typeof ItemNode> = {
     floorPlaced: {
       footprint: (node) => {
         const item = node as ItemNodeType
-        return { dimensions: getScaledDimensions(item), rotation: item.rotation }
+        const dimensions = getScaledDimensions(item)
+        if (!item.asset.boundsCenter) return { dimensions, rotation: item.rotation }
+        const [cx, cy, cz] = getItemBoundsCenter(item)
+        const offset = rotatePoint([cx, cy - dimensions[1] / 2, cz], item.rotation)
+        return {
+          dimensions,
+          rotation: item.rotation,
+          position: item.position.map((value, axis) => value + offset[axis]!) as [
+            number,
+            number,
+            number,
+          ],
+        }
       },
       applies: (node) => !(node as ItemNodeType).asset.attachTo,
       collides: true,

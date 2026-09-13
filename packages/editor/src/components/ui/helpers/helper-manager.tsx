@@ -23,6 +23,7 @@ import { continuationContextOf } from '../../../lib/continuation'
 import { canDirectMoveNode, canDirectRotateNode } from '../../../lib/direct-manipulation'
 import type { ReshapeKind } from '../../../lib/interaction/scope'
 import { isFreshPlacementMetadata } from '../../../lib/placement-metadata'
+import { hasPlacementPolicy } from '../../../lib/placement-policy'
 import { snapContextOf } from '../../../lib/snapping-mode'
 import useEditor, { getActiveContinuationContext } from '../../../store/use-editor'
 import useInteractionScope, {
@@ -249,6 +250,7 @@ export function HelperManager() {
   // Idle select only — an active scope (handle-drag, box-select, …) must not show
   // the idle selection hints.
   if (mode === 'select' && scope.kind === 'idle') {
+    if (hasPlacementPolicy()) return null
     return <ContextualHelperPanel hints={selectModeHints} />
   }
 

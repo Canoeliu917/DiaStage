@@ -3,6 +3,8 @@
 // into the other's scene graph during drag operations.
 
 import { create } from 'zustand'
+import { getNodeLock } from '../lib/node-lock'
+import useScene from './use-scene'
 
 export type LiveTransform = {
   position: [number, number, number]
@@ -29,6 +31,7 @@ const useLiveTransforms = create<LiveTransformState>((set, get) => ({
   transforms: new Map(),
   set: (nodeId, transform) =>
     set((state) => {
+      if (getNodeLock(useScene.getState().nodes, nodeId, true)) return state
       const next = new Map(state.transforms)
       next.set(nodeId, transform)
       return { transforms: next }

@@ -5,6 +5,7 @@ import {
   calculateLevelMiters,
   GROUND_SUPPORT_ID,
   getFloorPlacedElevation,
+  getItemBoundsCenter,
   getLevelElevations,
   getScaledDimensions,
   getSceneHistoryPauseDepth,
@@ -463,7 +464,7 @@ export function objectSnapshot(node: MovableNode, nodes: SceneNodes): SourceSnap
   let boundsCenter: Vec3
   if (node.type === 'item') {
     dimensions = getScaledDimensions(node)
-    boundsCenter = [0, dimensions[1] / 2, 0]
+    boundsCenter = getItemBoundsCenter(node)
   } else if (node.type === 'stair') {
     ;({ dimensions, boundsCenter } = stageStairBounds(node, nodes))
     yawOf(worldPose(node.parentId, nodes).rotation)

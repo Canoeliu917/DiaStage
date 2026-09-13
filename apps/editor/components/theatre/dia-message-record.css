@@ -1,0 +1,6 @@
+.dia-message-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.dia-panel .dia-message-delete { width:28px; height:28px; min-width:28px; min-height:28px; flex:none; padding:0; border-color:transparent; background:transparent; color:var(--dia-muted); font-size:22px; line-height:1; }
+@media(pointer:coarse) { .dia-panel .dia-message-delete { width:44px; height:44px; min-width:44px; min-height:44px; } }
+
+.dia-message-actions { display:flex; align-items:center; gap:2px; }
+.dia-panel .dia-message-star { display:grid; place-items:center; min-width:28px; min-height:28px; width:28px; height:28px; padding:0; border:0; background:transparent; color:var(--dia-text); }

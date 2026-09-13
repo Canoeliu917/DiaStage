@@ -1,0 +1,69 @@
+:root {
+  --dia-font-ui: "Inter", "Arial", var(--font-source-han-sans), "Source Han Sans SC", "Microsoft YaHei", sans-serif;
+  --dia-font-notation: "Courier Prime", "Courier New", var(--font-source-han-sans), monospace;
+  --dia-type-caption: 0.75rem;
+  --dia-type-ui: 0.8125rem;
+  --dia-type-body: 0.875rem;
+  --dia-type-title: 1.125rem;
+  --dia-line-ui: 1.45;
+  --dia-line-body: 1.7;
+  --dia-space-1: 4px;
+  --dia-space-2: 8px;
+  --dia-space-3: 12px;
+  --dia-space-4: 16px;
+  --dia-space-6: 24px;
+  --dia-radius: 4px;
+  --dia-surface: var(--dia-ink);
+  --dia-panel: color-mix(in srgb, var(--dia-ink) 97%, var(--dia-ivory));
+  --dia-raised: color-mix(in srgb, var(--dia-ink) 93%, var(--dia-ivory));
+  --dia-border: color-mix(in srgb, var(--dia-ink) 77%, var(--dia-ivory));
+  --dia-text: var(--dia-ivory);
+  --dia-muted: color-mix(in srgb, var(--dia-ivory) 68%, var(--dia-ink));
+  --dia-hover: color-mix(in srgb, var(--dia-ink) 87%, var(--dia-ivory));
+  --dia-active: var(--dia-ivory);
+  --dia-focus: var(--dia-ivory);
+  --dia-paper: var(--dia-ivory);
+  --dia-paper-text: var(--dia-ink);
+  --dia-paper-muted: color-mix(in srgb, var(--dia-ink) 70%, var(--dia-ivory));
+  --dia-paper-border: color-mix(in srgb, var(--dia-ink) 23%, var(--dia-ivory));
+  --dia-proposal-surface: color-mix(in srgb, var(--dia-blue) 9%, var(--dia-ivory));
+  --dia-error-surface: color-mix(in srgb, var(--dia-error) 10%, var(--dia-ivory));
+  --dia-shadow: 0 4px 16px color-mix(in srgb, var(--dia-ink) 18%, transparent);
+}
+
+.studio-workspace {
+  --background: var(--dia-surface);
+  --foreground: var(--dia-text);
+  --card: var(--dia-panel);
+  --card-foreground: var(--dia-text);
+  --popover: var(--dia-raised);
+  --popover-foreground: var(--dia-text);
+  --primary: var(--dia-active);
+  --primary-foreground: var(--dia-ink);
+  --secondary: var(--dia-raised);
+  --secondary-foreground: var(--dia-text);
+  --muted: var(--dia-raised);
+  --muted-foreground: var(--dia-muted);
+  --accent: var(--dia-hover);
+  --accent-foreground: var(--dia-text);
+  --destructive: var(--dia-error);
+  --border: var(--dia-border);
+  --input: var(--dia-border);
+  --ring: var(--dia-focus);
+  --sidebar: var(--dia-panel);
+  --sidebar-foreground: var(--dia-text);
+  --sidebar-primary: var(--dia-active);
+  --sidebar-primary-foreground: var(--dia-ink);
+  --sidebar-accent: var(--dia-hover);
+  --sidebar-accent-foreground: var(--dia-text);
+  --sidebar-border: var(--dia-border);
+  --sidebar-ring: var(--dia-focus);
+}
+
+.dia-notation {
+  font-family: var(--dia-font-notation);
+  font-size: var(--dia-type-caption);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: var(--dia-line-ui);
+}

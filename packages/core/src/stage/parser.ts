@@ -1,3 +1,4 @@
+import { resolveStageObjectSpecs } from './object-registry'
 import { resolveStagePlan, stageObjectBounds } from './plan'
 import {
   type ClarificationAnswer,
@@ -28,7 +29,7 @@ const digits: Record<string, number> = {
 }
 const units: Record<string, number> = { 十: 10, 百: 100, 千: 1000, 万: 10000 }
 const numberPattern = '[+-]?(?:\\d+(?:\\.\\d+)?|[零〇一二两三四五六七八九十百千万点半]+)'
-const lengthPattern = `(?:${numberPattern})(?:厘米|公分|cm|米|m)(?:半)?`
+const lengthPattern = `(?:${numberPattern})(?:毫米|mm|厘米|公分|cm|米|m)(?:半)?`
 const directions = {
   台右: 'stage-right',
   台左: 'stage-left',
@@ -87,47 +88,22 @@ export function parseStageLength(input: string): number | null {
   const match = input
     .replace(/\s/g, '')
     .toLowerCase()
-    .match(new RegExp(`^(${numberPattern})(厘米|公分|cm|米|m)(半)?$`))
+    .match(new RegExp(`^(${numberPattern})(毫米|mm|厘米|公分|cm|米|m)(半)?$`))
   if (!match) return null
   const number = parseStageNumber(match[1]!)
   if (number === null) return null
   const value = number + (match[3] ? (number < 0 ? -0.5 : 0.5) : 0)
-  return value * (['厘米', '公分', 'cm'].includes(match[2]!) ? 0.01 : 1)
+  return (
+    value *
+    (['毫米', 'mm'].includes(match[2]!)
+      ? 0.001
+      : ['厘米', '公分', 'cm'].includes(match[2]!)
+        ? 0.01
+        : 1)
+  )
 }
 
 const defaults: { aliases: string[]; kind: StageItemKind; dimensions: StageDimensions }[] = [
-  {
-    aliases: ['双人沙发', '沙发'],
-    kind: 'sofa',
-    dimensions: { width: 2, height: 0.85, depth: 0.9 },
-  },
-  {
-    aliases: ['窗景片', '窗户', '窗'],
-    kind: 'window-flat',
-    dimensions: { width: 1.2, height: 2.1, depth: 0.15 },
-  },
-  {
-    aliases: ['门景片', '门'],
-    kind: 'door-flat',
-    dimensions: { width: 0.9, height: 2.1, depth: 0.15 },
-  },
-  {
-    aliases: ['景片', '景墙'],
-    kind: 'scenic-flat',
-    dimensions: { width: 2, height: 2.4, depth: 0.15 },
-  },
-  {
-    aliases: ['圆桌'],
-    kind: 'round-table',
-    dimensions: { width: 1.2, height: 0.75, depth: 1.2 },
-  },
-  {
-    aliases: ['长方桌', '长桌', '桌子', '桌'],
-    kind: 'table',
-    dimensions: { width: 1.2, height: 0.75, depth: 1.2 },
-  },
-  { aliases: ['椅子', '椅'], kind: 'chair', dimensions: { width: 0.5, height: 0.85, depth: 0.5 } },
-  { aliases: ['平台', '台件'], kind: 'platform', dimensions: { width: 2, height: 0.3, depth: 1 } },
   {
     aliases: ['舞台台阶', '踏步', '台阶', '楼梯'],
     kind: 'stairs',
@@ -304,18 +280,19 @@ export function parseStageText(
     const selected = context.selectedObjectIds.length === 1 ? context.selectedObjectIds[0] : null
     const pronoun = /^(它|这个|那个|这[把张块台扇个]|那[把张块台扇个])/.test(token)
     const noun = token.replace(/^(?:它|这个|那个|这[把张块台扇个]|那[把张块台扇个])/, '')
-    const kind = defaults.find((entry) => entry.aliases.includes(noun))?.kind
+    const specs = resolveStageObjectSpecs(noun)
+    const kinds = specs.length
+      ? specs.map((spec) => spec.kind)
+      : [defaults.find((entry) => entry.aliases.includes(noun))?.kind]
     let matches = list.filter((item) => item.name === token)
     if (pronoun)
       matches = list.filter(
         (item) =>
           (item.id === selected || item.proposal?.existingNodeId === selected) &&
-          (!noun || item.name === noun || item.kind === kind),
+          (!noun || item.name === noun || kinds.includes(item.kind)),
       )
-    else if (matches.length === 0 && kind)
-      matches = list.filter(
-        (item) => item.kind === kind || (kind === 'table' && item.kind === 'round-table'),
-      )
+    else if (matches.length === 0 && kinds.some(Boolean))
+      matches = list.filter((item) => kinds.includes(item.kind))
     const choice = answer(id)
     if (choice) {
       const exact = (matches.length ? matches : list).filter(
@@ -359,7 +336,32 @@ export function parseStageText(
       ask('step-count', '台阶级数必须是 1 至 200 的整数。')
       return null
     }
-    const definition = defaults.find((entry) => entry.aliases.includes(name))
+    const specs = resolveStageObjectSpecs(name)
+    const choice = answer(`kind-${plan.items.length + 1}`)
+    const spec =
+      specs.length === 1
+        ? specs[0]
+        : specs.find((item) => item.canonicalId === choice || item.displayName === choice)
+    if (specs.length > 1 && !spec) {
+      ask(
+        `kind-${plan.items.length + 1}`,
+        `“${name}”有多个规范物品，请明确类型。`,
+        specs.map((item) => item.displayName),
+      )
+      return null
+    }
+    const specDimensions = spec?.modelDimensions ?? spec?.defaultDimensions
+    if (spec && !specDimensions) {
+      ask(
+        `asset-${spec.canonicalId}`,
+        `${spec.displayName}的整体尺寸需从资源目录读取，请先接入对应模型。`,
+      )
+      return null
+    }
+    const definition =
+      spec && specDimensions
+        ? { kind: spec.kind, dimensions: specDimensions }
+        : defaults.find((entry) => entry.aliases.includes(name))
     if (!definition) return null
     const id = `proposal-${plan.items.length + 1}`
     const assumptionId = `size-${id}`
@@ -369,15 +371,17 @@ export function parseStageText(
         : { ...definition.dimensions }
     plan.assumptions.push({
       id: assumptionId,
-      message: `${name} 未指定尺寸，暂按宽 ${dimensions.width}、高 ${dimensions.height}、深 ${dimensions.depth} 米。`,
+      message: spec
+        ? `${spec.displayName}规格来源：${spec.dimensionsSource}；模型包围尺寸来源：${spec.modelDimensionsSource}。`
+        : `${name} 未指定尺寸，暂按宽 ${dimensions.width}、高 ${dimensions.height}、深 ${dimensions.depth} 米。`,
     })
     const proposal: StageItemProposal = {
       proposalId: id,
       existingNodeId: null,
       kind: definition.kind,
       ...(definition.kind === 'stairs' ? { stepCount: count } : {}),
-      displayName: name,
-      libraryAssetId: null,
+      displayName: spec?.displayName ?? name,
+      libraryAssetId: spec?.canonicalId ?? null,
       dimensionsMeters: dimensions,
       transform: {
         position: {
@@ -389,7 +393,7 @@ export function parseStageText(
         },
         rotationDegrees: { x: 0, y: 0, z: 0 },
       },
-      certainty: 'inferred',
+      certainty: spec ? 'stated' : 'inferred',
       assumptionIds: [assumptionId],
       evidenceIds: [],
     }
@@ -400,8 +404,8 @@ export function parseStageText(
     const word = text.replace(/^并/, '')
     if (['紧贴', '紧邻', '相邻', '贴着'].includes(word)) return 0
     if (word) return parseStageLength(word)
-    plan.assumptions.push({ id, message: '未指定布景间距，预览暂留 0.3 米，可在确认前修改。' })
-    return 0.3
+    plan.assumptions.push({ id, message: '未指定布景间距，先紧邻落位，可自由调整。' })
+    return 0
   }
   const relation = (
     subject: StageItemProposal,
@@ -423,13 +427,23 @@ export function parseStageText(
       .replace(/^在舞台中区/, '舞台中区')
       .replace(/(平台)前方$/, '$1台前')
     const casualMove = clause.match(
-      /^(?:把)?(.+?)(?:再)?(?:往|向)?(台左|台右|台前|台后)(?:移|挪)?(?:一|一点|一些|一点点)$/,
+      /^(?:把)?(.+?)(?:再)?(?:往|向)?(台左|台右|台前|台后)(?:移动|挪动|移|挪)?(?:一|一点|一些|一点点|少许|稍微|小幅)$/,
     )
     if (casualMove) {
-      clause = `把${casualMove[1]}向${casualMove[2]}移30厘米`
+      const target = select(casualMove[1]!, `object-${index}`)
+      if (!target) continue
+      const lateral = ['台左', '台右'].includes(casualMove[2]!)
+      const objectSpan = lateral ? target.dimensionsMeters.width : target.dimensionsMeters.depth
+      const venueSpan = lateral ? context.venue?.widthMeters : context.venue?.depthMeters
+      const distance =
+        Math.round(
+          Math.max(0.05, Math.min(1, objectSpan * 0.25, (venueSpan ?? objectSpan * 12.5) * 0.02)) *
+            1000,
+        ) / 1000
+      clause = `把${casualMove[1]}向${casualMove[2]}移${distance}米`
       plan.assumptions.push({
         id: `nudge-${index}`,
-        message: '“一点”先预览移动 30 厘米，可在采用前修改。',
+        message: `“一点”按当前物品和场地尺度预览小幅移动 ${Math.round(distance * 1000) / 10} 厘米，采用前可调整。`,
       })
     }
     const naturalCreate = clause.match(
@@ -450,21 +464,20 @@ export function parseStageText(
       const table = candidates().filter((item) => ['table', 'round-table'].includes(item.kind))
       for (let n = 0; n < count; n++) {
         const created = create(naturalCreate[2]!)
-        if (!created) return null
-        if (count > 1) created.displayName += String(n + 1)
+        if (!created) return plan.questions.length ? plan : null
+        if (count > 1 && !created.libraryAssetId) created.displayName += String(n + 1)
         if (created.kind === 'chair' && count === 2 && table.length === 1) {
-          relation(created, table[0]!, n === 0 ? '台左' : '台右', 0.5)
+          relation(created, table[0]!, n === 0 ? '台左' : '台右', 0)
         } else if (count > 1) {
-          created.transform.position.x =
-            (n - (count - 1) / 2) * (created.dimensionsMeters.width + 0.3)
+          created.transform.position.x = (n - (count - 1) / 2) * created.dimensionsMeters.width
         }
       }
       plan.assumptions.push({
         id: `layout-${index}`,
         message:
           table.length === 1 && count === 2 && naturalCreate[2]!.includes('椅')
-            ? '两把椅子暂放在桌子两侧，各留 0.5 米；可修改后再采用。'
-            : '未指定台位的布景暂放中区，多件横向排开并留 0.3 米；冲突不会自动压缩。',
+            ? '两把椅子暂紧邻桌子两侧，可自由调整。'
+            : '未指定台位的布景暂放中区，多件横向紧邻排开，可自由调整。',
       })
       continue
     }
@@ -481,11 +494,11 @@ export function parseStageText(
         subjectId: created.proposalId,
         referenceId: null,
         direction: directions[atSide[1] as DirectionName],
-        gapMeters: 0.3,
+        gapMeters: 0,
       })
       plan.assumptions.push({
         id: `edge-${index}`,
-        message: '未指定台位净距，暂离舞台边界 0.3 米；台右按演员面向观众确定。',
+        message: '未指定台位净距，暂贴舞台边界；台右按演员面向观众确定。',
       })
       continue
     }
@@ -572,7 +585,26 @@ export function parseStageText(
       }
       continue
     }
-    let match = clause.match(
+    let match = clause.match(/^(?:把)?(.+?)(?:放在|放到|移到|移至)(?:舞台中区|舞台中央|台中|中区)$/)
+    if (match) {
+      const target = select(match[1]!, `object-${index}`)
+      if (target)
+        plan.relations.push({
+          id: `relation-${plan.relations.length + 1}`,
+          subjectId: upsert(target).proposalId,
+          referenceId: null,
+          direction: 'center',
+          gapMeters: 0,
+        })
+      continue
+    }
+    match = clause.match(/^(?:把)?(.+?)(?:向|往)?(台左|台右|台前|台后)(?:移动|挪动|移|挪)$/)
+    if (match) {
+      select(match[1]!, `object-${index}`)
+      ask(`distance-${index}`, '请说明移动幅度，例如“一点”或“30厘米”。')
+      continue
+    }
+    match = clause.match(
       new RegExp(
         `^(?:把)?(.+?)(?:向|往)?${directionPattern}(?:移动|挪动|移|挪)(${lengthPattern})$`,
       ),
@@ -634,7 +666,7 @@ export function parseStageText(
     match = clause.match(/^(?:舞台中区|舞台中央|中区)(?:放置|摆放|放|摆|有)?(.+)$/)
     if (match) {
       const created = create(match[1]!)
-      if (!created) return null
+      if (!created) return plan.questions.length ? plan : null
       plan.relations.push({
         id: `relation-${plan.relations.length + 1}`,
         subjectId: created.proposalId,
@@ -653,7 +685,7 @@ export function parseStageText(
     if (match) {
       const reference = select(match[1]!, `reference-${index}`)
       const created = create(match[4]!)
-      if (!created) return null
+      if (!created) return plan.questions.length ? plan : null
       const distance = gap(match[3] ?? '', `gap-${index}`)
       if (distance === null) return null
       if (reference) relation(created, reference, match[2] as DirectionName, distance)
@@ -676,7 +708,7 @@ export function parseStageText(
     match = clause.match(/^(?:添加|放入|增加)(.+)$/)
     if (match) {
       const created = create(match[1]!)
-      if (!created) return null
+      if (!created) return plan.questions.length ? plan : null
       plan.assumptions.push({
         id: `position-${index}`,
         message: '未指定台位，预览暂放在舞台中区。',

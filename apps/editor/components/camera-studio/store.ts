@@ -1,10 +1,12 @@
 'use client'
 
 import { create } from 'zustand'
+import { BETA_EXPERT_MEDIA_ENABLED } from '@/lib/beta-capabilities'
 import {
   type CameraKeyframe,
   type CameraPose,
   type CameraProject,
+  changedLockedShot,
   type Shot,
   validateCameraProject,
 } from './model'
@@ -88,7 +90,14 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
   monitorMessage: '等待机位与场景加载',
   recording: false,
   stageDraft: null,
-  setStageDraft: (stageDraft) => set({ stageDraft }),
+  setStageDraft: (stageDraft) => {
+    const shot = get().project.shots.find((entry) => entry.id === stageDraft?.shotId)
+    if (shot?.stageLocked) {
+      set({ stageDraft: null, notice: `${shot.name}已固定，请先解除固定。` })
+      return
+    }
+    set({ stageDraft })
+  },
   cameraUndo: [],
   cameraRedo: [],
   selectKeyframe: (id) => {
@@ -109,12 +118,17 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
     if (get().monitorStatus !== monitorStatus || get().monitorMessage !== monitorMessage)
       set({ monitorStatus, monitorMessage })
   },
-  setRecording: (recording) => set({ recording }),
+  setRecording: (recording) => set({ recording: BETA_EXPERT_MEDIA_ENABLED && recording }),
   undoCameraEdit: () => {
     const state = get()
     if (state.recording || state.playing || state.previewing) return
     const project = state.cameraUndo.at(-1)
     if (!project) return
+    const locked = changedLockedShot(state.project, project)
+    if (locked) {
+      set({ notice: `${locked.name}已固定，请先解除固定。` })
+      return
+    }
     const shot = project.shots.find((shot) => shot.id === state.selectedShotId) ?? project.shots[0]
     const frame =
       shot?.keyframes.find((frame) => frame.id === state.selectedKeyframeId) ?? shot?.keyframes[0]
@@ -132,6 +146,11 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
     if (state.recording || state.playing || state.previewing) return
     const project = state.cameraRedo.at(-1)
     if (!project) return
+    const locked = changedLockedShot(state.project, project)
+    if (locked) {
+      set({ notice: `${locked.name}已固定，请先解除固定。` })
+      return
+    }
     const shot = project.shots.find((shot) => shot.id === state.selectedShotId) ?? project.shots[0]
     const frame =
       shot?.keyframes.find((frame) => frame.id === state.selectedKeyframeId) ?? shot?.keyframes[0]
@@ -206,6 +225,11 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
   },
   updateShot: (id, patch) => {
     if (get().recording || !get().project.shots.some((shot) => shot.id === id)) return
+    const current = get().project.shots.find((shot) => shot.id === id)!
+    if (current.stageLocked && Object.keys(patch).some((key) => key !== 'stageLocked')) {
+      set({ notice: `${current.name}已固定，请先解除固定。` })
+      return
+    }
     const project = validateCameraProject({
       ...get().project,
       shots: get().project.shots.map((shot) => (shot.id === id ? { ...shot, ...patch, id } : shot)),
@@ -223,10 +247,16 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
       time: Math.min(get().time, selected?.duration ?? 0),
       playing: false,
       previewing: false,
+      stageDraft: null,
     })
   },
   removeShot: (id) => {
     if (get().recording) return
+    const shot = get().project.shots.find((entry) => entry.id === id)
+    if (shot?.stageLocked) {
+      set({ notice: `${shot.name}已固定，请先解除固定。` })
+      return
+    }
     const project = {
       ...get().project,
       shots: get().project.shots.filter((shot) => shot.id !== id),
@@ -247,6 +277,10 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
     })
   },
   play: () => {
+    if (!BETA_EXPERT_MEDIA_ENABLED) {
+      set({ playing: false, notice: 'Beta 暂未开放动画制作，可以从保存机位观察舞台。' })
+      return
+    }
     const state = get(),
       shot = state.project.shots.find((shot) => shot.id === state.selectedShotId)
     if (!shot) return
@@ -271,7 +305,9 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
       return
     }
     set({
-      time: Math.max(0, Math.min(shot.duration, time)),
+      time: BETA_EXPERT_MEDIA_ENABLED
+        ? Math.max(0, Math.min(shot.duration, time))
+        : shot.keyframes[0]!.time,
       playing: false,
       previewing: true,
       notice: '',

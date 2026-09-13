@@ -1,6 +1,6 @@
 import type { SceneContextSummary, StageDimensions, StagePoint } from '@pascal-app/core/stage'
 
-export type PlacementSnap = { grid: 0 | 0.1 | 0.25 | 0.5; guides: boolean }
+export type PlacementSnap = { grid: 0 | 0.05 | 0.1 | 0.25 | 0.5; guides: boolean }
 
 export function footprintHalfSize(dimensions: StageDimensions, yawDegrees: number) {
   const angle = (yawDegrees * Math.PI) / 180

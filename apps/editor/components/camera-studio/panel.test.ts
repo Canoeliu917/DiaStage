@@ -14,6 +14,7 @@ if (!process.env.CAMERA_PANEL_TEST) {
   })
 } else {
   const { mock } = await import('bun:test')
+  mock.module('@/lib/beta-capabilities', () => ({ BETA_EXPERT_MEDIA_ENABLED: true }))
   const React = await import('react')
   const core = await import('@pascal-app/core')
   const editor = await import('@pascal-app/editor')

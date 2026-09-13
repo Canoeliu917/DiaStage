@@ -7,6 +7,8 @@ import {
   validateStagePlan,
 } from '@pascal-app/core/stage'
 import { z } from 'zod'
+import { groundLanguage } from '../rehearsal-intelligence/language-grounding'
+import { groundStageAssets } from '../stage/ground-assets'
 import { AiError } from './api'
 import { trackAiCall } from './usage'
 
@@ -34,13 +36,40 @@ export async function planStageRequest(
     throw new AiError('PLAN_INVALID', '口令或舞台摘要格式有误；口令最多 10,000 个字符。')
   signal.throwIfAborted()
   const { source, sceneContext, priorAnswers } = request.data
-  const localPlan = parseStageText(request.data.input, sceneContext, priorAnswers, source)
+  const grounded = groundLanguage(request.data.input, sceneContext, priorAnswers)
+  if (grounded && ['view', 'clarify', 'unsupported'].includes(grounded.capability))
+    return grounded.plan
+      ? { ...groundStageAssets(grounded.plan), source }
+      : StagePlanSchema.parse({
+          schemaVersion: 1,
+          source,
+          venue: null,
+          items: [],
+          relations: [],
+          assumptions: [],
+          evidence: [],
+          warnings: [],
+          questions: [
+            {
+              id: 'grounding',
+              message:
+                grounded.clarification ?? '这是一条观察口令，请在 Dia 中发送；它不会修改布景。',
+              options: [],
+            },
+          ],
+        })
+  const localPlan = parseStageText(
+    grounded?.normalizedInput ?? request.data.input,
+    sceneContext,
+    priorAnswers,
+    source,
+  )
   if (localPlan)
     return trackAiCall(
       'stage-command',
       'local-parser',
       signal,
-      async () => validateStagePlan(localPlan, sceneContext).plan,
+      async () => validateStagePlan(groundStageAssets(localPlan), sceneContext).plan,
       () => null,
     )
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -62,7 +91,10 @@ export async function planStageRequest(
     if (
       result.data.source !== source ||
       result.data.items.some(
-        (item) => item.libraryAssetId !== null || item.evidenceIds.length > 0,
+        (item) =>
+          item.libraryAssetId !== null ||
+          item.evidenceIds.length > 0 ||
+          item.collisionGeometry !== undefined,
       ) ||
       result.data.evidence.length > 0
     )
@@ -73,7 +105,7 @@ export async function planStageRequest(
         true,
       )
     // Domain conflicts and questions remain reviewable; they never grant permission to execute.
-    return validateStagePlan(result.data, sceneContext).plan
+    return validateStagePlan(groundStageAssets(result.data), sceneContext).plan
   }
   throw new AiError('PLAN_INVALID', '未能生成有效的舞台方案，请调整口令后重新生成。', 422, true)
 }

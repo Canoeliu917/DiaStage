@@ -21,6 +21,7 @@ import { toggleDoorOpenState } from '../lib/door-interaction'
 import { guideEmitter } from '../lib/guide-events'
 import { runRedo, runUndo } from '../lib/history'
 import { isActive } from '../lib/interaction/scope'
+import { hasPlacementPolicy } from '../lib/placement-policy'
 import { copySelectedNodesToEditorClipboard } from '../lib/scene-clipboard'
 import { sfxEmitter } from '../lib/sfx-bus'
 import { toggleWindowOpenState } from '../lib/window-interaction'
@@ -172,7 +173,7 @@ export const isToolOwnedRotation = () => {
 }
 
 export const canRunGlobalRotationShortcut = () =>
-  useInteractionScope.getState().scope.kind !== 'mesh-editing'
+  !hasPlacementPolicy() && useInteractionScope.getState().scope.kind !== 'mesh-editing'
 
 export const canCycleSnappingModeShortcut = (hasActiveContext = getActiveSnapContext() != null) =>
   hasActiveContext
@@ -326,6 +327,12 @@ export const useKeyboard = ({
       } else if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
         if (isVersionPreviewMode) return
         e.preventDefault()
+        if (hasPlacementPolicy()) {
+          const selectedIds = useViewer.getState().selection.selectedIds
+          if (selectedIds.length === 1)
+            emitter.emit('camera-controls:focus', { nodeId: selectedIds[0] as AnyNodeId })
+          return
+        }
         useEditor.getState().setPhase('furnish')
         useEditor.getState().armToolMode({ mode: 'build', tool: 'item' })
         useEditor.getState().setActiveSidebarPanel('items')
@@ -589,7 +596,11 @@ export const useKeyboard = ({
             sfxEmitter.emit('sfx:item-rotate')
           }
         }
-      } else if ((e.key === 'e' || e.key === 'E') && !isVersionPreviewMode) {
+      } else if (
+        (e.key === 'e' || e.key === 'E') &&
+        !isVersionPreviewMode &&
+        !hasPlacementPolicy()
+      ) {
         // Toggle door / operable-window open/closed state. Moved off R,
         // which now flips the opening (side + π rotation).
         const selectedNodeIds = useViewer.getState().selection.selectedIds as AnyNodeId[]
@@ -670,7 +681,7 @@ export const useKeyboard = ({
       if (e.key === 'Control' || e.key === 'Meta') {
         const wasClean = ctrlTapClean
         ctrlTapClean = false
-        if (!wasClean) return
+        if (!wasClean || hasPlacementPolicy()) return
         // Same scope as the Shift snapping-mode cycle, and never while typing
         // in an input.
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {

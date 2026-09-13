@@ -5,6 +5,7 @@ import { Clapperboard, Hammer, Layers, ScanLine } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { BETA_EXPERT_MEDIA_ENABLED } from '@/lib/beta-capabilities'
 import { migrateStudioPanel, type StudioGroup } from '@/lib/studio-workspaces'
 import { useCameraStudio } from './camera-studio/store'
 import { StudioWordmark } from './studio-wordmark'
@@ -14,6 +15,8 @@ export type { StudioGroup } from '@/lib/studio-workspaces'
 
 export function openStudioPanel(panel: string): boolean {
   panel = migrateStudioPanel(panel)
+  if (!BETA_EXPERT_MEDIA_ENABLED && ['record', 'camera-rehearsal'].includes(panel))
+    panel = 'observe'
   const editor = useEditor.getState()
   if (editor.isFirstPersonMode || editor.isCaptureMode) return false
   useCameraStudio.getState().stop()

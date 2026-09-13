@@ -79,6 +79,12 @@ export { doorDefinition } from './door'
 export { fenceDefinition } from './fence'
 export { guideDefinition } from './guide'
 export { itemDefinition } from './item'
+export {
+  applyItemFoldControls,
+  computeItemFoldBounds,
+  type ItemFoldBounds,
+} from './item/fold-controls'
+export { limitItemFoldControls } from './item/fold-limits'
 export { levelDefinition } from './level'
 export { measurementDefinition } from './measurement'
 export { scanDefinition } from './scan'

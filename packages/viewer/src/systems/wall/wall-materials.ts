@@ -290,7 +290,7 @@ function createHighlightedWallMaterial(material: Material, kind: WallHighlightKi
 }
 
 // Light selection highlight for walls (walls are excluded from the generic
-// editor selection highlight, so they need their own). Adds a gentle indigo
+// editor selection highlight, so they need their own). Adds a faint neutral
 // emissive (no albedo tint) so the real material/texture stays readable with a
 // soft "selected" glow. Two NodeMaterial-clone gotchas are handled:
 //   1. `clone()` on the WebGPU backend drops the texture-map nodes → re-attach
@@ -298,17 +298,17 @@ function createHighlightedWallMaterial(material: Material, kind: WallHighlightKi
 //   2. The wall's finish texture loads async, so an early clone has no map yet →
 //      cache keyed by the source `.map` and rebuild when it changes (self-heals
 //      once the texture lands).
-const SELECTION_HIGHLIGHT_COLOR = new Color('#818cf8')
-const SELECTION_EMISSIVE_BLEND = 0.4
-const SELECTION_EMISSIVE_INTENSITY = 0.12
+const SELECTION_HIGHLIGHT_COLOR = new Color('#747777')
+const SELECTION_EMISSIVE_BLEND = 0.12
+const SELECTION_EMISSIVE_INTENSITY = 0.035
 
 // Softer sibling of the selection glow, for HOVERING a hidden wall (the
 // X-ray nearest-first selection made hidden walls hover targets; without a
 // material affordance the only thing lighting up was the furniture behind
-// them). Same indigo so hover reads as "this will select", weaker so a
+// them). Same neutral shade so hover reads as "this will select", weaker so a
 // hovered-then-selected wall still steps up on click.
-const HOVER_EMISSIVE_BLEND = 0.4
-const HOVER_EMISSIVE_INTENSITY = 0.2
+const HOVER_EMISSIVE_BLEND = 0.08
+const HOVER_EMISSIVE_INTENSITY = 0.025
 
 const SELECTION_TEXTURE_MAP_KEYS = [
   'map',

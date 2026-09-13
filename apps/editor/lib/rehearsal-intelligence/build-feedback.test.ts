@@ -15,6 +15,7 @@ import {
   reconcileBuildFeedback,
   saveBuildFeedback,
 } from './build-feedback'
+import { withLegacyTable } from './build-fixture'
 import { DiaConversation } from './conversation-controller'
 import * as storage from './conversation-storage'
 import { DiaBuildProposalSchema } from './dia-backbone'
@@ -31,12 +32,14 @@ afterEach(async () => {
 })
 
 async function setup() {
-  const graph = createManualStageGraph({
-    type: 'proscenium',
-    widthMeters: 8,
-    depthMeters: 6,
-    heightMeters: 4,
-  })
+  const graph = withLegacyTable(
+    createManualStageGraph({
+      type: 'proscenium',
+      widthMeters: 8,
+      depthMeters: 6,
+      heightMeters: 4,
+    }),
+  )
   const cameras = { version: 1 as const, shots: [] }
   graph.nodes[graph.rootNodeIds[0]!]!.metadata[CAMERA_METADATA] = cameras
   useCameraStudio.getState().setProject(cameras)
@@ -61,7 +64,7 @@ async function setup() {
   }
   const dia = await open()
   clearSceneHistory()
-  await dia.send('给我一张圆桌')
+  await dia.send('圆桌往台左移动30厘米')
   await dia.preview()
   expect(dia.buildProposal()!.status).toBe('previewed')
   return { sceneId, dia, journal, open, flush: () => queue }
@@ -151,7 +154,8 @@ test('durable Build lineage tracks Undo Redo manual edits and idempotent duplica
   await journal.append(useScene.getState())
   await flush()
   await until(async () => (await readBuildFeedback(sceneId)).some((e) => e.kind === 'undo'))
-  expect(currentStageContext().objects).toHaveLength(0)
+  expect(currentStageContext().objects).toHaveLength(1)
+  expect(currentStageContext().objects[0]!.transform.position.x).toBeCloseTo(0)
   expect(
     (await readBuildFeedback(sceneId)).find((e) => e.eventId === `${id}:result`)!.finalState,
   ).toBe('undone')

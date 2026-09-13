@@ -5,10 +5,12 @@ import {
   sceneRegistry,
   useInteractive,
   useLiveNodeOverrides,
+  useLiveTransforms,
   useScene,
 } from '@pascal-app/core'
 import { hideFromScene, SCENE_LAYER, showInScene, useViewer } from '@pascal-app/viewer'
 import { type Material, Matrix4, type Mesh, type Object3D } from 'three'
+import { isSceneryPanelAsset } from '../../item/presentation'
 import type { BatchCandidate, BatchEntry } from './types'
 
 /**
@@ -65,6 +67,9 @@ function resolveLevelId(node: AnyNode, nodes: Record<string, AnyNode | undefined
 
 function isExcluded(node: AnyNode): boolean {
   if (node.type === 'item') {
+    if (useViewer.getState().wallMode !== 'up' && isSceneryPanelAsset(node.asset)) return true
+    // These authored joint transforms must remain independent during folding.
+    if (['SCN-FOLD-02', 'SCN-FOLD-03'].includes(node.asset.id)) return true
     const asset = (node as { asset?: { interactive?: unknown } }).asset
     if (asset?.interactive) return true
     // A registered clip means the item animates its own subtree (a fan's
@@ -111,7 +116,7 @@ export function collectBatchCandidate(nodeId: string): BatchCandidate | null {
   // means an in-flight gesture: transforms are moving under our feet and the
   // commit's dirty mark has not landed yet.
   const overrides = useLiveNodeOverrides.getState()
-  if (overrides.get(nodeId as AnyNodeId)) return null
+  if (overrides.get(nodeId as AnyNodeId) || useLiveTransforms.getState().get(nodeId)) return null
   if (
     (node.type === 'door' || node.type === 'window') &&
     node.parentId &&
@@ -206,6 +211,8 @@ export function revealBatchedNode(nodeId: string): void {
 export function collectTintedNodes(nodeIds: ReadonlySet<string>): Set<string> {
   const viewer = useViewer.getState()
   const tinted = new Set<string>()
+  for (const id of useLiveTransforms.getState().transforms.keys())
+    if (nodeIds.has(id)) tinted.add(id)
   for (const id of viewer.selection.selectedIds) if (nodeIds.has(id)) tinted.add(id)
   for (const id of viewer.previewSelectedIds) if (nodeIds.has(id)) tinted.add(id)
   const hovered = viewer.hoveredId
@@ -220,6 +227,10 @@ export function collectTintedNodes(nodeIds: ReadonlySet<string>): Set<string> {
   for (const id of nodeIds) {
     if (tinted.has(id)) continue
     const node = nodes[id as AnyNodeId]
+    if (node?.type === 'item' && viewer.wallMode !== 'up' && isSceneryPanelAsset(node.asset)) {
+      tinted.add(id)
+      continue
+    }
     if (!node || (node.type !== 'door' && node.type !== 'window')) continue
     const wallId = node.parentId as string | null
     if (!wallId) continue

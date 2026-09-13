@@ -34,4 +34,13 @@ describe('createFrameClock', () => {
     expect(clock.step(0.02)).toBeCloseTo(2.02)
     expect(clock.step(0.001)).toBeCloseTo(2.021)
   })
+
+  test('keeps every display frame at 60 Hz despite rounded timestamps', () => {
+    const clock = createFrameClock()
+    clock.sample(1_000, 1000 / 60)
+    for (let i = 1; i <= 600; i++) {
+      const timestamp = Math.round((1_000 + (i * 1000) / 60) * 10) / 10
+      expect(clock.sample(timestamp, 1000 / 60)).toBeCloseTo(i / 60)
+    }
+  })
 })

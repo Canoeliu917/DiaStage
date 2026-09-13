@@ -52,6 +52,76 @@ export function localRehearsalOutput(
     .split(/[,，;；。\n]+/u)
     .map((clause) => clause.trim())
     .filter(Boolean)
+  const relative = clauses.map((clause) => {
+    const hold = clause.match(/^(?:请)?(?:让)?(.+?)(?:别动|不要动|保持原位|保持位置)$/u)
+    if (hold) return { name: hold[1]!.trim(), movement: 'hold' as const, target: '' }
+    const withdraw = clause.match(/^(.+?)离(.+?)远一点$/u)
+    if (withdraw)
+      return {
+        name: withdraw[1]!.trim(),
+        movement: 'withdraw' as const,
+        target: withdraw[2]!.trim(),
+      }
+    const approach = clause.match(/^(?:只让|让)?(.+?)靠近(?:一点)?(.*)$/u)
+    return approach
+      ? { name: approach[1]!.trim(), movement: 'approach' as const, target: approach[2]!.trim() }
+      : null
+  })
+  if (relative.every((entry) => entry !== null)) {
+    const context = validateContext(raw)
+    const person = (name: string) => {
+      const matches = context.performers.filter(
+        (entry) =>
+          entry.visible &&
+          [entry.id, entry.name].some((value) => value.toLowerCase() === name.toLowerCase()),
+      )
+      if (matches.length !== 1)
+        throw new Error(`无法唯一确定人物「${name}」，请明确当前舞台中的人物。`)
+      return matches[0]!
+    }
+    const held = relative
+      .filter((entry) => entry.movement === 'hold')
+      .map((entry) => person(entry.name))
+    const suggestions: Suggestion[] = relative.map((entry) => {
+      const actor = person(entry.name)
+      const target =
+        entry.movement === 'hold'
+          ? null
+          : entry.target
+            ? person(entry.target)
+            : held.length === 1
+              ? held[0]!
+              : null
+      if (entry.movement !== 'hold' && (!target || target.id === actor.id))
+        throw new Error('请说明要靠近或远离哪位人物。')
+      if (entry.movement !== 'hold' && held.some((fixed) => fixed.id === actor.id))
+        throw new Error('同一人物同时被要求保持原位和移动，请先明确。')
+      return {
+        id: actor.id,
+        performerId: actor.id,
+        intention: entry.movement === 'hold' ? '保持位置' : '试一次小幅距离调整',
+        movement: entry.movement,
+        targetPerformerId: target?.id ?? null,
+        zone: null,
+        extent: 'small',
+        pace: 'natural',
+      }
+    })
+    return AgentOutputSchema.parse({
+      dramaticState: [],
+      proposals: [
+        {
+          title: '先试一次人物距离调整',
+          intention: context.intention,
+          rationale: '按明确的人物关系预览小幅移动；保持原位的人物不移动，采用前由你确认。',
+          suggestions,
+          alternatives: ['也可以保留当前站位。'],
+          evidence: [{ source: 'intention', quote: context.intention }],
+          confidence: 1,
+        },
+      ],
+    })
+  }
   const parsed = clauses.map((clause) => {
     const stand = clause.match(/^(?:请)?(?:让)?(.+?)\s*(?:站在?|靠着?)\s*(.+)$/u)
     const further = clause.match(/^(.+?)\s*(?:别|不要)(?:那么|这么|太)?近(?:了)?$/u)

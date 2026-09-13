@@ -12,7 +12,7 @@
  * entirely in that frame, so the resulting guides line up with the cursor.
  */
 
-import { nodeRegistry } from '../registry'
+import { type FloorPlacedFootprint, nodeRegistry } from '../registry'
 import type { AnyNode } from '../schema/types'
 import { DEFAULT_WALL_THICKNESS } from '../systems/wall/wall-footprint'
 import { type AlignmentAnchor, bboxCornerAnchors } from './alignment'
@@ -69,9 +69,7 @@ export function footprintAABBFrom(
  *  floor-coupled — the elevator's outer shaft). A kind whose
  *  `alignmentFootprint` is an `aabb` (stair) has no centred box, so it's
  *  resolved directly in `nodeAlignmentAnchors`, not here. */
-function floorFootprint(
-  node: AnyNode,
-): { dimensions: [number, number, number]; rotation: [number, number, number] } | null {
+function floorFootprint(node: AnyNode): FloorPlacedFootprint | null {
   const capabilities = nodeRegistry.get(node.type)?.capabilities
   const floorPlaced = capabilities?.floorPlaced
   // `footprint` is optional now that floor-placed kinds may instead declare
@@ -118,7 +116,8 @@ function alignmentAABB(
 export function footprintAABB(node: AnyNode): FootprintAABB | null {
   const fp = floorFootprint(node)
   if (!fp) return null
-  const position = (node as { position?: [number, number, number] }).position ?? [0, 0, 0]
+  const position = fp.position ??
+    (node as { position?: [number, number, number] }).position ?? [0, 0, 0]
   return footprintAABBFrom(position, fp.dimensions, fp.rotation[1] ?? 0)
 }
 
@@ -131,9 +130,13 @@ export function footprintAABBAt(
   z: number,
   rotationY?: number,
 ): FootprintAABB | null {
-  const fp = floorFootprint(node)
+  const fp = floorFootprint(relocatedPlanNode(node, x, z, rotationY))
   if (!fp) return null
-  return footprintAABBFrom([x, 0, z], fp.dimensions, rotationY ?? fp.rotation[1] ?? 0)
+  return footprintAABBFrom(
+    fp.position ?? [x, 0, z],
+    fp.dimensions,
+    rotationY ?? fp.rotation[1] ?? 0,
+  )
 }
 
 /**

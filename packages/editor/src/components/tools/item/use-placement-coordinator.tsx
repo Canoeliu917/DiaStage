@@ -47,6 +47,11 @@ import {
 } from '../../../lib/active-placement-surface'
 import { EDITOR_LAYER } from '../../../lib/constants'
 import { formatLinearMeasurement } from '../../../lib/measurements'
+import {
+  hasPlacementPolicy,
+  placementFeedback,
+  snapPlacementPosition,
+} from '../../../lib/placement-policy'
 import { sfxEmitter } from '../../../lib/sfx-bus'
 
 import {
@@ -80,6 +85,7 @@ import {
 import {
   getDetachedAttachmentPreviewLift,
   getGridAlignedDimensions,
+  getItemPlacementBounds,
   snapToGrid,
   snapToHalf,
   snapUpToGridStep,
@@ -96,8 +102,6 @@ import {
 import { resolveItemPlacementSurfaceNormal } from './placement-surface'
 import type { PlacementState, TransitionResult } from './placement-types'
 import type { DraftNodeHandle } from './use-draft-node'
-
-const DEFAULT_DIMENSIONS: [number, number, number] = [1, 1, 1]
 
 /** Figma-style alignment-snap threshold (meters), matching the 2D
  *  floor-plan overlay and the 3D registry move tool. */
@@ -126,6 +130,7 @@ function expandBoundsToGrid(
   attachTo: AssetInput['attachTo'] | null | undefined,
   step: number,
 ): PreviewBounds {
+  if (hasPlacementPolicy()) return bounds
   const [w, h, d] = bounds.dimensions
   const [cx, , cz] = bounds.center
   const onWall = attachTo === 'wall' || attachTo === 'wall-side'
@@ -156,20 +161,6 @@ function expandBoundsToGrid(
     max: [maxX, maxY, maxZ],
     dimensions: [expandedW, expandedH, expandedD],
     center: [cx, (minY + maxY) / 2, newCz],
-  }
-}
-
-function getFallbackPreviewBounds(
-  item: import('@pascal-app/core').ItemNode | null,
-  asset: AssetInput | null | undefined,
-  attachTo: AssetInput['attachTo'] | null | undefined,
-): PreviewBounds {
-  const dims = item ? getScaledDimensions(item) : (asset?.dimensions ?? DEFAULT_DIMENSIONS)
-  return {
-    min: [-dims[0] / 2, 0, attachTo === 'wall-side' ? 0 : -dims[2] / 2],
-    max: [dims[0] / 2, dims[1], attachTo === 'wall-side' ? dims[2] : dims[2] / 2],
-    dimensions: dims,
-    center: [0, dims[1] / 2, attachTo === 'wall-side' ? dims[2] / 2 : 0],
   }
 }
 
@@ -318,7 +309,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
 
     const nextBasePlaneGeometry = new PlaneGeometry(width, depth)
     nextBasePlaneGeometry.rotateX(-Math.PI / 2)
-    nextBasePlaneGeometry.translate(centerX, 0.01, centerZ)
+    nextBasePlaneGeometry.translate(centerX, bounds.min[1] + 0.01, centerZ)
 
     updateLineGeometry(edgesRef, getBoxEdgePoints(bounds))
 
@@ -351,7 +342,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
     const maxZ = centerZ + depth / 2
     const guideOffset = 0.18
     const tick = 0.08
-    const y = 0.02
+    const y = bounds.min[1] + 0.02
 
     const widthPoints = [
       minX,
@@ -401,24 +392,24 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
 
     const heightPoints = [
       minX - guideOffset,
-      0,
+      bounds.min[1],
       minZ,
       minX - guideOffset,
-      bounds.dimensions[1],
+      bounds.max[1],
       minZ,
 
       minX - guideOffset - tick,
-      0,
+      bounds.min[1],
       minZ,
       minX - guideOffset + tick,
-      0,
+      bounds.min[1],
       minZ,
 
       minX - guideOffset - tick,
-      bounds.dimensions[1],
+      bounds.max[1],
       minZ,
       minX - guideOffset + tick,
-      bounds.dimensions[1],
+      bounds.max[1],
       minZ,
     ]
 
@@ -530,7 +521,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
     })
 
     const getActiveValidators = () =>
-      altFreeRef.current
+      altFreeRef.current && !hasPlacementPolicy()
         ? {
             canPlaceOnFloor: () => ({ valid: true }),
             canPlaceOnWall: () => ({ valid: true }),
@@ -603,8 +594,15 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
     }
 
     const revalidate = (): boolean => {
-      const placeable = altFreeRef.current || checkCanPlace(getContext(), validators)
-      const color = placeable ? 0x22_c5_5e : 0xef_44_44 // green-500 : red-500
+      const ctx = getContext()
+      const feedback = ctx.draftItem
+        ? placementFeedback({
+            ...ctx.draftItem,
+            position: [ctx.gridPosition.x, ctx.gridPosition.y, ctx.gridPosition.z],
+          })
+        : null
+      const placeable = feedback?.valid ?? (altFreeRef.current || checkCanPlace(ctx, validators))
+      const color = placeable && !feedback?.contact ? 0x22_c5_5e : 0xef_44_44
       edgeMaterial.color.setHex(color)
       basePlaneMaterial.color.setHex(color)
       return placeable
@@ -704,7 +702,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
       }
 
       const previewBounds = expandBoundsToGrid(
-        getFallbackPreviewBounds(draftNode.current, asset, asset.attachTo),
+        getItemPlacementBounds(draftNode.current, asset),
         asset.attachTo,
         gridSnapStep,
       )
@@ -864,12 +862,12 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
             // node's local Y rotation — the same value onGridMove applies. The world
             // quaternion would double-count any building rotation, leaving the initial
             // box mis-rotated until the first cursor move.
-            cursorGroupRef.current.rotation.y = draftNode.current.rotation[1] ?? 0
+            cursorGroupRef.current.rotation.set(...draftNode.current.rotation)
           }
         }
       } else if (cursorGroupRef.current) {
         cursorGroupRef.current.position.copy(gridPosition.current)
-        cursorGroupRef.current.rotation.y = draftNode.current.rotation[1] ?? 0
+        cursorGroupRef.current.rotation.set(...draftNode.current.rotation)
       }
     }
 
@@ -882,6 +880,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
     // replays it. Captured once at setup — a fresh coordinator mounts per move.
     const dragMode = useEditor.getState().placementDragMode
     let releaseCommit: (() => void) | null = null
+    let floorReleaseCommit: (() => void) | null = null
     // Eat the click the browser fires after pointer-up so the surface
     // `:click` handlers don't commit a second time.
     const swallowNextClick = () => {
@@ -893,9 +892,13 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
       setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 300)
     }
     const onReleaseCommit = () => {
-      if (!releaseCommit) return
-      const commit = releaseCommit
+      const commit =
+        hasPlacementPolicy() && placementState.current.surface === 'floor'
+          ? floorReleaseCommit
+          : releaseCommit
+      if (!commit) return
       releaseCommit = null
+      floorReleaseCommit = null
       swallowNextClick()
       commit()
     }
@@ -950,6 +953,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
 
     const onGridMove = (event: GridEvent) => {
       releaseCommit = () => onGridClick(event)
+      floorReleaseCommit = releaseCommit
       // Lazy draft creation: if no draft yet (e.g. level wasn't ready during init), create now
       if (
         shouldCreateFloorDraft(draftNode.current, asset.attachTo, placementState.current.surface)
@@ -1009,13 +1013,19 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
       // governs whether alignment runs at all ('off' / 'angles' disable
       // magnetic alignment, 'lines' enables it, matching the wall/fence flow).
       const draft = draftNode.current
+      const stagePosition = draft
+        ? snapPlacementPosition(
+            { ...draft, parentId: useViewer.getState().selection.levelId ?? draft.parentId },
+            [floorEvent.localPosition[0], floorAuthoredY, floorEvent.localPosition[2]],
+          )
+        : null
       let alignX = 0
       let alignZ = 0
       // Alignment "lines" are DISPLAYED in every snapping mode except Off
       // (isAlignmentGuideActive); the magnetic pull toward them is applied only
       // in 'lines' mode (isMagneticSnapActive). Alt is force-place, not a snap
       // bypass.
-      if (isAlignmentGuideActive() && draft) {
+      if (!stagePosition && isAlignmentGuideActive() && draft) {
         alignmentCandidates ??= collectAlignmentAnchors(
           useScene.getState().nodes,
           draft.id,
@@ -1042,7 +1052,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
         useAlignmentGuides.getState().clear()
       }
 
-      let gridPos: [number, number, number] = [
+      let gridPos: [number, number, number] = stagePosition ?? [
         result.gridPosition[0] + alignX,
         floorAuthoredY,
         result.gridPosition[2] + alignZ,
@@ -1087,7 +1097,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
       // transform the 2D floorplan mirrors) aligned with the draft's
       // rotation. Without this the box stays at its seed rotation until a
       // manual R/T, so a moved already-rotated item shows an axis-aligned box.
-      cursorGroupRef.current.rotation.y = result.cursorRotationY
+      cursorGroupRef.current.rotation.set(...(draft?.rotation ?? [0, result.cursorRotationY, 0]))
 
       if (draft) draft.position = gridPos
 
@@ -1135,7 +1145,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
           configRef.current.slots,
         )
         const previewBounds = expandBoundsToGrid(
-          getFallbackPreviewBounds(draftNode.current, asset, asset.attachTo),
+          getItemPlacementBounds(draftNode.current, asset),
           asset.attachTo,
           gridSnapStep,
         )
@@ -1869,6 +1879,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
     // ---- Keyboard rotation ----
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (hasPlacementPolicy()) return
       if (event.key === 'Alt') {
         altFreeRef.current = true
         revalidate()
@@ -2019,7 +2030,14 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
 
     // ---- tool:cancel (Escape / programmatic) ----
     const onCancel = () => {
+      releaseCommit = null
+      floorReleaseCommit = null
       useAlignmentGuides.getState().clear()
+      // The callback destroys the draft, so clear its live pose before losing its id.
+      if (draftNode.current) {
+        useLiveTransforms.getState().clear(draftNode.current.id)
+        useLiveNodeOverrides.getState().clearFields(draftNode.current.id, ['rotation'])
+      }
       if (configRef.current.onCancel) {
         configRef.current.onCancel()
       }
@@ -2065,7 +2083,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
 
     const draft = draftNode.current
     const previewBounds = expandBoundsToGrid(
-      getFallbackPreviewBounds(draft, asset, asset.attachTo),
+      getItemPlacementBounds(draft, asset),
       asset.attachTo,
       gridSnapStep,
     )
@@ -2188,7 +2206,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
     if (!asset) return
     const draft = draftNode.current
     const previewBounds = expandBoundsToGrid(
-      getFallbackPreviewBounds(draft, asset, asset.attachTo),
+      getItemPlacementBounds(draft, asset),
       asset.attachTo,
       gridSnapStep,
     )
@@ -2361,16 +2379,12 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
 
   const initialDraft = draftNode.current
   const initialAttachTo = config.asset?.attachTo
-  const rawDims = initialDraft
-    ? getScaledDimensions(initialDraft)
-    : (config.asset?.dimensions ?? DEFAULT_DIMENSIONS)
-  const dims = getGridAlignedDimensions(rawDims, initialAttachTo, gridSnapStep)
-  const wallSideZOffset = initialAttachTo === 'wall-side' ? dims[2] / 2 : 0
   const initialDimensionBounds = expandBoundsToGrid(
-    getFallbackPreviewBounds(initialDraft, config.asset, initialAttachTo),
+    getItemPlacementBounds(initialDraft, config.asset),
     initialAttachTo,
     gridSnapStep,
   )
+  const { dimensions: dims, center: boundsCenter, min: boundsMin } = initialDimensionBounds
   const initialEdgeGeometry = useMemo(
     () => createLineGeometry(getBoxEdgePoints(initialDimensionBounds)),
     [
@@ -2386,9 +2400,9 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
   const basePlaneGeometry = useMemo(() => {
     const geometry = new PlaneGeometry(dims[0], dims[2])
     geometry.rotateX(-Math.PI / 2)
-    geometry.translate(0, 0.01, wallSideZOffset)
+    geometry.translate(boundsCenter[0], boundsMin[1] + 0.01, boundsCenter[2])
     return geometry
-  }, [dims[0], dims[2], wallSideZOffset])
+  }, [dims[0], dims[2], boundsCenter[0], boundsCenter[2], boundsMin[1]])
   const initialWidthGuideGeometry = useMemo(() => createLineGeometry(), [])
   const initialDepthGuideGeometry = useMemo(() => createLineGeometry(), [])
   const initialHeightGuideGeometry = useMemo(() => createLineGeometry(), [])
@@ -2416,22 +2430,24 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
   )
   const widthLabelPosition: [number, number, number] = [
     currentDimensionBounds.center[0],
-    0.04,
+    currentDimensionBounds.min[1] + 0.04,
     currentDimensionBounds.center[2] + currentDimensionBounds.dimensions[2] / 2 + 0.24,
   ]
   const depthLabelPosition: [number, number, number] = [
     currentDimensionBounds.center[0] + currentDimensionBounds.dimensions[0] / 2 + 0.24,
-    0.04,
+    currentDimensionBounds.min[1] + 0.04,
     currentDimensionBounds.center[2],
   ]
   const heightLabelPosition: [number, number, number] = [
     currentDimensionBounds.center[0] - currentDimensionBounds.dimensions[0] / 2 - 0.24,
-    currentDimensionBounds.dimensions[1] / 2,
+    currentDimensionBounds.center[1],
     currentDimensionBounds.center[2] - currentDimensionBounds.dimensions[2] / 2,
   ]
+  const showPlacementBounds = !hasPlacementPolicy()
   const measurementContent = (
     <>
       <lineSegments
+        visible={showPlacementBounds}
         geometry={initialWidthGuideGeometry}
         layers={EDITOR_LAYER}
         material={measurementMaterial}
@@ -2439,6 +2455,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
         renderOrder={998}
       />
       <lineSegments
+        visible={showPlacementBounds}
         geometry={initialDepthGuideGeometry}
         layers={EDITOR_LAYER}
         material={measurementMaterial}
@@ -2446,75 +2463,83 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
         renderOrder={998}
       />
       <lineSegments
+        visible={showPlacementBounds}
         geometry={initialHeightGuideGeometry}
         layers={EDITOR_LAYER}
         material={measurementMaterial}
         ref={measurementHeightRef}
         renderOrder={998}
       />
-      <Html center position={widthLabelPosition} style={{ pointerEvents: 'none' }}>
-        <div
-          style={{
-            background: 'rgba(15, 23, 42, 0.86)',
-            border: '1px solid rgba(15, 23, 42, 0.65)',
-            borderRadius: '999px',
-            color: '#f8fafc',
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-            fontSize: '11px',
-            fontWeight: 600,
-            lineHeight: 1,
-            padding: '4px 8px',
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {widthLabel}
-        </div>
-      </Html>
-      <Html center position={depthLabelPosition} style={{ pointerEvents: 'none' }}>
-        <div
-          style={{
-            background: 'rgba(15, 23, 42, 0.86)',
-            border: '1px solid rgba(15, 23, 42, 0.65)',
-            borderRadius: '999px',
-            color: '#f8fafc',
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-            fontSize: '11px',
-            fontWeight: 600,
-            lineHeight: 1,
-            padding: '4px 8px',
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {depthLabel}
-        </div>
-      </Html>
-      <Html center position={heightLabelPosition} style={{ pointerEvents: 'none' }}>
-        <div
-          style={{
-            background: 'rgba(15, 23, 42, 0.86)',
-            border: '1px solid rgba(15, 23, 42, 0.65)',
-            borderRadius: '999px',
-            color: '#f8fafc',
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-            fontSize: '11px',
-            fontWeight: 600,
-            lineHeight: 1,
-            padding: '4px 8px',
-            pointerEvents: 'none',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {heightLabel}
-        </div>
-      </Html>
+      {showPlacementBounds && (
+        <Html center position={widthLabelPosition} style={{ pointerEvents: 'none' }}>
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.86)',
+              border: '1px solid rgba(15, 23, 42, 0.65)',
+              borderRadius: '999px',
+              color: '#f8fafc',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontSize: '11px',
+              fontWeight: 600,
+              lineHeight: 1,
+              padding: '4px 8px',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {widthLabel}
+          </div>
+        </Html>
+      )}
+      {showPlacementBounds && (
+        <Html center position={depthLabelPosition} style={{ pointerEvents: 'none' }}>
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.86)',
+              border: '1px solid rgba(15, 23, 42, 0.65)',
+              borderRadius: '999px',
+              color: '#f8fafc',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontSize: '11px',
+              fontWeight: 600,
+              lineHeight: 1,
+              padding: '4px 8px',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {depthLabel}
+          </div>
+        </Html>
+      )}
+      {showPlacementBounds && (
+        <Html center position={heightLabelPosition} style={{ pointerEvents: 'none' }}>
+          <div
+            style={{
+              background: 'rgba(15, 23, 42, 0.86)',
+              border: '1px solid rgba(15, 23, 42, 0.65)',
+              borderRadius: '999px',
+              color: '#f8fafc',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontSize: '11px',
+              fontWeight: 600,
+              lineHeight: 1,
+              padding: '4px 8px',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {heightLabel}
+          </div>
+        </Html>
+      )}
     </>
   )
 
   return (
     <group ref={cursorGroupRef}>
       <lineSegments
+        visible={showPlacementBounds}
         geometry={initialEdgeGeometry}
         layers={EDITOR_LAYER}
         material={edgeMaterial}
@@ -2523,6 +2548,7 @@ export function usePlacementCoordinator(config: PlacementCoordinatorConfig): Rea
       />
       {measurementContent}
       <mesh
+        visible={showPlacementBounds}
         geometry={basePlaneGeometry}
         layers={EDITOR_LAYER}
         material={basePlaneMaterial}

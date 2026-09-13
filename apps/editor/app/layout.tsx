@@ -1,5 +1,7 @@
 import localFont from 'next/font/local'
+import type { CSSProperties } from 'react'
 import { DIASTAGE_BRAND } from '@/lib/brand'
+import { DIA_CSS_VARIABLES } from '@/lib/visual-system'
 import { DevDiagnostics } from './dev-diagnostics'
 import './globals.css'
 
@@ -28,7 +30,11 @@ export default function RootLayout({
     process.env.NODE_ENV === 'development' && process.env.DIASTAGE_DEV_DIAGNOSTICS === '1'
 
   return (
-    <html className={sourceHanSans.variable} lang="zh-CN">
+    <html
+      className={sourceHanSans.variable}
+      lang="zh-CN"
+      style={DIA_CSS_VARIABLES as CSSProperties}
+    >
       <body className="font-sans">
         {children}
         <DevDiagnostics enabled={enableDevDiagnostics} />

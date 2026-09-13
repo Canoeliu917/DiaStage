@@ -1,6 +1,6 @@
 'use client'
 
-import { type AnyNode, type AnyNodeId, useScene } from '@pascal-app/core'
+import { type AnyNode, type AnyNodeId, getNodeLock, useScene } from '@pascal-app/core'
 import {
   beginPerfAction,
   commitPerfAction,
@@ -102,6 +102,12 @@ function commitScopePerfAction(): void {
 const useInteractionScope = create<InteractionScopeState>((set, get) => ({
   scope: IDLE_SCOPE,
   begin: (scope) => {
+    if (
+      'nodeId' in scope &&
+      scope.nodeId &&
+      getNodeLock(useScene.getState().nodes, scope.nodeId, true)
+    )
+      return
     beginScopePerfAction(scope)
     set({ scope })
   },

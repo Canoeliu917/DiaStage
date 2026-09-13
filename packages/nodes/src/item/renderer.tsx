@@ -4,6 +4,7 @@ import {
   type AnimationEffect,
   type AnyNodeId,
   deriveSlotId,
+  getItemBoundsCenter,
   getScaledDimensions,
   type Interactive,
   type ItemNode,
@@ -15,6 +16,7 @@ import {
   toLibraryMaterialRef,
   useInteractive,
   useLiveNodeOverrides,
+  useLiveTransforms,
   useRegistry,
   useScene,
 } from '@pascal-app/core'
@@ -38,13 +40,20 @@ import { Clone } from '@react-three/drei/core/Clone'
 import { useFrame, useLoader, useThree } from '@react-three/fiber'
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { AnimationAction, Group, Material, Mesh, Object3D } from 'three'
-import { MathUtils, Texture } from 'three'
+import { MathUtils, Plane, Texture } from 'three'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { positionLocal, smoothstep, time } from 'three/tsl'
+import { ClippingGroup } from 'three/webgpu'
 import { BlockFaceHostFrame } from '../shared/block-face-host'
+import { applyItemFoldControls } from './fold-controls'
 import { cancelItemModelLoad, getUnavailableItemAsset, ItemGLTFLoader } from './model-loader'
+import {
+  createTranslucentItemMaterials,
+  isSceneryPanelAsset,
+  updateItemSectionPlane,
+} from './presentation'
 
 type MutableMaterial = Material & {
   depthTest?: boolean
@@ -201,7 +210,7 @@ const BrokenItemFallback = ({ node }: { node: ItemNode }) => {
   if (isExporting) return null
 
   return (
-    <mesh position-y={h / 2} {...handlers}>
+    <mesh position={getItemBoundsCenter(node)} {...handlers}>
       <boxGeometry args={[w, h, d]} />
       <primitive attach="material" object={material} />
     </mesh>
@@ -431,7 +440,9 @@ export const ItemRenderer = ({ node: storeNode }: { node: ItemNode }) => {
   // effect via its URL key) so the replacement load is awaited too.
   const setSettled = useCallback((value: boolean) => {
     const group = ref.current as (Group & { userData: Record<string, unknown> }) | null
-    if (group) group.userData.itemModelSettled = value
+    if (!group || group.userData.itemModelSettled === value) return
+    group.userData.itemModelSettled = value
+    if (value) useViewer.getState().bumpGeometryRevision()
   }, [])
 
   // Merge live drag overrides so the mesh transforms in real time during a
@@ -440,13 +451,29 @@ export const ItemRenderer = ({ node: storeNode }: { node: ItemNode }) => {
   // the store only on release — without this merge the item would stay put
   // until commit.
   const liveOverrides = useLiveNodeOverrides((state) => state.get(storeNode.id as AnyNodeId))
+  const liveTransform = useLiveTransforms((state) =>
+    !storeNode.asset.attachTo &&
+    !storeNode.wallId &&
+    !storeNode.blockFaceId &&
+    storeNode.parentId &&
+    useScene.getState().nodes[storeNode.parentId as AnyNodeId]?.type === 'level'
+      ? state.get(storeNode.id)
+      : undefined,
+  )
   const node = useMemo(
     () => (liveOverrides ? ({ ...storeNode, ...liveOverrides } as ItemNode) : storeNode),
     [storeNode, liveOverrides],
   )
 
   const content = (
-    <group position={node.position} ref={ref} rotation={node.rotation} visible={node.visible}>
+    <group
+      position={liveTransform?.position ?? node.position}
+      ref={ref}
+      rotation={
+        liveTransform ? [node.rotation[0], liveTransform.rotation, node.rotation[2]] : node.rotation
+      }
+      visible={node.visible}
+    >
       <ModelWithRetry key={node.asset.src ?? 'no-src'} node={node} setSettled={setSettled} />
       {node.children?.map((childId) => (
         <NodeRenderer key={childId} nodeId={childId} />
@@ -487,20 +514,41 @@ const PreviewModel = ({ node }: { node: ItemNode }) => {
   // Loading placeholder — must never land in an exported GLB.
   if (isExporting) return null
   return (
-    <mesh material={getPreviewMaterial(shading)} position-y={h / 2}>
+    <mesh material={getPreviewMaterial(shading)} position={getItemBoundsCenter(node)}>
       <boxGeometry args={[w, h, d]} />
     </mesh>
   )
 }
 
+function useItemFoldPose(ref: { current: Group | null }, node: ItemNode, source: Object3D) {
+  const invalidate = useThree((state) => state.invalidate)
+  const first = node.controls?.fold_angle_1_deg ?? 90
+  const second = node.controls?.fold_angle_2_deg ?? 90
+  useLayoutEffect(() => {
+    if (
+      !['SCN-FOLD-02', 'SCN-FOLD-03'].includes(node.asset.id) ||
+      !ref.current ||
+      !source.getObjectByName('Hinge_02')
+    )
+      return
+    if (applyItemFoldControls(ref.current, { fold_angle_1_deg: first, fold_angle_2_deg: second })) {
+      useViewer.getState().bumpGeometryRevision()
+      invalidate()
+    }
+  }, [ref, source, node.asset.id, first, second, invalidate])
+}
+
 const LoadedItemPreview = ({ node }: { node: ItemNode }) => {
   const gltf = useItemGltf(resolveCdnUrl(node.asset.src) || '')
+  const ref = useRef<Group>(null!)
+  useItemFoldPose(ref, node, gltf.scene)
   if (getUnavailableItemAsset(gltf)) return <PreviewModel node={node} />
   return (
     <group rotation={node.rotation} scale={node.scale}>
       <Clone
         dispose={null}
         object={gltf.scene}
+        ref={ref}
         position={node.asset.offset}
         rotation={node.asset.rotation}
         scale={node.asset.scale || [1, 1, 1]}
@@ -540,6 +588,7 @@ const LoadedModelRenderer = ({
   markSettled: () => void
 }) => {
   const ref = useRef<Group>(null!)
+  useItemFoldPose(ref, node, scene)
   const { actions } = useAnimations(animations, ref)
 
   // Mounting past the suspense gate means the GLB resolved — the item's build
@@ -555,7 +604,26 @@ const LoadedModelRenderer = ({
   const shading = useViewer((s) => s.shading)
   const textures = useViewer((s) => s.textures)
   const colorPreset = useViewer((s) => s.colorPreset)
+  const wallMode = useViewer((s) => s.wallMode)
+  const isExporting = useViewer((s) => s.isExporting)
+  const panelMode = isSceneryPanelAsset(node.asset) && !isExporting ? wallMode : 'up'
+  const clipping = useMemo(() => {
+    const group = new ClippingGroup()
+    group.name = 'item-display-section'
+    group.clippingPlanes = [new Plane()]
+    group.clipShadows = true
+    return group
+  }, [])
+  clipping.enabled = panelMode === 'cutaway' || panelMode === 'down'
+  useFrame(() => {
+    if (!clipping.enabled) return
+    clipping.updateWorldMatrix(true, false)
+    updateItemSectionPlane(clipping.clippingPlanes[0]!, node.asset, panelMode, clipping.matrixWorld)
+  })
   const sceneMaterials = useScene((s) => s.materials)
+  const authoredMatte = scene.children.some(
+    (child) => child.userData.visual_style === 'diastage-neutral-matte-v1',
+  )
   // Freeze the interactive definition at mount — asset schemas don't change at runtime
   const interactiveRef = useRef(node.asset.interactive)
 
@@ -600,30 +668,37 @@ const LoadedModelRenderer = ({
       nodeSlots: node.slots,
       sceneMaterials,
       shading,
-      textures,
+      textures: textures || authoredMatte,
     }
+    const translucent = createTranslucentItemMaterials()
+    const present = (material: Material) =>
+      panelMode === 'translucent' ? translucent.resolve(material) : material
 
     for (const { mesh, captured } of meshEntries) {
       let hasGlass = false
 
       if (isCapturedMaterialArray(captured)) {
         const nextMaterials = captured.authoredMaterials.map((authoredMaterial, index) =>
-          resolveItemMaterial(
-            authoredMaterial,
-            captured.slotIds[index] ?? null,
-            captured.curatedRefs[index],
-            materialOptions,
+          present(
+            resolveItemMaterial(
+              authoredMaterial,
+              captured.slotIds[index] ?? null,
+              captured.curatedRefs[index],
+              materialOptions,
+            ),
           ),
         )
         mesh.material = nextMaterials
         hasGlass = nextMaterials.some(isGlassMaterial)
         clampGeometryGroups(mesh, nextMaterials.length)
       } else {
-        const nextMaterial = resolveItemMaterial(
-          captured.authoredMaterials,
-          captured.slotIds,
-          captured.curatedRefs,
-          materialOptions,
+        const nextMaterial = present(
+          resolveItemMaterial(
+            captured.authoredMaterials,
+            captured.slotIds,
+            captured.curatedRefs,
+            materialOptions,
+          ),
         )
         mesh.material = nextMaterial
         hasGlass = isGlassMaterial(nextMaterial)
@@ -632,7 +707,10 @@ const LoadedModelRenderer = ({
       mesh.castShadow = !hasGlass
       mesh.receiveShadow = !hasGlass
     }
-  }, [shading, textures, colorPreset, node.slots, sceneMaterials])
+    // Selection sync must re-wrap the new display material, not restore a stale opacity.
+    useViewer.getState().bumpGeometryRevision()
+    return () => translucent.dispose()
+  }, [shading, textures, authoredMatte, colorPreset, node.slots, sceneMaterials, panelMode])
 
   const interactive = interactiveRef.current
   const animEffect =
@@ -656,7 +734,7 @@ const LoadedModelRenderer = ({
   // Undo can unmount one item while another clone of the same asset still needs them.
   return (
     <>
-      <group scale={node.scale}>
+      <primitive object={clipping} scale={node.scale}>
         <Clone
           dispose={null}
           object={scene}
@@ -666,7 +744,7 @@ const LoadedModelRenderer = ({
           scale={node.asset.scale || [1, 1, 1]}
           {...handlers}
         />
-      </group>
+      </primitive>
       {animations.length > 0 && (
         <ItemAnimation
           actions={actions}

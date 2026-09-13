@@ -5,6 +5,7 @@ import { CONTINUATION_PROFILES, type ContinuationContext } from '../../../lib/co
 import type { ContextualShortcutHint } from '../../../lib/contextual-help'
 import { hasActivePaintMaterial } from '../../../lib/material-paint'
 import { paintScopeLabel, type PaintScope } from '../../../lib/paint-scope'
+import { hasPlacementPolicy } from '../../../lib/placement-policy'
 import { sfxEmitter } from '../../../lib/sfx-bus'
 import { cycleSnappingModeIn, resolveSnapFlags, type SnapContext } from '../../../lib/snapping-mode'
 import { cn } from '../../../lib/utils'
@@ -179,6 +180,7 @@ function SnappingChips({ context }: { context: SnapContext }) {
   const setGridSnapStep = useEditor((s) => s.setGridSnapStep)
 
   const gridActive = resolveSnapFlags(snappingMode).grid
+  const stage = hasPlacementPolicy()
 
   return (
     <>
@@ -187,24 +189,24 @@ function SnappingChips({ context }: { context: SnapContext }) {
         guideTarget="snap-mode"
         icon={SNAPPING_MODE_ICONS[snappingMode]}
         label={`吸附：${SNAPPING_MODE_LABELS[snappingMode]}`}
-        onClick={() => {
+        onClick={stage ? undefined : () => {
           setSnappingMode(context, cycleSnappingModeIn(context, snappingMode))
           sfxEmitter.emit('sfx:grid-snap')
         }}
-        shortcut="Shift"
-        tooltip="吸附模式：点击或按 Shift 切换"
+        shortcut={stage ? undefined : 'Shift'}
+        tooltip={stage ? '自由放置在工具栏末尾' : '吸附模式：点击或按 Shift 切换'}
       />
       {gridActive ? (
         <ChipRow
           ariaLabel={`网格步长：${gridSnapStep.toFixed(2)} m`}
           guideTarget="snap-grid-step"
-          label={`网格：${gridSnapStep.toFixed(2)} m`}
+          label={`画面每小格：${gridSnapStep * 100} cm`}
           onClick={() => {
             setGridSnapStep(nextGridSnapStep(gridSnapStep))
             sfxEmitter.emit('sfx:grid-snap')
           }}
           shortcut="Ctrl"
-          tooltip="网格步长：点击或按 Ctrl 切换"
+          tooltip="点击或轻按并松开 Ctrl 切换；格线与实际落点同步"
         />
       ) : null}
     </>
@@ -381,7 +383,7 @@ export function ContextualHelperPanel({
     return null
 
   return (
-    <div className={CONTAINER_CLASS}>
+    <div className={CONTAINER_CLASS} data-contextual-helper>
       {snapContext ? <SnappingChips context={snapContext} /> : null}
       {continuationContext === 'fence' ? <FenceContinuationChips /> : null}
       {continuationContext && continuationContext !== 'fence' ? (

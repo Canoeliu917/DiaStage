@@ -1,12 +1,15 @@
-import { type AnyNode, useScene } from '@pascal-app/core'
+import { type AnyNode, type BlockTopology, getItemBoundsCenter, useScene } from '@pascal-app/core'
 import { rotatePoint } from '@pascal-app/core/remount'
 import {
   type SceneContextObject,
   type SceneContextSummary,
   SceneContextSummarySchema,
+  type StageCollisionGeometry,
   type StageCoordinateFrame,
+  type StageDimensions,
   type StageItemKind,
   StageItemKindSchema,
+  stageCollisionGeometry,
   worldToStagePosition,
   worldToStageRotation,
 } from '@pascal-app/core/stage'
@@ -91,8 +94,60 @@ export function cameraContextObject(camera: Shot, frame: StageCoordinateFrame): 
     dimensionsMeters: { width: 0.35, height: 0.25, depth: 0.5 },
   }
 }
+
+const blockGeometry = new WeakMap<BlockTopology, StageCollisionGeometry>()
+export function stageNodeCollisionGeometry(node: AnyNode, dimensionsMeters: StageDimensions) {
+  if (node.type === 'item') {
+    const center = getItemBoundsCenter(node)
+    const offset = [center[0], center[1] - dimensionsMeters.height / 2, center[2]]
+    const geometry = stageCollisionGeometry({ kind: 'neutral-block', dimensionsMeters })
+    if (offset.every((value) => value === 0)) return geometry
+    return geometry.map((part) => ({
+      ...part,
+      vertices: part.vertices.map(
+        (point) => point.map((value, axis) => value + offset[axis]!) as [number, number, number],
+      ),
+    }))
+  }
+  if (node.type !== 'block') return undefined
+  const cached = blockGeometry.get(node.topology)
+  if (cached) return cached
+  const vertices = new Map(node.topology.vertices.map((vertex) => [vertex.id, vertex.position]))
+  const neighbors = new Map<string, Set<string>>()
+  for (const face of node.topology.faces) {
+    for (const [i, id] of face.vertexIds.entries()) {
+      const next = face.vertexIds[(i + 1) % face.vertexIds.length]!
+      if (!neighbors.has(id)) neighbors.set(id, new Set())
+      if (!neighbors.has(next)) neighbors.set(next, new Set())
+      neighbors.get(id)!.add(next)
+      neighbors.get(next)!.add(id)
+    }
+  }
+  const remaining = new Set(neighbors.keys())
+  const parts: StageCollisionGeometry = []
+  while (remaining.size) {
+    const ids = [remaining.values().next().value!]
+    remaining.delete(ids[0]!)
+    for (let i = 0; i < ids.length; i++) {
+      for (const next of neighbors.get(ids[i]!)!) {
+        if (remaining.delete(next)) ids.push(next)
+      }
+    }
+    const indices = new Map(ids.map((id, i) => [id, i]))
+    parts.push({
+      vertices: ids.map((id) => vertices.get(id)!),
+      faces: node.topology.faces
+        .filter((face) => indices.has(face.vertexIds[0]!))
+        .map((face) => face.vertexIds.map((id) => indices.get(id)!)),
+    })
+  }
+  blockGeometry.set(node.topology, parts)
+  return parts
+}
+
 export function currentStageContext(
   selectedObjectIds = useViewer.getState().selection.selectedIds,
+  includeTransient = false,
 ): SceneContextSummary {
   const doc = readStageDocument()
   if (!doc)
@@ -105,36 +160,13 @@ export function currentStageContext(
     if (
       !kind ||
       node.visible === false ||
-      node.metadata.isTransient ||
-      node.metadata.isNew ||
+      (!includeTransient && (node.metadata.isTransient || node.metadata.isNew)) ||
       (node.type !== 'item' && node.type !== 'block' && node.type !== 'stair')
     )
       continue
     try {
-      const pose = objectSnapshot(node, state.nodes)
-      if (node.type === 'stair') {
-        const offset = rotatePoint([pose.boundsCenter[0], 0, pose.boundsCenter[2]], pose.rotation)
-        pose.position = pose.position.map((value, axis) => value + offset[axis]!) as [
-          number,
-          number,
-          number,
-        ]
-      }
-      objects.push({
-        id: node.id,
-        name: node.name || (node.type === 'item' ? node.asset.name : '台件'),
-        kind,
-        ...(node.type === 'stair' ? { stepCount: node.stepCount } : {}),
-        transform: {
-          position: worldToStagePosition(pose.position, frame),
-          rotationDegrees: worldToStageRotation(pose.rotation),
-        },
-        dimensionsMeters: {
-          width: pose.dimensions[0],
-          height: pose.dimensions[1],
-          depth: pose.dimensions[2],
-        },
-      })
+      const item = stageContextObject(node, state.nodes, frame)
+      if (item) objects.push(item)
     } catch {
       // Hosted legacy geometry remains editable by its original tool, never guessed into world coordinates.
     }
@@ -152,7 +184,7 @@ export function currentStageContext(
     })
   for (const camera of cameraProject().shots) objects.push(cameraContextObject(camera, frame))
   return SceneContextSummarySchema.parse({
-    doorClearanceMeters: stageSite().metadata.stageDoorClearanceMeters ?? 0.6,
+    doorClearanceMeters: stageSite().metadata.stageDoorClearanceMeters ?? 0,
     documentVersion: stageRevision(),
     venue: {
       type: doc.venue.type === 'arena' ? 'other' : doc.venue.type,
@@ -163,4 +195,39 @@ export function currentStageContext(
     objects,
     selectedObjectIds,
   })
+}
+
+export function stageContextObject(
+  node: AnyNode,
+  nodes: State['nodes'],
+  frame: StageCoordinateFrame,
+): SceneContextObject | null {
+  const kind = stageKind(node)
+  if (!kind || (node.type !== 'item' && node.type !== 'block' && node.type !== 'stair')) return null
+  const pose = objectSnapshot(node, nodes)
+  if (node.type === 'stair') {
+    const offset = rotatePoint([pose.boundsCenter[0], 0, pose.boundsCenter[2]], pose.rotation)
+    pose.position = pose.position.map((value, axis) => value + offset[axis]!) as [
+      number,
+      number,
+      number,
+    ]
+  }
+  const dimensionsMeters = {
+    width: pose.dimensions[0],
+    height: pose.dimensions[1],
+    depth: pose.dimensions[2],
+  }
+  return {
+    id: node.id,
+    name: node.name || (node.type === 'item' ? node.asset.name : '台件'),
+    kind,
+    ...(node.type === 'stair' ? { stepCount: node.stepCount } : {}),
+    transform: {
+      position: worldToStagePosition(pose.position, frame),
+      rotationDegrees: worldToStageRotation(pose.rotation),
+    },
+    dimensionsMeters,
+    collisionGeometry: stageNodeCollisionGeometry(node, dimensionsMeters),
+  }
 }

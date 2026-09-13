@@ -1,11 +1,20 @@
 'use client'
 
-import { type AnyNodeId, emitter, useScene } from '@pascal-app/core'
+import { type AnyNodeId, emitter, getNodeLock, useScene } from '@pascal-app/core'
 import { routeTreeSelectionToNode, useEditor, useInteractionScope } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
-import { Crosshair, Eye, EyeOff, Search, Settings2 } from 'lucide-react'
+import {
+  Crosshair,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  LockKeyholeOpen,
+  Search,
+  Settings2,
+} from 'lucide-react'
 import { memo, useMemo, useState, useSyncExternalStore } from 'react'
 import { useShallow } from 'zustand/react/shallow'
+import { commandMeta, executeStageCommands } from '@/lib/stage/command-executor'
 import { editStageDocument } from '@/lib/theatre/simulation-store'
 import { useCameraStudio } from './camera-studio/store'
 import { buildStageRows, getStageNodeSelection } from './stage-overview-data'
@@ -54,7 +63,12 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
     camera.playing ||
     camera.previewing
   const objects = [
-    ...rows.map((row) => ({ ...row, kind: 'scenery' })),
+    ...rows.map((row) => ({
+      ...row,
+      kind: 'scenery',
+      stageLocked: !!getNodeLock(nodes, row.id),
+      inheritedLock: !!getNodeLock(nodes, row.id) && nodes[row.id]?.metadata.stageLocked !== true,
+    })),
     ...(document?.rehearsalSimulation.performers ?? []).map((p) => ({
       id: p.id,
       name: p.name,
@@ -63,6 +77,8 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
       parentLabel: '模拟排演',
       visible: p.visible,
       effectiveVisible: p.visible,
+      stageLocked: p.stageLocked === true,
+      inheritedLock: false,
     })),
     ...camera.project.shots.map((s) => ({
       id: s.id,
@@ -72,6 +88,8 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
       parentLabel: '舞台镜头',
       visible: camera.showStageCameras,
       effectiveVisible: camera.showStageCameras,
+      stageLocked: s.stageLocked === true,
+      inheritedLock: false,
     })),
   ]
   const visible = objects.filter(
@@ -92,7 +110,7 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
       getCameraDirectorState(sceneId).transport.status !== 'idle'
     )
   }
-  function select(id: string, kind: string, focus = false) {
+  function select(id: string, kind: string, focus = false, properties = false) {
     if (locked()) return
     if (kind === 'camera') {
       openStudioPanel('stage-cameras')
@@ -111,6 +129,7 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
     routeTreeSelectionToNode(node)
     useViewer.getState().setSelection(getStageNodeSelection(nodes, id))
     if (focus) emitter.emit('camera-controls:focus', { nodeId: node.id })
+    if (properties) openStudioPanel('build')
   }
   return (
     <section className="stage-overview" aria-label="舞台总览" data-scene-id={sceneId}>
@@ -156,21 +175,37 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
       </header>
       <div className="stage-overview-scroll">
         <table aria-label="舞台对象列表">
+          <colgroup>
+            <col className="stage-overview-state-column" />
+            <col />
+            <col className="stage-overview-type-column" />
+            <col className="stage-overview-action-column" />
+            <col className="stage-overview-action-column" />
+          </colgroup>
           <thead>
             <tr>
               <th>显示</th>
               <th>名称</th>
               <th>类型</th>
               <th>定位</th>
+              <th>固定</th>
             </tr>
           </thead>
           <tbody>
             {visible.map((row) => (
-              <tr key={row.id} data-selected={selection.selectedIds.includes(row.id as AnyNodeId)}>
+              <tr
+                key={row.id}
+                data-selected={selection.selectedIds.includes(row.id as AnyNodeId)}
+                onDoubleClick={(event) => {
+                  const button = (event.target as HTMLElement).closest('button')
+                  if (button && !button.classList.contains('stage-overview-name')) return
+                  select(row.id, row.kind, false, true)
+                }}
+              >
                 <td>
                   <button
                     type="button"
-                    disabled={busy || readOnly}
+                    disabled={busy || readOnly || row.stageLocked}
                     aria-label={`${row.visible ? '隐藏' : '显示'}${row.name}`}
                     onClick={() => {
                       try {
@@ -200,6 +235,7 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
                     className="stage-overview-name"
                     type="button"
                     disabled={busy}
+                    title="双击打开属性"
                     onClick={() => select(row.id, row.kind)}
                   >
                     <span>{row.name}</span>
@@ -221,6 +257,35 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
                     onClick={() => select(row.id, row.kind, true)}
                   >
                     <Crosshair size={14} />
+                  </button>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    aria-label={`${row.stageLocked ? '解锁' : '固定'}${row.name}`}
+                    aria-pressed={row.stageLocked}
+                    title={
+                      row.inheritedLock
+                        ? '随上级固定，请先解锁上级对象'
+                        : row.stageLocked
+                          ? '解锁后可修改'
+                          : '固定位置与属性，避免误触'
+                    }
+                    disabled={busy || readOnly || row.inheritedLock}
+                    onClick={() => {
+                      if (locked() || useScene.getState().readOnly) return
+                      const result = executeStageCommands([
+                        {
+                          type: 'SetObjectLock',
+                          nodeId: row.id,
+                          locked: !row.stageLocked,
+                          meta: commandMeta('manual'),
+                        },
+                      ])
+                      setNotice(result.ok ? '' : (result.error ?? '固定状态未更新'))
+                    }}
+                  >
+                    {row.stageLocked ? <LockKeyhole size={14} /> : <LockKeyholeOpen size={14} />}
                   </button>
                 </td>
               </tr>

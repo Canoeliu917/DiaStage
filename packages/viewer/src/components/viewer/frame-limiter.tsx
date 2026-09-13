@@ -31,11 +31,12 @@ export function createFrameClock(initialTime = 0): FrameClock {
       }
 
       const elapsedMs = wallTimeMs - previousWallTime
-      if (elapsedMs < intervalMs) return null
-
-      const remainderMs = elapsedMs % intervalMs
-      frameTime += (elapsedMs - remainderMs) / 1000
-      previousWallTime = wallTimeMs - remainderMs
+      // Rounded rAF timestamps must not drop an otherwise on-time display frame.
+      const intervals = Math.floor((elapsedMs + 0.5) / intervalMs)
+      if (intervals < 1) return null
+      const advancedMs = intervals * intervalMs
+      frameTime += advancedMs / 1000
+      previousWallTime += advancedMs
       return frameTime
     },
     step(seconds) {
@@ -59,7 +60,7 @@ const DRAW_DISABLED =
       .map((s) => s.trim()),
   ).has('draw')
 
-const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false, onError }) => {
+const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 60, paused = false, onError }) => {
   const errorHandler = useRef(onError)
   errorHandler.current = onError
   const { advance, set, frameloop: initFrameloop } = useThree()
@@ -87,7 +88,7 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 50, paused = false, o
         errorHandler.current?.(error)
       }
     }
-    const effectiveFps = Number.isFinite(fps) && fps > 0 ? fps : 50
+    const effectiveFps = Number.isFinite(fps) && fps > 0 ? fps : 60
     const interval = 1000 / effectiveFps
     function syncSize() {
       if (sizeSynced) return

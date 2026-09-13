@@ -115,6 +115,12 @@ export {
   snapFenceDraftPoint,
 } from './components/tools/fence/fence-drafting'
 export { MoveTool } from './components/tools/item/move-tool'
+export {
+  installPlacementPolicy,
+  type PlacementFeedback,
+  snapPlacementPosition,
+} from './lib/placement-policy'
+export { preloadRegistryAffordanceTool } from './components/tools/shared/affordance-dispatch'
 // Placement-math helpers — shared by kind-owned placement tools in
 // `@pascal-app/nodes` (wall curve sagitta snap, door / window placement,
 // item drop) so kinds don't reach into editor internals.

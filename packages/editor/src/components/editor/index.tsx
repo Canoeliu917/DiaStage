@@ -110,7 +110,7 @@ const recordEditorRender: ProfilerOnRenderCallback = (_id, _phase, actualDuratio
   if (PERF_OVERLAY_ENABLED) recordPerfSample('react-render', actualDuration)
 }
 const EDITOR_HOVER_STYLES: HoverStyles = {
-  default: { visibleColor: 0x00_aa_ff, hiddenColor: 0xf3_ff_47, strength: 5, pulse: true },
+  default: { visibleColor: 0x74_77_77, hiddenColor: 0x74_77_77, strength: 1.5, pulse: false },
   delete: { visibleColor: 0xef_44_44, hiddenColor: 0x99_1b_1b, strength: 6, pulse: false },
   'paint-ready': { visibleColor: 0xf5_9e_0b, hiddenColor: 0xfd_e0_68, strength: 5, pulse: true },
   'paint-disabled': {
@@ -396,10 +396,10 @@ type CameraControlHint = {
 const EDITOR_CAMERA_CONTROL_HINTS: CameraControlHint[] = [
   {
     action: 'Pan',
-    keys: [{ value: 'Space' }, { value: 'Left click' }],
-    alternativeKeys: [{ value: 'Middle click' }],
+    keys: [{ value: 'Shift' }, { value: 'Middle click' }],
+    alternativeKeys: [{ value: 'Alt' }, { value: 'Middle click' }],
   },
-  { action: 'Rotate', keys: [{ value: 'Right click' }] },
+  { action: 'Rotate', keys: [{ value: 'Middle click' }] },
   { action: 'Zoom', keys: [{ value: 'Scroll' }] },
 ]
 
@@ -500,7 +500,7 @@ function CameraControlHintItem({ hint }: { hint: CameraControlHint }) {
   return (
     <div className="flex min-w-0 flex-col items-center gap-1.5 px-4 text-center first:pl-0 last:pr-0">
       <span className="font-medium text-[10px] text-muted-foreground/60 tracking-[0.03em]">
-        {{ Pan: '平移', Rotate: '旋转', Zoom: '缩放' }[hint.action]}
+        {{ Pan: '平移', Rotate: '环绕', Zoom: '推近拉远' }[hint.action]}
       </span>
       <div className="flex flex-wrap items-center justify-center gap-1.5">
         <ShortcutSequence keys={hint.keys} />

@@ -4,18 +4,22 @@ import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 if (!process.env.CAMERA_STUDIO_RUNTIME_TEST) {
-  test('runtime motion, floor support, following and Stop share the rendered pose', () => {
+  test('Beta observes a fixed pose; retained expert runtime preserves motion and Stop', () => {
     // Bun module mocks persist process-wide; isolate hooks so recording tests
     // continue to exercise the real React Three Fiber after-render effects.
-    const child = spawnSync(process.execPath, ['run', fileURLToPath(import.meta.url)], {
-      env: { ...process.env, CAMERA_STUDIO_RUNTIME_TEST: '1' },
-      encoding: 'utf8',
-      timeout: 20_000,
-    })
-    assert.equal(child.status, 0, child.error?.message ?? `${child.stdout}\n${child.stderr}`)
+    for (const beta of ['0', '1']) {
+      const child = spawnSync(process.execPath, ['run', fileURLToPath(import.meta.url)], {
+        env: { ...process.env, CAMERA_STUDIO_RUNTIME_TEST: '1', CAMERA_BETA_TEST: beta },
+        encoding: 'utf8',
+        timeout: 20_000,
+      })
+      assert.equal(child.status, 0, child.error?.message ?? `${child.stdout}\n${child.stderr}`)
+    }
   })
 } else {
   const { mock } = await import('bun:test')
+  const beta = process.env.CAMERA_BETA_TEST === '1'
+  mock.module('@/lib/beta-capabilities', () => ({ BETA_EXPERT_MEDIA_ENABLED: !beta }))
   const React = await import('react')
   const { Object3D, PerspectiveCamera, Vector3 } = await import('three')
   const { z } = await import('zod')
@@ -96,9 +100,17 @@ if (!process.env.CAMERA_STUDIO_RUNTIME_TEST) {
       floorPlaced: { footprint: () => ({ dimensions: [0.4, 1, 0.4], rotation: [0, 0, 0] }) },
     },
   } as never)
-  const level = { id: 'level_runtime_test', type: 'level', level: 0, parentId: null, children: [] }
+  const level = {
+    id: 'level_runtime_test',
+    type: 'level',
+    level: 0,
+    parentId: null,
+    children: [],
+    metadata: {},
+  }
   const subject = {
     id: 'block_runtime_test',
+    metadata: {},
     type: 'block',
     parentId: level.id,
     position: [0, 0, 0],
@@ -106,6 +118,7 @@ if (!process.env.CAMERA_STUDIO_RUNTIME_TEST) {
   }
   const slab = {
     id: 'slab_runtime_test',
+    metadata: {},
     type: 'slab',
     parentId: level.id,
     visible: true,
@@ -169,14 +182,21 @@ if (!process.env.CAMERA_STUDIO_RUNTIME_TEST) {
   assert.equal(useCameraStudio.getState().runtimeReady, true)
   useCameraStudio.getState().seek(1)
   tick()
-  assert.equal(object.position.y, 2.5, 'track Y must survive the later floor-elevation pass')
-  assert.equal(target.y, 3.1, 'follow target must use the same rendered floor height')
-  assert.equal(camera.position.y, 3.5)
+  assert.equal(object.position.y, beta ? 0.5 : 2.5, 'Beta must not move the subject')
+  assert.equal(target.y, beta ? 1 : 3.1, 'Beta must observe the saved pose')
+  assert.equal(camera.position.y, beta ? 3 : 3.5)
   assert.equal(controls.enabled, false)
   useCameraStudio.getState().seek(2)
   tick()
-  assert.equal(object.position.y, 2, 'moving off the slab must resolve the new support footprint')
-  assert.equal(target.y, 2.6)
+  assert.equal(object.position.y, beta ? 0.5 : 2, 'Beta must ignore legacy motion tracks')
+  assert.equal(target.y, beta ? 1 : 2.6)
+  if (beta) {
+    assert.equal(core.useLiveNodeOverrides.getState().get(subject.id), undefined)
+    useCameraStudio.getState().play()
+    assert.equal(useCameraStudio.getState().playing, false)
+    useCameraStudio.getState().setRecording(true)
+    assert.equal(useCameraStudio.getState().recording, false)
+  }
   assert.deepEqual(subject.position, [0, 0, 0], 'preview must not mutate the scene graph')
 
   useCameraStudio.getState().stop()
@@ -186,7 +206,7 @@ if (!process.env.CAMERA_STUDIO_RUNTIME_TEST) {
   assert.equal(controls.enabled, true)
   assert.equal(core.useLiveNodeOverrides.getState().get(subject.id), undefined)
   // React rebinds base position when the transient override is cleared.
-  object.position.set(0, 0, 0)
+  if (!beta) object.position.set(0, 0, 0)
   tick()
   assert.equal(
     object.position.y,
@@ -243,8 +263,8 @@ if (!process.env.CAMERA_STUDIO_RUNTIME_TEST) {
       assert.notEqual(useCameraStudio.getState().captureCamera(), null, mode)
       useCameraStudio.getState().seek(1)
       tick()
-      assert.equal(camera.position.y, 3.5, `${mode}: the camera resumes following`)
-      assert.equal(object.position.y, 2.5)
+      assert.equal(camera.position.y, beta ? 3 : 3.5, `${mode}: observation resumes`)
+      assert.equal(object.position.y, beta ? 0.5 : 2.5)
     }
     for (const dispose of disposers.reverse()) dispose?.()
   }

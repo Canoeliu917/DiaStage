@@ -18,6 +18,7 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { Euler, Matrix3, Quaternion, Vector3 } from 'three'
+import { hasPlacementPolicy, placementFeedback } from '../../../lib/placement-policy'
 import { snapWorldXZForActiveBuilding } from '../../../lib/world-grid-snap'
 import {
   calculateItemRotation,
@@ -140,13 +141,15 @@ export const floorStrategy = {
       ctx.gridPosition.y,
       ctx.gridPosition.z,
     ]
-    const valid = validators.canPlaceOnFloor(
-      ctx.levelId,
-      pos,
-      getGridAlignedDimensions(getScaledDimensions(ctx.draftItem), ctx.draftItem.asset.attachTo),
-      ctx.draftItem.rotation,
-      [ctx.draftItem.id],
-    ).valid
+    const valid =
+      placementFeedback({ ...ctx.draftItem, position: pos, parentId: ctx.levelId })?.valid ??
+      validators.canPlaceOnFloor(
+        ctx.levelId,
+        pos,
+        getGridAlignedDimensions(getScaledDimensions(ctx.draftItem), ctx.draftItem.asset.attachTo),
+        ctx.draftItem.rotation,
+        [ctx.draftItem.id],
+      ).valid
 
     if (!valid) return null
 
@@ -423,6 +426,7 @@ function clearFaceHostItemFields(ctx: PlacementContext): Partial<ItemNode> {
 
 export const faceHostStrategy = {
   enter(ctx: PlacementContext, event: NodeEvent): TransitionResult | null {
+    if (hasPlacementPolicy() && !ctx.asset.attachTo && ctx.state.surface === 'floor') return null
     const target = resolveFaceHostTarget(ctx, event)
     if (!target) return null
     return {
@@ -504,6 +508,7 @@ export const itemSurfaceStrategy = {
   enter(ctx: PlacementContext, event: ItemEvent): TransitionResult | null {
     // Only floor items can be placed on surfaces
     if (ctx.asset.attachTo) return null
+    if (hasPlacementPolicy() && ctx.state.surface === 'floor') return null
 
     const surfaceItem = event.node as ItemNode
     // Don't surface-place on the draft itself
@@ -659,6 +664,7 @@ export const shelfSurfaceStrategy = {
    */
   enter(ctx: PlacementContext, event: ShelfEvent): TransitionResult | null {
     if (ctx.asset.attachTo) return null
+    if (hasPlacementPolicy() && ctx.state.surface === 'floor') return null
     const shelfNode = event.node as ShelfNode
 
     if (ctx.state.surface === 'shelf-surface' && ctx.state.shelfId === shelfNode.id) {
@@ -818,6 +824,12 @@ export function checkCanPlace(ctx: PlacementContext, validators: SpatialValidato
   }
 
   // Floor (no attachTo)
+  const feedback = placementFeedback({
+    ...ctx.draftItem,
+    position: [ctx.gridPosition.x, ctx.gridPosition.y, ctx.gridPosition.z],
+    parentId: ctx.levelId,
+  })
+  if (feedback) return feedback.valid
   return validators.canPlaceOnFloor(
     ctx.levelId,
     [ctx.gridPosition.x, ctx.gridPosition.y, ctx.gridPosition.z],

@@ -3,6 +3,7 @@ import {
   type ArcResizeHandle,
   createSceneApi,
   DEFAULT_ANGLE_STEP,
+  getNodeLock,
   type HandleDescriptor,
   hasRegistry3DMoveTool,
   isMovable,
@@ -30,6 +31,7 @@ export function getDirectRotateHandle(node: AnyNode): ArcResizeHandle<AnyNode> |
 }
 
 export function canDirectRotateNode(node: AnyNode): boolean {
+  if (getNodeLock(useScene.getState().nodes, node.id, true)) return false
   return (
     getDirectRotateHandle(node) !== null ||
     nodeRegistry.get(node.type)?.capabilities?.rotatable !== undefined
@@ -56,6 +58,7 @@ export function pointerEventHitsEditorHandle(event: unknown): boolean {
 }
 
 export function canDirectMoveNode(node: AnyNode): boolean {
+  if (getNodeLock(useScene.getState().nodes, node.id, true)) return false
   // 3D direct move (Ctrl/Meta-drag, the move-cross grip) needs a move tool that
   // mounts in 3D — distinct from `isRegistryMovable`, which also accepts
   // floorplan-only movers (zone) for the 2D plan.
@@ -80,6 +83,7 @@ export function shouldStartDirectMoveDrag({
   nodeId: string
   selectedIds: readonly string[]
 }): boolean {
+  if (getNodeLock(useScene.getState().nodes, nodeId, true)) return false
   if (handleOwnsPointer) return false
   if (commandModifier) return selectedIds.length === 1 && selectedIds[0] === nodeId
   return allowPlainDrag && selectedIds.length < 2
@@ -122,6 +126,7 @@ export function resolveDirectRotationPatch(
   delta: number,
   sceneApi: SceneApi = createSceneApi(useScene),
 ): Partial<AnyNode> | null {
+  if (getNodeLock(useScene.getState().nodes, node.id, true)) return null
   const rotateHandle = getDirectRotateHandle(node)
   if (rotateHandle) {
     return rotateHandle.apply(node, delta, sceneApi) as Partial<AnyNode>

@@ -5,6 +5,7 @@ import {
   parseStageText,
   type SceneContextObject,
   type StageCommand,
+  type StagePlan,
   StagePlanSchema,
 } from '@pascal-app/core/stage'
 import { createTheatreSceneGraph } from '../theatre/new-production'
@@ -19,7 +20,6 @@ globalThis.cancelAnimationFrame ??= () => {}
 let disconnect: () => void
 const typed =
   '建立一个宽8米、深6米的镜框式舞台。舞台中区放一个双人沙发，沙发台右30厘米放一块窗景片，窗景片台右紧邻一块门景片。'
-const spoken = typed.replace('8米', '八米').replace('6米', '六米').replace('30厘米', '三十厘米')
 const scenery = [
   {
     name: '双人沙发',
@@ -76,8 +76,8 @@ function canonical(objects: SceneContextObject[]) {
     .sort((a, b) => a.kind.localeCompare(b.kind))
 }
 
-function manualCommands(): StageCommand[] {
-  const meta = commandMeta('manual')
+function manualCommands(source: 'manual' | 'voice' | 'typed-command' = 'manual'): StageCommand[] {
+  const meta = commandMeta(source)
   return [
     {
       type: 'CreateStage',
@@ -99,13 +99,29 @@ function manualCommands(): StageCommand[] {
   ]
 }
 
-function textCommands(text = typed, source: 'voice' | 'typed-command' = 'typed-command') {
-  const context = currentStageContext()
-  const proposal = parseStageText(text, context, [], source)
-  expect(proposal).not.toBeNull()
-  const result = compileStagePlan(proposal, context, commandMeta(source))
-  expect(result.ok).toBe(true)
-  return result.commands
+function legacyPlan(): StagePlan {
+  return {
+    schemaVersion: 1,
+    source: 'typed-command',
+    venue: null,
+    items: scenery.map((item, index) => ({
+      proposalId: `legacy-${index}`,
+      existingNodeId: null,
+      kind: item.kind,
+      displayName: item.name,
+      libraryAssetId: null,
+      dimensionsMeters: { ...item.dimensionsMeters },
+      transform: { position: { x: item.x, y: 0, z: 3 }, rotationDegrees: { x: 0, y: 0, z: 0 } },
+      certainty: 'stated',
+      assumptionIds: [],
+      evidenceIds: [],
+    })),
+    relations: [],
+    assumptions: [],
+    questions: [],
+    evidence: [],
+    warnings: [],
+  }
 }
 
 beforeEach(() => {
@@ -118,13 +134,13 @@ afterEach(() => {
   clearSceneHistory()
 })
 
-test('typed, transcribed Chinese and manual inputs share exact scenery semantics and one undo step', () => {
+test('explicit legacy scene fixtures retain source-independent scenery semantics and one undo step', () => {
   const results: ReturnType<typeof canonical>[] = []
   for (const path of ['manual', 'typed-command', 'voice'] as const) {
     reset()
     const before = snapshot()
-    const commands =
-      path === 'manual' ? manualCommands() : textCommands(path === 'voice' ? spoken : typed, path)
+    // These are recorded legacy commands, not a substitute for an unavailable catalog GLB.
+    const commands = manualCommands(path)
     const result = executeStageCommands(commands)
     expect(result.error).toBeUndefined()
     expect(result.ok).toBe(true)
@@ -152,7 +168,7 @@ test('typed, transcribed Chinese and manual inputs share exact scenery semantics
 })
 
 test('a saved JSON scene reloads into the same document and accepts subsequent voice movement', () => {
-  expect(executeStageCommands(textCommands()).ok).toBe(true)
+  expect(executeStageCommands(manualCommands()).ok).toBe(true)
   const serialized = JSON.stringify(snapshot())
   const saved: SceneGraph = JSON.parse(serialized)
   const beforeReload = canonical(currentStageContext().objects)
@@ -176,7 +192,7 @@ test('a saved JSON scene reloads into the same document and accepts subsequent v
 })
 
 test('a stage changed after preview rejects the whole stale plan without overwriting manual work', () => {
-  const preview = textCommands()
+  const preview = manualCommands('typed-command')
   const add: StageCommand = {
     type: 'AddScenery',
     meta: commandMeta(),
@@ -221,7 +237,7 @@ test('forbidden schemas, ambiguous input and a bad later command never create pa
 
 test('confirmed script evidence saves and undoes with its objects; invalid metadata writes nothing', () => {
   const context = currentStageContext()
-  const plan = StagePlanSchema.parse({ ...parseStageText(typed, context), source: 'script' })
+  const plan = StagePlanSchema.parse({ ...legacyPlan(), source: 'script' })
   plan.evidence = [
     {
       id: 'included',

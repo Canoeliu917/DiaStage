@@ -1,5 +1,7 @@
-import { type AnyNodeDefinition, nodeRegistry, registerNode } from '@pascal-app/core'
+import { type AnyNode, type AnyNodeDefinition, nodeRegistry, registerNode } from '@pascal-app/core'
+import { preloadRegistryAffordanceTool } from '@pascal-app/editor'
 import { builtinPlugin } from '@pascal-app/nodes'
+import { centeredPropFloorplan } from './stage/rigid-floorplan'
 
 // Idempotency guards: HMR can reload this module, but `registerNode`
 // throws on duplicate kinds. Flags live in the module closure so they
@@ -30,7 +32,39 @@ function loadBuiltinsSync(): void {
     // above resets on HMR, but the registry singleton (in @pascal-app/core)
     // persists — without this guard we'd throw on the first duplicate.
     if (nodeRegistry.has((def as AnyNodeDefinition).kind)) continue
-    registerNode(def as AnyNodeDefinition)
+    const definition = def as AnyNodeDefinition
+    registerNode(
+      ['block', 'item', 'stair'].includes(definition.kind)
+        ? ({
+            ...definition,
+            capabilities: {
+              ...definition.capabilities,
+              selectable: { ...definition.capabilities.selectable, hitVolume: 'mesh' },
+              movable: {
+                ...(definition.capabilities.movable ?? { axes: ['x', 'z'] }),
+                directDrag: true,
+              },
+            },
+            handles: () => [],
+            floorplan: (node, context) =>
+              centeredPropFloorplan(
+                definition.floorplan?.(node, context) ?? null,
+                node as AnyNode,
+                context,
+              ),
+            presentation: { ...definition.presentation, actionMenu: false },
+            affordanceTools: Object.fromEntries(
+              Object.entries(definition.affordanceTools ?? {}).filter(
+                ([name]) => name !== 'selection',
+              ),
+            ),
+          } as AnyNodeDefinition)
+        : definition,
+    )
+    if (typeof window !== 'undefined' && ['block', 'item', 'stair'].includes(definition.kind)) {
+      // A failed warm-up is retried by the existing tool loader on interaction.
+      void preloadRegistryAffordanceTool(definition.kind, 'move')?.catch(() => {})
+    }
   }
 
   if (isDev()) {

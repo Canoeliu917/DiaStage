@@ -15,6 +15,7 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   })
 } else {
   const { mock } = await import('bun:test')
+  mock.module('@/lib/beta-capabilities', () => ({ BETA_EXPERT_MEDIA_ENABLED: true }))
   const React = await import('react')
   const { useCameraStudio: store } = await import('./camera-studio/store')
   const effects: Array<() => undefined | (() => void)> = []
@@ -211,16 +212,17 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   }
   assert.equal(renderNavigation().length, 3, 'three peer workspace options')
   for (const [label, expected, group] of [
-    ['置景', ['theatre-venue', 'build', 'items', 'stage-cameras'], 'set'],
-    ['排演', ['simulation', 'display', 'observe', 'record'], 'rehearse'],
-    ['复台', ['versions', 'remount'], 'remount'],
+    ['置景', ['build'], 'set'],
+    ['排演', ['simulation', 'display', 'observe', 'record', 'stage-cameras', 'build'], 'rehearse'],
+    ['复台', ['versions', 'remount', 'build'], 'remount'],
   ] as const) {
     button(label).onClick()
     assert.deepEqual(
-      renderSidebar('navigation-test').sidebarTabs.map((tab) => tab.id),
-      expected,
+      renderSidebar('navigation-test').sidebarTabs.map((tab) => tab.label),
+      ['场地', '资产', '属性'],
     )
     for (const panel of expected) {
+      assert.equal(openStudioPanel(panel), true)
       store.setState({ playing: true, previewing: true, time: 2 })
       editor.mode = 'build'
       collapsed = true
@@ -241,30 +243,25 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   }
   for (const [legacy, expected, expectedGroup] of [
     ['picture', 'display', 'rehearse'],
-    ['camera-studio', 'stage-cameras', 'set'],
-    ['stage-command', 'items', 'set'],
+    ['camera-studio', 'stage-cameras', 'rehearse'],
+    ['stage-command', 'items', 'rehearse'],
     ['camera-rehearsal', 'camera-rehearsal', 'rehearse'],
   ]) {
     assert.equal(openStudioPanel(legacy!), true)
     assert.equal(editor.activeSidebarPanel, expected)
     assert.equal(renderSidebar('navigation-test').group, expectedGroup)
-    if (expectedGroup === 'rehearse')
-      assert.equal(
-        renderSidebar('navigation-test').sidebarTabs.at(-1)?.id,
-        expected === 'camera-rehearsal' ? expected : 'record',
-      )
+    if (expectedGroup === 'rehearse' && expected !== 'items')
+      assert.equal(renderSidebar('navigation-test').sidebarTabs.at(-1)?.id, expected)
     button('排演').onClick()
     assert.equal(editor.activeSidebarPanel, 'simulation')
   }
   isMobile = true
   for (const label of ['置景', '排演', '复台']) {
     button(label).onClick()
-    const tab = renderSidebar('navigation-test').sidebarTabs.find(
-      (entry) => entry.id === 'stage-overview',
+    const content = elements(renderSidebar('navigation-test').sidebarTopSlot).find(
+      (entry) => entry.type === StageOverviewPanel,
     )
-    assert.ok(tab, 'mobile retains the existing overview entry')
-    const content = (tab.component as () => unknown)() as Element
-    assert.equal(content.type, StageOverviewPanel)
+    assert.ok(content)
     assert.equal(content.props?.sceneId, 'navigation-test')
   }
   isMobile = false

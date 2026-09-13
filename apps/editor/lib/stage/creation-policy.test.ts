@@ -4,6 +4,7 @@ import {
   parseStageText,
   type SceneContextSummary,
   type StageCommand,
+  type StagePlan,
 } from '@pascal-app/core/stage'
 import { handleCreationPermission } from '../ai/creation-permission'
 import {
@@ -19,7 +20,31 @@ const context: SceneContextSummary = {
   objects: [],
   selectedObjectIds: [],
 }
-const plan = parseStageText('添加窗景片', context)!
+// Explicit legacy scene fixture; current catalog creation requires its real GLB.
+const plan: StagePlan = {
+  schemaVersion: 1,
+  source: 'typed-command',
+  venue: null,
+  items: [
+    {
+      proposalId: 'legacy-window',
+      existingNodeId: null,
+      kind: 'window-flat',
+      displayName: '窗景片',
+      libraryAssetId: null,
+      dimensionsMeters: { width: 1.2, height: 2.1, depth: 0.15 },
+      transform: { position: { x: 0, y: 0, z: 3 }, rotationDegrees: { x: 0, y: 0, z: 0 } },
+      certainty: 'stated',
+      assumptionIds: [],
+      evidenceIds: [],
+    },
+  ],
+  relations: [],
+  assumptions: [],
+  questions: [],
+  evidence: [],
+  warnings: [],
+}
 const commands = compileStagePlan(plan, context, {
   transactionId: 'p1',
   issuedAt: new Date().toISOString(),

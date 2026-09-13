@@ -7,6 +7,7 @@ import { CAMERA_METADATA, currentStageContext } from '../stage/context'
 import { createManualStageGraph } from '../stage/initial-stage'
 import { bindRehearsalScene } from './authority'
 import * as feedback from './build-feedback'
+import { withLegacyTable } from './build-fixture'
 import { DiaConversation } from './conversation-controller'
 
 globalThis.requestAnimationFrame ??= () => 0
@@ -28,12 +29,14 @@ function deferred() {
 }
 
 async function setup() {
-  const graph = createManualStageGraph({
-    type: 'proscenium',
-    widthMeters: 8,
-    depthMeters: 6,
-    heightMeters: 4,
-  })
+  const graph = withLegacyTable(
+    createManualStageGraph({
+      type: 'proscenium',
+      widthMeters: 8,
+      depthMeters: 6,
+      heightMeters: 4,
+    }),
+  )
   const cameras = { version: 1 as const, shots: [] }
   graph.nodes[graph.rootNodeIds[0]!]!.metadata[CAMERA_METADATA] = cameras
   useCameraStudio.getState().setProject(cameras)
@@ -54,7 +57,7 @@ async function setup() {
   const dia = new DiaConversation(sceneId, () => null)
   cleanups.push(() => dia.dispose())
   await dia.load()
-  await dia.send('给我一张圆桌')
+  await dia.send('圆桌往台左移动30厘米')
   await dia.preview()
   expect(dia.buildProposal()!.status).toBe('previewed')
   return { dia, sceneId, flush: () => queue }
@@ -79,7 +82,7 @@ test('cancelled Build rejection cannot settle a newer proposal after its record 
   const rejecting = dia.reject()
   await entered.promise
   dia.cancel()
-  await dia.send('给我两把椅子')
+  await dia.send('圆桌往台右移动20厘米')
   const nextId = dia.buildProposal()!.id
   expect(nextId).not.toBe(oldId)
   expect(dia.store.getState().thread!.status).toBe('proposal-ready')
@@ -119,7 +122,7 @@ test('cancelled Build adoption retains its durable receipt without overwriting a
   expect(currentStageContext().objects).toHaveLength(1)
   const adopted = useScene.getState().nodes
   dia.cancel()
-  await dia.send('给我两把椅子')
+  await dia.send('圆桌往台右移动20厘米')
   const nextId = dia.buildProposal()!.id
   expect(nextId).not.toBe(oldId)
   expect(dia.store.getState().thread!.status).toBe('proposal-ready')

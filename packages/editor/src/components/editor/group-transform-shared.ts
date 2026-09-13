@@ -1,6 +1,7 @@
 import {
   type AnyNode,
   type AnyNodeId,
+  getNodeLock,
   nodeRegistry,
   resolveBuildingForLevel,
   sceneRegistry,
@@ -230,6 +231,8 @@ export function collectParticipants(
       }
     }
   }
+  if ([...starts, ...links].some(({ id }) => getNodeLock(sceneNodes, id, true)))
+    return { starts: [], links: [] }
   return { starts, links }
 }
 

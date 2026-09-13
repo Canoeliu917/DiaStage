@@ -11,6 +11,7 @@ import { useEditor, useFloorplanRender, useInteractionScope } from '@pascal-app/
 import { useViewer } from '@pascal-app/viewer'
 import { type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef } from 'react'
 import { Euler, Matrix4, Quaternion, Vector3 } from 'three'
+import { cameraObservationShot } from './beta-observation'
 import { type CameraPose, type CameraProject, type Shot, sampleShot, type Vec3 } from './model'
 import { useCameraStudio } from './store'
 
@@ -182,9 +183,11 @@ export function CameraStageFloorplan({ enabled }: { enabled: boolean }) {
       return
     try {
       state.updateShot(active.shot.id, {
-        keyframes: active.shot.keyframes.map((key) =>
-          key.id === active.frameId ? { ...key, ...temporary.pose } : key,
-        ),
+        keyframes: state.project.shots
+          .find((entry) => entry.id === active.shot.id)!
+          .keyframes.map((key) =>
+            key.id === active.frameId ? { ...key, ...temporary.pose } : key,
+          ),
       })
     } catch (error) {
       state.setNotice(error instanceof Error ? error.message : '二维机位变换无效')
@@ -238,6 +241,10 @@ export function CameraStageFloorplan({ enabled }: { enabled: boolean }) {
     if (state.selectedShotId !== shot.id) state.selectShot(shot.id)
     state.selectKeyframe(keyId)
     useViewer.getState().setSelection({ selectedIds: [] })
+    if (shot.stageLocked) {
+      state.setNotice(`${shot.name}已固定，请先解除固定。`)
+      return
+    }
     if (shot.follow) {
       state.setNotice('此机位正在跟随目标；请先关闭跟随，再移动或调整朝向')
       return
@@ -307,7 +314,8 @@ export function CameraStageFloorplan({ enabled }: { enabled: boolean }) {
       onPointerCancel={() => finish(false)}
       onLostPointerCapture={() => finish(false)}
     >
-      {project.shots.map((shot) => {
+      {project.shots.map((storedShot) => {
+        const shot = cameraObservationShot(storedShot)
         const selected = shot.id === selectedId
         const key =
           (selected ? shot.keyframes.find((key) => key.id === frameId) : undefined) ??
@@ -329,7 +337,7 @@ export function CameraStageFloorplan({ enabled }: { enabled: boolean }) {
           <g
             key={shot.id}
             role="button"
-            aria-label={`${shot.name}：拖动移动或调整机位朝向`}
+            aria-label={`${shot.name}：${shot.stageLocked ? '已固定' : '拖动移动或调整机位朝向'}`}
             tabIndex={0}
             transform={`translate(${position[0]} ${position[2]})`}
             onPointerDown={(event) => start(event, shot, key.id)}
@@ -341,7 +349,7 @@ export function CameraStageFloorplan({ enabled }: { enabled: boolean }) {
               useCameraStudio.getState().selectShot(shot.id)
               useCameraStudio.getState().selectKeyframe(key.id)
             }}
-            style={{ cursor: shot.follow ? 'pointer' : 'grab' }}
+            style={{ cursor: shot.stageLocked || shot.follow ? 'pointer' : 'grab' }}
           >
             <title>
               {shot.name} · {key.time.toFixed(2)} 秒 · 高度 {pose.position[1].toFixed(2)} 米

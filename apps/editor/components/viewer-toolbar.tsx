@@ -1,6 +1,7 @@
 'use client'
 
 import { Icon as IconifyIcon } from '@iconify/react'
+import { type AnyNodeId, getNodeLock, useScene } from '@pascal-app/core'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,9 +11,11 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
+  useCameraHintFocus,
   useEditor,
   useFloorplanAnnotationVisibility,
   useFloorplanMode,
+  useInteractionScope,
   useSidebarStore,
   type ViewMode,
 } from '@pascal-app/editor'
@@ -20,16 +23,19 @@ import { type EdgeMode, requestWalkthroughPointerLock, useViewer } from '@pascal
 import {
   Box,
   Check,
-  ChevronsLeft,
   ChevronsRight,
   Columns2,
   Eye,
   EyeOff,
   Footprints,
   Grid2X2,
+  Hand,
   Layers3,
   Magnet,
+  Maximize2,
+  MousePointer2,
   PenLine,
+  RotateCw,
   Ruler,
   ScanLine,
   SlidersHorizontal,
@@ -37,10 +43,23 @@ import {
   Tag,
 } from 'lucide-react'
 import Image from 'next/image'
-import { type ReactNode, useCallback } from 'react'
+import { type ReactNode, useCallback, useEffect } from 'react'
 import { flushSync } from 'react-dom'
+import { currentStageContext } from '@/lib/stage/context'
 import { cn } from '@/lib/utils'
 import { useCameraStudio } from './camera-studio/store'
+import {
+  cancelStagePlacement,
+  startStagePlacement,
+  useStagePlacement,
+} from './stage-entry/manual-stage-panel'
+import {
+  StageGridToolbar,
+  StagePlanNavigationRuntime,
+  StageRotationRuntime,
+  useStageRotation,
+} from './stage-entry/stage-viewport-controls'
+import { openStudioPanel } from './studio-navigation'
 import { useSimulationSelection } from './theatre/simulation-panel'
 import { Tooltip, TooltipContent, TooltipTrigger } from './toolbar-tooltip'
 
@@ -165,6 +184,153 @@ function ViewModeControl() {
   )
 }
 
+function openPropSettings(selector: string) {
+  if (!openStudioPanel('build')) return
+  const focus = () => {
+    const section = document.querySelector<HTMLElement>(selector)
+    if (!section) return false
+    if (section instanceof HTMLDetailsElement) section.open = true
+    section.scrollIntoView({ block: 'nearest' })
+    ;(section.querySelector<HTMLElement>('input, select, button') ?? section).focus()
+    return true
+  }
+  if (focus()) return
+  const observer = new MutationObserver(() => {
+    if (focus()) observer.disconnect()
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
+  window.setTimeout(() => observer.disconnect(), 2000)
+}
+
+function StageTransformToolbar() {
+  const selected = useViewer((state) => state.selection.selectedIds)
+  const node = useScene((state) =>
+    selected.length === 1 ? state.nodes[selected[0] as AnyNodeId] : undefined,
+  )
+  const locked = useScene(
+    (state) => !node || state.readOnly || !!getNodeLock(state.nodes, node.id, true),
+  )
+  const exclusive = useEditor(
+    (state) => state.isPreviewMode || state.isFirstPersonMode || state.isCaptureMode,
+  )
+  const draft = useStagePlacement((state) => state.draft)
+  const rotating = useStageRotation((state) => state.armed)
+  const editable = !exclusive && !locked && !!node && ['item', 'block', 'stair'].includes(node.type)
+  const select = useCallback(() => {
+    cancelStagePlacement()
+    useStageRotation.setState({ armed: false })
+    useEditor.getState().armToolMode({ mode: 'select' })
+    useEditor.getState().setFloorplanSelectionTool('click')
+  }, [])
+  const move = useCallback(() => {
+    if (!editable || !node) return
+    useStageRotation.setState({ armed: false })
+    const object = currentStageContext().objects.find((item) => item.id === node.id)
+    if (!object) return
+    startStagePlacement(
+      {
+        id: object.id,
+        name: object.name,
+        kind: object.kind,
+        dimensionsMeters: object.dimensionsMeters,
+        libraryAssetId: node.type === 'item' ? node.asset.id : null,
+      },
+      object,
+    )
+  }, [editable, node])
+  useEffect(() => {
+    const previous = useCameraHintFocus.getState().actions
+    useCameraHintFocus.getState().focus([])
+    return () => useCameraHintFocus.getState().focus(previous)
+  }, [])
+  useEffect(() => {
+    const keydown = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.altKey ||
+        event.shiftKey ||
+        exclusive
+      )
+        return
+      if (
+        event.target instanceof HTMLElement &&
+        (event.target.isContentEditable ||
+          event.target.closest('input, textarea, select, [role="dialog"]'))
+      )
+        return
+      if (document.querySelector('[role="dialog"][data-state="open"], [aria-modal="true"]')) return
+      if (
+        useViewer.getState().inputDragging ||
+        useViewer.getState().cameraDragging ||
+        useInteractionScope.getState().scope.kind !== 'idle'
+      )
+        return
+      const key = event.key.toLowerCase()
+      if (key !== 'r' || !editable) return
+      event.preventDefault()
+      event.stopPropagation()
+      openPropSettings('[data-stage-dimensions]')
+    }
+    window.addEventListener('keydown', keydown, true)
+    return () => window.removeEventListener('keydown', keydown, true)
+  }, [editable, exclusive])
+  return (
+    <div
+      className={cn(TOOLBAR_CONTAINER, 'stage-transform-toolbar')}
+      role="toolbar"
+      aria-label="道具操作"
+    >
+      <button
+        type="button"
+        className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
+        disabled={exclusive}
+        onClick={select}
+        title="选择道具"
+      >
+        <MousePointer2 size={14} />
+        选择
+      </button>
+      <button
+        type="button"
+        className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
+        disabled={!editable || !!draft}
+        onClick={move}
+        title="整件移动"
+      >
+        <Hand size={14} />
+        移动
+      </button>
+      <button
+        type="button"
+        className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
+        disabled={!editable || !!draft}
+        onClick={() => useStageRotation.setState({ armed: !rotating })}
+        aria-pressed={rotating}
+        title="旋转：按住右键左右拖动，15°一格，松开确定；Esc取消"
+      >
+        <RotateCw size={14} />
+        旋转
+      </button>
+      <button
+        type="button"
+        className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
+        disabled={!editable || !!draft}
+        onClick={() => openPropSettings('[data-stage-dimensions]')}
+        title="R · 打开缩放设置"
+      >
+        <Maximize2 size={14} />
+        缩放
+      </button>
+      <StageGridToolbar />
+      <StageRotationRuntime />
+      <StagePlanNavigationRuntime />
+    </div>
+  )
+}
+
 function CollapseSidebarButton() {
   const isCollapsed = useSidebarStore((state) => state.isCollapsed)
   const setIsCollapsed = useSidebarStore((state) => state.setIsCollapsed)
@@ -172,6 +338,8 @@ function CollapseSidebarButton() {
   const toggle = useCallback(() => {
     setIsCollapsed(!isCollapsed)
   }, [isCollapsed, setIsCollapsed])
+
+  if (!isCollapsed) return null
 
   return (
     <div className={TOOLBAR_CONTAINER}>
@@ -182,11 +350,7 @@ function CollapseSidebarButton() {
           onClick={toggle}
           type="button"
         >
-          {isCollapsed ? (
-            <ChevronsRight className="h-4 w-4" />
-          ) : (
-            <ChevronsLeft className="h-4 w-4" />
-          )}
+          <ChevronsRight className="h-4 w-4" />
         </button>
       </ToolbarTooltip>
     </div>
@@ -205,6 +369,7 @@ function WallModeToggle() {
         className="min-w-0 bg-background py-2 text-xs text-foreground"
         value={wallMode}
         onChange={(event) => setWallMode(event.target.value as typeof wallMode)}
+        onKeyDown={(event) => event.stopPropagation()}
       >
         {(['up', 'cutaway', 'down', 'translucent'] as const).map((mode) => (
           <option key={mode} value={mode}>
@@ -243,8 +408,7 @@ function DisplayMenu() {
   const setShading = useViewer((state) => state.setShading)
   const edges = useViewer((state) => state.edges)
   const setEdges = useViewer((state) => state.setEdges)
-  const magneticSnap = useEditor((state) => state.magneticSnap)
-  const setMagneticSnap = useEditor((state) => state.setMagneticSnap)
+  const snap = useStagePlacement((state) => state.snap)
   const annotationVisibility = useFloorplanAnnotationVisibility((state) => state.visibility)
   const setAnnotationCategory = useFloorplanAnnotationVisibility((state) => state.setCategory)
   const wallDimensionReference = useFloorplanAnnotationVisibility(
@@ -281,10 +445,11 @@ function DisplayMenu() {
         </DropdownMenuTrigger>
       </ToolbarTooltip>
       <DropdownMenuContent
-        align="end"
+        align="start"
         className="w-60 rounded-xl border-border/45 bg-popover/95 backdrop-blur-xl"
         side="bottom"
         sideOffset={8}
+        onEscapeKeyDown={(event) => event.stopPropagation()}
       >
         <DropdownMenuItem onSelect={(e) => keepOpen(e, () => setShowGrid(!showGrid))}>
           <Grid2X2 className="h-4 w-4" />
@@ -397,11 +562,22 @@ function DisplayMenu() {
             ) : null}
           </>
         ) : null}
-        <DropdownMenuItem onSelect={(e) => keepOpen(e, () => setMagneticSnap(!magneticSnap))}>
+        <DropdownMenuItem
+          onSelect={(e) =>
+            keepOpen(e, () => {
+              const guides = !snap.guides
+              useStagePlacement.setState({ snap: { ...snap, guides } })
+              const editor = useEditor.getState()
+              editor.setMagneticSnap(guides)
+              editor.setSnappingMode('item', snap.grid ? 'grid' : guides ? 'lines' : 'off')
+              editor.setSnappingMode('polygon', snap.grid ? 'grid' : guides ? 'lines' : 'off')
+            })
+          }
+        >
           <Magnet className="h-4 w-4" />
-          <span>磁性吸附</span>
+          <span>道具边缘贴合</span>
           <span className="ml-auto text-muted-foreground text-xs">
-            {magneticSnap ? '开启' : '关闭'}
+            {snap.guides ? '开启' : '关闭'}
           </span>
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -567,7 +743,7 @@ export function EditorViewerToolbarLeft() {
   return (
     <>
       <CollapseSidebarButton />
-      <ViewModeControl />
+      <StageTransformToolbar />
     </>
   )
 }
@@ -635,16 +811,27 @@ export function StudioPicturePanel() {
 
 export function EditorViewerToolbarRight() {
   return (
-    <details className="theatre-view-options">
-      <summary>显示与观察</summary>
-      <div className={TOOLBAR_CONTAINER}>
-        <WallModeToggle />
-        <div className="my-1.5 w-px bg-border/50" />
-        <DisplayMenu />
-        <div className="my-1.5 w-px bg-border/50" />
-        <WalkthroughButton />
-        <PreviewButton />
-      </div>
-    </details>
+    <div className="stage-view-toolbar">
+      <ViewModeControl />
+      <details className="theatre-view-options">
+        <summary>场景选项</summary>
+        <div className={TOOLBAR_CONTAINER}>
+          <WallModeToggle />
+          <div className="my-1.5 w-px bg-border/50" />
+          <DisplayMenu />
+          <div className="my-1.5 w-px bg-border/50" />
+          <WalkthroughButton />
+          <PreviewButton />
+          <details className="w-full text-xs text-muted-foreground">
+            <summary>操作帮助</summary>
+            <p className="mt-2">中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远 · F 聚焦所选道具。</p>
+            <p className="mt-2">
+              WASD 前后左右移动观察视角 · Q 下降 · E
+              上升。点击旋转后按住右键左右拖动，松开确定；点击缩放或按 R 也可打开缩放设置。
+            </p>
+          </details>
+        </div>
+      </details>
+    </div>
   )
 }

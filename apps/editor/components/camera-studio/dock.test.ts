@@ -15,6 +15,7 @@ if (!process.env.CAMERA_STUDIO_DOCK_TEST) {
   })
 } else {
   const { mock } = await import('bun:test')
+  mock.module('@/lib/beta-capabilities', () => ({ BETA_EXPERT_MEDIA_ENABLED: true }))
   const React = await import('react')
   const { useCameraStudio: store } = await import('./store')
   const effects: Array<() => undefined | (() => void)> = []

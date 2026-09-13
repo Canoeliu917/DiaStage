@@ -33,6 +33,7 @@ import {
   RenderTarget,
   type WebGPURenderer,
 } from 'three/webgpu'
+import { cameraObservationShot } from './beta-observation'
 import { MONITOR_HEIGHT, MONITOR_WIDTH } from './camera-monitor'
 import { renderMonitorPixels } from './camera-monitor-render'
 import { transformedCameraPose } from './camera-stage-math'
@@ -40,6 +41,7 @@ import { type CameraKeyframe, type CameraPose, type Shot, sampleShot } from './m
 import { useCameraStudio } from './store'
 
 function shotPose(shot: Shot, frame: CameraKeyframe): CameraPose {
+  shot = cameraObservationShot(shot)
   if (!shot.follow) return frame
   const target = sceneRegistry.nodes.get(shot.follow.nodeId)
   if (!target) throw new Error('跟随目标尚未加载，请检查运镜设置')
@@ -314,14 +316,21 @@ function CameraActor({
               .setNotice('此机位正在跟随目标；请先在运镜设置关闭跟随，再拖拽摄像机')
         }}
       />
-      {selected && !shot.follow && (
+      {selected && !shot.follow && !shot.stageLocked && (
         <CameraTransform
           controlRef={transform}
           object={rig.group}
           mode={mode}
           onMouseDown={() => {
             const state = useCameraStudio.getState()
-            if (!state.stageReady || state.recording || state.previewing || state.playing) return
+            if (
+              !state.stageReady ||
+              state.recording ||
+              state.previewing ||
+              state.playing ||
+              shot.stageLocked
+            )
+              return
             drag.current = {
               pose: {
                 position: rig.group.position.toArray(),
@@ -383,9 +392,9 @@ function CameraActor({
             if (pose) {
               try {
                 state.updateShot(shot.id, {
-                  keyframes: shot.keyframes.map((key) =>
-                    key.id === frame.id ? { ...key, ...pose } : key,
-                  ),
+                  keyframes: state.project.shots
+                    .find((entry) => entry.id === shot.id)!
+                    .keyframes.map((key) => (key.id === frame.id ? { ...key, ...pose } : key)),
                 })
               } catch (error) {
                 applyPose(rig.group, previous.pose)
@@ -586,7 +595,8 @@ export function CameraStageSystem({ enabled }: { enabled: boolean }) {
   const controls = useThree((state) => state.controls) as CameraControlsImpl | undefined
   const invalidate = useThree((state) => state.invalidate)
   const ready = enabled && editorReady && sceneReady && idle && !playback && !paused
-  const selected = project.shots.find((shot) => shot.id === selectedId)
+  const observationShots = useMemo(() => project.shots.map(cameraObservationShot), [project])
+  const selected = observationShots.find((shot) => shot.id === selectedId)
   const frame = selected?.keyframes.find((frame) => frame.id === frameId) ?? selected?.keyframes[0]
   useEffect(() => {
     const state = useCameraStudio.getState()
@@ -639,7 +649,7 @@ export function CameraStageSystem({ enabled }: { enabled: boolean }) {
   return (
     <>
       {showActors &&
-        project.shots.map((shot) => {
+        observationShots.map((shot) => {
           const active = shot.id === selectedId
           const key = active ? frame : shot.keyframes[0]
           return key ? (

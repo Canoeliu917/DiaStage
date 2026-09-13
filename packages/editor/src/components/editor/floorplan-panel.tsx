@@ -74,6 +74,7 @@ import {
   worldToFloorplanLocalPoint,
 } from '../../lib/floorplan'
 import { resolveGenericFloorplanGridEventPoint } from '../../lib/floorplan-grid-event-point'
+import { hasPlacementPolicy } from '../../lib/placement-policy'
 import { guideEmitter } from '../../lib/guide-events'
 import { measurementHint, parseMeasurement } from '../../lib/measurement-parser'
 import { formatLinearMeasurement, linearUnitToMeters } from '../../lib/measurements'
@@ -6071,7 +6072,7 @@ export function FloorplanPanel({
         return
       }
 
-      if (pose.source === '3d') {
+      if (pose.source === '3d' || hasPlacementPolicy()) {
         syncFloorplanViewportToNavigationPose(pose)
       }
     },
@@ -6473,9 +6474,11 @@ export function FloorplanPanel({
     [palette, isDark],
   )
   const slabSelectionHatchId = useMemo(() => `floorplan-slab-selection-hatch-${isDark}`, [isDark])
+  const placementGridStep = useEditor((state) => state.gridSnapStep)
+  const stageGrid = hasPlacementPolicy()
   const gridSteps = useMemo(
-    () => getVisibleGridSteps(viewBox.width, surfaceSize.width),
-    [surfaceSize.width, viewBox.width],
+    () => stageGrid ? { minorStep: placementGridStep, majorStep: 1 } : getVisibleGridSteps(viewBox.width, surfaceSize.width),
+    [surfaceSize.width, viewBox.width, placementGridStep, stageGrid],
   )
   const gridBounds = useMemo(
     () =>

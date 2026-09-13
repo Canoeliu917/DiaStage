@@ -86,6 +86,8 @@ const assetSchema = z.object({
   isDraft: z.boolean().optional(),
   src: AssetUrl,
   dimensions: z.tuple([z.number(), z.number(), z.number()]).default([1, 1, 1]), // [w, h, d]
+  // Bounds are separate from the authored pivot, after asset corrective transforms.
+  boundsCenter: z.tuple([z.number(), z.number(), z.number()]).optional(),
   attachTo: z.enum(['wall', 'wall-side']).optional(),
   tags: z.array(z.string()).optional(),
   // Function-axis tag slugs from the taxonomy. Drives the hierarchical
@@ -107,12 +109,19 @@ const assetSchema = z.object({
 export type AssetInput = z.input<typeof assetSchema>
 export type Asset = z.infer<typeof assetSchema>
 
+export const ItemFoldControlsSchema = z.object({
+  fold_angle_1_deg: z.number().finite().min(0).max(270).default(90),
+  fold_angle_2_deg: z.number().finite().min(0).max(270).default(90),
+})
+export type ItemFoldControls = z.infer<typeof ItemFoldControlsSchema>
+
 export const ItemNode = BaseNode.extend({
   id: objectId('item'),
   type: nodeType('item'),
   position: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
   rotation: z.tuple([z.number(), z.number(), z.number()]).default([0, 0, 0]),
   scale: z.tuple([z.number(), z.number(), z.number()]).default([1, 1, 1]),
+  controls: ItemFoldControlsSchema.optional(),
   side: z.enum(['front', 'back']).optional(),
   children: z.array(objectId('item')).default([]),
 
@@ -186,4 +195,9 @@ export function getScaledDimensions(item: ItemNode): [number, number, number] {
   const [w, h, d] = item.asset.dimensions
   const [sx, sy, sz] = item.scale
   return [w * sx, h * sy, d * sz]
+}
+
+export function getItemBoundsCenter(item: ItemNode): [number, number, number] {
+  const [x, y, z] = item.asset.boundsCenter ?? [0, item.asset.dimensions[1] / 2, 0]
+  return [x * item.scale[0], y * item.scale[1], z * item.scale[2]]
 }

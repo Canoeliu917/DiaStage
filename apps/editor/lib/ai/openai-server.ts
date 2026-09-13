@@ -1,11 +1,13 @@
 import 'server-only'
-import { StagePlanSchema } from '@pascal-app/core/stage'
+import { STAGE_OBJECT_REGISTRY } from '@pascal-app/core/stage'
 import OpenAI from 'openai'
 import { zodTextFormat } from 'openai/helpers/zod'
+import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { buildRelevantSceneContext } from '../stage/relevant-context'
 import { AI_LIMITS, AiError } from './api'
 import type { ValidatedAudio } from './audio-validation'
 import { AI_TOKEN_LIMITS, THEATRE_TRANSCRIPTION_PROMPT } from './config'
+import { StageModelPlanSchema } from './stage-model-schema'
 import type { PlanRequest } from './stage-planner'
 import { trackAiCall } from './usage'
 
@@ -32,9 +34,10 @@ const instructions = `你是咫台的舞台空间解析器。只返回严格 Sta
 不得生成代码、文件路径、URL、工具调用、任意字段或资源下载地址。libraryAssetId 必须为 null。
 禁止灯具、照明、家装、建筑工程、机电、屋顶、地形、厨房卫浴；禁止场次、节拍、行动目标、人物心理、导演阐释、Cue Stack 和独立道具管理。不要将禁止内容伪装为其他物件。
 source 必须等于请求 source，existingNodeId 只能引用 sceneContext 中已有 ID。
-舞台坐标单位米：原点在台口线中点，X 正向为演员面向观众的台右，Z 正向为台后，Y 向上。尺寸表示物体实际外框，位置表示底面中心。旋转角度使用度。
+舞台坐标单位米：原点在台口线中点，X 正向为演员面向观众的台右，Z 正向为台后，Y 向上。尺寸表示模型实际外框，位置表示对象原点；折叠或开门模型的外框不一定以原点居中，不能更改模型支点。旋转角度使用度。
 台右和观众右相反。“右边”“旁边”等关系不明确时必须在 questions 中询问；同名对象或“它”不唯一时必须询问，不能猜选对象。
-缺少舞台宽深时询问。推测的布景尺寸、间距和位置必须列为 assumptions，并在对应对象 assumptionIds 引用，certainty=inferred。
+缺少舞台宽深时询问。布景身份与名义规格只取 objectRegistry；新建默认外框取 modelDimensions 和 availableSceneryLibrary，不把单片宽或门框厚度当整体模型外框。名称有多种候选时询问，缺整体尺寸不能猜。用户明确要求不同尺寸时保留其数值并询问，不默默改为标准尺寸。未接入的模型会由本机拒绝创建。不得编造碰撞几何。
+“一点/稍微/小幅”表示 small 语义，不固定成某个距离；没有明确对象、方向或幅度时先询问。明确单位的数值必须原样换算，不能被小幅参数替代。
 空间相对关系写入 relations；间距是两个外框间的净距，最终坐标由本地确定性计算，不要用任意偏移替代。
 仅生成此次输入涉及的变更，不复制整个场景，不删除旧内容，不自动执行。不能处理的请求返回简短澄清问题，不创造替代需求。
 语音和口令没有剧本文本证据，evidence 与 evidenceIds 应为空数组。没有内容的必需字段使用空数组或 null。`
@@ -45,7 +48,17 @@ export async function generateStagePlan(
 ): Promise<unknown> {
   const context = buildRelevantSceneContext(request.sceneContext, request.input)
   const client = createOpenAIClient()
-  const payload = JSON.stringify({ ...request, sceneContext: context })
+  const payload = JSON.stringify({
+    ...request,
+    sceneContext: context,
+    objectRegistry: STAGE_OBJECT_REGISTRY,
+    availableSceneryLibrary: AVAILABLE_STAGE_SCENERY.map(({ asset }) => ({
+      canonicalId: asset.id,
+      name: asset.name,
+      dimensions: asset.dimensions,
+      boundsCenter: asset.boundsCenter,
+    })),
+  })
   const response = await trackAiCall(
     'stage-command',
     AI_MODELS.command,
@@ -61,7 +74,7 @@ export async function generateStagePlan(
               { role: 'system', content: instructions },
               { role: 'user', content: payload },
             ],
-            text: { format: zodTextFormat(StagePlanSchema, 'stage_plan') },
+            text: { format: zodTextFormat(StageModelPlanSchema, 'stage_plan') },
           },
           { signal },
         )
@@ -77,7 +90,7 @@ export async function generateStagePlan(
         }),
     (result) => result.usage,
     null,
-    instructions + payload + JSON.stringify(zodTextFormat(StagePlanSchema, 'stage_plan')),
+    instructions + payload + JSON.stringify(zodTextFormat(StageModelPlanSchema, 'stage_plan')),
   )
   if (response.status !== 'completed' || response.output_parsed === null)
     throw new AiError('PLAN_INVALID', '服务未能完成这条口令，请调整描述后重试。', 422, true)

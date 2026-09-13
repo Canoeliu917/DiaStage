@@ -15,6 +15,7 @@ import {
   applyFloorplanAlignment,
   isGridSnapActive,
   isMagneticSnapActive,
+  snapPlacementPosition,
   useEditor,
   type WallPlanPoint,
 } from '@pascal-app/editor'
@@ -261,30 +262,45 @@ function buildFloorItemSession(
 ): FloorplanMoveTargetSession {
   const rotationY = node.rotation[1] ?? 0
   const resolvePlanPoint = createPlanarMovePointResolver(resolveItemPlanPoint(node, nodes), node)
+  const resolveStagePoint = createFloorplanCursorResolver({
+    original: resolveItemPlanPoint(node, nodes),
+    metadata: node.metadata,
+  })
   // Alignment candidates gathered once — scene is stable during the drag.
   const candidates = collectAlignmentAnchors(nodes, node.id)
   let lastPatch: Partial<ItemNode> | null = null
   return {
     affectedIds: [node.id as AnyNodeId],
     apply({ planPoint }) {
+      const raw = resolveStagePoint(planPoint)
+      const stagePosition = snapPlacementPosition(
+        { ...node, parentId: startLevelId ?? node.parentId },
+        [raw[0], node.position[1], raw[1]],
+      )
       const gridSnapped = resolvePlanPoint(planPoint)
       // Figma-style alignment layered on the grid snap, mode-driven (matching 3D):
       // guides are DISPLAYED in every snapping mode; the magnetic pull onto them
       // is applied only in "lines" mode (`applySnap`).
-      const { point: snapped } = applyFloorplanAlignment(
-        gridSnapped,
-        movingFootprintAnchors(
-          node as unknown as AnyNode,
-          gridSnapped[0],
-          gridSnapped[1],
-          rotationY,
-        ),
-        candidates,
-        { applySnap: isMagneticSnapActive() },
-      )
+      const { point: snapped } = stagePosition
+        ? { point: [stagePosition[0], stagePosition[2]] }
+        : applyFloorplanAlignment(
+            gridSnapped,
+            movingFootprintAnchors(
+              node as unknown as AnyNode,
+              gridSnapped[0],
+              gridSnapped[1],
+              rotationY,
+            ),
+            candidates,
+            { applySnap: isMagneticSnapActive() },
+          )
 
       const sourceY = node.position[1]
-      const nextPosition: [number, number, number] = [snapped[0], sourceY, snapped[1]]
+      const nextPosition: [number, number, number] = stagePosition ?? [
+        snapped[0]!,
+        sourceY,
+        snapped[1]!,
+      ]
 
       lastPatch = {
         position: nextPosition,

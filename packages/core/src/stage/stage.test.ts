@@ -161,14 +161,16 @@ describe('stage domain coordinates', () => {
 })
 
 describe('stage plan trust boundary and compiler', () => {
-  test('dense collisions stay within the response schema limit and remain blocking', () => {
+  test('dense contacts stay within the response schema limit and remain advisory', () => {
     const input = plan()
     input.items = Array.from({ length: 50 }, (_, index) => item(`item-${index}`))
     const result = validateStagePlan(input, context)
-    expect(result.valid).toBe(false)
+    expect(result.valid).toBe(true)
     expect(result.warnings.length).toBeLessThanOrEqual(400)
     expect(StagePlanSchema.safeParse(result.plan).success).toBe(true)
-    expect(result.warnings.at(-1)?.code).toBe('invalid-plan')
+    expect(
+      result.warnings.every((warning) => warning.code === 'collision' && !warning.blocking),
+    ).toBe(true)
   })
   test('the sofa / window / door example has deterministic edge gaps and command metadata', () => {
     const input = example()
@@ -225,7 +227,7 @@ describe('stage plan trust boundary and compiler', () => {
     expect(result.ok).toBe(false)
     expect(result.commands).toEqual([])
   })
-  test('bounds, collisions, doorway clearance and missing references block before execution', () => {
+  test('bounds and references block execution while contacts and old clearances do not', () => {
     const outside = plan()
     outside.items[0]!.transform.position.x = 4
     expect(
@@ -235,7 +237,7 @@ describe('stage plan trust boundary and compiler', () => {
     ).toBe(true)
     const collision = plan()
     collision.items.push(item('other'))
-    expect(compileStagePlan(collision, context, transaction).commands).toEqual([])
+    expect(compileStagePlan(collision, context, transaction).ok).toBe(true)
     expect(validateStagePlan(collision, context).warnings.some((w) => w.code === 'collision')).toBe(
       true,
     )
@@ -249,10 +251,11 @@ describe('stage plan trust boundary and compiler', () => {
       },
     ]
     expect(
-      validateStagePlan(doorway, context).warnings.some(
-        (w) => w.code === 'clearance' && w.blocking,
+      validateStagePlan(doorway, { ...context, doorClearanceMeters: 10 }).warnings.some(
+        (w) => w.code === 'clearance',
       ),
-    ).toBe(true)
+    ).toBe(false)
+    expect(compileStagePlan(doorway, context, transaction).ok).toBe(true)
     const absent = example()
     absent.relations[1]!.referenceId = 'missing'
     expect(validateStagePlan(absent, context).valid).toBe(false)
@@ -290,7 +293,11 @@ describe('stage plan trust boundary and compiler', () => {
       compileStagePlan(input, scene, transaction).commands.map((command) => command.type),
     ).toEqual(['MoveObject', 'RotateObject', 'ResizeObject'])
     input.items[0]!.existingNodeId = null
-    expect(validateStagePlan(input, scene).valid).toBe(false)
+    const result = validateStagePlan(input, scene)
+    expect(result.valid).toBe(true)
+    expect(
+      result.warnings.some((warning) => warning.code === 'collision' && !warning.blocking),
+    ).toBe(true)
   })
   test('allowed commands and manual name/lock properties are strict, finite and metadata-complete', () => {
     const meta = {

@@ -1,6 +1,8 @@
 import 'fake-indexeddb/auto'
 import { afterEach, expect, mock, spyOn, test } from 'bun:test'
-import { clearSceneHistory, subscribeSceneCommits, useScene } from '@pascal-app/core'
+import { clearSceneHistory, emitter, subscribeSceneCommits, useScene } from '@pascal-app/core'
+import { useViewer } from '@pascal-app/viewer'
+import { publishCameraPose } from '../../../../packages/editor/src/store/camera-pose-store'
 import { SceneJournal } from '../scene-journal'
 import { moveSimulationPerformer, readStageDocument } from '../theatre/simulation-store'
 import {
@@ -72,6 +74,50 @@ test('duplicate Send creates one durable user message and interaction; no automa
   expect(events.map((e) => e.name)).toContain('dia_message_sent')
   expect(JSON.stringify(events)).not.toContain('他们太近了')
   expect(events.every((e) => !e.trainingAuthorized && !e.trainingEligible)).toBe(true)
+})
+
+test('deleting every message role survives queued sends and reload without changing the stage', async () => {
+  const { controller, sceneId } = await setup()
+  await controller.send('给我两个排法')
+  await controller.preview()
+  await controller.adopt()
+  const applied = useScene.getState().nodes
+  const interaction = controller.store.getState().interaction
+  const removedIds = controller.store.getState().thread!.messages.map((m) => m.messageId)
+  expect(new Set(controller.store.getState().thread!.messages.map((m) => m.role))).toEqual(
+    new Set(['user', 'dia', 'system-state']),
+  )
+
+  const saving = Promise.withResolvers<void>()
+  const started = Promise.withResolvers<void>()
+  const save = productStorage.saveConversation
+  spyOn(productStorage, 'saveConversation').mockImplementationOnce(async (record) => {
+    started.resolve()
+    await saving.promise
+    return save(record)
+  })
+  const pending = controller.send('帮我看看这一段')
+  await started.promise
+  const pendingUserId = controller.store.getState().thread!.messages.at(-1)!.messageId
+  removedIds.push(pendingUserId)
+  const deletions = removedIds.map((id) => controller.deleteMessage(id))
+  expect(controller.store.getState().thread!.messages).toHaveLength(0)
+  expect(controller.store.getState().interaction).toBe(interaction)
+  expect(controller.store.getState().busy).toBe(true)
+  saving.resolve()
+  await Promise.all([pending, ...deletions])
+  expect(useScene.getState().nodes).toBe(applied)
+
+  await controller.send('帮我看看当前舞台')
+  const saved = (await readConversation(sceneId))!
+  expect(saved.thread.messages.length).toBeGreaterThan(0)
+  expect(saved.thread.messages.some((m) => removedIds.includes(m.messageId))).toBe(false)
+  controller.dispose()
+  const reopened = new DiaConversation(sceneId, () => null)
+  disposers.push(() => reopened.dispose())
+  await reopened.load()
+  expect(reopened.store.getState().thread!.messages).toEqual(saved.thread.messages)
+  expect(useScene.getState().nodes).toBe(applied)
 })
 
 test('Preview Adopt manual move Now revision of second proposal Preview Reject retains complete lineage', async () => {
@@ -364,4 +410,66 @@ test('reopening after an external stage edit marks old proposals stale without r
   expect(reopened.store.getState().thread!.status).toBe('stale')
   expect(useScene.getState().nodes).toBe(nodes)
   expect(useProposalGhost.getState().proposalId).toBeNull()
+})
+
+test('Dia View commands preserve the waiting-human proposal and never write the formal scene or journal', async () => {
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  const values = new Map<string, string>()
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    value: {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => values.set(key, value),
+    },
+  })
+  try {
+    const { controller, sceneId } = await setup()
+    await controller.send('给我两个排法')
+    await controller.preview()
+    const before = useScene.getState().nodes
+    const ghost = useProposalGhost.getState()
+    const proposal = controller.proposal()
+    const selection = useViewer.getState().selection
+    useViewer.setState({ selection: { ...selection, selectedIds: [] } })
+    disposers.push(() => useViewer.setState({ selection }))
+    await controller.send('聚焦选中的物品')
+    expect(controller.proposal()).toBe(proposal)
+    expect(useProposalGhost.getState()).toBe(ghost)
+    expect(controller.store.getState().thread!.status).toBe('waiting-human')
+    const pose = {
+      position: [0, 4, 10] as [number, number, number],
+      target: [0, 1, 0] as [number, number, number],
+      projection: 'perspective' as const,
+      viewWidth: 12,
+    }
+    publishCameraPose(pose)
+    let writes = 0,
+      applications = 0
+    disposers.push(
+      subscribeSceneCommits(() => {
+        writes++
+      }),
+    )
+    const apply = () => {
+      applications++
+    }
+    emitter.on('camera-controls:apply-pose', apply)
+    disposers.push(() => emitter.off('camera-controls:apply-pose', apply))
+    await controller.send('视角往左转一点')
+    await controller.send('保存当前视角为全景')
+    await controller.send('召回视角全景')
+    expect(applications).toBe(2)
+    expect(writes).toBe(0)
+    expect(useScene.getState().nodes).toBe(before)
+    expect(useProposalGhost.getState()).toBe(ghost)
+    expect(controller.proposal()).toBe(proposal)
+    expect(controller.store.getState().thread!.status).toBe('waiting-human')
+    expect(values.has(`diastage:view-state:v1:${sceneId}`)).toBe(true)
+    await controller.send('转一下')
+    expect(controller.store.getState().thread!.messages.at(-1)!.content).toContain('明确')
+    expect(writes).toBe(0)
+  } finally {
+    if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor)
+    else Reflect.deleteProperty(globalThis, 'localStorage')
+  }
 })

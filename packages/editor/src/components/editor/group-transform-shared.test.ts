@@ -7,6 +7,7 @@ import {
   rotateGroupPatches,
   translateGroupPatches,
 } from './group-transform-shared'
+import { WallNode } from '@pascal-app/core'
 
 const BUILDING_SCOPED_KIND = 'group-transform-building-scoped-test'
 
@@ -28,6 +29,27 @@ function registerBuildingScopedTestKind() {
 describe('group transform participants', () => {
   beforeAll(() => {
     registerBuildingScopedTestKind()
+  })
+
+  test('a fixed group member or welded neighbour prevents a partial group preview', () => {
+    const fixed = WallNode.parse({
+      parentId: 'level_test',
+      start: [0, 0],
+      end: [1, 0],
+      metadata: { stageLocked: true },
+    })
+    const connected = WallNode.parse({ parentId: 'level_test', start: [1, 0], end: [2, 0] })
+    const nodes = { [fixed.id]: fixed, [connected.id]: connected }
+    expect(collectParticipants([fixed.id, connected.id], nodes, 'level_test')).toEqual({
+      starts: [],
+      links: [],
+    })
+    expect(collectParticipants([connected.id], nodes, 'level_test')).toEqual({
+      starts: [],
+      links: [],
+    })
+    const unlocked = { ...nodes, [fixed.id]: { ...fixed, metadata: { stageLocked: false } } }
+    expect(collectParticipants([connected.id], unlocked, 'level_test').starts).toHaveLength(1)
   })
 
   test('classifies and transforms polygon kinds (slab / zone)', () => {

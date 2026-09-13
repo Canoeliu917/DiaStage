@@ -274,20 +274,15 @@ export const Grid = ({
       material.needsUpdate = true
     }
 
-    // The grid is a placement aid: a tight cursor patch (no always-on baseline)
-    // shown whenever the active context is in grid-snap mode — ANY armed
-    // draft/build tool, a node move, or a reshape.
-    // It is hidden in select/idle, paint, and non-grid
-    // (lines/off) modes. `isGridSnapActive()` already derives the snap context
-    // from the interaction scope OR the armed build tool and is true only when
-    // that context resolves to grid, so it IS the gate. (Previously this also
-    // required a ghost in flight, so a merely-armed draft tool showed nothing.)
+    // The display toggle owns visibility; snapping can emphasize a local patch,
+    // but must neither hide an enabled grid nor override an explicit hide.
+    const showGrid = useViewer.getState().showGrid
     const snapPatchVisible = isGridSnapActive()
     revealRadiusUniform.value = PLACEMENT_REVEAL_RADIUS
-    baseAlphaUniform.value = 0
+    baseAlphaUniform.value = 0.45
     cellSizeUniform.value = useEditor.getState().gridSnapStep
-    patchAlphaUniform.value = 1.5
-    gridRef.current.visible = snapPatchVisible
+    patchAlphaUniform.value = snapPatchVisible ? 1.5 : 0.8
+    gridRef.current.visible = showGrid
   })
 
   // Pass the geometry as a prop instead of a JSX child so the mesh
@@ -306,6 +301,7 @@ export const Grid = ({
     // Orientation is driven imperatively in `useFrame` (horizontal by default,
     // tilted into the wall plane while placing on a wall), so no static rotation.
     <mesh
+      name="editor-position-grid"
       geometry={geometry}
       layers={GRID_LAYER}
       material={material}

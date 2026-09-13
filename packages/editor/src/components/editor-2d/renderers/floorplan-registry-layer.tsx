@@ -11,6 +11,7 @@ import {
   type FloorplanPalette,
   type FloorplanPoint,
   type GeometryContext,
+  getNodeLock,
   isNodeKindEnabled,
   isRegistryMovable,
   kindsWithFloorplanScope,
@@ -332,6 +333,7 @@ type FloorplanEntryDescriptor = {
 }
 
 type NodeDeps = {
+  geometryRevision: number
   automaticDimensions: boolean
   node: AnyNode
   live: LiveTransform | undefined
@@ -591,6 +593,8 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
 
   const applyEntrySelection = useCallback(
     (id: AnyNodeId, options: { shouldToggle: boolean; isolateMember: boolean }) => {
+      const sceneNodes = useScene.getState().nodes
+      if (getNodeLock(sceneNodes, id, true)) return
       const currentSelectedIds = useViewer.getState().selection.selectedIds
       let nextSelectedIds: string[]
       if (options.shouldToggle) {
@@ -603,6 +607,9 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
         const expanded = expandSessionSelectionForNode(id)
         nextSelectedIds = expanded && expanded.length > 1 ? expanded : [id]
       }
+      nextSelectedIds = nextSelectedIds.filter(
+        (selectedId) => !getNodeLock(sceneNodes, selectedId, true),
+      )
       setSelection({ selectedIds: nextSelectedIds })
       if (nextSelectedIds.length === 1 && nextSelectedIds[0] === id) {
         const node = useScene.getState().nodes[id]
@@ -893,6 +900,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
       // React paints the next frame; a render-time `undefined` handler leaves
       // a short dead zone where the first post-placement selection is lost.
       if (isFloorplanOpeningPlacementActiveNow()) return
+      if (getNodeLock(useScene.getState().nodes, id, true)) return
       if (startDirectMoveDrag(id, event)) return
       if (startDirectRotateDrag(id, event)) return
       if (startGroupMoveDrag(id, event)) return
@@ -1039,7 +1047,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
 
       const sceneNodes = useScene.getState().nodes
       const node = sceneNodes[nodeId]
-      if (!node) return
+      if (!node || getNodeLock(sceneNodes, nodeId, true)) return
       const handler = nodeRegistry.get(node.type)?.floorplanAffordances?.[affordance]
       if (!handler) return
       const initialPlanPoint = clientToPlan(event.clientX, event.clientY)
@@ -1076,7 +1084,7 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
 
       const sceneNodes = useScene.getState().nodes
       const node = sceneNodes[nodeId]
-      if (!node) return
+      if (!node || getNodeLock(sceneNodes, nodeId, true)) return
 
       const def = nodeRegistry.get(node.type)
       const handler = def?.floorplanAffordances?.[affordance]
@@ -1620,7 +1628,7 @@ function FloorplanAnnotationLayoutResolver({ active }: { active: boolean }) {
     for (const [index, label] of registryLabelElementsRef.current.entries()) {
       const id = svgAnnotationLabelId(label, index)
       label.dataset.floorplanAnnotationId = id
-      label.style.pointerEvents = 'all'
+      label.style.pointerEvents = label.closest('[data-stage-locked="true"]') ? 'none' : 'all'
       label.style.cursor = annotationLayoutOverrides[id]?.pinned ? 'grab' : 'move'
     }
   }, [active, annotationLayoutOverrides, interactionIdle, layoutInputs, sceneRotationDeg])
@@ -1635,6 +1643,7 @@ function FloorplanAnnotationLayoutResolver({ active }: { active: boolean }) {
     const findLabel = (target: EventTarget | null): SVGGElement | null => {
       if (!(target instanceof Element)) return null
       const label = target.closest<SVGGElement>('[data-floorplan-annotation-label]')
+      if (label?.closest('[data-stage-locked="true"]')) return null
       return label && registryLayer.contains(label) ? label : null
     }
 
@@ -1837,8 +1846,16 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
   wallDimensionReference,
   visibilityRootId,
 }: FloorplanRegistryEntryProps): React.ReactElement | null {
-  const selected = useViewer((state) => state.selection.selectedIds.includes(nodeId))
-  const highlighted = useViewer((state) => state.previewSelectedIds.includes(nodeId))
+  const geometryRevision = useViewer((state) =>
+    floorplanVisible && node.type === 'item' ? state.geometryRevision : 0,
+  )
+  const stageLocked = !!getNodeLock(nodes, nodeId, true)
+  const selected = useViewer(
+    (state) => !stageLocked && state.selection.selectedIds.includes(nodeId),
+  )
+  const highlighted = useViewer(
+    (state) => !stageLocked && state.previewSelectedIds.includes(nodeId),
+  )
   const suppressHandles = useViewer(
     (state) =>
       state.selection.selectedIds.length > 1 && state.selection.selectedIds.includes(nodeId),
@@ -1848,7 +1865,7 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
     node,
     nodes as Record<string, AnyNode | undefined>,
   )
-  const hovered = useViewer((state) => state.hoveredId === selectionProxyId)
+  const hovered = useViewer((state) => !stageLocked && state.hoveredId === selectionProxyId)
   const setHoveredId = useViewer((state) => state.setHoveredId)
   const referencedAnnotationRole = useViewer((state) =>
     floorplanEntryReferencedAnnotationRole(node, new Set(state.selection.selectedIds)),
@@ -1883,6 +1900,7 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
   // Mirror the sidebar tree nodes' hover wiring — `useViewer.hoveredId` drives
   // the highlight halo in 3D as well as registry floor-plan hover strokes.
   const handlePointerEnter = useCallback(() => {
+    if (getNodeLock(useScene.getState().nodes, nodeId, true)) return
     const currentNode = useScene.getState().nodes[nodeId]
     setHoveredId(
       currentNode
@@ -1935,7 +1953,7 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
     (event: ReactPointerEvent<SVGGElement>) => {
       if (event.button !== 0) return
       const currentNode = useScene.getState().nodes[nodeId]
-      if (!currentNode) return
+      if (!currentNode || getNodeLock(useScene.getState().nodes, nodeId, true)) return
       event.preventDefault()
       event.stopPropagation()
       suppressBoxSelectForPointer(event)
@@ -1952,6 +1970,7 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
   )
 
   const cacheEntry = buildFloorplanEntryGeometry({
+    geometryRevision,
     automaticDimensions: presentationVisibility.automaticDimensions,
     ctxOverrides,
     geometryCache: geometryCacheRef.current,
@@ -1982,7 +2001,7 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
   // dimension chrome (all of which live in the overlay pass) while keeping
   // its highlighted body geometry.
   const geometry =
-    visibleGeometry && suppressHandles && pass === 'overlay'
+    visibleGeometry && (suppressHandles || stageLocked) && pass === 'overlay'
       ? stripHandleChrome(visibleGeometry)
       : visibleGeometry
   if (!geometry) return null
@@ -1994,11 +2013,18 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
     <g
       className="floorplan-registry-entry"
       data-node-id={nodeId}
+      data-stage-locked={stageLocked}
       onClick={entryClick}
       onPointerDown={entryPointerDown}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
-      style={groupMoveCursor ? MOVE_CURSOR_STYLE : POINTER_CURSOR_STYLE}
+      style={
+        stageLocked
+          ? NO_POINTER_EVENTS_STYLE
+          : groupMoveCursor
+            ? MOVE_CURSOR_STYLE
+            : POINTER_CURSOR_STYLE
+      }
     >
       <InteractiveGeometry
         activeDragId={activeDragId}
@@ -2006,7 +2032,7 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
         geometry={geometry}
         hatchPatternId={hatchPatternId}
         hoveredHandleId={hoveredHandleId}
-        isMarqueeSelectionActive={isMarqueeSelectionActive}
+        isMarqueeSelectionActive={isMarqueeSelectionActive || stageLocked}
         nodeId={nodeId}
         onHandleDoubleClick={handleHandleDoubleClick}
         onHandleHoverChange={onHandleHoverChange}
@@ -2020,6 +2046,7 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
 }, shallowPropsAreEqual)
 
 type BuildFloorplanEntryGeometryArgs = {
+  geometryRevision?: number
   automaticDimensions: boolean
   ctxOverrides: FloorplanContextOverrides | undefined
   geometryCache: Map<string, CacheEntry>
@@ -2077,6 +2104,7 @@ function floorplanEntryReferencedAnnotationRole(
 }
 
 function buildFloorplanEntryGeometry({
+  geometryRevision = 0,
   automaticDimensions,
   ctxOverrides,
   geometryCache,
@@ -2118,6 +2146,7 @@ function buildFloorplanEntryGeometry({
   )
   const dependencyNodes = collectFloorplanDependencyNodes(def, node, nodes, liveOverrides)
   const deps: NodeDeps = {
+    geometryRevision,
     automaticDimensions,
     node,
     live,
@@ -3399,6 +3428,7 @@ export function computeAffectedSiblingIds(
 
 function nodeDepsEqual(a: NodeDeps, b: NodeDeps): boolean {
   const keys: Array<keyof NodeDeps> = [
+    'geometryRevision',
     'automaticDimensions',
     'node',
     'live',

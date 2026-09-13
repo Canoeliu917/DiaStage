@@ -5,6 +5,7 @@ import {
   parseStageText,
   type StageCommand,
   type StagePlan,
+  stageObjectsTouch,
 } from '@pascal-app/core/stage'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { readStageDocument } from '../theatre/simulation-store'
@@ -95,6 +96,35 @@ test('native numeric transforms on new scenery use the same validation gate', ()
   useScene.getState().updateNode(id, { position: [-1, 0, 0] })
   expect(currentStageContext().objects.find((n) => n.id === id)?.transform.position.x).toBe(1)
 })
+
+test('manual add, move and native mutation permit contact and overlap as one undoable edit', () => {
+  const first = executeStageCommands([add()]).nodeIds[0]!
+  const second = executeStageCommands([{ ...add(), nodeId: 'second' }])
+  expect(second.ok).toBe(true)
+  const secondId = second.nodeIds[0]!
+  const node = useScene.getState().nodes[secondId]!
+  const a = currentStageContext().objects.find((object) => object.id === first)!
+  expect(
+    stageObjectsTouch(a, currentStageContext().objects.find((object) => object.id === secondId)!),
+  ).toBe(true)
+  for (const x of [0.5, 0.501, 0]) {
+    const result = executeStageCommands([
+      { type: 'MoveObject', meta: commandMeta(), nodeId: secondId, position: { x, y: 0, z: 3 } },
+    ])
+    expect(result.ok).toBe(true)
+    expect(
+      currentStageContext().objects.find((object) => object.id === secondId)?.transform.position.x,
+    ).toBe(x)
+  }
+  clearSceneHistory()
+  useScene.getState().updateNode(secondId, { position: [-0.123, 0, 0] })
+  expect(
+    currentStageContext().objects.find((object) => object.id === secondId)?.transform.position.x,
+  ).toBe(0.123)
+  expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+  useScene.temporal.getState().undo()
+  expect(useScene.getState().nodes[secondId]).toEqual(node)
+})
 test('venue proposal changes the existing document without replacing legacy metadata', () => {
   const meta = commandMeta()
   expect(
@@ -123,6 +153,131 @@ test('hidden scenery can be revealed and locked objects reject native edits', ()
   expect(useScene.getState().nodes[nodeId]).toBe(before)
   expect(run({ type: 'SetObjectLock', locked: false }).ok).toBe(true)
   expect(run({ type: 'RenameObject', name: '排练椅' }).ok).toBe(true)
+})
+
+test('a fixed stage floor rejects venue resizing and parent deletion, then unlocks normally', () => {
+  const floor = Object.values(useScene.getState().nodes).find((node) => node.type === 'slab')!
+  const lock = (locked: boolean) =>
+    executeStageCommands([{ type: 'SetObjectLock', nodeId: floor.id, locked, meta: commandMeta() }])
+  expect(lock(true).ok).toBe(true)
+  const before = useScene.getState().nodes
+  const resize = () =>
+    executeStageCommands([
+      {
+        type: 'CreateStage',
+        meta: commandMeta(),
+        venue: { type: 'proscenium', widthMeters: 10, depthMeters: 8, heightMeters: 4 },
+      },
+    ])
+  expect(resize().error).toContain('锁定')
+  useScene.getState().updateNode(floor.id, { elevation: 2 })
+  useScene.getState().deleteNode(floor.parentId!)
+  expect(useScene.getState().nodes).toBe(before)
+  expect(executeStageCommands([add()]).ok).toBe(true)
+  expect(lock(false).ok).toBe(true)
+  expect(resize().ok).toBe(true)
+})
+
+test('fixed compound props reject child edits and moving their parent until unlocked', async () => {
+  const { createStageStair } = await import('@pascal-app/core/stage')
+  const level = Object.values(useScene.getState().nodes).find((node) => node.type === 'level')!
+  const { stair, segment } = createStageStair({ position: [2, 0, 0] }, level.id)
+  useScene.getState().createNodes([{ node: stair, parentId: level.id }, { node: segment }])
+  expect(
+    executeStageCommands([
+      { type: 'SetObjectLock', nodeId: stair.id, locked: true, meta: commandMeta() },
+    ]).ok,
+  ).toBe(true)
+  const before = useScene.getState().nodes
+  useScene.getState().updateNode(segment.id, { stepCount: 8 })
+  useScene.getState().deleteNode(segment.id)
+  useScene.getState().updateNode(level.id, { elevation: 1 })
+  expect(useScene.getState().nodes).toBe(before)
+  for (const command of [
+    { type: 'MoveObject', position: { x: 1, y: 0, z: 3 } },
+    { type: 'RotateObject', rotationDegrees: { x: 0, y: 90, z: 0 } },
+    { type: 'ResizeObject', dimensionsMeters: { width: 2, height: 1, depth: 2 } },
+    { type: 'RemoveObject' },
+  ])
+    expect(
+      executeStageCommands([{ ...command, nodeId: stair.id, meta: commandMeta() }]).error,
+    ).toContain('锁定')
+  expect(
+    executeStageCommands([
+      { type: 'SetObjectLock', nodeId: stair.id, locked: false, meta: commandMeta() },
+    ]).ok,
+  ).toBe(true)
+  useScene.getState().updateNode(segment.id, { stepCount: 4 })
+  expect(useScene.getState().nodes[segment.id]).toMatchObject({ stepCount: 4 })
+})
+
+test('overview lock commands persist virtual performer and camera locks', () => {
+  for (const command of [
+    {
+      type: 'AddPerformerMarker',
+      nodeId: 'lock-performer',
+      name: '人物',
+      position: { x: 0, y: 0, z: 3 },
+      facingDegrees: 0,
+      color: '#777777',
+    },
+    {
+      type: 'AddCamera',
+      nodeId: 'lock-camera',
+      name: '机位',
+      transform: { position: { x: 0, y: 1, z: 3 }, rotationDegrees: { x: 0, y: 0, z: 0 } },
+      target: { x: 0, y: 1, z: 0 },
+      fieldOfViewDegrees: 50,
+    },
+  ])
+    expect(executeStageCommands([{ ...command, meta: commandMeta() }]).ok).toBe(true)
+  for (const nodeId of ['lock-performer', 'lock-camera']) {
+    expect(
+      executeStageCommands([{ type: 'SetObjectLock', nodeId, locked: true, meta: commandMeta() }])
+        .ok,
+    ).toBe(true)
+  }
+  expect(
+    readStageDocument()?.rehearsalSimulation.performers.find((p) => p.id === 'lock-performer')
+      ?.stageLocked,
+  ).toBe(true)
+  expect(cameraProject().shots.find((shot) => shot.id === 'lock-camera')?.stageLocked).toBe(true)
+  expect(
+    executeStageCommands([
+      {
+        type: 'SetPerformerPosition',
+        nodeId: 'lock-performer',
+        position: { x: 1, y: 0, z: 3 },
+        facingDegrees: 30,
+        meta: commandMeta(),
+      },
+    ]).error,
+  ).toContain('锁定')
+  expect(
+    executeStageCommands([
+      {
+        type: 'MoveObject',
+        nodeId: 'lock-camera',
+        position: { x: 1, y: 1, z: 3 },
+        meta: commandMeta(),
+      },
+    ]).error,
+  ).toContain('锁定')
+  for (const nodeId of ['lock-performer', 'lock-camera'])
+    expect(
+      executeStageCommands([{ type: 'SetObjectLock', nodeId, locked: false, meta: commandMeta() }])
+        .ok,
+    ).toBe(true)
+  expect(
+    executeStageCommands([
+      {
+        type: 'MoveObject',
+        nodeId: 'lock-camera',
+        position: { x: 1, y: 1, z: 3 },
+        meta: commandMeta(),
+      },
+    ]).ok,
+  ).toBe(true)
 })
 
 test('camera plans preserve their observation direction and tilt across apply and context reload', () => {
@@ -295,7 +450,7 @@ test('changing stage depth checks old world positions against the new proscenium
   ).toBeCloseTo(3.5, 8)
 })
 
-test('stage stairs use native nodes, atomic edit, collision rejection, duplicate and undo', () => {
+test('stage stairs use native nodes, allow overlap, duplicate and undo', () => {
   const plan = parseStageText('在台右增加三级台阶', currentStageContext())!
   const compiled = compileStagePlan(plan, currentStageContext(), {
     transactionId: crypto.randomUUID(),
@@ -335,7 +490,8 @@ test('stage stairs use native nodes, atomic edit, collision rejection, duplicate
       position: currentStageContext().objects.find((n) => n.id === id)!.transform.position,
     },
   ])
-  expect(blocked.ok).toBe(false)
+  expect(blocked.ok).toBe(true)
+  useScene.temporal.getState().undo()
   useScene.temporal.getState().undo()
   expect(useScene.getState().nodes).toEqual(before)
   const platform = executeStageCommands([

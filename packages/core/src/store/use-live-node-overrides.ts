@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { getNodeLock } from '../lib/node-lock'
+import useScene from './use-scene'
 
 export type LiveNodeOverrides = Record<string, unknown>
 
@@ -16,6 +18,7 @@ const useLiveNodeOverrides = create<LiveNodeOverrideState>((set, get) => ({
   overrides: new Map(),
   set: (nodeId, values) =>
     set((state) => {
+      if (getNodeLock(useScene.getState().nodes, nodeId, true)) return state
       const next = new Map(state.overrides)
       next.set(nodeId, { ...(next.get(nodeId) ?? {}), ...values })
       return { overrides: next }
@@ -26,7 +29,11 @@ const useLiveNodeOverrides = create<LiveNodeOverrideState>((set, get) => ({
   // instead of N+1 times.
   setMany: (entries) =>
     set((state) => {
-      if (entries.length === 0) return state
+      if (
+        entries.length === 0 ||
+        entries.some(([id]) => getNodeLock(useScene.getState().nodes, id, true))
+      )
+        return state
       const next = new Map(state.overrides)
       for (const [nodeId, values] of entries) {
         next.set(nodeId, { ...(next.get(nodeId) ?? {}), ...values })
