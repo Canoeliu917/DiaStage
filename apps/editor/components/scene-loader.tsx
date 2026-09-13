@@ -21,14 +21,26 @@ import { type PersistedSceneGraph, sceneGraphSignature } from '@/lib/scene-signa
 import { THEATRE_METADATA_KEY } from '@/lib/theatre/scene-adapter'
 import { migrateStageDocument } from '@/lib/theatre/simulation'
 import { cn } from '@/lib/utils'
-import { CameraPersistence } from './camera-studio/persistence'
 import { validateCameraProject } from './camera-studio/model'
+import { CameraPersistence } from './camera-studio/persistence'
 import { StageCommandRuntime } from './stage-entry/runtime'
 
-const StagePlacementSystem = dynamic(() => import('./stage-entry/placement-system').then(m => m.StagePlacementSystem), { ssr: false })
-const StagePlacementFloorplan = dynamic(() => import('./stage-entry/placement-system').then(m => m.StagePlacementFloorplan), { ssr: false })
-const StagePlanPreviewSystem = dynamic(() => import('./stage-entry/plan-preview-system').then(m => m.StagePlanPreviewSystem), { ssr: false })
-const StageSelectionPanel = dynamic(() => import('./stage-entry/stage-selection-panel').then(m => m.StageSelectionPanel), { ssr: false })
+const StagePlacementSystem = dynamic(
+  () => import('./stage-entry/placement-system').then((m) => m.StagePlacementSystem),
+  { ssr: false },
+)
+const StagePlacementFloorplan = dynamic(
+  () => import('./stage-entry/placement-system').then((m) => m.StagePlacementFloorplan),
+  { ssr: false },
+)
+const StagePlanPreviewSystem = dynamic(
+  () => import('./stage-entry/plan-preview-system').then((m) => m.StagePlanPreviewSystem),
+  { ssr: false },
+)
+const StageSelectionPanel = dynamic(
+  () => import('./stage-entry/stage-selection-panel').then((m) => m.StageSelectionPanel),
+  { ssr: false },
+)
 
 const CameraRehearsalSystem = dynamic(
   () => import('./camera-rehearsal-system').then((m) => m.CameraRehearsalSystem),
@@ -156,7 +168,9 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
 
   const handleLoad = useCallback(async () => {
     const graph = structuredClone(archiveLegacyLighting(initialScene))
-    const site = graph.rootNodeIds.map(id => SiteNode.safeParse(graph.nodes[id])).find(result => result.success)?.data
+    const site = graph.rootNodeIds
+      .map((id) => SiteNode.safeParse(graph.nodes[id]))
+      .find((result) => result.success)?.data
     if (site && site.metadata.diastageCameraStudio === undefined) {
       try {
         const saved = localStorage.getItem(`camera-studio:v1:${meta.id}`)
@@ -164,7 +178,9 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
           site.metadata.diastageCameraStudio = validateCameraProject(JSON.parse(saved))
           graph.nodes[site.id] = site
         }
-      } catch { /* Keep unreadable legacy camera cache intact. */ }
+      } catch {
+        /* Keep unreadable legacy camera cache intact. */
+      }
     }
     return graph
   }, [initialScene, meta.id])
@@ -314,7 +330,11 @@ export function SceneLoader({ initialScene, meta }: SceneLoaderProps) {
       <div className="studio-workspace" data-studio-group={group}>
         <CameraPersistence sceneId={meta.id} />
         <VersionViewSync />
-        <StageCommandRuntime sceneId={meta.id} rootId={initialScene.rootNodeIds[0]} applyPlan={stageReady && searchParams.get('applyPlan') === '1'} />
+        <StageCommandRuntime
+          sceneId={meta.id}
+          rootId={initialScene.rootNodeIds[0]}
+          applyPlan={stageReady && searchParams.get('applyPlan') === '1'}
+        />
         {conflict && (
           <div className="pointer-events-auto absolute top-4 left-1/2 z-50 w-full max-w-md -translate-x-1/2 rounded-lg border border-border bg-background p-4 shadow-xl">
             <h2 className="font-semibold text-sm">此场景已在其他窗口更新</h2>

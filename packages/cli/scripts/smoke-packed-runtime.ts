@@ -17,6 +17,7 @@ const defaultPortBlocker = http.createServer((_request, response) => {
 })
 const smokeEnvironment = {
   ...process.env,
+  OPENAI_API_KEY: '',
   PASCAL_HOME: path.join(smokeRoot, 'home'),
   PASCAL_NO_OPEN: '1',
 }
@@ -51,6 +52,17 @@ try {
   if (!rootResponse.ok) throw new Error(`editor root returned ${rootResponse.status}`)
   const scenesResponse = await fetch(`${started.url}/scenes`)
   if (!scenesResponse.ok) throw new Error(`editor scenes returned ${scenesResponse.status}`)
+  // Exercise the packed document worker after removing native canvas modules.
+  const form = new FormData()
+  form.set('file', new Blob([textPdf()], { type: 'application/pdf' }), 'stage.pdf')
+  const script = await fetch(`http://127.0.0.1:${started.port}/api/script/stage-plan`, {
+    method: 'POST',
+    headers: { Origin: `http://127.0.0.1:${started.port}` },
+    body: form,
+  })
+  const extracted = (await script.json()) as { file?: { pageCount: number }; error?: unknown }
+  if (!script.ok || extracted.file?.pageCount !== 1)
+    throw new Error(`packed PDF text extraction failed: ${JSON.stringify(extracted)}`)
   const repeatedStart = JSON.parse(
     (
       await run(
@@ -211,4 +223,31 @@ async function run(
 
 function formatMb(bytes: number): string {
   return (bytes / 1024 / 1024).toFixed(1)
+}
+
+function textPdf(): string {
+  const text = '建立一个宽8米深6米的镜框式舞台。'
+  const hex = Array.from(text)
+    .map((c) => c.charCodeAt(0).toString(16).padStart(4, '0'))
+    .join('')
+  const stream = `BT /F1 12 Tf 20 700 Td <${hex}> Tj ET`
+  const cmap =
+    '/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def /CMapName /IdentityUCS def /CMapType 2 def 1 begincodespacerange <0000> <FFFF> endcodespacerange 1 beginbfrange <0000> <FFFF> <0000> endbfrange endcmap CMapName currentdict /CMap defineresource pop end end'
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 7 0 R >>',
+    '<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light /Encoding /Identity-H /DescendantFonts [5 0 R] /ToUnicode 6 0 R >>',
+    '<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 4 >> /DW 1000 >>',
+    `<< /Length ${cmap.length} >>\nstream\n${cmap}\nendstream`,
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+  ]
+  let pdf = '%PDF-1.7\n'
+  const offsets = objects.map((object, index) => {
+    const offset = pdf.length
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`
+    return offset
+  })
+  const xref = pdf.length
+  return `${pdf}xref\n0 8\n0000000000 65535 f \n${offsets.map((n) => `${String(n).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size 8 /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`
 }

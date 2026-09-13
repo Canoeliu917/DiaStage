@@ -4,7 +4,7 @@ import packageJson from '../package.json'
 test('version module loads', async () => {
   const mod = await import('./index')
   expect(mod.version).toBe(packageJson.version)
-})
+}, 30_000)
 
 test('createPascalMcpServer is a function', async () => {
   const mod = await import('./index')

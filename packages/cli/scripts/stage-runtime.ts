@@ -20,7 +20,12 @@ await chmod(path.join(packageDirectory, 'dist/bin/pascal.js'), 0o755)
 await assertFile(path.join(standaloneAppDirectory, 'server.js'))
 await rm(outputDirectory, { recursive: true, force: true })
 await mkdir(path.dirname(outputDirectory), { recursive: true })
-await cp(standaloneDirectory, outputDirectory, { recursive: true, dereference: false })
+// Next emits absolute directory junctions on Windows. Copy their contents now:
+// recreating them needs link privileges and would point outside the packed runtime.
+await cp(standaloneDirectory, outputDirectory, {
+  recursive: true,
+  ...(process.platform === 'win32' ? { dereference: true } : { verbatimSymlinks: true }),
+})
 
 await cp(path.join(appDirectory, 'public'), path.join(outputDirectory, 'apps/editor/public'), {
   recursive: true,
@@ -33,10 +38,11 @@ await cp(
 )
 await bundleMcpServer(outputDirectory, packageJson.version)
 
-await removeUnusedSharp(outputDirectory)
+await removeUnusedNativeRenderers(outputDirectory)
 await flattenBunNodeModules(outputDirectory)
 await materializeSymlinks(outputDirectory)
 await rm(path.join(outputDirectory, 'node_modules/.bun'), { recursive: true, force: true })
+await trimPdfTextRuntime(outputDirectory)
 const nativeFiles = await findNativeModules(outputDirectory)
 if (nativeFiles.length > 0) {
   throw new Error(`portable runtime contains native modules:\n${nativeFiles.join('\n')}`)
@@ -59,6 +65,28 @@ await writeFile(
 )
 
 console.log(`Staged Pascal editor runtime ${packageJson.version} at ${outputDirectory}`)
+
+async function trimPdfTextRuntime(root: string): Promise<void> {
+  // Keep text extraction, CMaps, standard fonts and attribution. PDF viewer UI,
+  // drawing builds and source maps are not used by the document worker.
+  for (const directory of ['node_modules', 'apps/editor/.next/node_modules']) {
+    const modules = path.join(root, directory)
+    for (const name of await readdir(modules).catch(() => [])) {
+      if (name !== 'pdfjs-dist' && !name.startsWith('pdfjs-dist-')) continue
+      const pdf = path.join(modules, name)
+      for (const [folder, keep] of [
+        ['', ['legacy', 'cmaps', 'standard_fonts', 'package.json', 'LICENSE']],
+        ['legacy', ['build']],
+        ['legacy/build', ['pdf.mjs', 'pdf.worker.mjs']],
+      ] as const) {
+        for (const entry of await readdir(path.join(pdf, folder))) {
+          if (!(keep as readonly string[]).includes(entry))
+            await rm(path.join(pdf, folder, entry), { recursive: true, force: true })
+        }
+      }
+    }
+  }
+}
 
 async function bundleMcpServer(runtimeDirectory: string, version: string): Promise<void> {
   const output = path.join(runtimeDirectory, 'services/pascal-mcp.mjs')
@@ -100,10 +128,16 @@ async function assertFile(filePath: string): Promise<void> {
   }
 }
 
-async function removeUnusedSharp(root: string): Promise<void> {
+async function removeUnusedNativeRenderers(root: string): Promise<void> {
   const nodeModules = path.join(root, 'node_modules')
   await rm(path.join(nodeModules, 'sharp'), { recursive: true, force: true })
   await rm(path.join(nodeModules, '@img'), { recursive: true, force: true })
+  // PDF.js text extraction needs no canvas. Optional native drawing backends
+  // must not make a packed CLI specific to the build machine's OS/CPU.
+  for (const entry of await readdir(path.join(nodeModules, '@napi-rs')).catch(() => [])) {
+    if (entry === 'canvas' || entry.startsWith('canvas-'))
+      await rm(path.join(nodeModules, '@napi-rs', entry), { recursive: true, force: true })
+  }
   const bunModules = path.join(nodeModules, '.bun')
   let entries: string[] = []
   try {
@@ -115,7 +149,12 @@ async function removeUnusedSharp(root: string): Promise<void> {
   await Promise.all(
     entries
       .filter(
-        (entry) => entry === 'sharp' || entry.startsWith('sharp@') || entry.startsWith('@img+'),
+        (entry) =>
+          entry === 'sharp' ||
+          entry.startsWith('sharp@') ||
+          entry.startsWith('@img+') ||
+          entry.startsWith('@napi-rs+canvas@') ||
+          entry.startsWith('@napi-rs+canvas-'),
       )
       .map((entry) => rm(path.join(bunModules, entry), { recursive: true, force: true })),
   )

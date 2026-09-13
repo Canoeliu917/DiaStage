@@ -1340,7 +1340,8 @@ function EditorContent({
       sceneLoadKey !== undefined &&
       loadedSourceRef.current?.key === sceneLoadKey &&
       loadedSourceRef.current.attempt === sceneLoadAttempt
-    ) return
+    )
+      return
     let cancelled = false
 
     async function load() {
@@ -1359,9 +1360,8 @@ function EditorContent({
         const sceneGraph = onLoad ? await onLoad() : loadSceneFromLocalStorage()
         if (!cancelled) {
           applySceneGraphToEditor(sceneGraph)
-          loadedSourceRef.current = sceneLoadKey === undefined
-            ? null
-            : { key: sceneLoadKey, attempt: sceneLoadAttempt }
+          loadedSourceRef.current =
+            sceneLoadKey === undefined ? null : { key: sceneLoadKey, attempt: sceneLoadAttempt }
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
@@ -1627,7 +1627,9 @@ function EditorContent({
                           inspectorFooter={inspectorFooter}
                           multiSelectionFooter={multiSelectionFooter}
                         />
-                      ) : selectionPanelSlot}
+                      ) : (
+                        selectionPanelSlot
+                      )}
                     </div>
                   )}
                   {!isCaptureMode && (
