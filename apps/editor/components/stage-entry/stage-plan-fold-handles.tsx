@@ -127,7 +127,7 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
       data-geometry-revision={revision}
       pointerEvents="auto"
     >
-      {Array.from({ length: foldPositionCount(node) + 2 }, (_, corner) => {
+      {[0, foldPositionCount(node) + 1].map((corner) => {
         const geometry = foldCornerGeometry(node, corner)
         if (!geometry) return null
         const { pivot: pivotWorld, parentMatrix } = geometry

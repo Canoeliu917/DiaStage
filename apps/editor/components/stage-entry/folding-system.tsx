@@ -206,7 +206,7 @@ export function FoldingSystem({ enabled }: { enabled: boolean }) {
   if (!available || node?.type !== 'item' || !foldPositionCount(node)) return null
   return (
     <group name={`stage-fold-controls:${node.id}`}>
-      {Array.from({ length: foldPositionCount(node) + 2 }, (_, corner) => (
+      {[0, foldPositionCount(node) + 1].map((corner) => (
         <FoldPosition key={`${node.id}:${corner}`} node={node} corner={corner} />
       ))}
     </group>
