@@ -9,6 +9,7 @@ import {
 } from '@pascal-app/core/remount'
 import { useEditor, useInteractionScope } from '@pascal-app/editor'
 import { useEffect, useMemo, useState } from 'react'
+import { BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
 import { useCameraDirectorState } from '@/lib/camera-director'
 import {
   applyRemount,
@@ -183,7 +184,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
   const [pathText, setPathText] = useState('')
   const candidates = useMemo(() => {
     void nodes
-    return getRemountCandidates()
+    return getRemountCandidates().filter((candidate) => !candidate.nodeId.startsWith('camera:'))
   }, [nodes])
   const scans = Object.values(nodes).filter((node) => node.type === 'scan')
   const versions = useMemo(() => {
@@ -305,7 +306,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                     })
                   }
                 >
-                  <option value="">当前舞台与排演</option>
+                  <option value="">当前舞台</option>
                   {versions.items.map((version) => (
                     <option key={version.id} value={version.id}>
                       {version.name} · {new Date(version.createdAt).toLocaleDateString('zh-CN')}
@@ -317,7 +318,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
               {draft.sourceVersion && (
                 <p className="rm-notice">
                   源版本：{draft.sourceVersion.name}
-                  。历史场地、布景和人物路线已读入草稿；当前场景保持原样。
+                  。历史快照已读入草稿；当前场景保持原样。
                 </p>
               )}
               <VenueFields
@@ -336,10 +337,10 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
               {!draft.sourceVersion && (
                 <>
                   <p className="rm-help">
-                    选取本次搬运的布景与机位，当前人物与路线一并记录。子物件随组合一起记录；跟随机位须同时选入其跟随的布景。
+                    选取本次映射的布景。子物件随组合一起记录；历史快照数据保持兼容。
                   </p>
                   <div className="rm-candidates">
-                    {candidates.length === 0 && <p>请先在置景中放置布景或添加机位。</p>}
+                    {candidates.length === 0 && <p>请先在置景中放置布景。</p>}
                     {candidates.map((candidate) => (
                       <label key={candidate.nodeId} className="rm-candidate">
                         <input
@@ -391,7 +392,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                       })
                     }
                   >
-                    记录演出布置 →
+                    记录布景布局 →
                   </button>
                 </>
               )}
@@ -401,10 +402,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 </button>
               )}
               {draft.layout && (
-                <p className="rm-help">
-                  已记录 {draft.sourceSnapshots.length} 个布景、机位与人物标记，
-                  {draft.sourceRehearsal?.paths.length ?? 0} 条排演路线。
-                </p>
+                <p className="rm-help">已记录 {draft.sourceSnapshots.length} 个历史对象。</p>
               )}
             </>
           )}
@@ -518,8 +516,8 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 <span>灰 · 场地参考</span>
               </div>
               <p className="rm-help">
-                原场地、原布景尺寸代理和人物路线以蓝色显示；新场地为灰色边界，待确认落位为彩色
-                Ghost。虚线包含已保存的排演路线。尺寸代理不复刻材质；确认前不改正式场景。
+                原场地与原布景尺寸代理以蓝色显示；目标场地为灰色边界，待确认落位为
+                Ghost。尺寸代理不复刻材质；确认前不改正式场景。
               </p>
               {sourceIssues.length > 0 && (
                 <p className="rm-notice rm-error" role="alert">
@@ -612,7 +610,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                   </button>
                 </>
               )}
-              {draft.layout && (
+              {BETA_REHEARSAL_ENABLED && draft.layout && (
                 <details className="rm-placement">
                   <summary>走位线与物件表示</summary>
                   <label className="rm-field">
@@ -696,7 +694,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
           {step === 4 && (
             <>
               <p className="rm-help">
-                确认仅将布景、人物、路线和机位的位置映射作为一次操作写入场景，并保存来源版本、校准点与原始布局。时长和实体尺寸保持不变，可一次撤销。
+                确认将位置映射作为一次操作写入场景，并保存来源版本、校准点与原始布局。实体尺寸保持不变，可一次撤销；历史快照中的关联数据随版本一起保留。
               </p>
               <p className="rm-notice">
                 正式场地的身份、边界和地面保持原样。这里不是完成新场地的正式复台或现场验收。
@@ -720,9 +718,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                   )}
                 </>
               )}
-              <p className="rm-help">
-                碰撞覆盖布景与墙体的尺寸包围体，人物和路线检测目标边界。墙体不扣除门洞；路线中途的动态避障、扫描和现场人员仍需人工复核。
-              </p>
+              <p className="rm-help">映射检测布景与历史结构的尺寸包围体。现场条件仍需人工复核。</p>
               {draft.obstacleWarnings.map((warning) => (
                 <p className="rm-notice" key={warning}>
                   {warning}
@@ -786,7 +782,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
                 撤销本次映射
               </button>
               <p className="rm-help">
-                若已继续编辑，可通过编辑器历史记录撤销。选入的机位关键帧、注视点与跟随偏移随布景一起复台，也一起撤销。
+                若已继续编辑，可通过编辑器历史记录撤销。关联历史数据随本次映射一起撤销。
               </p>
             </>
           )}

@@ -178,8 +178,7 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
 
   for (const [label, group, panel] of [
     ['置景', 'set', 'items'],
-    ['排演', 'rehearse', 'simulation'],
-    ['复台', 'remount', 'versions'],
+    ['复台', 'remount', 'remount'],
   ]) {
     collapsed = true
     editor.isPreviewMode = true
@@ -210,10 +209,9 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     assert.equal(renderNavigation().filter((node) => node.props?.['aria-pressed']).length, 1)
     await Promise.resolve()
   }
-  assert.equal(renderNavigation().length, 3, 'three peer workspace options')
+  assert.equal(renderNavigation().length, 2, 'only Build and Remount workspaces')
   for (const [label, expected, group] of [
-    ['置景', ['build'], 'set'],
-    ['排演', ['simulation', 'display', 'observe', 'record', 'stage-cameras', 'build'], 'rehearse'],
+    ['置景', ['build', 'view', 'display', 'versions'], 'set'],
     ['复台', ['versions', 'remount', 'build'], 'remount'],
   ] as const) {
     button(label).onClick()
@@ -241,22 +239,24 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
       assert.equal(store.getState().playing, false)
     }
   }
-  for (const [legacy, expected, expectedGroup] of [
-    ['picture', 'display', 'rehearse'],
-    ['camera-studio', 'stage-cameras', 'rehearse'],
-    ['stage-command', 'items', 'rehearse'],
-    ['camera-rehearsal', 'camera-rehearsal', 'rehearse'],
+  button('置景').onClick()
+  for (const [legacy, expected] of [
+    ['picture', 'display'],
+    ['camera-studio', 'view'],
+    ['stage-command', 'items'],
+    ['camera-rehearsal', 'view'],
+    ['simulation', 'items'],
+    ['theatre-paths', 'items'],
+    ['lighting', 'items'],
+    ['timeline', 'items'],
+    ['record', 'view'],
   ]) {
     assert.equal(openStudioPanel(legacy!), true)
     assert.equal(editor.activeSidebarPanel, expected)
-    assert.equal(renderSidebar('navigation-test').group, expectedGroup)
-    if (expectedGroup === 'rehearse' && expected !== 'items')
-      assert.equal(renderSidebar('navigation-test').sidebarTabs.at(-1)?.id, expected)
-    button('排演').onClick()
-    assert.equal(editor.activeSidebarPanel, 'simulation')
+    assert.equal(renderSidebar('navigation-test').group, 'set')
   }
   isMobile = true
-  for (const label of ['置景', '排演', '复台']) {
+  for (const label of ['置景', '复台']) {
     button(label).onClick()
     const content = elements(renderSidebar('navigation-test').sidebarTopSlot).find(
       (entry) => entry.type === StageOverviewPanel,
@@ -276,13 +276,13 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     assert.equal(editor.activeSidebarPanel, previousPanel)
     assert.equal(editor.workspaceMode, previousWorkspace)
     assert.equal(editor.mode, previousMode)
-    for (const label of ['置景', '排演', '复台']) assert.equal(button(label).disabled, true)
+    for (const label of ['置景', '复台']) assert.equal(button(label).disabled, true)
     assert.equal(button('退出取景').disabled, undefined)
     button('退出取景').onClick()
     assert.equal(editor.isFirstPersonMode, false)
     assert.equal(editor.isCaptureMode, false)
     assert.equal(editor.workspaceMode, previousWorkspace)
-    for (const label of ['置景', '排演', '复台']) assert.equal(button(label).disabled, false)
+    for (const label of ['置景', '复台']) assert.equal(button(label).disabled, false)
     assert.equal(
       renderNavigation().some((node) => node.props?.children === '退出取景'),
       false,

@@ -4,6 +4,7 @@ import { useScene } from '@pascal-app/core'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
+import { BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
 import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
 import {
@@ -49,8 +50,8 @@ const ZONES = {
 }
 const SHORTCUTS = [
   { label: '搭建构思', items: ['一张圆桌，两把硬椅', '两块单帘景片'] },
-  { label: '排演构思', items: ['给我两个排法', '这个人物还能怎么做'] },
-  { label: '为什么／换一种', items: ['为什么这样排', '换一种', '我自己来'] },
+  { label: '视图与版本', items: ['从正面看一下', '查看已保存版本'] },
+  { label: '调整构思', items: ['两块景片怎么摆', '我自己来'] },
 ]
 
 function GhostControls({ controller }: { controller: DiaConversation }) {
@@ -148,6 +149,7 @@ export function RehearsalPartner({
           // Build stays in Dia; opening the sidebar would close it on tablets.
           if (panel !== 'items') openStudioPanel(panel)
         },
+        BETA_REHEARSAL_ENABLED,
       ),
     [sceneId],
   )
@@ -216,12 +218,12 @@ export function RehearsalPartner({
     try {
       await action()
     } catch {
-      setPrivateNotice('本机记录未能读写，请检查存储空间。正式排演不受影响。')
+      setPrivateNotice('本机记录未能读写，请检查存储空间。正式舞台不受影响。')
     }
   }
 
   return (
-    <section className="dia-panel" aria-label="Dia 排演对话">
+    <section className="dia-panel" aria-label="Dia 舞台对话">
       <header className="dia-panel-header">
         <h2 className="dia-notation">DIA</h2>
         <span className="dia-header-note">{state.synthetic ? '示例对话' : '舞台对话'}</span>
@@ -273,15 +275,11 @@ export function RehearsalPartner({
         {!state.thread?.messages.length && (
           <div className="dia-welcome">
             <h3>你想试什么？</h3>
-            <p>
-              {state.synthetic
-                ? '两个人在告别。A 想走，B 不想让他走。你想让这一段发生什么？'
-                : '说说你想改变的关系或行动。我们先在舞台上试，再由你决定。'}
-            </p>
+            <p>说说想放入或调整的布景。我们先在舞台上试，再由你决定。</p>
           </div>
         )}
         <DiaRecords sceneId={sceneId} controller={controller} />
-        {state.interaction && !build && (
+        {BETA_REHEARSAL_ENABLED && state.interaction && !build && (
           <div ref={currentProposals} className="dia-proposals" role="group" aria-label="本轮方案">
             <p className="dia-section-label">
               <span className="dia-notation">PROPOSAL</span> 当前提案
@@ -359,7 +357,8 @@ export function RehearsalPartner({
             </details>
           </div>
         )}
-        {proposal &&
+        {BETA_REHEARSAL_ENABLED &&
+          proposal &&
           state.interaction &&
           !build &&
           !settled &&
@@ -699,56 +698,60 @@ export function RehearsalPartner({
           )}
         <details className="dia-secondary dia-settings">
           <summary>详情与设置</summary>
-          <label>
-            对话信息密度
-            <select
-              aria-label="对话模式"
-              value={professional ? 'professional' : 'default'}
-              onChange={(event) =>
-                useSimulationSelection.setState({
-                  professional: event.target.value === 'professional',
-                })
-              }
-            >
-              <option value="default">一起排</option>
-              <option value="professional">专业排演</option>
-            </select>
-          </label>
+          {BETA_REHEARSAL_ENABLED && (
+            <label>
+              对话信息密度
+              <select
+                aria-label="对话模式"
+                value={professional ? 'professional' : 'default'}
+                onChange={(event) =>
+                  useSimulationSelection.setState({
+                    professional: event.target.value === 'professional',
+                  })
+                }
+              >
+                <option value="default">一起排</option>
+                <option value="professional">专业排演</option>
+              </select>
+            </label>
+          )}
           {state.synthetic && <p role="note">演示数据 · 非真实模型输出</p>}
           {state.ready && !state.synthetic && !modelConfigured && (
-            <p role="note">本机舞台口令可用。开放式排演讨论尚未连接模型服务。</p>
+            <p role="note">本机置景、版本、复台预览与视图口令可用。</p>
           )}
-          <details className="dia-context">
-            <summary>{professional ? '剧本选段与导演意图' : '补充这一段（可选）'}</summary>
-            <label>
-              只粘贴本次讨论的剧本选段
-              <textarea
-                rows={4}
-                maxLength={12000}
-                value={state.script}
-                onChange={(e) => controller.patch({ script: e.target.value })}
-              />
-            </label>
-            <label>
-              希望观众看到什么
-              <textarea
-                rows={2}
-                maxLength={2000}
-                value={state.directorIntention}
-                onChange={(e) => controller.patch({ directorIntention: e.target.value })}
-              />
-            </label>
-            <p>
-              发送时只提供当前文字、人物与路线、布景边界和最近相关对话。正式舞台以你的手动操作为准。
-            </p>
-          </details>
-          {professional && <SceneLayersPanel />}
+          {BETA_REHEARSAL_ENABLED && (
+            <details className="dia-context">
+              <summary>{professional ? '剧本选段与导演意图' : '补充这一段（可选）'}</summary>
+              <label>
+                只粘贴本次讨论的剧本选段
+                <textarea
+                  rows={4}
+                  maxLength={12000}
+                  value={state.script}
+                  onChange={(e) => controller.patch({ script: e.target.value })}
+                />
+              </label>
+              <label>
+                希望观众看到什么
+                <textarea
+                  rows={2}
+                  maxLength={2000}
+                  value={state.directorIntention}
+                  onChange={(e) => controller.patch({ directorIntention: e.target.value })}
+                />
+              </label>
+              <p>
+                发送时只提供当前文字、人物与路线、布景边界和最近相关对话。正式舞台以你的手动操作为准。
+              </p>
+            </details>
+          )}
+          {BETA_REHEARSAL_ENABLED && professional && <SceneLayersPanel />}
           <nav className="dia-actions" aria-label="舞台版本与复台">
             <button type="button" onClick={() => openStudioPanel('versions')}>
               查看与保留版本
             </button>
             <button type="button" onClick={() => openStudioPanel('remount')}>
-              把这一版带去复台
+              查看复台映射预览
             </button>
           </nav>
           {state.synthetic && (
@@ -765,7 +768,7 @@ export function RehearsalPartner({
             canLoad={false}
             onSessionChange={setSession}
             onTranscript={async (_command, report) => {
-              await report('rejected', '请在手机 Dia 对话中发送排演想法；这里不会执行舞台口令。')
+              await report('rejected', '请在手机 Dia 对话中发送置景想法；这里不会执行舞台口令。')
             }}
           />
           <details>
@@ -884,7 +887,7 @@ export function RehearsalPartner({
                       disabled={state.busy}
                       onClick={() =>
                         text === '我自己来'
-                          ? controller.cancel('好的，继续手动排演。')
+                          ? controller.cancel('好的，继续手动置景。')
                           : controller.patch({ draft: text })
                       }
                     >
@@ -903,7 +906,7 @@ export function RehearsalPartner({
             rows={2}
             maxLength={2000}
             value={state.draft}
-            placeholder="说说想调整的台位、关系或行动…"
+            placeholder="说说想放入的布景、位置或视图…"
             onChange={(e) => controller.patch({ draft: e.target.value })}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {

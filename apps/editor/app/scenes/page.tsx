@@ -32,7 +32,7 @@ export default async function ScenesPage({
           <Image alt="" src="/diastage-mark.svg" width={36} height={36} />
           <div>
             <StudioWordmark />
-            <span className="studio-slogan">Theatre Rehearsal &amp; Stage Previs</span>
+            <span className="studio-slogan">Stage Build &amp; Remount Preview</span>
           </div>
         </Link>
         <div className="ds-library-actions">
@@ -46,7 +46,7 @@ export default async function ScenesPage({
         <div className="ds-library-heading">
           <div>
             <h1>我的剧目</h1>
-            <p>建立空间，模拟人物移动，观察画面，再带到另一座舞台。</p>
+            <p>搭建舞台，保存版本，对比另一座场地的映射预览。</p>
           </div>
           <CreateSceneButton />
         </div>
@@ -59,7 +59,7 @@ export default async function ScenesPage({
           <div className="ds-library-empty">
             <ScanLine size={40} strokeWidth={1} />
             <h2>从一座空舞台开始。</h2>
-            <p>新建剧目，设置舞台尺寸、放置布景，再添加人物与路线。</p>
+            <p>新建剧目，设置场地尺寸，用 22 件标准资产放置布景。</p>
             <CreateSceneButton />
           </div>
         ) : (
@@ -99,7 +99,7 @@ export default async function ScenesPage({
         )}
         <footer className="ds-library-footer">
           <StudioWordmark />
-          <span>Theatre Rehearsal &amp; Stage Previs</span>
+          <span>Stage Build &amp; Remount Preview</span>
         </footer>
       </main>
     </div>

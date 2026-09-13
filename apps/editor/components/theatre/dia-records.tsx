@@ -144,9 +144,13 @@ export function DiaRecords({
                   </p>
                 ))}
               </details>
-              <button type="button" onClick={() => controller.patch({ draft: entry.prompt })}>
-                用此构思继续讨论
-              </button>
+              {controller.rehearsalEnabled || !entry.interaction ? (
+                <button type="button" onClick={() => controller.patch({ draft: entry.prompt })}>
+                  用此构思继续讨论
+                </button>
+              ) : (
+                <p>历史提案 · 只读保留</p>
+              )}
             </article>
           ))}
         </details>

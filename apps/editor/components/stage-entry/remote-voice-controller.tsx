@@ -88,7 +88,7 @@ export function RemoteVoiceController() {
         )
       }
     } catch {
-      setError('浏览器未允许恢复配对，请重新连接；电脑排演仍保留。')
+      setError('浏览器未允许恢复配对，请重新连接；电脑舞台仍保留。')
     }
     return () => request.current?.abort()
   }, [])
@@ -264,7 +264,7 @@ export function RemoteVoiceController() {
       <header>
         <div>
           <h1>Dia</h1>
-          <p>{session?.label || '咫台 DiaStage · 一起排'}</p>
+          <p>{session?.label || '咫台 DiaStage · 一起搭台'}</p>
         </div>
         {session && (
           <button type="button" disabled={sending} onClick={() => void disconnect()}>
@@ -285,16 +285,13 @@ export function RemoteVoiceController() {
       )}
       {!session && tab === 'dia' && (
         <div className="mobile-dia-welcome">
-          <h2>今天想排什么？</h2>
-          <p>说一句，或输入文字。连接舞台后，和 Dia 看同一段戏，试几个方向，再由你决定。</p>
+          <h2>今天想怎么搭台？</h2>
+          <p>说一句，或输入文字。连接舞台后，和 Dia 看同一个舞台，试试布景位置，再由你决定。</p>
         </div>
       )}
       <details className="mobile-assistant-tools">
-        <summary>继续最近排演 · 剧本 · 舞台 · 扫描</summary>
-        <nav aria-label="其他排演工具">
-          <button type="button" aria-pressed={tab === 'voice'} onClick={() => setTab('voice')}>
-            语音构台
-          </button>
+        <summary>舞台与复台</summary>
+        <nav aria-label="舞台工具">
           <a
             href={
               session?.sceneId
@@ -304,7 +301,6 @@ export function RemoteVoiceController() {
           >
             手动置景
           </a>
-          <a href="/?entry=script">剧本搭台</a>
           <a
             href={
               session?.sceneId
@@ -314,9 +310,6 @@ export function RemoteVoiceController() {
           >
             复台
           </a>
-          <button type="button" aria-pressed={tab === 'scan'} onClick={() => setTab('scan')}>
-            扫描上传
-          </button>
         </nav>
       </details>
       {!session ? (

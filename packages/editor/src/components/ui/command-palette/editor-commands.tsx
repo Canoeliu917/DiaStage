@@ -104,7 +104,7 @@ export function EditorCommands() {
         id: 'editor.viewer.camera-mode',
         label: () => {
           const mode = useViewer.getState().cameraMode
-          return `摄像机：切换到${mode === 'perspective' ? '正交' : '透视'}`
+          return `视图：切换到${mode === 'perspective' ? '正交' : '透视'}`
         },
         group: '视口控制',
         icon: <Video className="h-4 w-4" />,

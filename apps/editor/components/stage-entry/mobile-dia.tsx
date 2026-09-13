@@ -96,7 +96,7 @@ export function MobileDia({
         currentPending.current = saved.data.pending
       }
     } catch {
-      setError('此浏览器无法恢复本次输入；电脑上的排演记录仍保留。')
+      setError('此浏览器无法恢复本次输入；电脑上的舞台记录仍保留。')
     }
     setRestored(true)
     return () => {
@@ -289,7 +289,7 @@ export function MobileDia({
             ? '正在连接电脑 Dia；当前预演状态尚未确认。'
             : !status?.ownerOnline
               ? '电脑 Dia 暂未连接，请在电脑上打开 Dia；尚未确认预演。'
-              : '和电脑上的同一个舞台一起排。'}
+              : '和电脑上的同一个舞台一起搭台。'}
       </p>
       {snapshot?.synthetic && <p className="mobile-dia__synthetic">演示数据 · 非真实模型输出</p>}
       {snapshot && (
@@ -356,7 +356,7 @@ export function MobileDia({
           id="mobile-dia-input"
           maxLength={2000}
           value={draft}
-          placeholder="比如：这场太平了，我想让他们之间更紧张一点。"
+          placeholder="比如：给我一张圆桌，两把硬椅。"
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
@@ -414,7 +414,7 @@ export function MobileDia({
           </div>
         )}
         <section className="mobile-dia__suggestions" aria-label="试着问 Dia">
-          {['帮我看看这一段', '给我两个排法', '换一种'].map((text) => (
+          {['一张圆桌，两把硬椅', '查看已保存版本', '从正面看一下'].map((text) => (
             <button type="button" key={text} onClick={() => setDraft(text)}>
               {text}
             </button>
@@ -429,8 +429,8 @@ export function MobileDia({
             <MiniDiaStage snapshot={snapshot} showGhost={online} />
           </details>
           <details className="mobile-dia__history">
-            <summary>最近排演对话（{snapshot.thread?.messages.length ?? 0}）</summary>
-            <ol className="mobile-dia__messages" aria-label="最近排演对话">
+            <summary>最近舞台对话（{snapshot.thread?.messages.length ?? 0}）</summary>
+            <ol className="mobile-dia__messages" aria-label="最近舞台对话">
               {snapshot.thread?.messages.map((message) => (
                 <li key={message.messageId} data-role={message.role}>
                   <span>
@@ -621,9 +621,7 @@ export function MiniDiaStage({
           观众
         </text>
       </svg>
-      <figcaption>
-        舞台俯视 · 框线为布景边界，实点为人物{ghost ? ' · 虚线为已确认预演' : ''}
-      </figcaption>
+      <figcaption>舞台俯视 · 框线为布景边界{ghost ? ' · 虚线为已确认预演' : ''}</figcaption>
     </figure>
   )
 }

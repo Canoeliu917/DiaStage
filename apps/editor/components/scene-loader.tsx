@@ -15,7 +15,7 @@ import { NeutralRenderEnvironment, StableRenderMode, ViewerErrorBoundary } from 
 import dynamic from 'next/dynamic'
 import { useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { BETA_EXPERT_MEDIA_ENABLED } from '@/lib/beta-capabilities'
+import { BETA_EXPERT_MEDIA_ENABLED, BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
 import { bindRehearsalScene, clearProposalGhost } from '@/lib/rehearsal-intelligence/authority'
@@ -168,7 +168,9 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   const immersive = useEditor(
     (state) => state.isCaptureMode || state.isFirstPersonMode || state.isPreviewMode,
   )
-  const cameraEnabled = ['stage-cameras', 'observe', 'record', 'display'].includes(activePanel)
+  const cameraEnabled =
+    BETA_EXPERT_MEDIA_ENABLED &&
+    ['stage-cameras', 'observe', 'record', 'display'].includes(activePanel)
   const recordingEnabled =
     BETA_EXPERT_MEDIA_ENABLED &&
     group === 'rehearse' &&
@@ -574,7 +576,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                         <CameraStudioRuntime />
                       </ViewerErrorBoundary>
                     )}
-                    <TheatreRuntime enabled={group !== 'remount'} />
+                    {BETA_REHEARSAL_ENABLED && <TheatreRuntime enabled={group !== 'remount'} />}
                   </>
                 }
                 viewerSceneSlot={
@@ -606,7 +608,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 }
                 floorplanSceneSlot={
                   <>
-                    <TheatreFloorplan enabled={group !== 'remount'} />
+                    {BETA_REHEARSAL_ENABLED && <TheatreFloorplan enabled={group !== 'remount'} />}
                     {cameraEnabled && <CameraStageFloorplan enabled />}
                     <StagePlacementFloorplan enabled={!immersive} />
                     <StagePlanPreviewFloorplan enabled={!immersive} />
@@ -658,7 +660,9 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
               <CameraStudioDock sceneId={meta.id} />
             </ViewerErrorBoundary>
           )}
-          <RehearsalTransport enabled={group === 'rehearse'} sceneId={meta.id} />
+          {BETA_REHEARSAL_ENABLED && (
+            <RehearsalTransport enabled={group === 'rehearse'} sceneId={meta.id} />
+          )}
         </div>
       </StableRenderMode.Provider>
     </NeutralRenderEnvironment.Provider>

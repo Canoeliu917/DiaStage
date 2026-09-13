@@ -113,14 +113,15 @@ export class DiaConversation {
     readonly sceneId: string,
     private readonly selectedId: () => string | null,
     private readonly navigate?: (panel: 'versions' | 'remount' | 'items') => void,
+    readonly rehearsalEnabled = true,
   ) {}
 
   currentContext() {
     const document = readStageDocument()
-    if (!document) throw new Error('请先建立剧目并添加人物。')
+    if (!document) throw new Error('请先建立舞台。')
     const state = this.store.getState()
     return buildDiaContext(this.sceneId, document, useScene.getState().nodes, {
-      intention: state.draft.trim() || '看看当前排演',
+      intention: state.draft.trim() || '看看当前舞台',
       script: state.script,
       directorIntention: state.directorIntention,
       selectedPerformerId: this.selectedId(),
@@ -131,7 +132,7 @@ export class DiaConversation {
     const epoch = ++this.epoch
     this.disposed = false
     try {
-      const synthetic = isSyntheticDemoScene(useScene.getState().nodes)
+      const synthetic = this.rehearsalEnabled && isSyntheticDemoScene(useScene.getState().nodes)
       this.store.setState({ synthetic, script: synthetic ? SYNTHETIC_DEMO_SCRIPT : '' })
       const [saved, log] = await Promise.all([
         readConversation(this.sceneId),
@@ -261,7 +262,7 @@ export class DiaConversation {
           !state.busy &&
           state.thread?.status === 'waiting-human'
         ) {
-          this.status('failed', '预演已停止，不能采用。请重新预演，手动排演仍可使用。')
+          this.status('failed', '预演已停止，不能采用。请重新预演，手动置景仍可使用。')
           void this.persist().catch((error) => this.fail(error))
         }
       })
@@ -408,11 +409,11 @@ export class DiaConversation {
       'failed',
       error instanceof Error
         ? error.message
-        : 'Dia 暂时没有生成可执行方案。舞台没有被修改，可以换一种说法，或继续手动排演。',
+        : 'Dia 暂时没有生成可执行方案。舞台没有被修改，可以换一种说法，或继续手动置景。',
     )
   }
 
-  cancel(notice = '已停止。没有自动采用；你仍可以继续手动排演。', state: DiaStatus = 'idle') {
+  cancel(notice = '已停止。没有自动采用；你仍可以继续手动置景。', state: DiaStatus = 'idle') {
     this.request?.abort()
     this.request = null
     this.epoch++
@@ -535,6 +536,7 @@ export class DiaConversation {
   }
 
   choose(proposalId: string) {
+    if (!this.rehearsalEnabled) return
     if (proposalId === this.buildProposal()?.id) return
     const state = this.store.getState(),
       proposal = state.interaction?.proposals.find((p) => p.proposalId === proposalId)
@@ -552,6 +554,7 @@ export class DiaConversation {
   }
 
   edit(suggestions: Suggestion[], editing: boolean) {
+    if (!this.rehearsalEnabled) return
     if (this.store.getState().busy) return
     clearProposalGhost()
     this.store.setState({ suggestions, editing })
@@ -560,6 +563,7 @@ export class DiaConversation {
   }
 
   proposal(): RehearsalProposal | undefined {
+    if (!this.rehearsalEnabled) return undefined
     const state = this.store.getState()
     return state.interaction?.proposals.find(
       (p) => p.proposalId === state.thread?.selectedProposalId,
@@ -592,6 +596,7 @@ export class DiaConversation {
 
   preview() {
     if (this.buildProposal()) return this.previewBuild(this.buildProposal()!.plan)
+    if (!this.rehearsalEnabled) return
     return this.act('compiling', async (signal) => {
       const state = this.store.getState(),
         proposal = this.proposal()
@@ -611,6 +616,7 @@ export class DiaConversation {
 
   adopt() {
     if (this.buildProposal()) return this.adoptBuild(this.buildProposal()!.plan)
+    if (!this.rehearsalEnabled) return
     return this.act('applying', async (signal) => {
       const state = this.store.getState(),
         proposal = this.proposal()
@@ -653,6 +659,7 @@ export class DiaConversation {
 
   reject() {
     if (this.buildProposal()) return this.rejectBuild()
+    if (!this.rehearsalEnabled) return
     return this.act('waiting-human', async (signal) => {
       const state = this.store.getState(),
         proposal = this.proposal()
@@ -702,7 +709,14 @@ export class DiaConversation {
 
   buildProposal() {
     const state = this.store.getState()
-    return state.builds.find((p) => p.id === state.activeBuildId)
+    return state.builds.find((p) => p.id === state.activeBuildId && this.buildInScope(p.plan))
+  }
+
+  private buildInScope(plan: StagePlan) {
+    return (
+      this.rehearsalEnabled ||
+      plan.items.every((item) => !['camera', 'performer-marker'].includes(item.kind))
+    )
   }
 
   private replaceBuild(proposal: DiaBuildProposal) {
@@ -714,6 +728,7 @@ export class DiaConversation {
   }
 
   editBuild(plan: StagePlan) {
+    if (!this.buildInScope(plan)) return
     const proposal = this.buildProposal()
     if (
       !proposal ||
@@ -744,6 +759,7 @@ export class DiaConversation {
   }
 
   previewBuild(plan: StagePlan) {
+    if (!this.buildInScope(plan)) return Promise.resolve()
     return this.act('compiling', async (signal) => {
       const proposal = this.buildProposal()
       if (!proposal || ['applied', 'rejected'].includes(proposal.status))
@@ -774,6 +790,7 @@ export class DiaConversation {
   }
 
   adoptBuild(plan: StagePlan) {
+    if (!this.buildInScope(plan)) return Promise.resolve()
     return this.act('applying', async (signal) => {
       const proposal = this.buildProposal()
       const committed = proposal && (await committedBuild(this.sceneId, proposal.id))
@@ -851,7 +868,7 @@ export class DiaConversation {
         '搭台方案已采用，本机已保存，可一步撤销。',
         this.currentContext().sceneVersion ?? '',
       )
-      this.status('applied', '搭台已保留。可以继续排演，或保存为一个版本。')
+      this.status('applied', '搭台已保留。可以继续置景，或保存为一个版本。')
       await this.event('proposal_adopted')
     })
   }
@@ -909,6 +926,15 @@ export class DiaConversation {
       if (!viewOnly) this.status('idle', '舞台没有改变，可以继续讨论或手动操作。')
       await this.persist()
     }
+    if (
+      !this.rehearsalEnabled &&
+      /排演|人物|角色|走位|路线|blocking|performer|rehears|character\s*movement|create_route|edit_route|face_performer/i.test(
+        text,
+      )
+    ) {
+      await reply('0.1 只开放置景、版本、复台预览与视图。请描述要调整的布景、场地或观察方向。')
+      return true
+    }
     if (/^(?:不对|不是|纠正|我说的不是|我是想)/.test(text) && typeof localStorage !== 'undefined') {
       const messages = this.store.getState().thread!.messages
       const previousInput = messages.filter((message) => message.role === 'user').at(-2)
@@ -935,16 +961,20 @@ export class DiaConversation {
     }
     if (intent === 'reflect') {
       await reply(
-        discussStage(
-          context.performers.map((p) => p.name),
-          context.paths.length,
-        ),
+        this.rehearsalEnabled
+          ? discussStage(
+              context.performers.map((p) => p.name),
+              context.paths.length,
+            )
+          : '先看布景的位置、朝向和间距。请指出具体物品及想调整的方向，我们先预演，再由你决定。',
       )
       return true
     }
     if (intent === 'mixed') {
       await reply(
-        '这句话同时涉及布景与人物。先预演并采用布景，再根据新的正式舞台安排人物，能避免站位依据过期。请先发送布景部分，或先说清要调整的人物；两步都需要你确认。',
+        this.rehearsalEnabled
+          ? '这句话同时涉及布景与人物。先预演并采用布景，再根据新的正式舞台安排人物，能避免站位依据过期。请先发送布景部分，或先说清要调整的人物；两步都需要你确认。'
+          : '0.1 暂不安排人物行动。请单独描述布景调整，先预演再采用。',
       )
       return true
     }
@@ -990,7 +1020,13 @@ export class DiaConversation {
       )
       return true
     }
-    if (intent !== 'build') return false
+    if (intent !== 'build') {
+      if (this.rehearsalEnabled) return false
+      await reply(
+        '请描述布景的名称、方向与幅度，或查看版本、准备复台预览、调整视图。0.1 不生成排演提案。',
+      )
+      return true
+    }
     this.navigate?.('items')
     if (this.store.getState().builds.length >= 200)
       throw new Error('本场已保留 200 次搭台建议，请先导出私有记录并开始新的场景。')
@@ -1007,6 +1043,10 @@ export class DiaConversation {
       await reply(
         '这句话还不能可靠地转换成搭台方案。可以写“给我一张圆桌，两把椅子，台右一扇门”或“桌子往台左一点”；复杂空间关系请补充对象、方向和距离。我不会猜测坐标。',
       )
+      return true
+    }
+    if (!this.buildInScope(parsed)) {
+      await reply('0.1 只处理标准舞台布景；人物与制作机位保留为历史资料。')
       return true
     }
     const groundedPlan = groundStageAssets(

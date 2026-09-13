@@ -20,7 +20,8 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
     context = controller.currentContext(),
     ghost = useProposalGhost.getState()
   const build = controller.buildProposal()
-  const envelope = build ? build.envelope : state.interaction?.envelope
+  const interaction = controller.rehearsalEnabled ? state.interaction : null
+  const envelope = build ? build.envelope : interaction?.envelope
   const plan = useStagePlanPreview.getState().plan
   const hasBuildGhost =
     !!build &&
@@ -31,6 +32,7 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
     ['ghost-ready', 'waiting-human'].includes(state.thread?.status ?? '') &&
     JSON.stringify(plan) === JSON.stringify(build.previewedPlan)
   const hasGhost =
+    controller.rehearsalEnabled &&
     ghost.visible &&
     ghost.sceneId === controller.sceneId &&
     ghost.proposalId === state.thread?.selectedProposalId &&
@@ -57,7 +59,7 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
             })),
         }
       : null,
-    interactionId: build?.id ?? state.interaction?.interactionId ?? null,
+    interactionId: build?.id ?? interaction?.interactionId ?? null,
     ...(envelope ? { envelope } : {}),
     proposals: build
       ? [
@@ -77,7 +79,7 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
             alternatives: build.plan.questions.slice(0, 8).map((question) => question.message),
           },
         ]
-      : (state.interaction?.proposals.map((p) => ({
+      : (interaction?.proposals.map((p) => ({
           proposalId: p.proposalId,
           title: p.title,
           intention: p.intention.slice(0, 500),
@@ -90,7 +92,7 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
           ),
           alternatives: p.alternatives.map((a) => a.slice(0, 500)),
         })) ?? []),
-    selectedProposalId: state.thread?.selectedProposalId ?? null,
+    selectedProposalId: build || interaction ? (state.thread?.selectedProposalId ?? null) : null,
     state: state.thread?.status ?? 'idle',
     statusText: state.notice.slice(0, 500),
     decision:
@@ -110,8 +112,8 @@ export function diaRemoteSnapshot(controller: DiaConversation): RemoteDiaSnapsho
       width: context.venue.width,
       depth: context.venue.depth,
       origin: context.venue.origin,
-      performers: performers(context.performers),
-      paths: paths(context.paths),
+      performers: controller.rehearsalEnabled ? performers(context.performers) : [],
+      paths: controller.rehearsalEnabled ? paths(context.paths) : [],
       scenery: context.obstacles.map((object) => ({
         id: object.id,
         name: object.name.slice(0, 100),

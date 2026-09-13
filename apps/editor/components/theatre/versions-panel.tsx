@@ -11,6 +11,7 @@ import { useEditor } from '@pascal-app/editor'
 import { useViewer, ViewerErrorBoundary } from '@pascal-app/viewer'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
+import { BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
 import { buildDiaContext } from '@/lib/rehearsal-intelligence/context'
 import { sceneFactsVersion } from '@/lib/rehearsal-intelligence/conversation'
@@ -48,7 +49,7 @@ const VIEW = 'diastageRestoredView'
 const SOURCE_LABEL = {
   manual: '手动整理',
   'dia-build': 'Dia 搭台',
-  'dia-rehearse': 'Dia 排演',
+  'dia-rehearse': 'Dia 历史提案',
   'dia-remount': 'Dia 复台映射',
   restore: '恢复历史版本',
 }
@@ -133,7 +134,7 @@ export function restoreRehearsalVersion(id: string, sceneId?: string) {
     .array(versionSchema)
     .parse(site.metadata[VERSIONS] ?? [])
     .find((v) => v.id === id)
-  if (!doc || !version) throw new Error('排演版本不存在')
+  if (!doc || !version) throw new Error('版本 / 历史不存在')
   const versions = z.array(versionSchema).parse(site.metadata[VERSIONS] ?? [])
   const restored = versionSchema.parse({
     ...version,
@@ -261,9 +262,9 @@ export function VersionsPanel({ sceneId }: { sceneId: string }) {
     }
   }
   return (
-    <section className="theatre-panel" aria-label="排演版本">
-      <h2>排演版本</h2>
-      <p>版本保留场地、布景与排演。可以只读查看、明确恢复，或带入新场地复台。</p>
+    <section className="theatre-panel" aria-label="版本 / 历史">
+      <h2>版本 / 历史</h2>
+      <p>版本保留当前舞台快照。可以只读查看、明确恢复，或带入目标场地做映射预览。</p>
       <fieldset disabled={readOnly}>
         <label>
           版本名称
@@ -312,10 +313,7 @@ export function VersionsPanel({ sceneId }: { sceneId: string }) {
           >
             <VersionDrawing version={preview} />
           </ViewerErrorBoundary>
-          <p>
-            正在查看历史版本，当前舞台未改变。人物 {preview.rehearsalSimulation.performers.length}{' '}
-            位 · 路线 {preview.rehearsalSimulation.paths.length} 条。
-          </p>
+          <p>正在查看历史版本，当前舞台未改变。</p>
           <details>
             <summary>版本来源</summary>
             <p>{preview.source ? SOURCE_LABEL[preview.source] : '旧版本 · 未记录来源'}</p>
@@ -323,7 +321,8 @@ export function VersionsPanel({ sceneId }: { sceneId: string }) {
             <p>场景 {preview.sceneVersion ?? rehearsalVersionHashes(preview).sceneVersion}</p>
             <p>场地 {preview.venueVersion ?? rehearsalVersionHashes(preview).venueVersion}</p>
             <p>
-              排演 {preview.rehearsalVersion ?? rehearsalVersionHashes(preview).rehearsalVersion}
+              历史关联数据{' '}
+              {preview.rehearsalVersion ?? rehearsalVersionHashes(preview).rehearsalVersion}
             </p>
             <p>{new Date(preview.createdAt).toLocaleString('zh-CN')}</p>
             {preview.sourceVersion && <p>来源版本 {preview.sourceVersion}</p>}
@@ -401,7 +400,7 @@ function VersionDrawing({ version }: { version: RehearsalVersion }) {
       },
     ]
   })
-  for (const performer of version.rehearsalSimulation.performers)
+  for (const performer of BETA_REHEARSAL_ENABLED ? version.rehearsalSimulation.performers : [])
     objects.push({
       id: performer.id,
       name: performer.name,
@@ -418,7 +417,7 @@ function VersionDrawing({ version }: { version: RehearsalVersion }) {
       <svg
         style={{ width: '100%', height: 'auto' }}
         role="img"
-        aria-label="历史版本：场地、布景、人物与路线，台口在下方"
+        aria-label="历史版本：场地与布景，台口在下方"
         viewBox={`${-width / 2 - 0.5} -0.5 ${width + 1} ${depth + 1.2}`}
       >
         <rect
@@ -446,25 +445,26 @@ function VersionDrawing({ version }: { version: RehearsalVersion }) {
             <title>{object.name}</title>
           </rect>
         ))}
-        {version.rehearsalSimulation.paths
-          .filter((path) => path.visible)
-          .map((path) => (
-            <polyline
-              key={path.id}
-              points={path.points
-                .map((point) => `${point[0] - origin[0]},${point[2] - origin[2] + depth / 2}`)
-                .join(' ')}
-              fill="none"
-              stroke="#444"
-              strokeWidth={0.05}
-              strokeDasharray="0.15 0.1"
-            />
-          ))}
+        {BETA_REHEARSAL_ENABLED &&
+          version.rehearsalSimulation.paths
+            .filter((path) => path.visible)
+            .map((path) => (
+              <polyline
+                key={path.id}
+                points={path.points
+                  .map((point) => `${point[0] - origin[0]},${point[2] - origin[2] + depth / 2}`)
+                  .join(' ')}
+                fill="none"
+                stroke="#444"
+                strokeWidth={0.05}
+                strokeDasharray="0.15 0.1"
+              />
+            ))}
         <text x={0} y={depth + 0.45} fontSize={0.3} textAnchor="middle" fill="currentColor">
           台口 · 观众方向
         </text>
       </svg>
-      <figcaption>只读快照 · 虚线为当时保存的走位。</figcaption>
+      <figcaption>只读快照 · 当前舞台保持原样。</figcaption>
     </figure>
   )
 }

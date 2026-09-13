@@ -1,11 +1,10 @@
 'use client'
 
 import { useEditor, useIsMobile, useSidebarStore } from '@pascal-app/editor'
-import { Clapperboard, Hammer, Layers, ScanLine } from 'lucide-react'
+import { Hammer, Layers, ScanLine } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { BETA_EXPERT_MEDIA_ENABLED } from '@/lib/beta-capabilities'
 import { migrateStudioPanel, type StudioGroup } from '@/lib/studio-workspaces'
 import { useCameraStudio } from './camera-studio/store'
 import { StudioWordmark } from './studio-wordmark'
@@ -15,15 +14,13 @@ export type { StudioGroup } from '@/lib/studio-workspaces'
 
 export function openStudioPanel(panel: string): boolean {
   panel = migrateStudioPanel(panel)
-  if (!BETA_EXPERT_MEDIA_ENABLED && ['record', 'camera-rehearsal'].includes(panel))
-    panel = 'observe'
   const editor = useEditor.getState()
   if (editor.isFirstPersonMode || editor.isCaptureMode) return false
   useCameraStudio.getState().stop()
   useRehearsalPlayback.getState().stop()
   editor.setPreviewMode(false)
   if (panel !== 'build' && panel !== 'items') editor.setMode('select')
-  editor.setWorkspaceMode(panel === 'camera-rehearsal' ? 'studio' : 'edit')
+  editor.setWorkspaceMode('edit')
   editor.setActiveSidebarPanel(panel)
   useSidebarStore.getState().setIsCollapsed(false)
   return true
@@ -64,13 +61,12 @@ export function StudioNavigation({
         />
         <div>
           <StudioWordmark />
-          <span className="studio-slogan">Theatre Rehearsal &amp; Stage Previs</span>
+          <span className="studio-slogan">Stage Build &amp; Remount Preview</span>
         </div>
       </div>
       <nav className="studio-workspaces" aria-label="工作区">
         {[
           { id: 'set' as const, label: '置景', icon: Hammer },
-          { id: 'rehearse' as const, label: '排演', icon: Clapperboard },
           { id: 'remount' as const, label: '复台', icon: ScanLine },
         ].map(({ id, label, icon: Icon }) => (
           <button
@@ -106,12 +102,12 @@ export function StudioNavigation({
           <details className="studio-mobile-menu">
             <summary>更多</summary>
             <div>
-              <p>戏剧排演与舞台复现</p>
+              <p>舞台置景与复台预览</p>
               <button type="button" onClick={() => useEditor.getState().setViewMode('3d')}>
                 三维舞台
               </button>
               <button type="button" onClick={() => useEditor.getState().setViewMode('2d')}>
-                俯视调度图
+                平面图
               </button>
               {menu}
             </div>

@@ -46,7 +46,6 @@ import Image from 'next/image'
 import { type ReactNode, useCallback, useEffect } from 'react'
 import { currentStageContext } from '@/lib/stage/context'
 import { cn } from '@/lib/utils'
-import { useCameraStudio } from './camera-studio/store'
 import {
   cancelStagePlacement,
   startStagePlacement,
@@ -59,7 +58,6 @@ import {
   useStageRotation,
 } from './stage-entry/stage-viewport-controls'
 import { openStudioPanel } from './studio-navigation'
-import { useSimulationSelection } from './theatre/simulation-panel'
 import { Tooltip, TooltipContent, TooltipTrigger } from './toolbar-tooltip'
 
 const TOOLBAR_CONTAINER =
@@ -716,8 +714,6 @@ export function EditorViewerToolbarLeft() {
 
 export function StudioPicturePanel() {
   const viewer = useViewer()
-  const cameras = useCameraStudio((s) => s.showStageCameras)
-  const routes = useSimulationSelection((s) => s.showRoutes)
   return (
     <section className="theatre-panel" aria-label="显示">
       <h2>显示</h2>
@@ -734,7 +730,7 @@ export function StudioPicturePanel() {
         >
           <option value="white">白模</option>
           <option value="blackbox">黑匣子</option>
-          <option value="preview">演出预览</option>
+          <option value="preview">材质预览</option>
         </select>
       </label>
       <label>
@@ -752,22 +748,6 @@ export function StudioPicturePanel() {
           onChange={(e) => viewer.setShowGuides(e.target.checked)}
         />
         辅助线
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={routes}
-          onChange={(e) => useSimulationSelection.setState({ showRoutes: e.target.checked })}
-        />
-        人物路线
-      </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={cameras}
-          onChange={(e) => useCameraStudio.getState().setShowStageCameras(e.target.checked)}
-        />
-        摄影机模型
       </label>
       <WallModeToggle />
       <DisplayMenu />
@@ -789,7 +769,9 @@ export function EditorViewerToolbarRight() {
           <PreviewButton />
           <details className="w-full text-xs text-muted-foreground">
             <summary>操作帮助</summary>
-            <p className="mt-2">中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远 · F 聚焦所选道具。</p>
+            <p className="mt-2">
+              中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远 · F 聚焦所选道具。
+            </p>
             <p className="mt-2">
               WASD 前后左右移动观察视角 · Q 下降 · E
               上升。点击旋转后按住右键左右拖动，松开确定；点击缩放或按 R 也可打开缩放设置。

@@ -15,11 +15,9 @@ import {
 import { memo, useMemo, useState, useSyncExternalStore } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { commandMeta, executeStageCommands } from '@/lib/stage/command-executor'
-import { editStageDocument } from '@/lib/theatre/simulation-store'
 import { useCameraStudio } from './camera-studio/store'
 import { buildStageRows, getStageNodeSelection } from './stage-overview-data'
 import { openStudioPanel } from './studio-navigation'
-import { useSimulationSelection, useStageDocument } from './theatre/simulation-panel'
 import './stage-overview.css'
 import { getCameraDirectorState, subscribeCameraDirector } from '@/lib/camera-director'
 
@@ -43,7 +41,6 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
       setShowStageCameras: s.setShowStageCameras,
     })),
   )
-  const { document } = useStageDocument()
   const exclusive = useEditor((s) => s.isCaptureMode || s.isFirstPersonMode)
   const interactionBusy = useInteractionScope((s) => s.scope.kind !== 'idle')
   const [query, setQuery] = useState('')
@@ -69,28 +66,6 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
       stageLocked: !!getNodeLock(nodes, row.id),
       inheritedLock: !!getNodeLock(nodes, row.id) && nodes[row.id]?.metadata.stageLocked !== true,
     })),
-    ...(document?.rehearsalSimulation.performers ?? []).map((p) => ({
-      id: p.id,
-      name: p.name,
-      kind: 'performer',
-      typeLabel: '人物',
-      parentLabel: '模拟排演',
-      visible: p.visible,
-      effectiveVisible: p.visible,
-      stageLocked: p.stageLocked === true,
-      inheritedLock: false,
-    })),
-    ...camera.project.shots.map((s) => ({
-      id: s.id,
-      name: s.name,
-      kind: 'camera',
-      typeLabel: '摄影机',
-      parentLabel: '舞台镜头',
-      visible: camera.showStageCameras,
-      effectiveVisible: camera.showStageCameras,
-      stageLocked: s.stageLocked === true,
-      inheritedLock: false,
-    })),
   ]
   const visible = objects.filter(
     (row) =>
@@ -110,19 +85,8 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
       getCameraDirectorState(sceneId).transport.status !== 'idle'
     )
   }
-  function select(id: string, kind: string, focus = false, properties = false) {
+  function select(id: string, focus = false, properties = false) {
     if (locked()) return
-    if (kind === 'camera') {
-      openStudioPanel('stage-cameras')
-      camera.selectShot(id)
-      if (focus) camera.focusStageCamera()
-      return
-    }
-    if (kind === 'performer') {
-      openStudioPanel('simulation')
-      useSimulationSelection.setState({ selectedId: id })
-      return
-    }
     const node = useScene.getState().nodes[id as AnyNodeId]
     if (!node) return
     useEditor.getState().setMode('select')
@@ -159,8 +123,6 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
           {[
             ['all', '全部'],
             ['scenery', '布景'],
-            ['performer', '人物'],
-            ['camera', '摄影机'],
           ].map(([id, label]) => (
             <button
               type="button"
@@ -199,7 +161,7 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
                 onDoubleClick={(event) => {
                   const button = (event.target as HTMLElement).closest('button')
                   if (button && !button.classList.contains('stage-overview-name')) return
-                  select(row.id, row.kind, false, true)
+                  select(row.id, false, true)
                 }}
               >
                 <td>
@@ -210,17 +172,9 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
                     onClick={() => {
                       try {
                         if (locked() || useScene.getState().readOnly) return
-                        if (row.kind === 'camera')
-                          camera.setShowStageCameras(!camera.showStageCameras)
-                        else if (row.kind === 'performer')
-                          editStageDocument((d) => {
-                            d.rehearsalSimulation.performers.find((p) => p.id === row.id)!.visible =
-                              !row.visible
-                          })
-                        else
-                          useScene
-                            .getState()
-                            .updateNode(row.id as AnyNodeId, { visible: !row.visible })
+                        useScene
+                          .getState()
+                          .updateNode(row.id as AnyNodeId, { visible: !row.visible })
                         setNotice('')
                       } catch (e) {
                         setNotice(e instanceof Error ? e.message : '修改未完成')
@@ -236,7 +190,7 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
                     type="button"
                     disabled={busy}
                     title="双击打开属性"
-                    onClick={() => select(row.id, row.kind)}
+                    onClick={() => select(row.id)}
                   >
                     <span>{row.name}</span>
                     <small>
@@ -254,7 +208,7 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
                     type="button"
                     aria-label={`定位${row.name}`}
                     disabled={busy}
-                    onClick={() => select(row.id, row.kind, true)}
+                    onClick={() => select(row.id, true)}
                   >
                     <Crosshair size={14} />
                   </button>
@@ -293,7 +247,7 @@ export const StageOverviewPanel = memo(function StageOverviewPanel({
           </tbody>
         </table>
         {!visible.length && (
-          <p className="stage-overview-empty">暂无匹配对象。可在置景中添加布景或摄影机。</p>
+          <p className="stage-overview-empty">暂无匹配对象。可在置景中添加布景。</p>
         )}
       </div>
       <footer className="stage-overview-footer">

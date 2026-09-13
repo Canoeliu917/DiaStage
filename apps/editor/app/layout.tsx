@@ -6,7 +6,7 @@ import { DevDiagnostics } from './dev-diagnostics'
 import './globals.css'
 
 export const metadata = {
-  title: '咫台 DiaStage: Theatre Rehearsal & Stage Previs',
+  title: '咫台 DiaStage: Stage Build & Remount Preview',
   description: DIASTAGE_BRAND.product,
   icons: { icon: '/diastage-mark.svg' },
 }

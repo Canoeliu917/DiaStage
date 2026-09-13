@@ -46,11 +46,11 @@ afterEach(() => {
 })
 test('workspace and panel IDs migrate without reviving cancelled entries', () => {
   expect(migrateStudioGroup('space')).toBe('set')
-  expect(migrateStudioGroup('director')).toBe('rehearse')
+  expect(migrateStudioGroup('director')).toBe('set')
   expect(migrateStudioGroup('remount')).toBe('remount')
-  expect(migrateStudioPanel('theatre-scenes')).toBe('simulation')
+  expect(migrateStudioPanel('theatre-scenes')).toBe('items')
   expect(migrateStudioPanel('theatre-props')).toBe('items')
-  expect(migrateStudioPanel('camera-studio')).toBe('stage-cameras')
+  expect(migrateStudioPanel('camera-studio')).toBe('view')
 })
 test('legacy theatre fields are preserved raw while active simulation contains only spatial facts', () => {
   const old = createTheatreDocument('旧剧目')
