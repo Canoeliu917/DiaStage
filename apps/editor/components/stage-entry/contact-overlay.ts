@@ -1,11 +1,12 @@
 import { BATCHED_LAYER, OVERLAY_LAYER, SCENE_LAYER } from '@pascal-app/viewer'
-import { DoubleSide, Group, Matrix4, Mesh, type Object3D } from 'three'
+import { BackSide, DoubleSide, Group, Matrix4, Mesh, type Object3D } from 'three'
+import { modelScale, normalLocal, positionLocal } from 'three/tsl'
 import { ClippingGroup, MeshBasicNodeMaterial } from 'three/webgpu'
 import { DIA_COLORS } from '@/lib/visual-system'
 
-export function createStageContactOverlay() {
+export function createStageContactOverlay(selection = false) {
   const group = new Group()
-  group.name = 'stage-contact-feedback'
+  group.name = selection ? 'stage-selection-feedback' : 'stage-contact-feedback'
   group.layers.set(OVERLAY_LAYER)
   const material = new MeshBasicNodeMaterial({
     color: DIA_COLORS.error,
@@ -18,6 +19,24 @@ export function createStageContactOverlay() {
     polygonOffsetFactor: -2,
     polygonOffsetUnits: -2,
   })
+  const feedbackMaterials = selection
+    ? [
+        [0.09, 0.12, DIA_COLORS.ink],
+        [0.05, 0.6, DIA_COLORS.ink],
+        [0.015, 0.95, DIA_COLORS.ivory],
+      ].map(([width, opacity, color]) => {
+        const outline = new MeshBasicNodeMaterial({
+          color: color as string,
+          opacity: opacity as number,
+          transparent: true,
+          side: BackSide,
+          depthWrite: false,
+          toneMapped: false,
+        })
+        outline.positionNode = positionLocal.add(normalLocal.div(modelScale).mul(width as number))
+        return outline
+      })
+    : [material]
   const inverse = new Matrix4()
   const entries = new Map<
     string,
@@ -27,7 +46,7 @@ export function createStageContactOverlay() {
       revision: number
       settled: unknown
       snapshot: unknown
-      meshes: Map<Mesh, Mesh>
+      meshes: Map<Mesh, Mesh[]>
       container: ClippingGroup
       section: ClippingGroup | null
     }
@@ -91,17 +110,20 @@ export function createStageContactOverlay() {
             const materials = Array.isArray(child.material) ? child.material : [child.material]
             if (!materials.some((value) => value.visible && value.opacity > 0)) return
             // Borrow geometry and skeletal pose; never recolor or dispose a catalog asset.
-            const mesh = child.clone(false)
-            mesh.name = `stage-contact:${id}`
-            mesh.material = material
-            mesh.matrixAutoUpdate = false
-            mesh.layers.set(OVERLAY_LAYER)
-            mesh.renderOrder = 900
-            mesh.castShadow = false
-            mesh.receiveShadow = false
-            mesh.raycast = () => {}
-            entry!.meshes.set(child, mesh)
-            entry!.container.add(mesh)
+            const copies = feedbackMaterials.map((feedbackMaterial, index) => {
+              const mesh = child.clone(false)
+              mesh.name = `stage-contact:${id}`
+              mesh.material = feedbackMaterial
+              mesh.matrixAutoUpdate = false
+              mesh.layers.set(OVERLAY_LAYER)
+              mesh.renderOrder = 900 + (selection ? index + 1 : 0)
+              mesh.castShadow = false
+              mesh.receiveShadow = false
+              mesh.raycast = () => {}
+              entry!.container.add(mesh)
+              return mesh
+            })
+            entry!.meshes.set(child, copies)
           })
           entries.set(id, entry)
         }
@@ -110,11 +132,12 @@ export function createStageContactOverlay() {
         if (entry.snapshot === snapshot && !source.userData.itemHasAnimations) continue
         entry.snapshot = snapshot
         source.updateWorldMatrix(true, true)
-        for (const [original, mesh] of entry.meshes) {
-          mesh.geometry = original.geometry
-          mesh.matrix.copy(inverse).multiply(original.matrixWorld)
-          mesh.matrixWorldNeedsUpdate = true
-        }
+        for (const [original, copies] of entry.meshes)
+          for (const mesh of copies) {
+            mesh.geometry = original.geometry
+            mesh.matrix.copy(inverse).multiply(original.matrixWorld)
+            mesh.matrixWorldNeedsUpdate = true
+          }
       }
       group.userData.contactIds = [...entries]
         .filter(([, entry]) => entry.meshes.size > 0)
@@ -124,6 +147,7 @@ export function createStageContactOverlay() {
       group.clear()
       entries.clear()
       material.dispose()
+      if (selection) for (const outline of feedbackMaterials) outline.dispose()
     },
   }
 }

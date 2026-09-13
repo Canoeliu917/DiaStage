@@ -29,6 +29,7 @@
 .stage-plan-drawing figcaption { opacity:.75; }
 .stage-plan-handle { cursor:grab; touch-action:none; }
 .stage-plan-handle:active { cursor:grabbing; }
+.stage-plan-handle[data-selected=true] { filter:drop-shadow(0 0 2px var(--dia-ivory)); }
 .stage-plan-handle[aria-disabled=true] { cursor:default; }
 .stage-plan-review .stage-plan-handle:focus { outline:none; }
 .stage-plan-handle:focus-visible rect { stroke-width:.07; stroke-dasharray:none; }

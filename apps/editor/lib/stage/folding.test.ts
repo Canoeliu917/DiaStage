@@ -9,17 +9,21 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { useInteractionScope } from '@pascal-app/editor'
+import { applyItemFoldControls } from '@pascal-app/nodes'
 import { useViewer } from '@pascal-app/viewer'
-import { Group } from 'three'
+import { Group, Vector3 } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { connectStageCommandExecutor } from './command-executor'
 import {
+  beginFoldCornerDrag,
   beginFoldDrag,
   enterStageFolding,
   exitStageFolding,
   finishFoldDrag,
+  foldCornerGeometry,
   previewFoldAngle,
+  previewFoldCornerAngle,
   setFoldAngle,
 } from './folding'
 import { AVAILABLE_STAGE_SCENERY } from './prop-assets'
@@ -115,6 +119,57 @@ test('fixed/read-only props reject folding and a lock arriving mid-drag cancels 
   expect(useLiveNodeOverrides.getState().get(node.id)).toBeUndefined()
   expect(beginFoldDrag(node.id, 0)).toBe(false)
   expect((useScene.getState().nodes[node.id] as ItemNode).controls).toBeUndefined()
+})
+
+test('every authored corner turns rigid panels, keeps its pivot and writes one undo step', () => {
+  const root = sceneRegistry.nodes.get(node.id)!
+  const point = (name: string) => root.getObjectByName(name)!.getWorldPosition(new Vector3())
+  for (const corner of [0, 1, 2, 3]) {
+    const before = useScene.getState().nodes[node.id] as ItemNode
+    const pivot = foldCornerGeometry(before, corner)!.pivot.clone()
+    const downstream = point('Hinge_03')
+    expect(beginFoldCornerDrag(node.id, corner)).toBe(true)
+    previewFoldCornerAngle(corner === 1 ? 30 : 120)
+    const patch = useLiveNodeOverrides.getState().get(node.id)!
+    expect(useScene.getState().nodes[node.id]).toEqual(before)
+    const next = { ...before, ...patch } as ItemNode
+    root.position.fromArray(next.position)
+    root.rotation.set(...next.rotation)
+    applyItemFoldControls(root, next.controls)
+    root.updateWorldMatrix(true, true)
+    expect(foldCornerGeometry(next, corner)!.pivot.distanceTo(pivot)).toBeLessThan(1e-6)
+    expect(point('Hinge_01').distanceTo(point('Hinge_02'))).toBeCloseTo(0.9, 6)
+    expect(point('Hinge_02').distanceTo(point('Hinge_03'))).toBeCloseTo(0.9, 6)
+    expect(next.scale).toEqual(before.scale)
+    expect(next.asset.dimensions[1]).toBeCloseTo(before.asset.dimensions[1], 6)
+    if (corner === 0) expect(point('Hinge_03').distanceTo(downstream)).toBeLessThan(1e-6)
+    finishFoldDrag(true)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+    useScene.temporal.getState().undo()
+    expect(useScene.getState().nodes[node.id]).toEqual(before)
+    clearSceneHistory()
+    root.position.fromArray(before.position)
+    root.rotation.set(...before.rotation)
+    applyItemFoldControls(root, before.controls)
+  }
+  expect(beginFoldCornerDrag(node.id, -1)).toBe(false)
+  expect(beginFoldCornerDrag(node.id, 4)).toBe(false)
+})
+
+test('cancel restores all corner positions even before the 3D renderer has reconciled its old pose', () => {
+  const root = sceneRegistry.nodes.get(node.id)!
+  const before = [0, 1, 2, 3].map((corner) => foldCornerGeometry(node, corner)!.point)
+  expect(beginFoldCornerDrag(node.id, 0)).toBe(true)
+  previewFoldCornerAngle(135)
+  const patch = useLiveNodeOverrides.getState().get(node.id) as Partial<ItemNode>
+  root.position.fromArray(patch.position!)
+  root.rotation.set(...patch.rotation!)
+  applyItemFoldControls(root, patch.controls)
+  expect(foldCornerGeometry(node, 0)!.point.distanceTo(before[0]!)).toBeGreaterThan(0.1)
+  finishFoldDrag(false)
+  for (const corner of [0, 1, 2, 3])
+    expect(foldCornerGeometry(node, corner)!.point.distanceTo(before[corner]!)).toBeLessThan(1e-6)
+  expect(useScene.temporal.getState().pastStates).toHaveLength(0)
 })
 
 test('numeric presets retain the other relative angle and reject self-penetration along the path', () => {

@@ -1,7 +1,33 @@
 import { expect, test } from 'bun:test'
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Plane } from 'three'
+import { BackSide, BoxGeometry, Group, Mesh, MeshBasicMaterial, Plane } from 'three'
 import { ClippingGroup } from 'three/webgpu'
 import { createStageContactOverlay } from './contact-overlay'
+
+test('selection uses soft silhouette shells, follows folds and never mutates source materials', () => {
+  const feedback = createStageContactOverlay(true)
+  const root = new Group()
+  const original = new Mesh(new BoxGeometry(), new MeshBasicMaterial())
+  root.add(original)
+  const sources = new Map([['selected', root]])
+  const ids = new Set(['selected'])
+  feedback.sync(ids, sources, 0, {})
+  const shells = feedback.group.children[0]!.children as Mesh[]
+  expect(shells).toHaveLength(3)
+  for (const shell of shells) {
+    expect(shell.geometry).toBe(original.geometry)
+    expect((shell.material as MeshBasicMaterial).side).toBe(BackSide)
+    expect(shell.material).not.toBe(original.material)
+  }
+  original.rotation.y = 1.2
+  feedback.sync(ids, sources, 0, {})
+  feedback.group.updateWorldMatrix(true, true)
+  expect(shells[0]!.matrixWorld.elements).toEqual(original.matrixWorld.elements)
+  feedback.sync(new Set(), sources, 0, {})
+  expect(feedback.group.children).toHaveLength(0)
+  feedback.dispose()
+  original.geometry.dispose()
+  original.material.dispose()
+})
 
 test('contact overlays follow visible geometry and release only their own material', () => {
   const overlay = createStageContactOverlay()

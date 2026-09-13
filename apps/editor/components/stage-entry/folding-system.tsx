@@ -1,12 +1,6 @@
 'use client'
 
-import {
-  type AnyNodeId,
-  getNodeLock,
-  type ItemNode,
-  sceneRegistry,
-  useScene,
-} from '@pascal-app/core'
+import { type AnyNodeId, getNodeLock, type ItemNode, useScene } from '@pascal-app/core'
 import { useEditor, useInteractionScope } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Html } from '@react-three/drei'
@@ -15,28 +9,21 @@ import { type PointerEvent, useCallback, useEffect, useRef } from 'react'
 import { type Group, type Matrix4, Plane, Raycaster, Vector2, Vector3 } from 'three'
 import { advanceFoldAngle, type FoldAngleDrag } from '@/lib/stage/fold-drag'
 import {
-  beginFoldDrag,
+  beginFoldCornerDrag,
   exitStageFolding,
   finishFoldDrag,
   foldControls,
+  foldCornerGeometry,
+  foldCornerLabel,
   foldHandle,
   foldKeys,
   foldPositionCount,
-  previewFoldAngle,
+  previewFoldCornerAngle,
   useStageFolding,
 } from '@/lib/stage/folding'
 import { STAGE_PROP_MENU } from '@/lib/stage/prop-assets'
 
-function FoldPosition({
-  node,
-  position,
-  active,
-}: {
-  node: ItemNode
-  position: number
-  active: boolean
-}) {
-  const marker = useRef<Group>(null)
+function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
   const handle = useRef<Group>(null)
   const { camera, gl, controls } = useThree()
   const gesture = useRef<{
@@ -50,7 +37,6 @@ function FoldPosition({
   } | null>(null)
   const source = STAGE_PROP_MENU.assets.find((asset) => asset.id === node.asset.id)
   const dimensions = source?.dimensions_m
-  const panelWidth = dimensions && 'panel_width' in dimensions ? dimensions.panel_width : 0.9
   const panelHeight = dimensions?.height ?? 2.4
   const ray = useRef(new Raycaster())
   const dragging = useStageFolding((state) => state.dragging)
@@ -85,108 +71,89 @@ function FoldPosition({
     return ray.current.ray.intersectPlane(plane, new Vector3())
   }
   useFrame(() => {
-    const joint = sceneRegistry.nodes.get(node.id)?.getObjectByName(`Hinge_0${position + 2}`)
-    if (marker.current) marker.current.visible = !!joint
-    if (handle.current) handle.current.visible = !!joint
-    if (!joint) return
-    joint.updateWorldMatrix(true, false)
-    marker.current?.position.copy(joint.localToWorld(new Vector3(0, panelHeight / 2, 0)))
-    handle.current?.position.copy(joint.localToWorld(new Vector3(panelWidth, panelHeight / 2, 0)))
+    const geometry = foldCornerGeometry(node, corner, panelHeight / 2)
+    if (handle.current) {
+      handle.current.visible = !!geometry
+      if (geometry) handle.current.position.copy(geometry.point)
+    }
   })
   return (
-    <>
-      <group ref={marker}>
-        <Html center style={{ pointerEvents: 'none' }}>
-          <button
-            className="stage-fold-point"
-            type="button"
-            aria-label={`选择折叠位置${position + 1}`}
-            aria-pressed={active}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={() => useStageFolding.setState({ position })}
-          >
-            {position + 1}
-          </button>
-        </Html>
-      </group>
-      <group ref={handle}>
-        <Html center style={{ pointerEvents: 'none' }}>
-          <button
-            className="stage-fold-angle-handle"
-            type="button"
-            aria-label={`拖动折叠位置${position + 1}打开角度`}
-            title="拖动打开角度"
-            onPointerDown={(event) => {
-              if (event.button !== 0) return
-              event.preventDefault()
-              event.stopPropagation()
-              const joint = sceneRegistry.nodes
-                .get(node.id)
-                ?.getObjectByName(`Hinge_0${position + 2}`)
-              if (!joint?.parent) return
-              joint.updateWorldMatrix(true, false)
-              const pivot = joint.localToWorld(new Vector3(0, panelHeight / 2, 0))
-              const normal = new Vector3(0, 1, 0).transformDirection(joint.matrixWorld)
-              const plane = new Plane().setFromNormalAndCoplanarPoint(normal, pivot)
-              const point = planePoint(event, plane)
-              if (
-                !point ||
-                point.distanceToSquared(pivot) < 1e-8 ||
-                !beginFoldDrag(node.id, position)
-              )
-                return
-              const inverseParent = joint.parent.matrixWorld.clone().invert()
-              const localPivot = pivot.clone().applyMatrix4(inverseParent)
-              const start = point.applyMatrix4(inverseParent).sub(localPivot)
-              gesture.current = {
-                plane,
-                pivot: localPivot,
-                inverseParent,
-                angle: {
-                  startAngle: foldControls(node)[foldKeys[position]!],
-                  pointerRadians: Math.atan2(-start.z, start.x),
-                  turnRadians: 0,
-                },
-                button: event.currentTarget,
-                pointerId: event.pointerId,
-                enabled: cameraControls?.enabled,
-              }
-              if (cameraControls) cameraControls.enabled = false
-              event.currentTarget.setPointerCapture(event.pointerId)
-            }}
-            onPointerMove={(event) => {
-              const drag = gesture.current
-              if (!drag || drag.pointerId !== event.pointerId) return
-              event.preventDefault()
-              event.stopPropagation()
-              const point = planePoint(event, drag.plane)
-              if (!point) return
-              const next = point.applyMatrix4(drag.inverseParent).sub(drag.pivot)
-              const delta = Math.atan2(-next.z, next.x)
-              const advanced = advanceFoldAngle(drag.angle, delta)
-              drag.angle = advanced.drag
-              previewFoldAngle(advanced.angle)
-            }}
-            onPointerUp={(event) => {
-              if (!gesture.current || event.button !== 0) return
-              event.stopPropagation()
-              finishFoldDrag(true)
-              restoreCamera()
-            }}
-            onPointerCancel={() => {
-              finishFoldDrag(false)
-              restoreCamera()
-            }}
-            onLostPointerCapture={() => {
-              finishFoldDrag(false)
-              restoreCamera()
-            }}
-          >
-            ↶
-          </button>
-        </Html>
-      </group>
-    </>
+    <group ref={handle}>
+      <Html center style={{ pointerEvents: 'none' }}>
+        <button
+          className="stage-fold-angle-handle"
+          type="button"
+          aria-label={`拖动${foldCornerLabel(corner)}`}
+          data-fold-corner={corner}
+          title={`${foldCornerLabel(corner)} · 每格 15°`}
+          onPointerDown={(event) => {
+            if (event.button !== 0) return
+            event.preventDefault()
+            event.stopPropagation()
+            const geometry = foldCornerGeometry(node, corner, panelHeight / 2)
+            if (!geometry) return
+            const { pivot, parentMatrix } = geometry
+            const normal = new Vector3(0, 1, 0).transformDirection(parentMatrix)
+            const plane = new Plane().setFromNormalAndCoplanarPoint(normal, pivot)
+            const point = planePoint(event, plane)
+            if (
+              !point ||
+              point.distanceToSquared(pivot) < 1e-8 ||
+              !beginFoldCornerDrag(node.id, corner)
+            )
+              return
+            const inverseParent = parentMatrix.clone().invert()
+            const localPivot = pivot.clone().applyMatrix4(inverseParent)
+            const start = point.applyMatrix4(inverseParent).sub(localPivot)
+            gesture.current = {
+              plane,
+              pivot: localPivot,
+              inverseParent,
+              angle: {
+                startAngle:
+                  corner === 1 ? 0 : foldControls(node)[foldKeys[Math.max(0, corner - 2)]!],
+                pointerRadians: Math.atan2(-start.z, start.x),
+                turnRadians: 0,
+              },
+              button: event.currentTarget,
+              pointerId: event.pointerId,
+              enabled: cameraControls?.enabled,
+            }
+            if (cameraControls) cameraControls.enabled = false
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerMove={(event) => {
+            const drag = gesture.current
+            if (!drag || drag.pointerId !== event.pointerId) return
+            event.preventDefault()
+            event.stopPropagation()
+            const point = planePoint(event, drag.plane)
+            if (!point) return
+            const next = point.applyMatrix4(drag.inverseParent).sub(drag.pivot)
+            const delta = Math.atan2(-next.z, next.x)
+            const advanced = advanceFoldAngle(drag.angle, delta, corner)
+            drag.angle = advanced.drag
+            previewFoldCornerAngle(advanced.angle)
+          }}
+          onPointerUp={(event) => {
+            if (!gesture.current || event.button !== 0) return
+            event.stopPropagation()
+            finishFoldDrag(true)
+            restoreCamera()
+          }}
+          onPointerCancel={() => {
+            finishFoldDrag(false)
+            restoreCamera()
+          }}
+          onLostPointerCapture={() => {
+            finishFoldDrag(false)
+            restoreCamera()
+          }}
+        >
+          {corner === 0 ? '↶' : corner === 1 ? '↻' : corner - 1}
+        </button>
+      </Html>
+    </group>
   )
 }
 
@@ -236,16 +203,11 @@ export function FoldingSystem({ enabled }: { enabled: boolean }) {
     }
   }, [folding.nodeId])
   useEffect(() => () => exitStageFolding(), [])
-  if (!available || node?.type !== 'item') return null
+  if (!available || node?.type !== 'item' || !foldPositionCount(node)) return null
   return (
     <group name={`stage-fold-controls:${node.id}`}>
-      {Array.from({ length: foldPositionCount(node) }, (_, position) => (
-        <FoldPosition
-          key={`${node.id}:${position}`}
-          node={node}
-          position={position}
-          active={folding.position === position}
-        />
+      {Array.from({ length: foldPositionCount(node) + 2 }, (_, corner) => (
+        <FoldPosition key={`${node.id}:${corner}`} node={node} corner={corner} />
       ))}
     </group>
   )

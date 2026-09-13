@@ -1,13 +1,14 @@
 export const FOLD_ANGLE_STEP = 15
 export type FoldAngleDrag = { startAngle: number; pointerRadians: number; turnRadians: number }
 
-export function advanceFoldAngle(drag: FoldAngleDrag, pointerRadians: number) {
+export function advanceFoldAngle(drag: FoldAngleDrag, pointerRadians: number, corner = 2) {
   const difference = pointerRadians - drag.pointerRadians
   const turnRadians = drag.turnRadians + Math.atan2(Math.sin(difference), Math.cos(difference))
-  const degrees = drag.startAngle - (turnRadians * 180) / Math.PI
+  const degrees = drag.startAngle + ((corner === 0 ? 1 : -1) * turnRadians * 180) / Math.PI
+  const snapped = Math.round(degrees / FOLD_ANGLE_STEP) * FOLD_ANGLE_STEP
   return {
     drag: { ...drag, pointerRadians, turnRadians },
-    angle: Math.max(0, Math.min(270, Math.round(degrees / FOLD_ANGLE_STEP) * FOLD_ANGLE_STEP)),
+    angle: corner === 1 ? snapped : Math.max(0, Math.min(270, snapped)),
   }
 }
 

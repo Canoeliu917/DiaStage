@@ -1,6 +1,6 @@
 'use client'
 
-import { getNodeLock, useScene } from '@pascal-app/core'
+import { type AnyNodeId, getNodeLock, useScene } from '@pascal-app/core'
 import {
   type SceneContextObject,
   type SceneContextSummary,
@@ -80,6 +80,7 @@ export function PlanDrawing({
   const showGrid = useViewer((state) => state.showGrid)
   const gridId = useId()
   const nodes = useScene((state) => state.nodes)
+  const selectedIds = useViewer((state) => state.selection.selectedIds)
   const geometryRevision = useViewer((state) => state.geometryRevision)
   const plan = useMemo(() => {
     if (!placement) return sourcePlan
@@ -121,9 +122,15 @@ export function PlanDrawing({
       context,
     ).plan
   }, [sourcePlan, placement, context])
-  const drag = useRef<{ id: string; pointer: number; x: number; z: number; moved: boolean } | null>(
-    null,
-  )
+  const drag = useRef<{
+    id: string
+    pointer: number
+    x: number
+    z: number
+    clientX: number
+    clientY: number
+    moved: boolean
+  } | null>(null)
   const pendingMove = useRef<{ id: string; x: number; z: number } | null>(null)
   const moveFrame = useRef(0)
   const moveCallback = useRef(onMove)
@@ -175,6 +182,11 @@ export function PlanDrawing({
         onPointerMove={(event) => {
           const active = drag.current
           if (!active || active.pointer !== event.pointerId || disabled) return
+          if (
+            !active.moved &&
+            Math.hypot(event.clientX - active.clientX, event.clientY - active.clientY) < 3
+          )
+            return
           const p = position(event.currentTarget, event)
           active.moved = true
           pendingMove.current = { id: active.id, x: p.x + active.x, z: p.z + active.z }
@@ -266,6 +278,14 @@ export function PlanDrawing({
             disabled || !!(item.existingNodeId && getNodeLock(nodes, item.existingNodeId, true))
           const unchanged =
             live || !plan.items.some((entry) => entry.proposalId === item.proposalId)
+          const selected =
+            !itemDisabled && !!item.existingNodeId && selectedIds.includes(item.existingNodeId)
+          const select = () => {
+            if (itemDisabled) return
+            useStagePlanPreview.setState({ inspectedId: item.existingNodeId ?? item.proposalId })
+            if (item.existingNodeId && nodes[item.existingNodeId as AnyNodeId])
+              useViewer.getState().setSelection({ selectedIds: [item.existingNodeId] })
+          }
           const p = item.transform.position,
             size = item.dimensionsMeters,
             invalid =
@@ -295,6 +315,8 @@ export function PlanDrawing({
               data-proposal-id={item.proposalId}
               data-existing={!!item.existingNodeId}
               data-invalid={invalid}
+              data-selected={selected}
+              aria-pressed={selected}
               className="stage-plan-handle"
               onFocus={() =>
                 useStagePlanPreview.setState({
@@ -306,6 +328,7 @@ export function PlanDrawing({
                 event.preventDefault()
                 event.stopPropagation()
                 event.currentTarget.focus()
+                select()
                 const svg = event.currentTarget.ownerSVGElement!
                 const cursor = position(svg, event)
                 drag.current = {
@@ -314,10 +337,17 @@ export function PlanDrawing({
                   x: p.x - cursor.x,
                   z: p.z - cursor.z,
                   moved: false,
+                  clientX: event.clientX,
+                  clientY: event.clientY,
                 }
                 svg.setPointerCapture(event.pointerId)
               }}
               onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  select()
+                  return
+                }
                 if (
                   itemDisabled ||
                   !onMove ||
@@ -344,6 +374,19 @@ export function PlanDrawing({
                 height={size.depth}
                 fill="transparent"
               />
+              {selected &&
+                outlines.map((outline, index) => (
+                  <polygon
+                    key={`selection:${index}`}
+                    points={outline.join(' ')}
+                    fill="none"
+                    stroke={DIA_COLORS.ink}
+                    strokeWidth={6}
+                    strokeOpacity={0.22}
+                    vectorEffect="non-scaling-stroke"
+                    pointerEvents="none"
+                  />
+                ))}
               {outlines.map((outline, index) => (
                 <polygon key={index} points={outline.join(' ')} {...appearance} />
               ))}
@@ -351,7 +394,7 @@ export function PlanDrawing({
                 textAnchor="middle"
                 y={
                   Math.min(...outlines.flatMap((outline) => outline.map((point) => point[1]!))) -
-                  unit / 3
+                  unit * (selected ? 1 : 1 / 3)
                 }
                 fontSize={unit * 0.7}
                 fill={DIA_COLORS.ink}
@@ -376,11 +419,11 @@ export function PlanDrawing({
         <text x={w / 2} y={-unit} textAnchor="end" fontSize={unit * 0.7} fill="currentColor">
           台左
         </text>
-        <StagePlanFoldHandles depthMeters={d} />
+        {live && !disabled && <StagePlanFoldHandles depthMeters={d} />}
       </svg>
       <figcaption>
         {live
-          ? '拖动布景，松开落位；红色表示接触或重叠，Esc 取消。'
+          ? '点选布景，拖动整件；圆点调角度，每格 15°。红色表示接触或重叠。'
           : '拖动布景调整提案；红色表示接触或重叠，采用后才落位。'}
       </figcaption>
     </figure>

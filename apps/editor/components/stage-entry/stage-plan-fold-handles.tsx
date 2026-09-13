@@ -4,157 +4,31 @@ import {
   type AnyNodeId,
   getNodeLock,
   type ItemFoldControls,
-  sceneRegistry,
   useLiveNodeOverrides,
   useScene,
 } from '@pascal-app/core'
-import { stageToWorldPosition, worldToStagePosition } from '@pascal-app/core/stage'
+import { worldToStagePosition } from '@pascal-app/core/stage'
 import { useEditor } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { type PointerEvent, useCallback, useEffect, useRef } from 'react'
 import { type Matrix4, Vector3 } from 'three'
-import { currentStageContext, stageFrame } from '@/lib/stage/context'
+import { stageFrame } from '@/lib/stage/context'
 import { advanceFoldAngle, type FoldAngleDrag, foldPointerRadians } from '@/lib/stage/fold-drag'
 import {
-  beginFoldDrag,
+  beginFoldCornerDrag,
   finishFoldDrag,
   foldControls,
+  foldCornerGeometry,
+  foldCornerLabel,
   foldKeys,
   foldPositionCount,
-  previewFoldAngle,
+  previewFoldCornerAngle,
   useStageFolding,
 } from '@/lib/stage/folding'
-import { STAGE_PROP_MENU } from '@/lib/stage/prop-assets'
 import { cameraPlanPoint, cameraPointerToPlan } from '../camera-studio/camera-stage-floorplan'
-import {
-  cancelStagePlacement,
-  commitStagePlacement,
-  startStagePlacement,
-  updateStagePlacement,
-} from './manual-stage-panel'
 
 type Point = [number, number]
 type Project = (point: [number, number, number]) => Point
-function PlanMoveNode({
-  id,
-  point,
-  project,
-  unit,
-  label,
-}: {
-  id: string
-  point: Point
-  project: Project
-  unit: number
-  label: string
-}) {
-  const gesture = useRef<{
-    pointer: number
-    start: Point
-    x: Point
-    z: Point
-    position: { x: number; y: number; z: number }
-  } | null>(null)
-  useEffect(
-    () => () => {
-      if (gesture.current) cancelStagePlacement()
-    },
-    [],
-  )
-  return (
-    <g
-      className="stage-fold-plan-handle"
-      role="button"
-      tabIndex={0}
-      aria-label={label}
-      data-stage-move-node={id}
-      onPointerDown={(event) => {
-        if (event.button !== 0) return
-        event.stopPropagation()
-        event.preventDefault()
-        const root = event.currentTarget.parentElement as unknown as SVGGElement
-        const start = cameraPointerToPlan(root, event.clientX, event.clientY)
-        const object = currentStageContext().objects.find((entry) => entry.id === id)
-        if (!start || !object) return
-        const position = object.transform.position
-        const origin = project(stageToWorldPosition(position, stageFrame()))
-        const x = project(stageToWorldPosition({ ...position, x: position.x + 1 }, stageFrame()))
-        const z = project(stageToWorldPosition({ ...position, z: position.z + 1 }, stageFrame()))
-        startStagePlacement(
-          {
-            id,
-            name: object.name,
-            kind: object.kind,
-            dimensionsMeters: object.dimensionsMeters,
-            libraryAssetId: null,
-          },
-          object,
-        )
-        gesture.current = {
-          pointer: event.pointerId,
-          start,
-          position,
-          x: [x[0] - origin[0], x[1] - origin[1]],
-          z: [z[0] - origin[0], z[1] - origin[1]],
-        }
-        event.currentTarget.setPointerCapture(event.pointerId)
-      }}
-      onPointerMove={(event) => {
-        const drag = gesture.current
-        if (!drag) return
-        event.stopPropagation()
-        const next = cameraPointerToPlan(
-          event.currentTarget.parentElement as unknown as SVGGElement,
-          event.clientX,
-          event.clientY,
-        )
-        if (!next) return
-        const dx = next[0] - drag.start[0],
-          dy = next[1] - drag.start[1]
-        const determinant = drag.x[0] * drag.z[1] - drag.x[1] * drag.z[0]
-        if (Math.abs(determinant) < 1e-8) return
-        updateStagePlacement({
-          ...drag.position,
-          x: drag.position.x + (dx * drag.z[1] - dy * drag.z[0]) / determinant,
-          z: drag.position.z + (dy * drag.x[0] - dx * drag.x[1]) / determinant,
-        })
-      }}
-      onPointerUp={(event) => {
-        if (!gesture.current) return
-        event.stopPropagation()
-        gesture.current = null
-        if (!commitStagePlacement()) cancelStagePlacement()
-        event.currentTarget.releasePointerCapture(event.pointerId)
-      }}
-      onPointerCancel={() => {
-        gesture.current = null
-        cancelStagePlacement()
-      }}
-      onLostPointerCapture={() => {
-        if (gesture.current) {
-          gesture.current = null
-          cancelStagePlacement()
-        }
-      }}
-      onClick={(event) => event.stopPropagation()}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          gesture.current = null
-          cancelStagePlacement()
-        }
-      }}
-    >
-      <circle cx={point[0]} cy={point[1]} r={8 * unit} />
-      <circle
-        cx={point[0]}
-        cy={point[1]}
-        r={2 * unit}
-        style={{ fill: 'var(--dia-ink)' }}
-        pointerEvents="none"
-      />
-    </g>
-  )
-}
 type Gesture = {
   pointerId: number
   target: SVGGElement
@@ -162,11 +36,13 @@ type Gesture = {
   x: Point
   z: Point
   angle: FoldAngleDrag
+  corner: number
 }
 
 function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPerPixel?: number }) {
   const root = useRef<SVGGElement>(null)
   const gesture = useRef<Gesture | null>(null)
+  const releasedPointer = useRef<number | null>(null)
   const selected = useViewer((state) => state.selection.selectedIds)
   const revision = useViewer((state) => state.geometryRevision)
   const nodeId = selected.length === 1 ? selected[0] : null
@@ -182,6 +58,7 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
   const release = useCallback(() => {
     const drag = gesture.current
     gesture.current = null
+    if (drag) releasedPointer.current = drag.pointerId
     if (drag?.target.hasPointerCapture(drag.pointerId))
       drag.target.releasePointerCapture(drag.pointerId)
   }, [])
@@ -193,6 +70,24 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
     },
     [release],
   )
+  useEffect(() => {
+    // Cancelling moves the node away from the pointer. Its trailing click must not select the floor.
+    const pointerDown = () => {
+      releasedPointer.current = null
+    }
+    const click = (event: MouseEvent) => {
+      if (releasedPointer.current === null || event.detail === 0) return
+      releasedPointer.current = null
+      event.preventDefault()
+      event.stopImmediatePropagation()
+    }
+    window.addEventListener('pointerdown', pointerDown, true)
+    window.addEventListener('click', click, true)
+    return () => {
+      window.removeEventListener('pointerdown', pointerDown, true)
+      window.removeEventListener('click', click, true)
+    }
+  }, [])
   useEffect(() => {
     if (!dragging) release()
   }, [dragging, release])
@@ -217,11 +112,6 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
     }
   }, [finish])
   if (node?.type !== 'item' || !foldPositionCount(node) || disabled || !editing) return null
-  const model = sceneRegistry.nodes.get(node.id)
-  const source = STAGE_PROP_MENU.assets.find((asset) => asset.id === node.asset.id)
-  const dimensions = source?.dimensions_m
-  if (!model || !dimensions || !('panel_width' in dimensions) || !dimensions.panel_width)
-    return null
   const controls = {
     ...foldControls(node),
     ...(live?.controls as Partial<ItemFoldControls> | undefined),
@@ -237,124 +127,112 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
       data-geometry-revision={revision}
       pointerEvents="auto"
     >
-      {model.getObjectByName('Hinge_01') && (
-        <PlanMoveNode
-          id={node.id}
-          point={project(
-            model.getObjectByName('Hinge_01')!.getWorldPosition(new Vector3()).toArray(),
-          )}
-          project={project}
-          unit={unit}
-          label="起端节点：整件落位"
-        />
-      )}
-      {Array.from({ length: foldPositionCount(node) }, (_, position) => {
-        const joint = model.getObjectByName(`Hinge_0${position + 2}`)
-        if (!joint?.parent) return null
-        joint.updateWorldMatrix(true, false)
-        const pivotWorld = joint.localToWorld(new Vector3())
+      {Array.from({ length: foldPositionCount(node) + 2 }, (_, corner) => {
+        const geometry = foldCornerGeometry(node, corner)
+        if (!geometry) return null
+        const { pivot: pivotWorld, parentMatrix } = geometry
         const pivot = project(pivotWorld.toArray())
-        const end = project(joint.localToWorld(new Vector3(dimensions.panel_width, 0, 0)).toArray())
+        const end = project(geometry.point.toArray())
+        const position = Math.max(0, corner - 2)
+        const angle = corner === 1 ? 0 : controls[foldKeys[position]!]
         return (
-          <g key={position}>
-            {position === 0 && (
-              <PlanMoveNode
-                id={node.id}
-                point={pivot}
-                project={project}
-                unit={unit}
-                label="转角节点：整件落位"
-              />
-            )}
-            <g
-              role="slider"
-              tabIndex={0}
-              className="stage-fold-plan-handle"
-              aria-label={`平面折叠位置${position + 1}打开角度`}
-              aria-valuemin={0}
-              aria-valuemax={270}
-              aria-valuenow={controls[foldKeys[position]!]}
-              data-fold-position={position}
-              transform={`translate(${end[0]} ${end[1]})`}
-              onPointerDown={(event) => {
-                if (event.button !== 0) return
-                event.preventDefault()
-                event.stopPropagation()
-                const point = pointer(event)
-                const basis = (axis: number): Point => {
-                  const projected = project(
-                    pivotWorld
-                      .clone()
-                      .add(new Vector3().setFromMatrixColumn(joint.parent!.matrixWorld, axis))
-                      .toArray(),
-                  )
-                  return [projected[0] - pivot[0], projected[1] - pivot[1]]
-                }
-                const x = basis(0),
-                  z = basis(2)
-                const radians = point && foldPointerRadians(point, pivot, x, z)
-                if (radians === null || radians === undefined || !beginFoldDrag(node.id, position))
-                  return
-                gesture.current = {
-                  pointerId: event.pointerId,
-                  target: event.currentTarget,
-                  pivot,
-                  x,
-                  z,
-                  angle: {
-                    startAngle: controls[foldKeys[position]!],
-                    pointerRadians: radians,
-                    turnRadians: 0,
-                  },
-                }
-                event.currentTarget.setPointerCapture(event.pointerId)
-              }}
-              onPointerMove={(event) => {
-                const drag = gesture.current
-                if (!drag || drag.pointerId !== event.pointerId) return
-                event.preventDefault()
-                event.stopPropagation()
-                const point = pointer(event)
-                const radians = point && foldPointerRadians(point, drag.pivot, drag.x, drag.z)
-                if (radians === null || radians === undefined) return
-                const next = advanceFoldAngle(drag.angle, radians)
-                drag.angle = next.drag
-                previewFoldAngle(next.angle)
-              }}
-              onPointerUp={(event) => {
-                if (gesture.current?.pointerId === event.pointerId) {
-                  event.stopPropagation()
-                  finish(true)
-                }
-              }}
-              onPointerCancel={() => finish(false)}
-              onLostPointerCapture={() => finish(false)}
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => {
-                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-                event.preventDefault()
-                event.stopPropagation()
-                if (!beginFoldDrag(node.id, position)) return
-                previewFoldAngle(
-                  event.key === 'Home'
-                    ? 0
-                    : event.key === 'End'
-                      ? 270
-                      : controls[foldKeys[position]!] + (event.key === 'ArrowLeft' ? -15 : 15),
+          <g
+            key={corner}
+            role="slider"
+            tabIndex={0}
+            className="stage-fold-plan-handle"
+            aria-label={`平面${foldCornerLabel(corner)}`}
+            aria-valuemin={corner === 1 ? undefined : 0}
+            aria-valuemax={corner === 1 ? undefined : 270}
+            aria-valuenow={angle}
+            data-fold-position={corner >= 2 ? position : undefined}
+            data-fold-corner={corner}
+            transform={`translate(${end[0]} ${end[1]})`}
+            onPointerDown={(event) => {
+              if (event.button !== 0) return
+              event.preventDefault()
+              event.stopPropagation()
+              const point = pointer(event)
+              const basis = (axis: number): Point => {
+                const projected = project(
+                  pivotWorld
+                    .clone()
+                    .add(new Vector3().setFromMatrixColumn(parentMatrix, axis))
+                    .toArray(),
                 )
-                finishFoldDrag(true)
-              }}
+                return [projected[0] - pivot[0], projected[1] - pivot[1]]
+              }
+              const x = basis(0),
+                z = basis(2)
+              const radians = point && foldPointerRadians(point, pivot, x, z)
+              if (
+                radians === null ||
+                radians === undefined ||
+                !beginFoldCornerDrag(node.id, corner)
+              )
+                return
+              gesture.current = {
+                pointerId: event.pointerId,
+                target: event.currentTarget,
+                corner,
+                pivot,
+                x,
+                z,
+                angle: {
+                  startAngle: angle,
+                  pointerRadians: radians,
+                  turnRadians: 0,
+                },
+              }
+              event.currentTarget.setPointerCapture(event.pointerId)
+            }}
+            onPointerMove={(event) => {
+              const drag = gesture.current
+              if (!drag || drag.pointerId !== event.pointerId) return
+              event.preventDefault()
+              event.stopPropagation()
+              const point = pointer(event)
+              const radians = point && foldPointerRadians(point, drag.pivot, drag.x, drag.z)
+              if (radians === null || radians === undefined) return
+              const next = advanceFoldAngle(drag.angle, radians, drag.corner)
+              drag.angle = next.drag
+              previewFoldCornerAngle(next.angle)
+            }}
+            onPointerUp={(event) => {
+              if (gesture.current?.pointerId === event.pointerId) {
+                event.stopPropagation()
+                finish(true)
+              }
+            }}
+            onPointerCancel={() => finish(false)}
+            onLostPointerCapture={() => finish(false)}
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
+              event.preventDefault()
+              event.stopPropagation()
+              if (!beginFoldCornerDrag(node.id, corner)) return
+              previewFoldCornerAngle(
+                event.key === 'Home'
+                  ? 0
+                  : event.key === 'End'
+                    ? 270
+                    : angle + (event.key === 'ArrowLeft' ? -15 : 15),
+              )
+              finishFoldDrag(true)
+            }}
+          >
+            <title>{foldCornerLabel(corner)} · 每格 15°</title>
+            <circle r={11 * unit} style={{ fill: 'transparent', stroke: 'none' }} />
+            <circle r={8 * unit} />
+            <text
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={10 * unit}
+              pointerEvents="none"
             >
-              <circle r={8 * unit} />
-              <text
-                textAnchor="middle"
-                dominantBaseline="central"
-                fontSize={10 * unit}
-                pointerEvents="none"
-              >
-                {position + 1}
-              </text>
-            </g>
+              {corner === 0 ? '↶' : corner === 1 ? '↻' : corner - 1}
+            </text>
           </g>
         )
       })}

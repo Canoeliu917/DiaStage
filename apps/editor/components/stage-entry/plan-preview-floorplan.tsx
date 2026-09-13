@@ -1,6 +1,6 @@
 'use client'
 
-import { useScene } from '@pascal-app/core'
+import { getNodeLock, useScene } from '@pascal-app/core'
 import {
   footprintHull,
   stageFootprintGap,
@@ -273,6 +273,29 @@ export function StagePlanPreviewFloorplan({ enabled }: { enabled: boolean }) {
           )
         })}
       </g>
+      {props
+        .filter((item) => selectedIds.includes(item.id) && !getNodeLock(nodes, item.id, true))
+        .map((item) => (
+          <g key={`selection:${item.id}`} data-stage-plan-selection={item.id}>
+            {stageVisibleFootprints(item).map((part, index) => (
+              <g key={index}>
+                <polygon
+                  points={part.map(([x, z]) => project(x, z)).join(' ')}
+                  fill="none"
+                  stroke={DIA_COLORS.ink}
+                  strokeWidth={7 * unit}
+                  strokeOpacity={0.2}
+                />
+                <polygon
+                  points={part.map(([x, z]) => project(x, z)).join(' ')}
+                  fill="none"
+                  stroke={DIA_COLORS.ivory}
+                  strokeWidth={1.5 * unit}
+                />
+              </g>
+            ))}
+          </g>
+        ))}
       <NativePlanFoldHandles frame={frame} unitsPerPixel={unit} />
     </g>
   )
