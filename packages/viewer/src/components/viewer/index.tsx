@@ -20,6 +20,7 @@ import { PerfActionSettleSystem } from '../../systems/perf-action-settle/perf-ac
 import { ErrorBoundary } from '../error-boundary'
 import { SceneRenderer } from '../renderers/scene-renderer'
 import { BATCH_SPIKE_ENABLED, BatchedMeshSpike } from './batched-mesh-spike'
+import { BlackLineView } from './black-line-view'
 import FrameLimiter from './frame-limiter'
 import { Lights } from './lights'
 import { PerfMonitor } from './perf-monitor'
@@ -357,6 +358,7 @@ function Viewer({
   renderPaused = false,
 }: ViewerProps) {
   const stable = useStableRenderMode()
+  const blackLine = useViewer((state) => state.viewStyle === 'black-line' && !state.isExporting)
   const neutral = useNeutralRenderEnvironment()
   const coarse = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
   const budget = stableRenderBudget(coarse)
@@ -633,7 +635,11 @@ function Viewer({
             kind's `def.system` is loaded via lazy() and rendered here,
             ordered by `system.priority`. */}
           <RegisteredSystems />
-          <PostProcessing disablePostFx={disablePostFx || stable} hoverStyles={hoverStyles} />
+          {blackLine ? (
+            <BlackLineView />
+          ) : (
+            <PostProcessing disablePostFx={disablePostFx || stable} hoverStyles={hoverStyles} />
+          )}
           {selectionManager === 'default' && <SelectionManager />}
           {(perf || PERF_OVERLAY_ENABLED) && <PerfMonitor />}
           {/* Feeds the action-cost ledger the frame's settle state (dirty

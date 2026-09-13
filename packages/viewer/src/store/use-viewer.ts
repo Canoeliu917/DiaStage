@@ -68,6 +68,8 @@ type ViewerState = {
   setRenderPaused: (value: boolean) => void
 
   shading: RenderShading
+  viewStyle: 'default' | 'black-line'
+  setViewStyle: (style: 'default' | 'black-line') => void
   shadingByContext: Partial<Record<RenderContext, RenderShading>>
   setShading: (shading: RenderShading) => void
 
@@ -378,6 +380,8 @@ const useViewer = create<ViewerState>()(
       setRenderPaused: (value) => set({ renderPaused: value }),
 
       shading: 'rendered',
+      viewStyle: 'default',
+      setViewStyle: (viewStyle) => set({ viewStyle }),
       shadingByContext: {},
       setShading: (shading) =>
         set((state) => ({

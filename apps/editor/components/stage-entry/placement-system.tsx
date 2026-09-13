@@ -170,7 +170,7 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
   const rotation = stageToWorldRotation(draft.item.transform.rotationDegrees)
   const venue = state.context.venue
   return (
-    <group>
+    <group userData={{ viewerLineStyle: 'colored' }}>
       <mesh
         position={[frame.origin[0], frame.origin[1] + 0.015, frame.origin[2]]}
         rotation={[-Math.PI / 2, 0, 0]}

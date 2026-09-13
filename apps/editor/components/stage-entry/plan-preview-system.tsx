@@ -150,7 +150,7 @@ export function StagePlanPreviewSystem({ enabled }: { enabled: boolean }) {
   const venue = plan.venue
   const frame = { ...stageFrame(), ...(venue ? { depthMeters: venue.depthMeters } : {}) }
   return (
-    <group>
+    <group userData={{ viewerLineStyle: 'colored' }}>
       {venue && (
         <group name="stage-plan-venue-outline" position={frame.origin} raycast={() => null}>
           {[-1, 1].map((side) => (

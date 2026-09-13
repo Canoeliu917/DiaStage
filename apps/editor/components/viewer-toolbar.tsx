@@ -119,6 +119,7 @@ const wallModeLabels: Record<string, string> = {
 const SHADING_OPTIONS = [
   { id: 'solid', name: '实体', detail: '快速实体显示，不计算环境光遮蔽', icon: Box },
   { id: 'rendered', name: '渲染', detail: '计算环境光遮蔽', icon: Sparkles },
+  { id: 'black-line', name: '黑场线稿', detail: '三维黑底白线，仅影响当前视图', icon: PenLine },
 ] as const
 
 const FLOORPLAN_ANNOTATION_OPTIONS = [
@@ -414,6 +415,8 @@ function DisplayMenu() {
   const cameraMode = useViewer((state) => state.cameraMode)
   const setCameraMode = useViewer((state) => state.setCameraMode)
   const shading = useViewer((state) => state.shading)
+  const viewStyle = useViewer((state) => state.viewStyle)
+  const setViewStyle = useViewer((state) => state.setViewStyle)
   const setShading = useViewer((state) => state.setShading)
   const edges = useViewer((state) => state.edges)
   const setEdges = useViewer((state) => state.setEdges)
@@ -429,8 +432,9 @@ function DisplayMenu() {
   const floorplanMode = useFloorplanMode((state) => state.mode)
   const setFloorplanMode = useFloorplanMode((state) => state.setMode)
 
+  const activeStyle = viewStyle === 'black-line' ? viewStyle : shading
   const activeShading =
-    SHADING_OPTIONS.find((option) => option.id === shading) ?? SHADING_OPTIONS[0]
+    SHADING_OPTIONS.find((option) => option.id === activeStyle) ?? SHADING_OPTIONS[0]
   const activeEdges = EDGE_OPTIONS.find((option) => option.id === edges) ?? EDGE_OPTIONS[0]
 
   // Keep the menu open when flipping a toggle.
@@ -654,20 +658,24 @@ function DisplayMenu() {
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <activeShading.icon className="h-4 w-4" />
-            <span>着色</span>
+            <span>视图风格</span>
             <span className="ml-auto text-muted-foreground text-xs">{activeShading.name}</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className={SUBMENU_CONTENT_CLASS}>
             {SHADING_OPTIONS.map((option) => {
               const OptionIcon = option.icon
               return (
-                <DropdownMenuItem key={option.id} onSelect={() => setShading(option.id)}>
+                <DropdownMenuItem
+                  key={option.id}
+                  title={option.detail}
+                  onSelect={() => {
+                    setViewStyle(option.id === 'black-line' ? 'black-line' : 'default')
+                    if (option.id !== 'black-line') setShading(option.id)
+                  }}
+                >
                   <OptionIcon className="h-4 w-4" />
-                  <div className="flex flex-col">
-                    <span className="text-foreground">{option.name}</span>
-                    <span className="text-muted-foreground text-xs">{option.detail}</span>
-                  </div>
-                  {shading === option.id ? (
+                  <span className="text-foreground">{option.name}</span>
+                  {activeStyle === option.id ? (
                     <Check className="ml-auto h-4 w-4 text-foreground" />
                   ) : null}
                 </DropdownMenuItem>

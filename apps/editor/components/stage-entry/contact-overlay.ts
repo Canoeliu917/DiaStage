@@ -15,6 +15,7 @@ import { DIA_COLORS } from '@/lib/visual-system'
 export function createStageContactOverlay(selection = false) {
   const group = new Group()
   group.name = selection ? 'stage-selection-feedback' : 'stage-contact-feedback'
+  group.userData.viewerLineStyle = selection ? 'hidden' : 'colored'
   group.layers.set(OVERLAY_LAYER)
   const material = new MeshBasicNodeMaterial({
     color: DIA_COLORS.error,
