@@ -13,12 +13,13 @@ if not exist "%PASCAL_DB_PATH%" (
   exit /b 1
 )
 set "NEXT_TELEMETRY_DISABLED=1"
+set "PORT=4329"
 echo Installing locked dependencies. First start requires Internet access.
 call bun install --frozen-lockfile
 if errorlevel 1 goto failed
 echo Open http://127.0.0.1:4329 after the server shows Ready.
 echo Keep this window open while editing. Ctrl+C stops the server.
-node node_modules/dotenv-cli/cli.js -e .env.local -e .env.defaults -- node node_modules/next/dist/bin/next dev apps/editor -p 4329 -H 127.0.0.1
+call bun run dev --filter=editor... --ui=stream
 if errorlevel 1 goto failed
 exit /b 0
 :missing
