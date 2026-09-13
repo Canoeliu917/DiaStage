@@ -32,7 +32,6 @@ import useFloorplanMode from './../../../../../store/use-floorplan-mode'
 import { AudioSettingsDialog } from './audio-settings-dialog'
 import { KeyboardShortcutsDialog } from './keyboard-shortcuts-dialog'
 import { LoadBuildDialog, type PendingImport } from './load-build-dialog'
-import { PrintExportButton } from './print-export-button'
 
 type SceneNode = Record<string, unknown> & {
   id?: unknown
@@ -474,7 +473,6 @@ export function SettingsPanel({
             导出 OBJ
           </Button>
 
-          <PrintExportButton onlyVisible={exportOnlyVisible} />
         </div>
 
         <div className="space-y-2">

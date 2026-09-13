@@ -14,6 +14,7 @@ import {
 import { useViewer } from '@pascal-app/viewer'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { canCreateWithTool, editorFeatureEnabled } from '../lib/editor-scope'
 import {
   CONTINUATION_PROFILES,
   type ContinuationContext,
@@ -498,14 +499,13 @@ function materializeToolMode(
   structureLayer: StructureLayer,
 ): ToolMode {
   if (mode === 'build') {
-    return {
-      mode,
-      tool:
-        typeof tool === 'string' && tool.length > 0
-          ? (tool as StructureTool)
-          : defaultBuildTool(phase, structureLayer),
-    }
+    const resolved = typeof tool === 'string' && tool.length > 0
+      ? tool as StructureTool
+      : defaultBuildTool(phase, structureLayer)
+    return canCreateWithTool(resolved) ? { mode, tool: resolved } : { mode: 'select' }
   }
+
+  if (mode === 'material-paint' && !editorFeatureEnabled('materialEditing')) return { mode: 'select' }
 
   return { mode } as ToolMode
 }
@@ -534,9 +534,12 @@ function readPersistedToolMode(state: Partial<PersistedEditorUiState> | null | u
 function withMaterializedToolMode(
   state: Omit<PersistedEditorUiState, 'toolMode'>,
 ): PersistedEditorUiState {
+  const toolMode = materializeToolMode(state.mode, state.tool, state.phase, state.structureLayer)
   return {
     ...state,
-    toolMode: materializeToolMode(state.mode, state.tool, state.phase, state.structureLayer),
+    mode: toolMode.mode,
+    tool: toolMode.mode === 'build' ? toolMode.tool : null,
+    toolMode,
   }
 }
 
@@ -944,6 +947,7 @@ const useEditor = create<EditorState>()(
         syncBrushModeScope(next.mode)
       },
       armMaterialPaint: (material) => {
+        if (!editorFeatureEnabled('materialEditing')) return
         get().armToolMode({ mode: 'material-paint' })
         if (material) get().setActivePaintMaterial(material)
       },
@@ -1172,6 +1176,7 @@ const useEditor = create<EditorState>()(
         const resolved: CaptureMode =
           typeof next === 'boolean' ? { mode: next ? 'standard' : 'idle' } : next
         const entering = resolved.mode !== 'idle'
+        if (entering && !editorFeatureEnabled('capture')) return
         // Walk / drone framing is a capture-only camera, so leaving capture always
         // lands back on orbit. Run it first: it restores its own view mode, and
         // the capture restore below has the final say.
@@ -1294,6 +1299,7 @@ const useEditor = create<EditorState>()(
       isFirstPersonMode: false,
       _viewModeBeforeFirstPerson: null as ViewMode | null,
       setFirstPersonMode: (enabled) => {
+        if (enabled && !editorFeatureEnabled('firstPerson')) return
         if (enabled) {
           const currentViewMode = get().viewMode
           set({

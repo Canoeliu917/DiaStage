@@ -1,8 +1,5 @@
 'use client'
 
-import { requestWalkthroughPointerLock } from '@pascal-app/viewer'
-import { flushSync } from 'react-dom'
-import useEditor from '../store/use-editor'
 import { ViewerControlsBar } from './viewer/viewer-controls-bar'
 import { ViewerSceneHeader } from './viewer/viewer-scene-header'
 
@@ -36,10 +33,6 @@ export const ViewerOverlay = ({
       <ViewerControlsBar
         canShowGuides={canShowGuides}
         canShowScans={canShowScans}
-        onWalkthroughToggle={() => {
-          flushSync(() => useEditor.getState().setFirstPersonMode(true))
-          requestWalkthroughPointerLock()
-        }}
       />
     ) : null}
   </>

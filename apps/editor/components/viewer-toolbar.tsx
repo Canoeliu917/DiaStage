@@ -19,7 +19,7 @@ import {
   useSidebarStore,
   type ViewMode,
 } from '@pascal-app/editor'
-import { type EdgeMode, requestWalkthroughPointerLock, useViewer } from '@pascal-app/viewer'
+import { type EdgeMode, useViewer } from '@pascal-app/viewer'
 import {
   Box,
   Check,
@@ -44,7 +44,6 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { type ReactNode, useCallback, useEffect } from 'react'
-import { flushSync } from 'react-dom'
 import { currentStageContext } from '@/lib/stage/context'
 import { cn } from '@/lib/utils'
 import { useCameraStudio } from './camera-studio/store'
@@ -690,39 +689,6 @@ function DisplayMenu() {
   )
 }
 
-function WalkthroughButton() {
-  const isFirstPersonMode = useEditor((state) => state.isFirstPersonMode)
-  const setFirstPersonMode = useEditor((state) => state.setFirstPersonMode)
-  const handleClick = useCallback(() => {
-    if (isFirstPersonMode) {
-      setFirstPersonMode(false)
-      return
-    }
-
-    flushSync(() => setFirstPersonMode(true))
-    requestWalkthroughPointerLock()
-  }, [isFirstPersonMode, setFirstPersonMode])
-
-  return (
-    <ToolbarTooltip label="走入舞台（第一人称漫游）">
-      <button
-        aria-label="走入舞台（第一人称漫游）"
-        aria-pressed={isFirstPersonMode}
-        className={cn(
-          TOOLBAR_BTN,
-          'w-auto gap-1.5 px-2.5',
-          isFirstPersonMode && 'bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20',
-        )}
-        onClick={handleClick}
-        type="button"
-      >
-        <Footprints className="h-4 w-4" />
-        <span className="text-xs">走入舞台</span>
-      </button>
-    </ToolbarTooltip>
-  )
-}
-
 function PreviewButton() {
   return (
     <ToolbarTooltip label="沉浸预览：隐藏编辑面板">
@@ -820,7 +786,6 @@ export function EditorViewerToolbarRight() {
           <div className="my-1.5 w-px bg-border/50" />
           <DisplayMenu />
           <div className="my-1.5 w-px bg-border/50" />
-          <WalkthroughButton />
           <PreviewButton />
           <details className="w-full text-xs text-muted-foreground">
             <summary>操作帮助</summary>

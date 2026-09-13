@@ -1,7 +1,14 @@
 import { type AnyNode, type AnyNodeDefinition, nodeRegistry, registerNode } from '@pascal-app/core'
-import { preloadRegistryAffordanceTool } from '@pascal-app/editor'
-import { builtinPlugin } from '@pascal-app/nodes'
+import { configureEditorScope, preloadRegistryAffordanceTool } from '@pascal-app/editor'
+import { stagePlugin as builtinPlugin } from '@pascal-app/nodes/stage'
 import { centeredPropFloorplan } from './stage/rigid-floorplan'
+
+configureEditorScope({
+  creationTools: ['item', 'measurement', 'construction-dimension'],
+  materialEditing: false,
+  firstPerson: false,
+  capture: false,
+})
 
 // Idempotency guards: HMR can reload this module, but `registerNode`
 // throws on duplicate kinds. Flags live in the module closure so they

@@ -6,6 +6,16 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./item-fold": {
+      "types": "./dist/item-fold.d.ts",
+      "import": "./dist/item-fold.js",
+      "default": "./dist/item-fold.js"
+    },
+    "./stage": {
+      "types": "./dist/stage.d.ts",
+      "import": "./dist/stage.js",
+      "default": "./dist/stage.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",

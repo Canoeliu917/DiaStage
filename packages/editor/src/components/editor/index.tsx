@@ -68,13 +68,10 @@ import type { SidebarTab } from '../ui/sidebar/tab-bar'
 import { useHostPanels } from '../ui/sidebar/use-plugin-panels'
 import { ViewerStage } from '../viewer/viewer-stage'
 import type { ViewerStageMode } from '../viewer/viewer-stage-modes'
-import { CaptureCameraRig } from './capture-camera-rig'
 import { CustomCameraControls } from './custom-camera-controls'
 import { DeleteConfirmationDialog } from './delete-confirmation-dialog'
 import { EditorLayoutV2 } from './editor-layout-v2'
 import { ExportManager } from './export-manager'
-import { FenceTangentLines3D } from './fence-tangent-lines-3d'
-import { FirstPersonControls, FirstPersonOverlay } from './first-person-controls'
 import { FloatingActionMenu } from './floating-action-menu'
 import { FloatingBuildingActionMenu } from './floating-building-action-menu'
 import { FloorplanModeCoordinator } from './floorplan-mode-coordinator'
@@ -88,7 +85,6 @@ import { QuickMeasurementHud } from './quick-measurement-hud'
 import { SelectionManager } from './selection-manager'
 import { SiteEdgeLabels } from './site-edge-labels'
 import { SlabHoleHighlights } from './slab-hole-highlights'
-import { SnapshotCaptureOverlay } from './snapshot-capture-overlay'
 import { type SnapshotCameraData, ThumbnailGenerator } from './thumbnail-generator'
 import { WallMeasurementLabel } from './wall-measurement-label'
 import { WallMoveSideHandles } from './wall-move-side-handles'
@@ -792,7 +788,6 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!noEditing && <WallOpeningHighlights />}
       {!noEditing && <SlabHoleHighlights />}
       {!noEditing && <WallMoveSideHandles />}
-      {!noEditing && <FenceTangentLines3D />}
       {!noEditing && <FloatingActionMenu />}
       {!noEditing && <GroupFloatingActionMenu />}
       {!noEditing && <FloatingBuildingActionMenu />}
@@ -802,8 +797,6 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!noEditing && <SelectionAffordanceManager />}
       {!(isLoading || isFirstPersonMode) && <SnapAwareGrid />}
       {!(isLoading || noEditing) && <ToolManager />}
-      {isFirstPersonMode && <FirstPersonControls />}
-      {isCaptureMode && <CaptureCameraRig />}
       <CustomCameraControls />
       <ThumbnailGenerator onThumbnailCapture={onThumbnailCapture} />
       {!isFirstPersonMode && <SiteEdgeLabels />}
@@ -1190,14 +1183,10 @@ function PreviewStage({
 
   return (
     <div className="dark relative h-full w-full overflow-hidden bg-neutral-100 text-foreground">
-      {isFirstPersonMode ? (
-        <FirstPersonOverlay onExit={() => useEditor.getState().setFirstPersonMode(false)} />
-      ) : (
-        <ViewerOverlay
-          hideBottomBar={stageMode !== '3d'}
-          onBack={() => useEditor.getState().setPreviewMode(false)}
-        />
-      )}
+      <ViewerOverlay
+        hideBottomBar={stageMode !== '3d'}
+        onBack={() => useEditor.getState().setPreviewMode(false)}
+      />
 
       <ViewerStage
         className="absolute inset-0"
@@ -1481,7 +1470,6 @@ function EditorContent({
     >
       <ExportManager />
       <ViewerZoneSystem />
-      {isFirstPersonMode && <FirstPersonControls />}
       <CustomCameraControls />
       <ThumbnailGenerator onThumbnailCapture={onThumbnailCapture} />
       <InteractiveSystem />
@@ -1604,16 +1592,7 @@ function EditorContent({
                       <HelperManager />
                     </div>
                   )}
-                  {/* Capture mode drives walk / drone from its own overlay, which
-                      owns the framing chrome — the walkthrough HUD would both
-                      clutter the frame and offer a second, conflicting exit. */}
-                  {isFirstPersonMode && !isCaptureMode && (
-                    <FirstPersonOverlay
-                      onExit={() => useEditor.getState().setFirstPersonMode(false)}
-                    />
-                  )}
                   {viewerBanner}
-                  {projectId ? <SnapshotCaptureOverlay projectId={projectId} /> : null}
                 </>
               }
               renderTabContent={renderTabContent}
@@ -1688,9 +1667,6 @@ function EditorContent({
             <div className="pointer-events-auto">
               <HelperManager />
             </div>
-            {isFirstPersonMode && (
-              <FirstPersonOverlay onExit={() => useEditor.getState().setFirstPersonMode(false)} />
-            )}
           </ViewerOverlays>
         </>
       )}

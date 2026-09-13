@@ -17,14 +17,12 @@ import {
 } from '../components/editor/group-transform-shared'
 import { steppedRotation } from '../components/tools/item/placement-math'
 import { resolveDirectManipulationNode } from '../lib/direct-manipulation'
-import { toggleDoorOpenState } from '../lib/door-interaction'
 import { guideEmitter } from '../lib/guide-events'
 import { runRedo, runUndo } from '../lib/history'
 import { isActive } from '../lib/interaction/scope'
 import { hasPlacementPolicy } from '../lib/placement-policy'
 import { copySelectedNodesToEditorClipboard } from '../lib/scene-clipboard'
 import { sfxEmitter } from '../lib/sfx-bus'
-import { toggleWindowOpenState } from '../lib/window-interaction'
 import useDeleteConfirmation from '../store/use-delete-confirmation'
 import useEditor, { getActiveContinuationContext, getActiveSnapContext } from '../store/use-editor'
 import useInteractionScope, { getMovingNode } from '../store/use-interaction-scope'
@@ -336,12 +334,6 @@ export const useKeyboard = ({
         useEditor.getState().setPhase('furnish')
         useEditor.getState().armToolMode({ mode: 'build', tool: 'item' })
         useEditor.getState().setActiveSidebarPanel('items')
-      } else if (e.key === 'z' && !e.metaKey && !e.ctrlKey) {
-        if (isVersionPreviewMode) return
-        e.preventDefault()
-        useEditor.getState().setPhase('structure')
-        useEditor.getState().setStructureLayer('zones')
-        useEditor.getState().armToolMode({ mode: 'build', tool: 'zone' })
       } else if (e.key === 'm' && !e.metaKey && !e.ctrlKey) {
         if (isVersionPreviewMode) return
         e.preventDefault()
@@ -355,22 +347,10 @@ export const useKeyboard = ({
         e.preventDefault()
         useEditor.getState().armToolMode({ mode: 'select' })
         useEditor.getState().setFloorplanSelectionTool('click')
-      } else if (e.key === 'b' && !e.metaKey && !e.ctrlKey) {
-        if (isVersionPreviewMode) return
-        e.preventDefault()
-        useEditor.getState().setPhase('structure')
-        useEditor.getState().setStructureLayer('elements')
-        useEditor.getState().armToolMode({ mode: 'build', tool: 'wall' })
       } else if (e.key === 'x' && !e.metaKey && !e.ctrlKey) {
         if (isVersionPreviewMode) return
         e.preventDefault()
         useEditor.getState().armToolMode({ mode: 'delete' })
-      } else if (e.key === 'p' && !e.metaKey && !e.ctrlKey) {
-        if (isVersionPreviewMode) return
-        e.preventDefault()
-        useEditor.getState().setPhase('structure')
-        useEditor.getState().setStructureLayer('elements')
-        useEditor.getState().armMaterialPaint()
       } else if (e.key === 'c' && (e.metaKey || e.ctrlKey) && !e.shiftKey) {
         if (isVersionPreviewMode) return
         e.preventDefault()
@@ -484,34 +464,14 @@ export const useKeyboard = ({
           const sceneNodes = useScene.getState().nodes
           const selectedNode = sceneNodes[selectedNodeIds[0]!]
           const node = selectedNode ? resolveDirectManipulationNode(selectedNode, sceneNodes) : null
-          if (node?.type === 'door') {
+          if (node?.type === 'door' || node?.type === 'window') {
+            // Historical openings retain their saved pose; no authoring interaction.
             e.preventDefault()
-            useScene.getState().updateNode(node.id, {
-              side: node.side === 'front' ? 'back' : 'front',
-              rotation: [node.rotation[0], node.rotation[1] + Math.PI, node.rotation[2]],
-            })
-            if (node.parentId) {
-              useScene.getState().dirtyNodes.add(node.parentId as AnyNodeId)
-            }
-            sfxEmitter.emit('sfx:item-rotate')
-          } else if (node?.type === 'window') {
-            // Windows: R flips side (front ↔ back, rotation += π). Open/
-            // close toggle for operable windows lives on E.
-            e.preventDefault()
-            useScene.getState().updateNode(node.id, {
-              side: node.side === 'front' ? 'back' : 'front',
-              rotation: [node.rotation[0], node.rotation[1] + Math.PI, node.rotation[2]],
-            })
-            if (node.parentId) {
-              useScene.getState().dirtyNodes.add(node.parentId as AnyNodeId)
-            }
-            sfxEmitter.emit('sfx:item-rotate')
           } else if (node && nodeRegistry.get(node.type)?.keyboardActions?.r?.appliesTo(node)) {
             // Registry-driven R action. Skylight uses this for open/
             // close toggling; future kinds with custom R behaviour
             // declare it on their `def.keyboardActions` without
-            // touching this hook. Door / window still use the legacy
-            // direct calls above (follow-up to migrate).
+            // touching this hook.
             e.preventDefault()
             nodeRegistry.get(node.type)?.keyboardActions?.r?.run(node)
             sfxEmitter.emit('sfx:item-rotate')
@@ -611,24 +571,6 @@ export const useKeyboard = ({
             // Registry-driven E interaction. Same shape as the R/T arms.
             e.preventDefault()
             registryE.run(node)
-            sfxEmitter.emit('sfx:item-rotate')
-          } else if (node?.type === 'door' && node.openingKind !== 'opening') {
-            e.preventDefault()
-            toggleDoorOpenState(node.id)
-            sfxEmitter.emit('sfx:item-rotate')
-          } else if (
-            node?.type === 'window' &&
-            node.openingKind !== 'opening' &&
-            (node.windowType === 'sliding' ||
-              node.windowType === 'casement' ||
-              node.windowType === 'awning' ||
-              node.windowType === 'hopper' ||
-              node.windowType === 'single-hung' ||
-              node.windowType === 'double-hung' ||
-              node.windowType === 'louvered')
-          ) {
-            e.preventDefault()
-            toggleWindowOpenState(node.id)
             sfxEmitter.emit('sfx:item-rotate')
           }
         }

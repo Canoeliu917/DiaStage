@@ -3,23 +3,17 @@
 import { useScene } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import {
-  AppWindow,
-  ArrowRight,
   Box,
   Camera,
   Copy,
-  DoorOpen,
   Eye,
   EyeOff,
   FileJson,
-  Hexagon,
   Layers,
   Maximize2,
   Package,
-  PaintBucket,
   Redo2,
   Sparkles,
-  Square,
   Trash2,
   Undo2,
   Video,
@@ -37,7 +31,6 @@ export function EditorCommands() {
 
   const setPhase = useEditor((s) => s.setPhase)
   const armToolMode = useEditor((s) => s.armToolMode)
-  const armMaterialPaint = useEditor((s) => s.armMaterialPaint)
   const setStructureLayer = useEditor((s) => s.setStructureLayer)
   const isPreviewMode = useEditor((s) => s.isPreviewMode)
   const setPreviewMode = useEditor((s) => s.setPreviewMode)
@@ -63,54 +56,12 @@ export function EditorCommands() {
     return register([
       // ── Scene ────────────────────────────────────────────────────────────
       {
-        id: 'editor.tool.wall',
-        label: '景片工具',
-        group: '场景',
-        icon: <Square className="h-4 w-4" />,
-        keywords: ['draw', 'build', 'structure'],
-        execute: () => activateTool('wall'),
-      },
-
-
-      {
-        id: 'editor.tool.door',
-        label: '实用门工具',
-        group: '场景',
-        icon: <DoorOpen className="h-4 w-4" />,
-        keywords: ['opening', 'entrance'],
-        execute: () => activateTool('door'),
-      },
-      {
-        id: 'editor.tool.window',
-        label: '实用窗工具',
-        group: '场景',
-        icon: <AppWindow className="h-4 w-4" />,
-        keywords: ['opening', 'glass'],
-        execute: () => activateTool('window'),
-      },
-      {
         id: 'editor.tool.item',
         label: '道具放置',
         group: '场景',
         icon: <Package className="h-4 w-4" />,
         keywords: ['furniture', 'object', 'asset', 'furnish'],
         execute: () => activateTool('item'),
-      },
-      {
-        id: 'editor.tool.stair',
-        label: '舞台台阶工具',
-        group: '场景',
-        icon: <ArrowRight className="h-4 w-4" />,
-        keywords: ['stairs', 'staircase', 'flight', 'landing', 'steps'],
-        execute: () => activateTool('stair'),
-      },
-      {
-        id: 'editor.tool.zone',
-        label: '表演区工具',
-        group: '场景',
-        icon: <Hexagon className="h-4 w-4" />,
-        keywords: ['stage', 'area', 'space'],
-        execute: () => activateTool('zone'),
       },
       {
         id: 'editor.delete-selection',
@@ -124,20 +75,6 @@ export function EditorCommands() {
           run(() => {
             const { selectedIds } = useViewer.getState().selection
             useScene.getState().deleteNodes(selectedIds as any[])
-          }),
-      },
-      {
-        id: 'editor.mode.material-paint',
-        label: '表面处理',
-        group: '场景',
-        icon: <PaintBucket className="h-4 w-4" />,
-        keywords: ['paint', 'material', 'texture', 'bucket', 'surface'],
-        shortcut: ['P'],
-        execute: () =>
-          run(() => {
-            setPhase('structure')
-            setStructureLayer('elements')
-            armMaterialPaint()
           }),
       },
 
@@ -193,17 +130,6 @@ export function EditorCommands() {
         icon: <Sparkles className="h-4 w-4" />,
         keywords: ['rendered', 'shading', 'render', 'mode', 'quality'],
         execute: () => run(() => useViewer.getState().setShading('rendered')),
-      },
-      {
-        id: 'editor.viewer.camera-snapshot',
-        label: '拍摄快照',
-        group: '视口控制',
-        icon: <Camera className="h-4 w-4" />,
-        keywords: ['camera', 'snapshot', 'capture', 'save', 'view', 'bookmark'],
-        execute: () => {
-          setOpen(false)
-          useEditor.getState().setCaptureMode(true)
-        },
       },
 
       // ── View ─────────────────────────────────────────────────────────────
@@ -312,7 +238,6 @@ export function EditorCommands() {
     setOpen,
     setPhase,
     armToolMode,
-    armMaterialPaint,
     setStructureLayer,
     isPreviewMode,
     setPreviewMode,

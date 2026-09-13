@@ -342,6 +342,7 @@ export {
   nextContinuation,
 } from './lib/continuation'
 export { createEditorApi } from './lib/editor-api'
+export { configureEditorScope } from './lib/editor-scope'
 export {
   clearStructuralElevationGuide,
   collectElevationSnapTargets,

@@ -13,7 +13,7 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { useInteractionScope } from '@pascal-app/editor'
-import { computeItemFoldBounds, limitItemFoldControls } from '@pascal-app/nodes'
+import { computeItemFoldBounds, limitItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { useViewer } from '@pascal-app/viewer'
 import { Euler, Matrix4, type Object3D, Quaternion, Vector3 } from 'three'
 import { create } from 'zustand'

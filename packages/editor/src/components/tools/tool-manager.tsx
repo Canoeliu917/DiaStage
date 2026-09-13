@@ -11,6 +11,7 @@ import {
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
 import { type ComponentType, lazy, Suspense, useMemo } from 'react'
+import { canCreateWithTool } from '../../lib/editor-scope'
 import { siteBoundaryHandlesEnabled } from '../../lib/site-boundary'
 import useEditor, { type Phase, type Tool } from '../../store/use-editor'
 import useInteractionScope, {
@@ -33,9 +34,7 @@ import { RegistryToolProvider } from './registry-tool-context'
 import { getRegistryAffordanceTool } from './shared/affordance-dispatch'
 import { FacingPoseIndicator } from './shared/facing-pose-indicator'
 import { SiteBoundaryEditor } from './site/site-boundary-editor'
-import { StairTool } from './stair/stair-tool'
 import { ZoneBoundaryEditor } from './zone/zone-boundary-editor'
-import { ZoneTool } from './zone/zone-tool'
 
 // Cache lazy tool components keyed by their loader so React.lazy isn't
 // re-invoked across renders.
@@ -43,7 +42,7 @@ const lazyToolCache = new WeakMap<() => Promise<unknown>, ComponentType>()
 const registryToolPreloadCache = new WeakMap<AnyNodeDefinition, Promise<void>>()
 
 export function preloadRegistryToolModules(tool: string | null): Promise<void> {
-  if (!tool) return Promise.resolve()
+  if (!tool || !canCreateWithTool(tool)) return Promise.resolve()
   const def = nodeRegistry.get(tool)
   if (!def) return Promise.resolve()
   const cached = registryToolPreloadCache.get(def)
@@ -65,7 +64,7 @@ export function preloadRegistryToolModules(tool: string | null): Promise<void> {
 }
 
 function getRegistryTool(tool: Tool | null): ComponentType | null {
-  if (!tool) return null
+  if (!tool || !canCreateWithTool(tool)) return null
   const def = nodeRegistry.get(tool)
   if (!def?.tool) return null
   const cached = lazyToolCache.get(def.tool)
@@ -88,10 +87,7 @@ const tools: Record<Phase, Partial<Record<Tool, React.FC>>> = {
   site: {
     'property-line': SiteBoundaryEditor,
   },
-  structure: {
-    stair: StairTool,
-    zone: ZoneTool,
-  },
+  structure: {},
   furnish: {},
 }
 
@@ -204,7 +200,7 @@ export const ToolManager: React.FC = () => {
     !showSlabBoundaryEditor
 
   // Show build tools when in build mode
-  const showBuildTool = mode === 'build' && tool !== null
+  const showBuildTool = mode === 'build' && tool !== null && canCreateWithTool(tool)
 
   // A move initiated from the 2D floor-plan (orange move-dot) is owned end-to-
   // end by `FloorplanRegistryMoveOverlay`, which marks the origin `'2d'` at

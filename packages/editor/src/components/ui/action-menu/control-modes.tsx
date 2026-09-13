@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react'
 import { type LucideIcon, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { Fragment } from 'react'
+import { canCreateWithTool } from '../../../lib/editor-scope'
 import { cn } from './../../../lib/utils'
 import useEditor from './../../../store/use-editor'
 import { ActionButton } from './action-button'
@@ -103,6 +104,7 @@ export function ControlModes() {
   return (
     <div className="flex items-center gap-1">
       {controls.map((c) => {
+        if (c.id === 'zone' && !canCreateWithTool('zone')) return null
         const ModeIcon = c.icon
         const isImageMode = Boolean(c.imageSrc)
         const isActive = getIsActive(c.id)

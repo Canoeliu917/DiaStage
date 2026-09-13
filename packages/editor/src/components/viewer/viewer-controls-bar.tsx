@@ -314,7 +314,7 @@ export type ViewerControlsBarProps = {
   glbHasScans?: boolean
   glbHasGuides?: boolean
   walkthroughActive?: boolean
-  onWalkthroughToggle: () => void
+  onWalkthroughToggle?: () => void
   className?: string
 }
 
@@ -406,9 +406,9 @@ export const ViewerControlsBar = ({
 
           <DisplayMenu />
 
-          <div className="mx-1 h-5 w-px bg-border/40" />
-
           {/* Walkthrough */}
+          {onWalkthroughToggle && <>
+          <div className="mx-1 h-5 w-px bg-border/40" />
           <ActionButton
             className={
               walkthroughActive
@@ -423,6 +423,7 @@ export const ViewerControlsBar = ({
           >
             <Footprints className="h-6 w-6" />
           </ActionButton>
+          </>}
 
           <div className="mx-1 h-5 w-px bg-border/40" />
 
