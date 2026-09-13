@@ -42,6 +42,11 @@ export const siteDefinition: NodeDefinition<typeof SiteNode> = {
   // No dirty consumer rebuilds this kind — see NodeDefinition.dirtyTracking.
   dirtyTracking: false,
 
+  renderer: {
+    kind: 'parametric',
+    module: () => import('./renderer'),
+  },
+
   presentation: {
     label: '场地',
     description: '包含舞台空间、表演区和场地边界的顶层容器。',
