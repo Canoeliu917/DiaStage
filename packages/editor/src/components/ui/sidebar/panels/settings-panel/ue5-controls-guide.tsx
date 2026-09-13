@@ -263,14 +263,23 @@ const SOURCES = [
 export function Ue5ControlsGuide() {
   return (
     <details className="space-y-4 rounded-md border border-border/80 p-3" open>
-      <summary className="cursor-pointer font-medium text-sm">UE5 标准操作与方块练习</summary>
+      <summary className="cursor-pointer font-medium text-sm">UE5 主布局与中键环绕</summary>
       <p className="text-sm">
-        统一按 UE5.6 Windows 默认关卡编辑器规格适配。本文是标准指南，运行时键位尚未同步。
-        现有操作请查下方“当前版本快捷键”。
+        以 UE5.6 Windows 关卡编辑器为主要操作规范，增加中键环绕作为 DiaStage 的观察手势。
+        中键手势已支持；其余 UE5 键位仍待适配，现有操作请查下方“当前版本快捷键”。
       </p>
+      <section className="space-y-2 text-sm">
+        <h3 className="font-medium">三维观察：中键环绕</h3>
+        <p>按住滚轮拖动：围绕当前观察中心查看舞台，道具不动。</p>
+        <p>Shift+按住滚轮拖动：平移画面。Alt+中键也可平移；滚动滚轮拉近或拉远。</p>
+        <p>
+          适用于三维透视和正交观察，二维平面图仍使用平移。此手势是 DiaStage 扩展，下面的表格列出 UE5
+          原版操作。
+        </p>
+      </section>
       <p className="text-muted-foreground text-xs">
-        松开右键时 Q 选择、W 移动、E 旋转、R 缩放；按住右键时切换为相机导航，Q 下降、E 上升。
-        输入框或其他编辑工具获得焦点时，不套用关卡视口命令。网页中的 F11、Ctrl+R
+        UE5 适配目标：松开右键时 Q 选择、W 移动、E 旋转、R 缩放；按住右键时切换为相机导航，Q 下降、E
+        上升。 输入框或其他编辑工具获得焦点时，不套用关卡视口命令。网页中的 F11、Ctrl+R
         需另行适配浏览器行为。
       </p>
       {CONTROL_GROUPS.map((group) => (
