@@ -8,7 +8,7 @@ import {
 const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
 
 describe('capture manifests', () => {
-  test('normalizes the Community v1 manifest into extensible streams', () => {
+  test('normalizes the legacy v1 manifest into extensible streams', () => {
     const descriptor = normalizeCaptureSessionManifest({
       schemaVersion: 1,
       sessionId: 'capture_123',

@@ -35,11 +35,11 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       { keys: ['Z'], action: '切换到区域图层' },
       {
         keys: ['Cmd/Ctrl', 'Arrow Up'],
-        action: '选择当前建筑的上一层',
+        action: '选择当前舞台空间的上一层',
       },
       {
         keys: ['Cmd/Ctrl', 'Arrow Down'],
-        action: '选择当前建筑的下一层',
+        action: '选择当前舞台空间的下一层',
       },
       { keys: ['Cmd/Ctrl', 'B'], action: '切换侧栏' },
     ],
@@ -67,7 +67,7 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       {
         keys: ['Cmd/Ctrl', 'C'],
         action: '复制选中物体',
-        note: '已复制的物体可以粘贴到其他楼层、项目或浏览器标签页。',
+        note: '已复制的物体可以粘贴到其他表演层、项目或浏览器标签页。',
       },
       {
         keys: ['Cmd/Ctrl', 'X'],

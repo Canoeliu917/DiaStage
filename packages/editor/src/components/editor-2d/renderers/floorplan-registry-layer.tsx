@@ -21,7 +21,6 @@ import {
   resolveBuildingForLevel,
   resolveSelectionProxyId,
   resumeSceneHistory,
-  useInteractive,
   useLiveNodeOverrides,
   useLiveTransforms,
   useScene,
@@ -295,15 +294,7 @@ export function floorplanAffordanceReshapeScope(
     const endpoint = (payload as { endpoint?: 'start' | 'end' } | undefined)?.endpoint ?? 'end'
     return endpointReshapeScope(nodeId, endpoint, 'floorplan')
   }
-  // Roof-segment width/depth resize — a no-angle dimension edit, so the
-  // no-angle 'polygon' snap set (grid / lines / off) via a boundary scope.
-  // Matched exactly so a still-legacy `*-resize` affordance on another kind
-  // doesn't get a chip its snap math can't honour yet.
-  if (affordance === 'roof-segment-resize') {
-    return boundaryReshapeScope(nodeId, 'floorplan')
-  }
-  // 2D corner rotate-arrow (column / elevator / roof-segment / shelf / spawn /
-  // stair). Begin the same handle-drag scope the 3D rotate gizmo uses, label-
+  // Begin the same handle-drag scope the 3D rotate gizmo uses, label-
   // matched, so the contextual HUD shows the "Shift = rotate freely" hint over
   // the drag. The affordance applies the 15° angle step itself.
   if (affordance.includes('rotate')) {
@@ -356,7 +347,6 @@ type NodeDeps = {
   siblingEpoch: number
   committedNodes: Record<string, AnyNode> | null
   dependencyNodes: AnyNode[]
-  interactiveElevators: unknown
 }
 
 type CacheEntry = {
@@ -520,10 +510,6 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
     floorplanMode,
     wallDimensionReference,
   )
-  // Elevator builders read runtime state imperatively, so entries include this
-  // rare-changing ref in their cache deps.
-  const interactiveElevators = useInteractive((s) => s.elevators)
-
   // Interactive state lives in refs; only the visible feedback bits go
   // into React state to keep re-renders cheap during drag.
   const dragRef = useRef<ActiveDrag | null>(null)
@@ -1424,7 +1410,6 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             geometryCacheRef={geometryCacheRef}
             hatchPatternId={renderCtx?.hatchPatternId}
             hoveredHandleId={handleIdForNode(hoveredHandleId, entry.id)}
-            interactiveElevators={interactiveElevators}
             isMarqueeSelectionActive={isMarqueeSelectionActive}
             key={`base-${entry.id}`}
             levelDataCacheRef={levelDataCacheRef}
@@ -1470,7 +1455,6 @@ export const FloorplanRegistryLayer = memo(function FloorplanRegistryLayer() {
             geometryCacheRef={geometryCacheRef}
             hatchPatternId={renderCtx?.hatchPatternId}
             hoveredHandleId={handleIdForNode(hoveredHandleId, entry.id)}
-            interactiveElevators={interactiveElevators}
             isMarqueeSelectionActive={isMarqueeSelectionActive}
             key={`overlay-${entry.id}`}
             levelDataCacheRef={levelDataCacheRef}
@@ -1585,15 +1569,10 @@ function FloorplanAnnotationLayoutResolver({ active }: { active: boolean }) {
     const unsubscribeOverrides = useLiveNodeOverrides.subscribe((state, previousState) => {
       if (state.overrides !== previousState.overrides) invalidateLayout()
     })
-    const unsubscribeInteractive = useInteractive.subscribe((state, previousState) => {
-      if (state.elevators !== previousState.elevators) invalidateLayout()
-    })
-
     return () => {
       unsubscribeScene()
       unsubscribeTransforms()
       unsubscribeOverrides()
-      unsubscribeInteractive()
       if (frame !== null) window.cancelAnimationFrame(frame)
     }
   }, [layoutEnabled])
@@ -1788,7 +1767,6 @@ type FloorplanRegistryEntryProps = {
   geometryCacheRef: { current: Map<string, CacheEntry> }
   hatchPatternId: string | undefined
   hoveredHandleId: string | null
-  interactiveElevators: unknown
   isMarqueeSelectionActive: boolean
   levelDataCacheRef: { current: Map<string, LevelDataCacheEntry> }
   levelNodeIdsByType: ReadonlyMap<string, readonly AnyNodeId[]>
@@ -1835,7 +1813,6 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
   geometryCacheRef,
   hatchPatternId,
   hoveredHandleId,
-  interactiveElevators,
   isMarqueeSelectionActive,
   levelDataCacheRef,
   levelNodeIdsByType,
@@ -1980,7 +1957,6 @@ const FloorplanRegistryEntry = memo(function FloorplanRegistryEntry({
     geometryCache: geometryCacheRef.current,
     highlighted,
     hovered,
-    interactiveElevators,
     levelDataCache: levelDataCacheRef.current,
     levelNodeIdsByType,
     live,
@@ -2049,7 +2025,6 @@ type BuildFloorplanEntryGeometryArgs = {
   geometryCache: Map<string, CacheEntry>
   highlighted: boolean
   hovered: boolean
-  interactiveElevators: unknown
   levelDataCache: Map<string, LevelDataCacheEntry>
   levelNodeIdsByType: ReadonlyMap<string, readonly AnyNodeId[]>
   live: LiveTransform | undefined
@@ -2107,7 +2082,6 @@ function buildFloorplanEntryGeometry({
   geometryCache,
   highlighted,
   hovered,
-  interactiveElevators,
   levelDataCache,
   levelNodeIdsByType,
   live,
@@ -2161,7 +2135,6 @@ function buildFloorplanEntryGeometry({
     // committed state via `ctx`, so committed sibling edits still invalidate.
     committedNodes: dependsOnSiblingInputs ? nodes : null,
     dependencyNodes,
-    interactiveElevators,
   }
   const cached = geometryCache.get(nodeId)
   if (cached && nodeDepsEqual(cached.deps, deps)) return cached
@@ -2187,7 +2160,7 @@ function buildFloorplanEntryGeometry({
     if ((def.capabilities?.floorPlaced || def.floorplanScope === 'building') && hasPosition) {
       return applyPositionLiveTransform(sourceNode, live)
     }
-    if (sourceNode.type === 'slab' || sourceNode.type === 'ceiling' || sourceNode.type === 'zone') {
+    if (sourceNode.type === 'slab' || sourceNode.type === 'zone') {
       const dx = live.position[0]
       const dz = live.position[2]
       if (dx === 0 && dz === 0) return sourceNode
@@ -3346,7 +3319,6 @@ function endpointKey(x: number, y: number): string {
 //     dragged wall invalidates the walls at its old AND new junctions, plus its
 //     own door/window children (their cuts are drawn into it);
 //   - a door/window cut is drawn into its host wall, so it invalidates that wall;
-//   - a gutter join depends on sibling gutters under the same roof.
 // Everything else stays cached, so dragging one wall/opening rebuilds a handful
 // of geometries rather than every wall + opening on the level.
 export function computeAffectedSiblingIds(
@@ -3420,16 +3392,6 @@ export function computeAffectedSiblingIds(
       if (hostId) affected.add(hostId as AnyNodeId)
       const liveHostId = (liveOverrides.get(id) as { parentId?: string } | undefined)?.parentId
       if (liveHostId) affected.add(liveHostId as AnyNodeId)
-    } else if (node.type === 'gutter') {
-      const roofId = (node as { parentId?: string }).parentId
-      if (roofId) {
-        for (const sid in nodes) {
-          const s = nodes[sid]
-          if (s?.type === 'gutter' && (s as { parentId?: string }).parentId === roofId) {
-            affected.add(sid as AnyNodeId)
-          }
-        }
-      }
     }
   }
   return affected
@@ -3452,7 +3414,6 @@ function nodeDepsEqual(a: NodeDeps, b: NodeDeps): boolean {
     'siblingEpoch',
     'committedNodes',
     'dependencyNodes',
-    'interactiveElevators',
   ]
   for (const key of keys) {
     if (!depsValueEqual(a[key], b[key])) return false

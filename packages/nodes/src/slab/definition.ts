@@ -8,7 +8,6 @@ import {
   pointInPolygon2D,
   type SceneApi,
   type SlabNode as SlabNodeType,
-  syncStairRises,
 } from '@pascal-app/core'
 import {
   clearStructuralElevationGuide,
@@ -127,17 +126,6 @@ function slabChangePreviewOverrides(
   const previews = new Map<AnyNodeId, Partial<AnyNode>>()
 
   markSlabChangeDependents(slab, next, nodes, (id) => previews.set(id, {}))
-  for (const update of syncStairRises(nodes)) {
-    const segment = nodes[update.id]
-    if (
-      segment?.type !== 'stair-segment' ||
-      !segment.parentId ||
-      !previews.has(segment.parentId as AnyNodeId)
-    ) {
-      continue
-    }
-    previews.set(update.id, update.data)
-  }
 
   return [...previews]
 }
@@ -284,7 +272,6 @@ export const slabDefinition: NodeDefinition<typeof SlabNode> = {
     elevation: 0.05,
     thickness: 0.05,
     recessed: false,
-    autoFromWalls: false,
   }),
 
   capabilities: {
@@ -312,7 +299,7 @@ export const slabDefinition: NodeDefinition<typeof SlabNode> = {
       polygonMeasurementFeatures({
         featurePrefix: 'slab',
         height: node.elevation,
-        label: '楼板',
+        label: '舞台平台',
         polygon: node.polygon,
       }),
     quickMeasure: (node) => slabQuickMeasurement(node),
@@ -362,20 +349,20 @@ export const slabDefinition: NodeDefinition<typeof SlabNode> = {
   },
 
   toolHints: [
-    { key: '鼠标左键', label: '描绘楼板轮廓' },
-    { key: 'Enter', label: '完成楼板', minDraftVertices: 3 },
+    { key: '鼠标左键', label: '描绘舞台平台轮廓' },
+    { key: 'Enter', label: '完成舞台平台', minDraftVertices: 3 },
     { key: 'Esc', label: '取消' },
   ],
 
   presentation: {
-    label: '楼板',
-    description: '以多边形为边界、可在表面放置物件的楼板。',
+    label: '舞台平台',
+    description: '以多边形为边界、可在表面放置物件的平台。',
     icon: { kind: 'url', src: '/icons/floor.webp' },
     paletteSection: 'structure',
     paletteOrder: 30,
   },
 
   mcp: {
-    description: 'A polygon-bounded slab (floor) with optional cutout holes.',
+    description: 'A polygon-bounded stage platform with optional cutout holes.',
   },
 }

@@ -4,7 +4,6 @@ import {
   type AnyNode,
   type AnyNodeId,
   nodeRegistry,
-  type TerrainVerb,
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
@@ -54,35 +53,6 @@ function reshapingHints(reshape: ReshapeKind): ContextualShortcutHint[] {
   ]
 }
 
-// Sculpt mode's HUD. The verb is named rather than described because it is the one
-// piece of state a user loses track of between strokes. This stays even though the
-// brush ring now carries the verb in colour (`brushRingColor`): the ring says
-// *which* verb only to someone who already knows the mapping, and the HUD is what
-// teaches it.
-function terrainSculptHints(verb: TerrainVerb, sampling: boolean): ContextualShortcutHint[] {
-  if (sampling) {
-    return [
-      { keys: ['Click'], label: '拾取目标高度' },
-      { keys: ['Esc'], label: '取消拾取' },
-    ]
-  }
-  const action =
-    verb === 'raise'
-      ? '抬高地面'
-      : verb === 'lower'
-        ? '降低地面'
-        : verb === 'flatten'
-          ? '平整地面'
-          : '平滑地面'
-  return [
-    { keys: ['Drag'], label: action },
-    // Nested, so the two render as alternatives ("[ / ]") rather than a chord —
-    // a flat `['[', ']']` joins with "+" and would read as "press both".
-    { keys: [['[', ']']], label: '笔刷大小' },
-    { keys: ['Esc'], label: '取消笔划' },
-  ]
-}
-
 type ActiveModifierKeys = {
   command: boolean
   shift: boolean
@@ -128,8 +98,6 @@ function useActiveModifierKeys(): ActiveModifierKeys {
 export function HelperManager() {
   const mode = useEditor((s) => s.mode)
   const tool = useEditor((s) => s.tool)
-  const terrainVerb = useEditor((s) => s.terrainVerb)
-  const terrainSampling = useEditor((s) => s.terrainSampling)
   const isFirstPersonMode = useEditor((s) => s.isFirstPersonMode)
   const measurementToolKind = useEditor((s) => s.toolDefaults.measurement?.kind)
   const workspaceMode = useEditor((s) => s.workspaceMode)
@@ -181,20 +149,12 @@ export function HelperManager() {
   )
   const continuationContext = useMemo(() => getActiveContinuationContext(), [scope, mode, tool])
   const selectModeHints = useMemo(() => {
-    const single = selectedNodes.length === 1 ? selectedNodes[0] : null
-    const mepSelection =
-      single?.type === 'duct-segment' || single?.type === 'pipe-segment'
-        ? 'run'
-        : single?.type === 'duct-fitting' || single?.type === 'pipe-fitting'
-          ? 'fitting'
-          : null
     return resolveSelectModeHelpHints({
       selectedCount: selectedNodes.length,
       hasMovableSelection: selectedNodes.some((node) => canDirectMoveNode(node)),
       hasRotatableSelection: selectedNodes.some((node) => canDirectRotateNode(node)),
       commandPressed: modifiers.command,
       shiftPressed: modifiers.shift,
-      mepSelection,
     })
   }, [modifiers.command, modifiers.shift, selectedNodes])
 
@@ -280,15 +240,6 @@ export function HelperManager() {
   // paint one surface, so this renders nothing until a scoped target is active.
   if (mode === 'material-paint') {
     return <ContextualHelperPanel hints={[]} showPaintScope />
-  }
-
-  // Sculpt mode. The HUD is what makes a sustained brush mode legible: it names
-  // the active verb (the same word the panel's segmented control shows, so the
-  // two never disagree), and it advertises the two keys whose behaviour is
-  // mode-specific — bracket resize, and an Esc that abandons the stroke rather
-  // than exiting the mode.
-  if (mode === 'terrain-sculpt') {
-    return <ContextualHelperPanel hints={terrainSculptHints(terrainVerb, terrainSampling)} />
   }
 
   if (scope.kind === 'mesh-editing') {

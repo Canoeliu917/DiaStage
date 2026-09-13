@@ -1,5 +1,4 @@
 import { GROUND_SUPPORT_ID } from '../../hooks/spatial-grid/support-host-id'
-import { terrainSupportLift } from '../../lib/terrain-support'
 import {
   type AnyNode,
   type AnyNodeId,
@@ -391,15 +390,10 @@ function splitWall(
     })
   })
   const originalElevation =
-    wall.supportSlabId === GROUND_SUPPORT_ID && wall.parentId
-      ? (terrainSupportLift(nodes, wall.parentId, wall.start[0], wall.start[1]) ?? 0) +
-        (wall.supportOffset ?? 0)
-      : null
+    wall.supportSlabId === GROUND_SUPPORT_ID && wall.parentId ? (wall.supportOffset ?? 0) : null
   const segments = parsedSegments.map((segment) => {
     if (originalElevation === null || !wall.parentId) return segment
-    const terrainElevation =
-      terrainSupportLift(nodes, wall.parentId, segment.start[0], segment.start[1]) ?? 0
-    const supportOffset = originalElevation - terrainElevation
+    const supportOffset = originalElevation
     return {
       ...segment,
       supportOffset: Math.abs(supportOffset) > 1e-6 ? supportOffset : undefined,

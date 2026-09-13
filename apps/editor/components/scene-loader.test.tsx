@@ -35,7 +35,13 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   let effects: (() => void)[] = []
   let forceEffects = false
   let metaVersion = 7
-  let refreshes = 0
+  let exports = 0,
+    retries = 0
+  const windowEvents = Object.assign(new EventTarget(), {
+    document: { createElement: () => ({ click: () => exports++ }) },
+  })
+  windowEvents.addEventListener('scene:retry-save', () => retries++)
+  Object.assign(globalThis, { window: windowEvents })
   let onApplyDirty = () => {}
   const applied: SceneGraph[] = []
   const sources: SceneEvents[] = []
@@ -62,12 +68,30 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   }
   Object.assign(globalThis, { EventSource: SceneEvents })
   const statuses: SaveStatus[] = []
+  let proposalInvalidations = 0
+  let checkProposal = async () => {}
+  mock.module('../lib/rehearsal-intelligence/authority', () => ({
+    bindRehearsalScene: (_id: string, check: () => Promise<void>) => {
+      checkProposal = check
+      return () => {}
+    },
+    clearProposalGhost: () => {
+      proposalInvalidations++
+    },
+  }))
   const requests: { url: string; init: RequestInit }[] = []
   let respond: () => Promise<Response> = async () => new Response(null, { status: 500 })
   const Editor = () => null
   const empty = () => null
   mock.module('react', () => ({
     ...React,
+    useMemo: <T,>(factory: () => T, deps: unknown[]) => {
+      const index = hookIndex++
+      const previous = hooks[index] as { deps: unknown[]; value: T } | undefined
+      if (!previous || deps.some((dep, i) => !Object.is(dep, previous.deps[i])))
+        hooks[index] = { deps: [...deps], value: factory() }
+      return (hooks[index] as { value: T }).value
+    },
     useCallback: <T,>(callback: T) => callback,
     useEffect: (effect: () => undefined | (() => void), deps: unknown[]) => {
       const index = hookIndex++
@@ -104,6 +128,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   }))
   mock.module('@pascal-app/editor', () => ({
     Editor,
+    useSidebarStore: { getState: () => ({ isCollapsed: false, setIsCollapsed: () => {} }) },
     useEditor: (select: (state: { activeSidebarPanel: string }) => unknown) =>
       select({ activeSidebarPanel: 'theatre-roles' }),
     applySceneGraphToEditor: (graph: SceneGraph) => {
@@ -112,11 +137,25 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
       onApplyDirty()
     },
   }))
-  mock.module('@pascal-app/viewer', () => ({ NeutralRenderEnvironment: { Provider: empty } }))
+  mock.module('@pascal-app/viewer', () => ({
+    NeutralRenderEnvironment: { Provider: empty },
+    StableRenderMode: { Provider: empty },
+    ViewerErrorBoundary: empty,
+  }))
+  mock.module('../lib/scene-journal', () => ({
+    SceneJournal: class {
+      async recover(graph: SceneGraph) {
+        return { graph, pending: false, conflict: false }
+      }
+      async append() {}
+      async acknowledge() {}
+      async assertCurrent() {}
+    },
+  }))
   mock.module('next/navigation', () => ({
     useRouter: () => ({
       refresh: () => {
-        refreshes += 1
+        throw new Error('conflicts must not discard local data by refreshing')
       },
       push: () => {},
     }),
@@ -143,16 +182,14 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     './camera-studio/camera-stage-system': ['CameraStageSystem'],
     './camera-studio/dock': ['CameraStudioDock'],
     './camera-studio/runtime': ['CameraStudioRuntime'],
-    './lighting/floorplan': ['LightingFloorplan'],
-    './lighting/persistence': ['LightingPersistence'],
-    './lighting/system': ['LightingSystem'],
     './camera-studio/persistence': ['CameraPersistence'],
     './theatre/versions-panel': ['VersionViewSync'],
+    './theatre/scene-visibility': ['SceneLayersRuntime'],
     './remount-preview-system': ['RemountPreviewSystem'],
     './stage-overview-panel': ['StageOverviewPanel'],
     './studio-navigation': ['StudioNavigation'],
     './theatre/runtime': ['RehearsalTransport', 'TheatreFloorplan', 'TheatreRuntime'],
-    './viewer-toolbar': ['CommunityViewerToolbarLeft', 'CommunityViewerToolbarRight'],
+    './viewer-toolbar': ['EditorViewerToolbarLeft', 'EditorViewerToolbarRight'],
   }
   for (const [path, names] of Object.entries(componentModules)) {
     mock.module(path, () => Object.fromEntries(names.map((name) => [name, empty])))
@@ -164,6 +201,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const { SceneLoader } = await import('./scene-loader')
   type Element = { type?: unknown; props?: Record<string, unknown> }
   type EditorProps = {
+    onLoad: () => Promise<SceneGraph>
     onSave: (graph: SceneGraph, options?: { keepalive?: boolean }) => Promise<void>
     onSaveStatusChange: (status: SaveStatus) => void
     onDirty: () => void
@@ -234,7 +272,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   await assert.rejects(saveAsEditor(initialScene, true), /500/)
   assert.deepEqual(statuses, ['error'], 'autosave cannot interpret a failed callback as saved')
   assert.equal(status(), '保存失败')
-  assert.equal(requests[0]?.init.keepalive, true)
+  assert.equal(requests[0]?.init.keepalive, undefined)
   assert.equal(matchVersion(0), '7')
   assert.deepEqual(sentGraph(0).graph, initialScene)
   assert.equal(sentGraph(0).name, '排演', 'legacy graphs keep their existing scene name')
@@ -247,13 +285,17 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     throw new Error('offline')
   }
   click('重试保存')
+  assert.equal(retries, 1, 'retry wakes the single save queue')
+  assert.equal(requests.length, 1, 'retry does not bypass the queue with another PUT')
+  await assert.rejects(saveAsEditor(liveGraph), /offline/)
   await flush()
   assert.equal(status(), '保存失败', 'retry network failure stays retryable')
   assert.equal(matchVersion(1), '7', 'failed requests do not advance the revision')
   respond = async () => Response.json({ version: 8, nodeCount: 2 })
   click('重试保存')
+  await saveAsEditor(liveGraph)
   await flush()
-  assert.equal(status(), '已保存')
+  assert.equal(status(), '本机已保存 · 已同步')
   assert.deepEqual(sentGraph(2).graph, liveGraph, 'retry reads the current persisted store')
   assert.notDeepEqual(
     (sentGraph(2).graph.nodes[prop.id] as typeof prop).position,
@@ -285,8 +327,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   )
   assert.equal(status(), '保存失败')
   const conflictRequest = requests.length
-  click('重新加载')
-  assert.equal(refreshes, 1)
+  click('导出本机版本')
+  assert.equal(exports, 1)
   assert.equal(requests.length, conflictRequest, 'reload never forces a conflicting write')
 
   hooks = []
@@ -304,7 +346,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     render().nodes.some((node) => node.props?.children === '重试保存'),
     true,
   )
-  assert.equal(statuses.includes('saved'), false)
+  assert.equal(statuses.at(-1), 'error')
 
   hooks = []
   liveGraph = structuredClone(initialScene)
@@ -314,6 +356,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const remoteGraph = structuredClone(initialScene)
   remoteGraph.nodes[prop.id] = { ...prop, position: [-4, 0, -4] }
   sources.at(-1)!.scene(8, remoteGraph)
+  assert.ok(proposalInvalidations > 0, 'foreign changes invalidate rehearsal previews')
+  await assert.rejects(checkProposal(), /版本冲突/, 'a conflicted scene cannot adopt a proposal')
   assert.equal(applied.length, 0, 'a different remote revision cannot overwrite local edits')
   assert.deepEqual(liveGraph, dirtyGraph)
   assert.equal(
@@ -351,6 +395,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
 
   metaVersion = 12
   render()
+  await render().props.onLoad()
   assert.equal(
     render().nodes.some((node) => node.props?.children === '此场景已在其他窗口更新'),
     false,

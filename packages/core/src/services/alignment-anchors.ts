@@ -256,7 +256,7 @@ export function wallSegmentAnchors(
   return anchors
 }
 
-/** Each vertex of a polygon (slab / ceiling footprint) as a `corner` anchor. */
+/** Each vertex of a slab polygon as a `corner` anchor. */
 export function polygonAnchors(
   id: string,
   points: readonly (readonly [number, number])[],
@@ -266,7 +266,7 @@ export function polygonAnchors(
 
 /**
  * Alignment anchors a node contributes to the candidate pool, dispatched by
- * kind: walls / fences → segment endpoints + midpoint; slabs / ceilings →
+ * kind: walls / fences → segment endpoints + midpoint; slabs →
  * polygon vertices; everything else → the corners of its plan bounding box
  * (`alignmentAABB`, which covers floor-placed kinds, the elevator's
  * alignment box, and the stair's chain / sector footprint). Kinds with no
@@ -291,7 +291,7 @@ export function nodeAlignmentAnchors(
     // fence always carries one. Either way, pass it through so faces align.
     return wallSegmentAnchors(seg.id, seg.start, seg.end, seg.thickness ?? DEFAULT_WALL_THICKNESS)
   }
-  if (node.type === 'slab' || node.type === 'ceiling') {
+  if (node.type === 'slab') {
     const poly = (node as { polygon?: [number, number][] }).polygon
     return poly ? polygonAnchors(node.id, poly) : []
   }
@@ -313,17 +313,7 @@ export function nodeAlignmentAnchors(
     }
   }
 
-  // Typed ports (fittings, equipment, terminals, run ends): connection points
-  // are natural alignment targets — line a new run up with an existing collar.
-  const ports = nodeRegistry.get(node.type)?.ports?.(node)
-  if (ports) {
-    for (const port of ports) {
-      anchors.push({ nodeId: node.id, kind: 'corner', x: port.position[0], z: port.position[2] })
-    }
-  }
-
-  // Position-based kinds with no footprint (e.g. duct fittings): the origin
-  // itself is a useful centre anchor.
+  // Position-based kinds with no footprint still expose their origin.
   if (!aabb) {
     const position = (node as { position?: [number, number, number] }).position
     if (Array.isArray(position)) {

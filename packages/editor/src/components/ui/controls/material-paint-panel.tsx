@@ -21,9 +21,7 @@ import { MaterialPicker } from './material-picker'
 import { SceneMaterialList } from './scene-material-list'
 
 /**
- * Material picker for paint mode. Embedders render this wherever paint controls
- * belong (the community editor places it in the Build sidebar while paint mode
- * is active). It fills its container's height and lays out as three bands: a
+ * Material picker for paint mode. It fills its container's height and lays out as three bands: a
  * fixed control/category header, a single scrolling catalog grid, and a fixed
  * scene-material footer (always visible, with a `+` to add a custom material).
  */
@@ -58,7 +56,7 @@ export function MaterialPaintPanel({ onCreateMaterialRequest }: MaterialPaintPan
 
   const resetSelection = () => {
     if (!selectedNode) return
-    useScene.getState().updateNodes(buildResetSurfaceMaterialUpdates(nodes, selectedNode))
+    useScene.getState().updateNodes(buildResetSurfaceMaterialUpdates(selectedNode))
   }
 
   // Create a blank custom scene material, select it as the brush (`scene:` ref so

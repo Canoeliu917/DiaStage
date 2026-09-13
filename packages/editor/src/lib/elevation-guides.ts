@@ -2,11 +2,8 @@ import {
   type AnyNode,
   type AnyNodeId,
   type FenceNode,
-  findLevelAncestorId,
   getWallBaseElevationForNodes,
   getWallEffectiveHeightForNodes,
-  levelBaseElevationAt,
-  resolveCeilingHeight,
 } from '@pascal-app/core'
 import useElevationGuides from '../store/use-elevation-guides'
 
@@ -60,12 +57,7 @@ export function getFenceBaseElevationForNodes(
 ): number {
   const host = node.supportSlabId ? nodes[node.supportSlabId as AnyNodeId] : undefined
   const hosted = host?.type === 'slab' && (host.parentId ?? null) === (node.parentId ?? null)
-  const levelId = findLevelAncestorId(node.id as AnyNodeId, nodes)
-  const support = hosted
-    ? (host.elevation ?? 0)
-    : levelId
-      ? levelBaseElevationAt(nodes, levelId, node.start[0], node.start[1])
-      : 0
+  const support = hosted ? (host.elevation ?? 0) : 0
   return support + (node.supportOffset ?? 0)
 }
 
@@ -85,28 +77,9 @@ export function collectElevationSnapTargets(
       id: `${source.levelId}:level`,
       elevation: 0,
       anchor: source.anchor,
-      label: '楼层',
+      label: '表演层',
     },
   ]
-  // Sculpted ground under the thing being dragged. A separate target rather than
-  // a redefinition of `Level`: the storey plane is still a real datum a user may
-  // want (a fence sunk to the building's floor line), and on a hillside the
-  // ground is a second, different one. Emitted only when they actually differ,
-  // so a flat scene keeps exactly one target at 0.
-  const groundElevation = levelBaseElevationAt(
-    nodes,
-    source.levelId,
-    source.anchor[0],
-    source.anchor[1],
-  )
-  if (Math.abs(groundElevation) > GUIDE_MATCH_EPSILON_M) {
-    targets.push({
-      id: `${source.levelId}:ground`,
-      elevation: groundElevation,
-      anchor: source.anchor,
-      label: '地面',
-    })
-  }
   const level = nodes[source.levelId as AnyNodeId]
   if (level?.type !== 'level') return targets
 
@@ -122,26 +95,16 @@ export function collectElevationSnapTargets(
         id: `${node.id}:top`,
         elevation: top,
         anchor: center,
-        label: '楼板顶面',
+        label: '舞台平台顶面',
       })
       if (!node.recessed) {
         targets.push({
           id: `${node.id}:base`,
           elevation: top - (node.thickness ?? 0.05),
           anchor: center,
-          label: '楼板底面',
+          label: '舞台平台底面',
         })
       }
-      continue
-    }
-
-    if (node.type === 'ceiling') {
-      targets.push({
-        id: `${node.id}:ceiling`,
-        elevation: resolveCeilingHeight(node, nodes as Record<AnyNodeId, AnyNode>),
-        anchor: polygonCenter(node.polygon),
-        label: '天花板',
-      })
       continue
     }
 

@@ -16,7 +16,6 @@ import {
   useScene,
   type WallMiterData,
   type WallNode,
-  wallClosesRoom,
 } from '@pascal-app/core'
 import {
   CursorSphere,
@@ -36,7 +35,6 @@ import {
   markToolCancelConsumed,
   publishHorizontalConstructionPlane,
   publishPlacementSurface,
-  resampleTerrainConstructionPlane,
   resolveEventConstructionPlane,
   resolvePointerSupportSurface,
   type SegmentAngleReference,
@@ -717,10 +715,7 @@ export const WallTool: React.FC = () => {
           ),
         )
       } else {
-        const hoverPlane = resampleTerrainConstructionPlane(
-          resolveEventConstructionPlane(event, pointed),
-          gridPosition,
-        )
+        const hoverPlane = resolveEventConstructionPlane(event, pointed)
         cursorRef.current.position.set(gridPosition[0], hoverPlane.localY, gridPosition[1])
         setDraftMeasurement(null)
         setAxisGuide(null)
@@ -755,7 +750,7 @@ export const WallTool: React.FC = () => {
             : pointMatches(snappedStart, snapResult.point)
               ? snappedWallConstructionPlane(snapResult.targetWallIds, walls)
               : null) ?? resolveEventConstructionPlane(event, pointed)
-        const plane = resampleTerrainConstructionPlane(resolvedPlane, snappedStart)
+        const plane = resolvedPlane
         constructionPlane.current = plane
         flatConstructionBase.current = pointed?.sourceNodeId != null
         publishHorizontalConstructionPlane(event, plane)
@@ -831,19 +826,11 @@ export const WallTool: React.FC = () => {
           chainFirstVertex.current &&
           isWithinWallJoinSnapRadius(createdWall.end, chainFirstVertex.current)
 
-        // Auto-close also fires when the segment seals a room against the
-        // existing wall network (e.g. a bay closed onto the middle of another
-        // wall), not just when the chain loops back to its own start. Shares the
-        // room graph with auto slab/ceiling detection so the two never disagree.
-        // A resolved end that tees into wall geometry outside the chain also
-        // terminates even without an enclosed room — nobody continues drawing
-        // from a T-junction into an existing wall; a dead end in free space
-        // keeps the chain going.
+        // Stop a chain when it loops to its start or reaches an existing wall.
         const levelWalls = getCurrentLevelWalls()
         if (
           closedToChainStart ||
-          chainEndJoinsExistingWall(createdWall.end, levelWalls, chainWallIds.current) ||
-          wallClosesRoom(levelWalls, createdWall)
+          chainEndJoinsExistingWall(createdWall.end, levelWalls, chainWallIds.current)
         ) {
           stopDrafting()
           return

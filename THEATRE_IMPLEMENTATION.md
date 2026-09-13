@@ -131,7 +131,7 @@
 全仓各包实际验证命令：
 
 ```sh
-bun test packages/core/src packages/viewer/src packages/editor/src packages/nodes/src packages/mcp/src packages/capture-protocol/src packages/capture-viewer/src packages/ifc-converter/tests packages/cli/src apps/editor/lib apps/editor/components scripts
+bun test packages/core/src packages/viewer/src packages/editor/src packages/nodes/src packages/mcp/src packages/capture-protocol/src packages/capture-viewer/src packages/cli/src apps/editor/lib apps/editor/components scripts
 ```
 
 全仓 3 项失败位于既有 CLI 的 Windows 文件权限/进程停止测试：`info creates private local storage on a fresh home`、`managed runtime > allows an explicit force stop only for the recorded editor command`、`managed runtime > force-stops the recorded editor when its runtime manifest is damaged`。第一项断言 POSIX `0700` 权限，Windows 返回的 `mode & 0o077` 为 54；后两项要求强制停止成功，但现有运行管理器在 Windows 显式返回不支持，结果为 `state_conflict`，后续清理还触发 `EBUSY`。相关 CLI 源码和测试本轮未修改，具体日志与代码位置见 [最终验证记录](previews/theatre/phase-b-validation.md)。本阶段没有通过删测试、放宽断言或绕过进程保护隐藏失败，因此不能写成「全仓全部通过」。

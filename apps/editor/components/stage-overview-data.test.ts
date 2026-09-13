@@ -11,7 +11,19 @@ import {
   SiteNode,
   ZoneNode,
 } from '@pascal-app/core/schema'
+import { createStageStair } from '@pascal-app/core/stage'
 import { buildStageRows, getStageNodeSelection } from './stage-overview-data'
+
+test('simple stage steps appear as one movable object without exposing internal segments', () => {
+  const { stair, segment } = createStageStair({}, 'level_main')
+  const nodes = { [stair.id]: stair, [segment.id]: segment }
+  const before = JSON.stringify(nodes)
+  assert.deepEqual(
+    buildStageRows(nodes).map((row) => row.id),
+    [stair.id],
+  )
+  assert.equal(JSON.stringify(nodes), before)
+})
 
 function item(id: string, parentId: string | null, name = '物件'): AnyNode {
   return ItemNode.parse({
@@ -107,7 +119,7 @@ test('own visibility remains distinct from visibility inherited from an ancestor
 test('legacy light effects are absent from the overview without filtering by user names', () => {
   const nodes = graph()
   nodes.item_named = item('item_named', 'level_2', '点光灯 Light 灯光')
-  nodes.item_light = ItemNode.parse({
+  nodes.item_light = {
     ...item('item_light', 'level_10', '舞台照明'),
     asset: {
       id: 'light-asset',
@@ -117,7 +129,7 @@ test('legacy light effects are absent from the overview without filtering by use
       src: '/assets/light.glb',
       interactive: { effects: [{ kind: 'light', intensityRange: [0, 100] }] },
     },
-  })
+  } as unknown as AnyNode
   const rows = buildStageRows(nodes)
   assert.equal(
     rows.some((row) => row.id === 'item_light'),

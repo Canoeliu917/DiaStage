@@ -2,9 +2,16 @@
 
 import { emitter, sceneRegistry, useScene } from '@pascal-app/core'
 import { useEditor, useInteractionScope } from '@pascal-app/editor'
-import { getSceneTheme, OVERLAY_LAYER, SCENE_LAYER, useViewer } from '@pascal-app/viewer'
+import {
+  getSceneTheme,
+  OVERLAY_LAYER,
+  SCENE_LAYER,
+  useIsolatedFrame as useFrame,
+  useViewer,
+  ViewerErrorBoundary,
+} from '@pascal-app/viewer'
 import type { CameraControlsImpl } from '@react-three/drei'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import { type MutableRefObject, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   BoxGeometry,
@@ -402,6 +409,10 @@ function MonitorRenderer({ shot, frame }: { shot: Shot; frame: CameraKeyframe })
     pending: boolean
     last: number
     failed: boolean
+    signature: string
+    nodes: unknown
+    materials: unknown
+    registry: number
   } | null>(null)
   useEffect(() => {
     if (typeof (gl as unknown as WebGPURenderer).readRenderTargetPixelsAsync !== 'function') {
@@ -414,7 +425,18 @@ function MonitorRenderer({ shot, frame }: { shot: Shot; frame: CameraKeyframe })
     })
     const camera = new PerspectiveCamera(50, 16 / 9, 0.05, 100000)
     camera.layers.set(SCENE_LAYER)
-    const current = { target, camera, alive: true, pending: false, last: -Infinity, failed: false }
+    const current = {
+      target,
+      camera,
+      alive: true,
+      pending: false,
+      last: -Infinity,
+      failed: false,
+      signature: '',
+      nodes: undefined as unknown,
+      materials: undefined as unknown,
+      registry: -1,
+    }
     resource.current = current
     useCameraStudio.getState().setMonitorStatus('waiting', '正在生成所选机位画面')
     return () => {
@@ -433,7 +455,7 @@ function MonitorRenderer({ shot, frame }: { shot: Shot; frame: CameraKeyframe })
       current.failed ||
       !canvas ||
       document.hidden ||
-      performance.now() - current.last < 100
+      performance.now() - current.last < 250
     )
       return
     const renderer = gl as unknown as WebGPURenderer
@@ -455,6 +477,26 @@ function MonitorRenderer({ shot, frame }: { shot: Shot; frame: CameraKeyframe })
       )
       return
     }
+    const sceneState = useScene.getState()
+    const signature = [
+      ...pose.position,
+      ...pose.lookAt,
+      pose.fov,
+      useViewer.getState().sceneTheme,
+    ].join(',')
+    if (
+      signature === current.signature &&
+      sceneState.nodes === current.nodes &&
+      sceneState.materials === current.materials &&
+      current.registry === sceneRegistry.revision
+    )
+      return
+    // Wait for geometry rebuilds before recording this scene version as rendered.
+    if (sceneState.dirtyNodes.size) return
+    current.signature = signature
+    current.nodes = sceneState.nodes
+    current.materials = sceneState.materials
+    current.registry = sceneRegistry.revision
     current.camera.position.set(...pose.position)
     current.camera.lookAt(...pose.lookAt)
     current.camera.fov = pose.fov
@@ -605,7 +647,13 @@ export function CameraStageSystem({ enabled }: { enabled: boolean }) {
           ) : null
         })}
       {showMonitor && selected && frame && (
-        <MonitorRenderer key={`${selected.id}:${frame.id}`} shot={selected} frame={frame} />
+        <ViewerErrorBoundary
+          fallback={null}
+          scope="monitor-render"
+          onError={(error) => useCameraStudio.getState().setMonitorStatus('error', error.message)}
+        >
+          <MonitorRenderer key={`${selected.id}:${frame.id}`} shot={selected} frame={frame} />
+        </ViewerErrorBoundary>
       )}
     </>
   )

@@ -16,7 +16,6 @@ import {
   resolveNodeSelectionTarget,
   resolveSelectedIdsForNodeClick,
   selectionModifiersFromEvent,
-  shouldPreserveSelectedRoofHostTarget,
 } from './selection-routing'
 
 function registerTestDefinition(kind: string, overrides: Record<string, unknown> = {}) {
@@ -353,80 +352,5 @@ describe('resolveCanvasSelectionNode', () => {
         selectedIds: [root.id],
       }),
     ).toBe(proxyGroup)
-  })
-
-  test('routes proxied lean-to roof children to the owning extension', () => {
-    const leanTo = {
-      id: 'lean_to_1',
-      type: 'lean-to-extension',
-      metadata: {},
-    } as unknown as AnyNode
-    const roof = {
-      id: 'roof_lean_to',
-      type: 'roof',
-      parentId: leanTo.id,
-      metadata: {
-        managedByLeanTo: leanTo.id,
-        leanToRole: 'roof',
-        nodeSelectionProxyId: leanTo.id,
-      },
-    } as unknown as AnyNode
-    const segment = {
-      id: 'rseg_lean_to',
-      type: 'roof-segment',
-      parentId: roof.id,
-      metadata: {
-        managedByLeanTo: leanTo.id,
-        leanToRole: 'roof-segment',
-        nodeSelectionProxyId: leanTo.id,
-      },
-    } as unknown as AnyNode
-
-    const nodes = {
-      [leanTo.id]: leanTo,
-      [roof.id]: roof,
-      [segment.id]: segment,
-    }
-
-    expect(resolveCanvasSelectionNode({ node: roof, nodes, selectedIds: [] })).toBe(leanTo)
-    expect(resolveCanvasSelectionNode({ node: segment, nodes, selectedIds: [] })).toBe(leanTo)
-  })
-})
-
-describe('shouldPreserveSelectedRoofHostTarget', () => {
-  test('keeps the roof host target while that roof is the sole armed selection', () => {
-    const node = { id: 'roof_1', type: 'roof' } as unknown as AnyNode
-
-    expect(
-      shouldPreserveSelectedRoofHostTarget({
-        node,
-        selectedIds: ['roof_1'],
-        armedRoofId: 'roof_1',
-      }),
-    ).toBe(true)
-  })
-
-  test('falls back to segment targeting when the roof host is not armed', () => {
-    const node = { id: 'roof_1', type: 'roof' } as unknown as AnyNode
-
-    expect(
-      shouldPreserveSelectedRoofHostTarget({
-        node,
-        selectedIds: ['roof_1'],
-        armedRoofId: null,
-      }),
-    ).toBe(false)
-  })
-
-  test('falls back to segment targeting when the roof is no longer the sole selection', () => {
-    const node = { id: 'roof_1', type: 'roof' } as unknown as AnyNode
-
-    expect(
-      shouldPreserveSelectedRoofHostTarget({
-        node,
-        selectedIds: ['roof_1', 'wall_1'],
-        armedRoofId: 'roof_1',
-      }),
-    ).toBe(false)
   })
 })

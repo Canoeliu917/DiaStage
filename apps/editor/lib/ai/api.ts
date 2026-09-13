@@ -1,4 +1,7 @@
 import { guardSceneApiRequest, sceneApiJson, withSceneApiHeaders } from '../scene-api-security'
+import { SceneContextTooLargeError } from '../stage/relevant-context'
+import { ModelBudgetError } from './model-budget'
+import { aiRequestContext } from './usage'
 
 export const AI_LIMITS = {
   jsonBytes: 1024 * 1024,
@@ -21,8 +24,11 @@ export interface ApiErrorBody {
       | 'AMBIGUOUS_COMMAND'
       | 'RATE_LIMITED'
       | 'INTERNAL_ERROR'
+      | 'BUDGET_CONFIRMATION_REQUIRED'
+      | 'BUDGET_EXCEEDED'
     message: string
     retryable: boolean
+    estimateCny?: number
   }
 }
 
@@ -32,6 +38,7 @@ export class AiError extends Error {
     message: string,
     readonly status = 400,
     readonly retryable = false,
+    readonly estimateCny?: number,
   ) {
     super(message)
     this.name = 'AiError'
@@ -120,7 +127,12 @@ export async function readJsonBody(request: Request, signal: AbortSignal): Promi
 function errorResponse(request: Request, requestId: string, error: AiError): Response {
   const body: ApiErrorBody = {
     requestId,
-    error: { code: error.code, message: error.message, retryable: error.retryable },
+    error: {
+      code: error.code,
+      message: error.message,
+      retryable: error.retryable,
+      ...(error.estimateCny !== undefined ? { estimateCny: error.estimateCny } : {}),
+    },
   }
   return sceneApiJson(request, body, { status: error.status })
 }
@@ -149,9 +161,13 @@ export async function handleAiRequest(
     requestId: string
     signal: AbortSignal
   }) => Promise<Record<string, unknown>>,
+  options: { skipSceneAuth?: boolean } = {},
 ): Promise<Response> {
   const requestId = crypto.randomUUID()
-  const guard = guardSceneApiRequest(request, { skipRateLimit: true })
+  const guard = guardSceneApiRequest(request, {
+    skipRateLimit: true,
+    skipAuth: options.skipSceneAuth,
+  })
   if (guard) return errorResponse(request, requestId, accessError(guard.status))
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
@@ -172,7 +188,19 @@ export async function handleAiRequest(
   const signal = AbortSignal.any([request.signal, timeout.signal])
   try {
     signal.throwIfAborted()
-    const result = await withAbort(operation({ requestId, signal }), signal)
+    const result = await withAbort(
+      aiRequestContext.run(
+        {
+          requestId,
+          approvedCny: Math.max(
+            0,
+            Math.min(100, Number(request.headers.get('x-diastage-budget-consent')) || 0),
+          ),
+        },
+        () => operation({ requestId, signal }),
+      ),
+      signal,
+    )
     signal.throwIfAborted()
     return sceneApiJson(request, { ...result, requestId })
   } catch (error) {
@@ -180,9 +208,13 @@ export async function handleAiRequest(
       ? new AiError('INTERNAL_ERROR', '操作已取消。', 499)
       : timeout.signal.aborted
         ? new AiError('INTERNAL_ERROR', '处理超时，请稍后重试。当前舞台未发生修改。', 504, true)
-        : error instanceof AiError
-          ? error
-          : new AiError('INTERNAL_ERROR', '舞台输入服务暂时不可用，请稍后重试。', 500, true)
+        : error instanceof SceneContextTooLargeError
+          ? new AiError('AMBIGUOUS_COMMAND', error.message, 422)
+          : error instanceof ModelBudgetError
+            ? new AiError(error.code, error.message, 402, false, error.estimateCny)
+            : error instanceof AiError
+              ? error
+              : new AiError('INTERNAL_ERROR', '舞台输入服务暂时不可用，请稍后重试。', 500, true)
     return errorResponse(request, requestId, failure)
   } finally {
     clearTimeout(timer)

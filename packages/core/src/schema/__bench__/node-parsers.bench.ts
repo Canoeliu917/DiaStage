@@ -242,7 +242,7 @@ function sites() {
   // normalizes. Six of them, each hit monomorphically.
   const MIGRATE_NODES = 100
   const authored = authoredNodeSchemas()
-  const migrateKinds = ['door', 'window', 'stair', 'stair-segment', 'shelf', 'elevator']
+  const migrateKinds = ['door', 'window', 'stair', 'stair-segment', 'shelf', 'item']
   const migrateBatch = Array.from({ length: MIGRATE_NODES }, (_, index) => {
     const kind = migrateKinds[index % migrateKinds.length] as string
     return { kind, node: { ...(fixtures.get(kind as AnyNodeType) as Record<string, unknown>) } }

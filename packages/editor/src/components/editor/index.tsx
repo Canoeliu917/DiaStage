@@ -6,7 +6,6 @@ import {
   getCatalogMaterialById,
   getLibraryMaterialIdFromRef,
   getSceneMaterialIdFromRef,
-  initSpaceDetectionSync,
   initSpatialGridSync,
   spatialGridManager,
   useScene,
@@ -46,11 +45,7 @@ import { type CameraHintAction, useCameraHintFocus } from '../../store/use-camer
 import useEditor from '../../store/use-editor'
 import useFloorplanMode from '../../store/use-floorplan-mode'
 import useSessionGroups from '../../store/use-session-groups'
-import { CeilingSelectionAffordanceSystem } from '../systems/ceiling/ceiling-selection-affordance-system'
-import { CeilingSystem } from '../systems/ceiling/ceiling-system'
-import { RoofEditSystem } from '../systems/roof/roof-edit-system'
 import { SelectionAffordanceManager } from '../systems/selection-affordance-manager'
-import { StairEditSystem } from '../systems/stair/stair-edit-system'
 import { ZoneLabelEditorSystem } from '../systems/zone/zone-label-editor-system'
 import { ZoneSystem } from '../systems/zone/zone-system'
 import { BoxSelectTool } from '../tools/select/box-select-tool'
@@ -90,7 +85,6 @@ import { GroupRotateHandle } from './group-rotate-handle'
 import { GroupSelectionBox3D } from './group-selection-box-3d'
 import { NodeArrowHandles } from './node-arrow-handles'
 import { QuickMeasurementHud } from './quick-measurement-hud'
-import { RiserDiagramPanel } from './riser-diagram-panel'
 import { SelectionManager } from './selection-manager'
 import { SiteEdgeLabels } from './site-edge-labels'
 import { SlabHoleHighlights } from './slab-hole-highlights'
@@ -137,12 +131,10 @@ const EDITOR_DEFAULT_RENDER = { shading: 'solid' } as const
  */
 function initializeEditorRuntime(): () => void {
   const unsubscribeSpatialGrid = initSpatialGridSync()
-  const unsubscribeSpaceDetection = initSpaceDetectionSync(useScene, useEditor)
   initSFXBus()
 
   return () => {
     unsubscribeSpatialGrid()
-    unsubscribeSpaceDetection?.()
 
     spatialGridManager.clear()
     disposeSFXBus()
@@ -176,18 +168,6 @@ export interface EditorProps {
    * viewer toolbar stays on top so the host's stage switch remains reachable.
    */
   stageOverlay?: ReactNode
-  /**
-   * Docked below the node inspector (v2). Hosts mount the "save as preset"
-   * affordance here so it reads as part of the inspector surface and shows
-   * only while a node is selected.
-   */
-  inspectorFooter?: ReactNode
-  /**
-   * Docked below the multi-selection panel (v2). Hosts mount whole-selection
-   * affordances here (e.g. "Save to my catalog"); shows only while more than
-   * one node is selected.
-   */
-  multiSelectionFooter?: ReactNode
   /** Replace the native selection inspector; undefined keeps the default, null hides it. */
   selectionPanelSlot?: ReactNode
 
@@ -207,6 +187,7 @@ export interface EditorProps {
   /** Stable persisted source identity; prevents UI refreshes from reloading an older snapshot. */
   sceneLoadKey?: string
   onSave?: (scene: SceneGraph, options?: { keepalive?: boolean }) => Promise<void>
+  onLocalSave?: (scene: SceneGraph) => Promise<void>
   onDirty?: () => void
   onSaveStatusChange?: (status: SaveStatus) => void
 
@@ -214,7 +195,7 @@ export interface EditorProps {
   previewScene?: SceneGraph
   isVersionPreviewMode?: boolean
 
-  // Loading indicator (e.g. project fetching in community mode)
+  // Loading indicator while the host fetches a project.
   isLoading?: boolean
 
   // Fires when the full-screen scene loader shows/hides — lets hosts measure
@@ -552,7 +533,7 @@ function ViewerCanvasControlsHint({
   }
 
   return (
-    <div className="pointer-events-none absolute top-14 left-1/2 z-40 max-w-[calc(100%-2rem)] -translate-x-1/2">
+    <div className="pointer-events-none absolute top-14 left-1/2 z-40 max-w-[calc(100%-2rem)] -translate-x-1/2 pointer-coarse:hidden">
       <section
         aria-label="摄像机操作提示"
         className="pointer-events-auto flex items-start gap-3 rounded-2xl border border-border/35 bg-background/90 px-3.5 py-2.5 shadow-elevation-4 backdrop-blur-xl"
@@ -818,11 +799,7 @@ const ViewerSceneContent = memo(function ViewerSceneContent({
       {!isFirstPersonMode && <WallMeasurementLabel />}
       <ExportManager />
       {isFirstPersonMode ? <ViewerZoneSystem /> : <ZoneSystem />}
-      <CeilingSystem />
-      <CeilingSelectionAffordanceSystem />
       {!noEditing && <SelectionAffordanceManager />}
-      <RoofEditSystem />
-      <StairEditSystem />
       {!(isLoading || isFirstPersonMode) && <SnapAwareGrid />}
       {!(isLoading || noEditing) && <ToolManager />}
       {isFirstPersonMode && <FirstPersonControls />}
@@ -1249,8 +1226,6 @@ function EditorContent({
   viewerToolbarLeft,
   viewerToolbarRight,
   stageOverlay,
-  inspectorFooter,
-  multiSelectionFooter,
   selectionPanelSlot,
   viewerSceneSlot,
   viewerRuntimeSlot,
@@ -1260,6 +1235,7 @@ function EditorContent({
   onLoad,
   sceneLoadKey,
   onSave,
+  onLocalSave,
   onDirty,
   onSaveStatusChange,
   previewScene,
@@ -1285,6 +1261,7 @@ function EditorContent({
 
   const { isLoadingSceneRef } = useAutoSave({
     onSave,
+    onLocalSave,
     onDirty,
     onSaveStatusChange,
     isVersionPreviewMode,
@@ -1340,7 +1317,8 @@ function EditorContent({
       sceneLoadKey !== undefined &&
       loadedSourceRef.current?.key === sceneLoadKey &&
       loadedSourceRef.current.attempt === sceneLoadAttempt
-    ) return
+    )
+      return
     let cancelled = false
 
     async function load() {
@@ -1359,9 +1337,8 @@ function EditorContent({
         const sceneGraph = onLoad ? await onLoad() : loadSceneFromLocalStorage()
         if (!cancelled) {
           applySceneGraphToEditor(sceneGraph)
-          loadedSourceRef.current = sceneLoadKey === undefined
-            ? null
-            : { key: sceneLoadKey, attempt: sceneLoadAttempt }
+          loadedSourceRef.current =
+            sceneLoadKey === undefined ? null : { key: sceneLoadKey, attempt: sceneLoadAttempt }
           setIsViewerSceneReady(false)
           setSceneReadyKey((key) => key + 1)
         }
@@ -1504,9 +1481,6 @@ function EditorContent({
     >
       <ExportManager />
       <ViewerZoneSystem />
-      <CeilingSystem />
-      <RoofEditSystem />
-      <StairEditSystem />
       {isFirstPersonMode && <FirstPersonControls />}
       <CustomCameraControls />
       <ThumbnailGenerator onThumbnailCapture={onThumbnailCapture} />
@@ -1622,12 +1596,7 @@ function EditorContent({
                   )}
                   {!(isVersionPreviewMode || isCaptureMode || isStudioMode) && (
                     <div className="pointer-events-auto">
-                      {selectionPanelSlot === undefined ? (
-                        <PanelManager
-                          inspectorFooter={inspectorFooter}
-                          multiSelectionFooter={multiSelectionFooter}
-                        />
-                      ) : selectionPanelSlot}
+                      {selectionPanelSlot === undefined ? <PanelManager /> : selectionPanelSlot}
                     </div>
                   )}
                   {!isCaptureMode && (
@@ -1719,7 +1688,6 @@ function EditorContent({
             <div className="pointer-events-auto">
               <HelperManager />
             </div>
-            <RiserDiagramPanel />
             {isFirstPersonMode && (
               <FirstPersonOverlay onExit={() => useEditor.getState().setFirstPersonMode(false)} />
             )}

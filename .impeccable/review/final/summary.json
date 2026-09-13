@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "stage": "Dia Core Closure",
+  "baseline": "b2abdbbc52b09fb5e97569adbf49b7d1bacd6708",
+  "synthetic": true,
+  "realModel": "NOT_RUN",
+  "realDevices": "NOT_RUN",
+  "productCapabilitiesAdded": 0,
+  "localValidation": {
+    "types": "9/9 PASS",
+    "tests": "2854 PASS / 0 FAIL / 1 existing SKIP",
+    "build": "8/8 PASS",
+    "check": "PASS",
+    "targeted": "84 PASS / 814 assertions"
+  },
+  "browser": {
+    "startedAt": "2026-09-12T04:59:03.782Z",
+    "base": "http://127.0.0.1:4328",
+    "uncaughtErrors": 0,
+    "finishedAt": "2026-09-12T05:00:16.166Z",
+    "checks": [
+      {
+        "name": "Create isolated synthetic stage through /demo",
+        "status": "PASS",
+        "durationMs": 11689
+      },
+      {
+        "name": "Build exact request creates four proposed objects with zero formal writes",
+        "status": "PASS",
+        "durationMs": 2237
+      },
+      {
+        "name": "Build follow-up edits same pending table and requires a fresh Ghost",
+        "status": "PASS",
+        "durationMs": 2641
+      },
+      {
+        "name": "Confirm Build persists exactly four new objects",
+        "status": "PASS",
+        "durationMs": 2506
+      },
+      {
+        "name": "Build receipt, feedback and interaction survive a real browser reload without reapply",
+        "status": "PASS",
+        "durationMs": 9967
+      },
+      {
+        "name": "A by door and B by table is proposed through the rehearsal system, never direct write",
+        "status": "PASS",
+        "durationMs": 2177
+      },
+      {
+        "name": "B less close revises rehearsal with zero formal writes",
+        "status": "PASS",
+        "durationMs": 1970
+      },
+      {
+        "name": "Reflect produces discussion; second direction produces a fresh rehearsal Ghost",
+        "status": "PASS",
+        "durationMs": 2223
+      },
+      {
+        "name": "Save a named Version with scene, venue, rehearsal hashes and source time",
+        "status": "PASS",
+        "durationMs": 2684
+      },
+      {
+        "name": "View historical Version without restoring or changing any formal data",
+        "status": "PASS",
+        "durationMs": 2614
+      },
+      {
+        "name": "Version becomes Remount source; manual venue and three-point calibration stay draft-only",
+        "status": "PASS",
+        "durationMs": 2279
+      },
+      {
+        "name": "Source Target and Overlay controls are visible and switchable",
+        "status": "PASS",
+        "durationMs": 3044
+      },
+      {
+        "name": "Confirm Remount applies 1:1 once; real conflicts block instead of being ignored",
+        "status": "PASS",
+        "durationMs": 5347
+      },
+      {
+        "name": "Paired phone submits Build, requests owner Ghost and receives read-only scenery projection",
+        "status": "PASS",
+        "durationMs": 20376
+      },
+      {
+        "name": "No uncaught browser exceptions during completed acceptance",
+        "status": "PASS",
+        "durationMs": 0
+      }
+    ],
+    "status": "PASS"
+  },
+  "remount": "PARTIAL / REMOUNT PREVIEW / MAPPING",
+  "screenshots": [
+    {
+      "height": 1000,
+      "path": "desktop.png",
+      "width": 1440
+    },
+    {
+      "height": 1180,
+      "path": "tablet.png",
+      "width": 820
+    },
+    {
+      "height": 844,
+      "path": "phone.png",
+      "width": 390
+    }
+  ]
+}

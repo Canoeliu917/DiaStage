@@ -71,6 +71,7 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
 
   mock.module('react', () => ({
     ...React,
+    useContext: () => false,
     forwardRef: (render: (props: Record<string, unknown>, ref: unknown) => unknown) => render,
     useState: <T,>(initial: T | (() => T)) => {
       const index = cursor++
@@ -122,7 +123,6 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
     nodeRegistry: { size: 1, get: () => undefined },
     sceneRegistry: { nodes: new Map() },
     useScene: { getState: () => ({ nodes: {}, rootNodeIds: [], dirtyNodes: new Set() }) },
-    StairOpeningSystem: () => null,
   }))
   const viewerState = {
     sceneTheme: 'studio',
@@ -143,7 +143,6 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
   mock.module('../../lib/scene-themes', () => ({
     getSceneTheme: () => ({ appearance: 'dark', toneMappingExposure: 1 }),
   }))
-  mock.module('../../lib/isolation', () => ({ applyIsolation: () => {}, clearIsolation: () => {} }))
   mock.module('../../lib/ktx2-loader', () => ({ ensureKtx2Support: () => {} }))
   mock.module('../../lib/gpu-perf', () => ({ PERF_OVERLAY_ENABLED: false }))
   mock.module('../../lib/texture-node-guard', () => ({ installTextureNodeNullGuard: () => {} }))

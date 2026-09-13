@@ -286,12 +286,34 @@
 .studio-workspace[data-studio-group=rehearse] .diastage-tool-rail :is([data-tab-id=record], [data-tab-id=camera-rehearsal]) { grid-column: 2; }
 .studio-workspace[data-studio-group=rehearse] [data-tab-id=versions] { grid-row: 5; align-self: end; }
 .theatre-panel input[type=checkbox] { width: auto; align-self: flex-start; }
+.rehearsal-partner { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); min-width: 0; overflow-wrap: anywhere; }
+.rehearsal-partner > :is(label,details,div,article) { margin-block: 12px; }
+.rehearsal-partner h3 { font-size: 18px; }
+.rehearsal-partner h4 { font-weight: 600; margin-block: 16px 8px; }
+.rehearsal-partner summary { cursor: pointer; padding-block: 10px; }
+.rehearsal-partner blockquote { padding: 8px; border: 1px solid var(--border); }
+.rehearsal-partner .rehearsal-choice { flex-direction: row; align-items: center; gap: 10px; min-height: 44px; }
+.rehearsal-choice input[type=checkbox] { align-self: center; flex: none; min-height: 20px; width: 20px; height: 20px; }
+.rehearsal-suggestion { padding-block: 12px; border-bottom: 1px solid var(--border); }
+.rehearsal-suggestion > label { margin-block: 8px; }
+.rehearsal-partner :is(button,input,select,textarea) { min-height: 44px; }
+.rehearsal-partner textarea { resize: vertical; max-height: 40dvh; font-size: 16px; }
+.rehearsal-partner dt { font-weight: 600; }
+.rehearsal-partner dd { margin: 0 0 8px; }
+.rehearsal-ghost-controls { padding-block: 12px; border-block: 1px solid var(--border); }
+@media (pointer: coarse) { .th-transport button { min-height: 44px; } .rehearsal-partner { padding-bottom: env(safe-area-inset-bottom, 0px); } }
 .theatre-panel > :is(label,button,details) { margin-block: 10px; }
 .th-buttons { flex-wrap: wrap; }
 .ds-production-home h1 { max-width: 760px; font-size: clamp(28px, 3vw, 44px); line-height: 1.4; margin-bottom: 20px; }
-.ds-start-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin-top: 48px; border-block: 1px solid #aaa; padding-block: 32px; }
+.ds-start-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; margin-top: 48px; border-block: 1px solid #aaa; padding-block: 32px; }
 .ds-start-options h2 { font-size: 21px; margin-bottom: 12px; }
 .ds-start-options p { color: #555; margin-bottom: 12px; line-height: 1.7; }
 .ds-start-options button, .ds-remount-entry { display: inline-block; background: #191919; color: white; padding: 12px 20px; border-radius: 4px; }
-.ds-remount-entry { margin-top: 32px; }
+.ds-remount-entry { margin-top: 32px;min-height:44px; }
+.ds-start-options .ds-remount-entry { margin-top:0; }
+.ds-home-links { display:flex;flex-wrap:wrap;gap:16px; }
+.ds-home-links a { display:flex;align-items:center;min-height:44px; }
+@media(max-width:1100px) { .ds-start-options { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(pointer:coarse) { .theatre-panel :is(input,select,button,summary) { min-height:44px;font-size:16px; } }
+@media(pointer:coarse) { .studio-workspace .node-action-menu > button { min-width:44px;min-height:44px; } .studio-save-notice button { min-height:44px; } }
 @media (max-width: 700px) { .ds-start-options { grid-template-columns: 1fr; } }

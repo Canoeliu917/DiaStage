@@ -26,8 +26,7 @@ export type Selection = {
   selectedNodes: AnyNode[]
   /**
    * The single selected node, or `null` when zero or multiple nodes are
-   * selected. Useful for "save as preset" / inspector gating where the
-   * UI only makes sense for a unique selection.
+   * selected. Useful for inspector actions that require a unique selection.
    */
   selectedNode: AnyNode | null
 }
@@ -35,8 +34,7 @@ export type Selection = {
 /**
  * Subscribe to the current selection. Equivalent to reading from
  * `useViewer().selection` plus a live `useScene()` lookup, packaged as
- * a single hook so consumers building their own shells (community,
- * standalone editor app, embedders) don't have to learn the two
+ * a single hook so consumers building their own shells don't have to learn the two
  * separate stores.
  *
  * Selection state intentionally lives in `useViewer` (it tracks the

@@ -23,7 +23,6 @@ export type FunctionTreeNode = {
 
 const SOURCE_CHIPS: Array<{ id: NonNullable<AssetInput['source']>; label: string }> = [
   { id: 'library', label: '资源库' },
-  { id: 'community', label: '社区' },
   { id: 'mine', label: '我的' },
 ]
 
@@ -47,7 +46,7 @@ function itemFunctionSlugs(item: AssetInput): string[] {
  * DB-driven hierarchical Items browse. Roots render as the category tab bar;
  * a selected root with children exposes those children as a secondary chip
  * row. Selecting any node shows items tagged with that node or any descendant.
- * Library / Community / Mine narrows by source on top of the tree selection.
+ * Built-in / Mine narrows by source on top of the tree selection.
  */
 export function FunctionTreePanel({
   functionTree,
@@ -81,11 +80,6 @@ export function FunctionTreePanel({
     const itemSource = item.source ?? 'library'
     if (activeSource === 'mine') return itemSource === 'mine'
     if (activeSource === 'library') return itemSource === 'library'
-    if (activeSource === 'community') {
-      if (itemSource === 'community') return true
-      if (itemSource === 'mine') return !item.isDraft
-      return false
-    }
     return true
   }
 

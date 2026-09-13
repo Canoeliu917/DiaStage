@@ -1,16 +1,10 @@
 import type {
   AnyNodeId,
-  DormerNode,
   HandleDescriptor,
   NodeDefinition,
-  RoofSegmentNode,
   SceneApi,
   WallNode,
   WindowNode as WindowNodeType,
-} from '@pascal-app/core'
-import {
-  getDormerWallHorizontalBoundsAtHeight,
-  getDormerWallOpeningVerticalBounds,
 } from '@pascal-app/core'
 import type { FloorplanNodeExtension } from '@pascal-app/editor'
 import {
@@ -18,9 +12,7 @@ import {
   computeWindowFloorplanLevelData,
 } from '../shared/opening-documentation'
 import { publishOpeningResizeGuides } from '../shared/opening-guides-runtime'
-import { readRoofFaceHeightMax, readRoofFaceWidthMax } from '../shared/roof-opening-host'
-import { buildRoofWallOpeningCut } from '../shared/roof-wall-opening-cut'
-import { readHostWallCeiling } from '../shared/wall-opening-ceiling'
+import { readHostWallTop } from '../shared/wall-opening-top'
 import { wallFloorplanSiblingOverrides } from '../wall/floorplan-overrides'
 import { buildWindowContextualDimensions } from './contextual-dimensions'
 import { buildWindowFloorplan } from './floorplan'
@@ -45,11 +37,7 @@ export function resolveWindowHandlePortalTarget(
   const grandparentId = (scene.get(parentId) as { parentId?: AnyNodeId | null } | undefined)
     ?.parentId
   if (!grandparentId) return null
-  if (window.dormerId !== parentId) return grandparentId
-  return (
-    (scene.get(grandparentId) as { parentId?: AnyNodeId | null } | undefined)?.parentId ??
-    grandparentId
-  )
+  return grandparentId
 }
 
 function readWallLength(w: WindowNodeType, scene: { get: (id: AnyNodeId) => unknown }): number {
@@ -57,50 +45,6 @@ function readWallLength(w: WindowNodeType, scene: { get: (id: AnyNodeId) => unkn
   const wall = scene.get(w.wallId as AnyNodeId) as WallNode | undefined
   if (!wall) return Number.POSITIVE_INFINITY
   return Math.hypot(wall.end[0] - wall.start[0], wall.end[1] - wall.start[1])
-}
-
-function resolveDormerHost(
-  window: WindowNodeType,
-  scene: Pick<SceneApi, 'get'>,
-): DormerNode | null {
-  const dormerId = window.dormerId ?? window.parentId
-  if (!dormerId) return null
-  const dormer = scene.get(dormerId as AnyNodeId) as DormerNode | undefined
-  return dormer?.type === 'dormer' ? dormer : null
-}
-
-function readDormerFaceWidthMax(
-  window: WindowNodeType,
-  scene: Pick<SceneApi, 'get'>,
-  localGrowSign: number,
-): number | null {
-  const dormer = resolveDormerHost(window, scene)
-  if (!dormer) return null
-  const bounds = getDormerWallHorizontalBoundsAtHeight(
-    dormer,
-    window.dormerFace ?? 'front',
-    window.position[1] + window.height / 2,
-  )
-  const faceGrowSign = Math.cos(window.rotation[1]) >= 0 ? localGrowSign : -localGrowSign
-  const anchorX = window.position[0] - (faceGrowSign * window.width) / 2
-  return faceGrowSign > 0 ? bounds.max - anchorX : anchorX - bounds.min
-}
-
-function readDormerFaceHeightMax(
-  window: WindowNodeType,
-  scene: Pick<SceneApi, 'get'>,
-  growSign: number,
-): number | null {
-  const dormer = resolveDormerHost(window, scene)
-  if (!dormer) return null
-  const bounds = getDormerWallOpeningVerticalBounds(
-    dormer,
-    window.dormerFace ?? 'front',
-    window.position[0],
-    window.width,
-  )
-  const anchorY = window.position[1] - (growSign * window.height) / 2
-  return growSign > 0 ? bounds.max - anchorY : anchorY - bounds.min
 }
 
 function windowWidthHandle(side: 'left' | 'right'): HandleDescriptor<WindowNodeType> {
@@ -114,15 +58,7 @@ function windowWidthHandle(side: 'left' | 'right'): HandleDescriptor<WindowNodeT
     anchor: side === 'right' ? 'min' : 'max',
     gridSnap: true,
     min: MIN_WINDOW_WIDTH,
-    max: (n, scene) => {
-      const dormerMax = readDormerFaceWidthMax(n, scene, sign)
-      if (dormerMax !== null) return Math.max(MIN_WINDOW_WIDTH, dormerMax)
-      // Roof-hosted windows clamp against the face profile (the
-      // wall-based limits read Infinity when wallId is unset).
-      const roofMax = readRoofFaceWidthMax(n, scene, sign)
-      if (roofMax !== null) return Math.max(MIN_WINDOW_WIDTH, roofMax)
-      return readWallLength(n, scene)
-    },
+    max: (n, scene) => readWallLength(n, scene),
     currentValue: (n) => n.width,
     onDrag: (node) => publishOpeningResizeGuides(node, true),
     apply: (initial, newWidth) => {
@@ -162,14 +98,10 @@ function windowHeightHandle(edge: 'top' | 'bottom'): HandleDescriptor<WindowNode
     gridSnap: true,
     min: MIN_WINDOW_HEIGHT,
     max: (n, scene) => {
-      const dormerMax = readDormerFaceHeightMax(n, scene, sign)
-      if (dormerMax !== null) return Math.max(MIN_WINDOW_HEIGHT, dormerMax)
-      const roofMax = readRoofFaceHeightMax(n, scene, sign)
-      if (roofMax !== null) return Math.max(MIN_WINDOW_HEIGHT, roofMax)
       // Maximum: distance from the anchored edge to the wall's allowed Y
       // bounds. Top arrow caps at the wall's resolved ceiling - bottom;
       // bottom arrow caps at top (positive Y room above the floor).
-      const wallH = readHostWallCeiling(n.wallId, scene)
+      const wallH = readHostWallTop(n.wallId, scene)
       const anchored = edge === 'top' ? n.position[1] - n.height / 2 : n.position[1] + n.height / 2
       return edge === 'top'
         ? Math.max(MIN_WINDOW_HEIGHT, wallH - anchored)
@@ -242,18 +174,7 @@ export const windowDefinition: NodeDefinition<typeof WindowNode> = {
     duplicable: true,
     deletable: true,
     wallOpeningPlacement: true,
-    // Windows also host on roof-segment wall faces (base walls under the
-    // roof, gable ends) — same wiring as door; see the door capability
-    // for why `dirtyHandledByOwnSystem` is required.
-    roofAccessory: {
-      buildCut: (node, hostSegment) =>
-        buildRoofWallOpeningCut(node as WindowNodeType, hostSegment as RoofSegmentNode),
-      cutScope: 'wall',
-      dirtyHandledByOwnSystem: true,
-    },
-    // `wallId` / `roofSegmentId` / `dormerId` are re-derived from the surface under
-    // the cursor at preset placement time — see door for the pattern.
-    hostRefFields: ['wallId', 'roofSegmentId', 'roofFace', 'dormerId', 'dormerFace'],
+    hostRefFields: ['wallId'],
     // Frame / glass slots painted through the registry. The window system tags
     // each mesh with its `userData.slotId`; paint writes `node.slots`.
     slots: () => windowSlots(),

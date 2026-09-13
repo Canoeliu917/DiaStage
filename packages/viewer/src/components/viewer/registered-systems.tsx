@@ -9,6 +9,7 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { type ComponentType, lazy, Suspense, useMemo } from 'react'
+import { ErrorBoundary } from '../error-boundary'
 
 const DEFAULT_PRIORITY = 5
 
@@ -51,6 +52,11 @@ function loadSystem(def: AnyNodeDefinition): ComponentType<RegisteredSystemProps
 export function RegisteredSystems() {
   const sceneApi = useMemo(() => createSceneApi(useScene), [])
   const installedPlugins = useScene((state) => state.installedPlugins)
+  const nodes = useScene((state) => state.nodes)
+  const presentKinds = useMemo(
+    () => new Set<string>(Object.values(nodes).map((node) => node.type)),
+    [nodes],
+  )
   const registryVersion = useRegistryVersion()
   const entries = useMemo(() => {
     // re-derive when kinds register after mount (async plugin load)
@@ -70,12 +76,15 @@ export function RegisteredSystems() {
     <>
       {entries.map(([kind, def]) => {
         if (!isNodeKindEnabled(kind, installedPlugins)) return null
+        if (!presentKinds.has(kind)) return null
         const Comp = loadSystem(def)
         if (!Comp) return null
         return (
-          <Suspense fallback={null} key={`registered-system:${kind}`}>
-            <Comp sceneApi={sceneApi} />
-          </Suspense>
+          <ErrorBoundary fallback={null} scope={`system:${kind}`} key={`registered-system:${kind}`}>
+            <Suspense fallback={null}>
+              <Comp sceneApi={sceneApi} />
+            </Suspense>
+          </ErrorBoundary>
         )
       })}
     </>

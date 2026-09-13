@@ -1,5 +1,5 @@
 import type { AnyNode, AnyNodeId, WallNode } from '@pascal-app/core'
-import { resolveWallOpeningCeiling } from '../shared/wall-opening-ceiling'
+import { resolveWallOpeningTop } from '../shared/wall-opening-top'
 
 /**
  * Default sill height (metres from the floor to the BOTTOM of a window) for a
@@ -53,7 +53,7 @@ export function clampToWall(
   const dx = wallNode.end[0] - wallNode.start[0]
   const dz = wallNode.end[1] - wallNode.start[1]
   const wallLength = Math.sqrt(dx * dx + dz * dz)
-  const wallHeight = resolveWallOpeningCeiling(wallNode, nodes)
+  const wallHeight = resolveWallOpeningTop(wallNode, nodes)
 
   const clampedX = Math.max(width / 2, Math.min(wallLength - width / 2, localX))
   const clampedY = Math.max(height / 2, Math.min(wallHeight - height / 2, localY))

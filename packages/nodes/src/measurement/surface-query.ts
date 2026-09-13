@@ -41,7 +41,7 @@ const SURFACE_INTENT_MIN_NORMAL_ALIGNMENT = 0.94
 const SURFACE_INTENT_PLANE_TOLERANCE = 0.05
 const HORIZONTAL_SURFACE_MIN_NORMAL_Y = 0.85
 const HORIZONTAL_SURFACE_MAX_OCCLUDER_NORMAL_Y = 0.5
-const HORIZONTAL_SURFACE_TYPES = new Set(['slab', 'ceiling', 'site'])
+const HORIZONTAL_SURFACE_TYPES = new Set(['slab', 'site'])
 
 export type MeasurementRaycastContext = {
   ownerByObject: Map<Object3D, string>

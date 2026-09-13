@@ -31,6 +31,7 @@ if (!process.env.CAMERA_PANEL_TEST) {
   }))
   mock.module('@pascal-app/editor', () => ({
     ...editor,
+    useIsMobile: () => false,
     useEditor: Object.assign(
       (select: (state: ReturnType<typeof editorStore.getState>) => unknown) =>
         select(editorStore.getState()),
@@ -49,6 +50,7 @@ if (!process.env.CAMERA_PANEL_TEST) {
   mock.module('../theatre/simulation-panel', () => ({ useSimulationSelection: () => true }))
   mock.module('react', () => ({
     ...React,
+    useState: <T>(value: T) => [value, () => {}],
     useRef: <T>(value: T) => ({ current: value }),
     useEffect: () => {},
     useCallback: <T>(callback: T) => callback,
@@ -56,7 +58,7 @@ if (!process.env.CAMERA_PANEL_TEST) {
   }))
   const { CameraPanel } = await import('./panel')
   const { CameraRehearsalPanel } = await import('../camera-rehearsal-panel')
-  const { CommunityViewerToolbarRight, StudioPicturePanel } = await import('../viewer-toolbar')
+  const { EditorViewerToolbarRight, StudioPicturePanel } = await import('../viewer-toolbar')
   const { getCameraDirectorState } = await import('../../lib/camera-director')
   const { validateCameraProject } = await import('./model')
 
@@ -277,7 +279,7 @@ if (!process.env.CAMERA_PANEL_TEST) {
   )
 
   const previousLevelMode = viewerStore.getState().levelMode
-  const toolbar = elements(CommunityViewerToolbarRight()).flatMap((entry) =>
+  const toolbar = elements(EditorViewerToolbarRight()).flatMap((entry) =>
     typeof entry.type === 'function' && entry.type.name === 'WallModeToggle'
       ? elements((entry.type as () => unknown)())
       : [entry],

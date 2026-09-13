@@ -1,6 +1,7 @@
 import type { ParametricDescriptor, ScanNode } from '@pascal-app/core'
 
 export const scanParametrics: ParametricDescriptor<ScanNode> = {
+  customPanel: () => import('./panel'),
   groups: [
     {
       label: '变换',

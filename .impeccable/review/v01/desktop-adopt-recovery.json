@@ -1,0 +1,10 @@
+{
+  "synthetic": true,
+  "realModel": false,
+  "actualGPUFault": false,
+  "boundaryCallbackInjected": true,
+  "adoptUndoRedo": true,
+  "refreshRecovery": true,
+  "journalReceipt": true,
+  "errors": []
+}

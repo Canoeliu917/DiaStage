@@ -13,8 +13,8 @@ import { faceHostStrategy, wallStrategy } from './placement-strategies'
 import type { PlacementContext, SpatialValidators } from './placement-types'
 import { registerTestBlockFaceHost } from './test-face-host'
 
-const BLOCK_ID = 'block_ceiling-host'
-const LEVEL_ID = 'level_ceiling-host' as LevelNode['id']
+const BLOCK_ID = 'block_face-host'
+const LEVEL_ID = 'level_face-host' as LevelNode['id']
 
 beforeEach(() => {
   registerTestBlockFaceHost()
@@ -27,16 +27,15 @@ beforeEach(() => {
   }))
 })
 
-function ceilingContext(): PlacementContext {
+function baseContext(): PlacementContext {
   return {
     asset: {
-      id: 'ceiling-light',
-      category: 'lighting',
-      name: 'Ceiling light',
-      thumbnail: '/ceiling-light.png',
-      src: '/ceiling-light.glb',
+      id: 'stage-object',
+      category: 'props',
+      name: 'Stage object',
+      thumbnail: '/stage-object.png',
+      src: '/stage-object.glb',
       dimensions: [1, 0.25, 1],
-      attachTo: 'ceiling',
     },
     levelId: LEVEL_ID,
     draftItem: null,
@@ -44,9 +43,7 @@ function ceilingContext(): PlacementContext {
     state: {
       surface: 'floor',
       wallId: null,
-      roofSegmentId: null,
       blockId: null,
-      ceilingId: null,
       surfaceItemId: null,
       shelfId: null,
     },
@@ -56,7 +53,7 @@ function ceilingContext(): PlacementContext {
 
 function floorItemContext(): PlacementContext {
   return {
-    ...ceilingContext(),
+    ...baseContext(),
     asset: {
       id: 'potted-plant',
       category: 'decor',
@@ -70,7 +67,7 @@ function floorItemContext(): PlacementContext {
 
 function wallItemContext(): PlacementContext {
   return {
-    ...ceilingContext(),
+    ...baseContext(),
     asset: {
       id: 'wall-light',
       category: 'lighting',
@@ -144,25 +141,6 @@ function adjacentRightFaceEventOnFrontSurface(): NodeEvent {
   }
 }
 
-function bottomFaceEvent(): NodeEvent {
-  const node = BlockNode.parse({ id: BLOCK_ID, parentId: LEVEL_ID })
-  const geometry = new BufferGeometry()
-  geometry.userData.blockFaces = [{ faceId: 'f-bottom', start: 0, count: 6 }]
-  const object = new Mesh(geometry, new MeshBasicMaterial())
-  object.updateMatrixWorld(true)
-
-  return {
-    node,
-    object,
-    faceIndex: 0,
-    position: [0, 0, 0],
-    localPosition: [0, 0, 0],
-    normal: [0, -1, 0],
-    stopPropagation: () => {},
-    nativeEvent: {} as NodeEvent['nativeEvent'],
-  }
-}
-
 function topFaceEvent(): NodeEvent {
   const node = BlockNode.parse({ id: BLOCK_ID, parentId: LEVEL_ID })
   const geometry = new BufferGeometry()
@@ -212,23 +190,6 @@ describe('faceHostStrategy', () => {
       blockFaceId: 'f-front',
     } satisfies Partial<ItemNode>)
     expect(move?.cursorPosition[2]).toBe(-1)
-  })
-
-  test('hosts a ceiling item on a downward-facing block face', () => {
-    const result = faceHostStrategy.enter(ceilingContext(), bottomFaceEvent())
-
-    expect(result).not.toBeNull()
-    expect(result?.stateUpdate).toMatchObject({
-      surface: 'block-face',
-      blockId: BLOCK_ID,
-    })
-    expect(result?.nodeUpdate).toMatchObject({
-      parentId: BLOCK_ID,
-      blockFaceId: 'f-bottom',
-      position: [0, 0, 0.25],
-      rotation: [-Math.PI / 2, 0, 0],
-    } satisfies Partial<ItemNode>)
-    expect(result?.cursorPosition).toEqual([0, -0.25, 0])
   })
 
   test('hosts a floor item on an upward-facing block face', () => {
@@ -366,7 +327,6 @@ function makeWallEvent(wall: WallNode, collisionMesh: Object3D, localHit: Vector
 const validators: SpatialValidators = {
   canPlaceOnFloor: () => ({ valid: true }),
   canPlaceOnWall: () => ({ valid: true }),
-  canPlaceOnCeiling: () => ({ valid: true }),
 }
 
 function makeContext(draft: ItemNode): PlacementContext {
@@ -378,8 +338,6 @@ function makeContext(draft: ItemNode): PlacementContext {
     state: {
       surface: 'wall',
       wallId: 'wall_test',
-      roofSegmentId: null,
-      ceilingId: null,
       surfaceItemId: null,
       shelfId: null,
     },

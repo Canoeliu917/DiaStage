@@ -84,7 +84,7 @@ const SNAP_PROFILES: Record<SnapContext, SnapModeSet> = {
   // Item placement / move: magnetic alignment by default; grid is an explicit
   // alternative, and angle lock is meaningless for a footprint.
   item: { modes: ['lines', 'grid', 'off'], default: 'lines' },
-  // Structural / surface, no direction to set: slab / ceiling / roof draft+move,
+  // Structural / surface, no direction to set: platform and zone draft/move,
   // whole wall/fence translate, curve reshape, polygon boundary edit. Grid by
   // default, NO angle lock.
   polygon: { modes: ['grid', 'lines', 'off'], default: 'grid' },
@@ -120,13 +120,6 @@ function contextForProfile(
   if (profile === 'structural') return directionSetting ? 'wall' : 'polygon'
   return null
 }
-
-// Tools that are not registered node kinds (no `snapProfile` to look up) but
-// still place a whole footprint — the host app's room-preset stamp. A stamp is
-// a whole-footprint translate: no direction to set → the no-angle 'polygon'
-// set. Without an entry here the tool has no snap context at all, so Shift
-// cycling and the HUD chip stay dead while it drives placement.
-const TOOL_SNAP_CONTEXTS: Record<string, SnapContext> = { room: 'polygon' }
 
 /**
  * The active snapping context, derived from what the user is doing — fully
@@ -188,8 +181,7 @@ export function snapContextOf(args: {
         : null
     default:
       return mode === 'build' && tool
-        ? (TOOL_SNAP_CONTEXTS[tool] ??
-            contextForProfile(profileOf(tool), draftDirectionalOf?.(tool) ?? true))
+        ? contextForProfile(profileOf(tool), draftDirectionalOf?.(tool) ?? true)
         : null
   }
 }

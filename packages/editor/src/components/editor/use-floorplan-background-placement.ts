@@ -1,19 +1,7 @@
 'use client'
 
-import {
-  emitter,
-  type FenceNode,
-  isCurvedWall,
-  nodeRegistry,
-  type WallNode,
-} from '@pascal-app/core'
-import {
-  type MouseEvent as ReactMouseEvent,
-  useCallback,
-  useEffect,
-  useSyncExternalStore,
-} from 'react'
-import { resolveCeilingPlanPointSnap } from '../../lib/ceiling-plan-snap'
+import { emitter, type FenceNode, isCurvedWall, type WallNode } from '@pascal-app/core'
+import { type MouseEvent as ReactMouseEvent, useCallback } from 'react'
 import { alignFloorplanDraftPoint, getPlanPointDistance } from '../../lib/floorplan'
 import { resolveGenericFloorplanGridEventPoint } from '../../lib/floorplan-grid-event-point'
 import { resolveSlabPlanPointSnap } from '../../lib/slab-plan-snap'
@@ -24,14 +12,9 @@ import useSegmentDraftChain from '../../store/use-segment-draft-chain'
 import { snapFenceDraftPoint } from '../tools/fence/fence-drafting'
 import { getSegmentGridStep, type WallPlanPoint } from '../tools/wall/wall-drafting'
 
-const NOOP_SUBSCRIBE = () => () => {}
-const DEFAULT_ROOF_FOOTPRINT_CHOICE = () => 'draw'
-
 type UseFloorplanBackgroundPlacementArgs = {
   activePolygonDraftPoints: WallPlanPoint[]
-  ceilingDraftPoints: WallPlanPoint[]
   clearFencePlacementDraft: () => void
-  clearRoofPlacementDraft: () => void
   clearWallPlacementDraft: () => void
   emitFloorplanGridEvent: (
     type: 'click' | 'double-click' | 'move',
@@ -52,31 +35,20 @@ type UseFloorplanBackgroundPlacementArgs = {
   } | null
   floorplanOpeningLocalY: number
   getSnappedFloorplanPoint: (point: WallPlanPoint) => WallPlanPoint
-  handleCeilingItemPlacementClick: (
-    planPoint: WallPlanPoint,
-    nativeEvent: ReactMouseEvent<SVGSVGElement>,
-  ) => boolean
-  handleCeilingPlacementPoint: (point: WallPlanPoint) => void
   handleSlabPlacementPoint: (point: WallPlanPoint) => void
   handleWallPlacementPoint: (point: WallPlanPoint) => void
   handleZonePlacementPoint: (point: WallPlanPoint) => void
-  isCeilingBuildActive: boolean
-  isCeilingItemPlacementActive: boolean
   isFenceBuildActive: boolean
   isFloorplanGridInteractionActive: boolean
   isOpeningPlacementActive: boolean
   isPolygonBuildActive: boolean
-  isRoofBuildActive: boolean
   isWallBuildActive: boolean
   isZoneBuildActive: boolean
   levelId: string | null
   registryToolOwnsSnapping: boolean
-  roofDraftStart: WallPlanPoint | null
   setCursorPoint: React.Dispatch<React.SetStateAction<WallPlanPoint | null>>
   setFenceDraftEnd: React.Dispatch<React.SetStateAction<WallPlanPoint | null>>
   setFenceDraftStart: React.Dispatch<React.SetStateAction<WallPlanPoint | null>>
-  setRoofDraftEnd: React.Dispatch<React.SetStateAction<WallPlanPoint | null>>
-  setRoofDraftStart: React.Dispatch<React.SetStateAction<WallPlanPoint | null>>
   snapWallDraftPoint: (args: {
     point: WallPlanPoint
     walls: WallNode[]
@@ -104,9 +76,7 @@ type UseFloorplanBackgroundPlacementArgs = {
 
 export function useFloorplanBackgroundPlacement({
   activePolygonDraftPoints,
-  ceilingDraftPoints,
   clearFencePlacementDraft,
-  clearRoofPlacementDraft,
   clearWallPlacementDraft,
   emitFloorplanGridEvent,
   fenceDraftStart,
@@ -114,54 +84,26 @@ export function useFloorplanBackgroundPlacement({
   findClosestWallPoint,
   floorplanOpeningLocalY,
   getSnappedFloorplanPoint,
-  handleCeilingItemPlacementClick,
-  handleCeilingPlacementPoint,
   handleSlabPlacementPoint,
   handleWallPlacementPoint,
   handleZonePlacementPoint,
-  isCeilingBuildActive,
-  isCeilingItemPlacementActive,
   isFenceBuildActive,
   isFloorplanGridInteractionActive,
   isOpeningPlacementActive,
   isPolygonBuildActive,
-  isRoofBuildActive,
   isWallBuildActive,
   isZoneBuildActive,
   levelId,
   registryToolOwnsSnapping,
-  roofDraftStart,
   setCursorPoint,
   setFenceDraftEnd,
   setFenceDraftStart,
-  setRoofDraftEnd,
-  setRoofDraftStart,
   snapWallDraftPoint,
   snapPolygonDraftPoint,
   toPoint2D,
   walls,
   worldGridSnap,
 }: UseFloorplanBackgroundPlacementArgs) {
-  // Read the roof's footprint-source option through the registry, not
-  // `@pascal-app/nodes`: this file lands in the nodes package's program via
-  // its editor imports, so a direct nodes import would cycle onto nodes' own
-  // dist output.
-  const roofFootprintOption = nodeRegistry
-    .get('roof')
-    ?.toolOptions?.find((option) => option.id === 'footprintSource')
-  const roofFootprintChoice = useSyncExternalStore(
-    roofFootprintOption?.subscribe ?? NOOP_SUBSCRIBE,
-    roofFootprintOption?.value ?? DEFAULT_ROOF_FOOTPRINT_CHOICE,
-    roofFootprintOption?.value ?? DEFAULT_ROOF_FOOTPRINT_CHOICE,
-  )
-  // Conical always builds from a curved wall pick, regardless of the choice.
-  const roofIsConical = useEditor((state) => state.toolDefaults.roof?.roofType === 'conical')
-  const roofFootprintSource = roofIsConical ? 'walls' : roofFootprintChoice
-
-  useEffect(() => {
-    if (isRoofBuildActive && roofFootprintSource !== 'draw') clearRoofPlacementDraft()
-  }, [clearRoofPlacementDraft, isRoofBuildActive, roofFootprintSource])
-
   const handleBackgroundPlacementClick = useCallback(
     (
       planPoint: WallPlanPoint,
@@ -189,53 +131,6 @@ export function useFloorplanBackgroundPlacement({
         // Drop the off-wall ghost on commit so it doesn't linger at the
         // just-placed spot before the next pointer move re-evaluates.
         usePlacementPreview.getState().clear()
-        return true
-      }
-
-      if (isCeilingBuildActive) {
-        // Align the committed vertex the same way the move-preview did, so the
-        // placed point matches what the user saw — mode-driven (the chip):
-        // `grid` quantizes, `angles` locks 15° rays, `lines` snaps onto walls /
-        // alignment, `off` is free. Alt remains force/free at commit time.
-        const angleSnap = ceilingDraftPoints.length > 0 && isAngleSnapActive()
-        const fallbackPoint = snapPolygonDraftPoint({
-          point: planPoint,
-          start: ceilingDraftPoints[ceilingDraftPoints.length - 1],
-          angleSnap,
-        })
-        const snappedPoint = resolveCeilingPlanPointSnap({
-          rawPoint: planPoint,
-          fallbackPoint,
-          levelId,
-          align: !angleSnap,
-        }).point
-
-        emitFloorplanGridEvent('click', snappedPoint, event)
-        handleCeilingPlacementPoint(snappedPoint)
-        return true
-      }
-
-      if (isRoofBuildActive) {
-        // Footprint placement (polygon context: grid / lines / off, no angle),
-        // mode-driven to match the chip. Alt is force/free at commit time;
-        // alignment display/pull follows the active magnetic mode.
-        const snappedPoint = alignFloorplanDraftPoint(getSnappedFloorplanPoint(planPoint), {
-          applySnap: isMagneticSnapActive(),
-        })
-        emitFloorplanGridEvent('click', snappedPoint, event)
-        setCursorPoint(snappedPoint)
-
-        if (roofFootprintSource !== 'draw') {
-          clearRoofPlacementDraft()
-          return true
-        }
-
-        if (roofDraftStart) {
-          clearRoofPlacementDraft()
-        } else {
-          setRoofDraftStart(snappedPoint)
-          setRoofDraftEnd(snappedPoint)
-        }
         return true
       }
 
@@ -324,8 +219,7 @@ export function useFloorplanBackgroundPlacement({
         }).point
 
         // Emit the grid event so the registry-driven slab tool also
-        // sees the click (parity with ceiling / fence / roof branches
-        // above). Zone has no registry tool — emit-or-not is irrelevant.
+        // sees the click. Zone has no registry tool, so emit-or-not is irrelevant.
         if (!isZoneBuildActive) {
           emitFloorplanGridEvent('click', snappedPoint, event)
         }
@@ -386,15 +280,6 @@ export function useFloorplanBackgroundPlacement({
         return true
       }
 
-      // Ceiling-attached item placement (lights, fans). Routes the click
-      // through `ceiling:click` instead of `grid:click` so the placement
-      // strategy parents the new item to the ceiling at the correct
-      // height — mirrors the pointer-move handler in `floorplan-panel`.
-      if (isCeilingItemPlacementActive) {
-        handleCeilingItemPlacementClick(planPoint, event)
-        return true
-      }
-
       // Generic catch-all — registry-driven tool whose kind has no
       // local floor-plan draft handler (column / spawn / shelf / etc.).
       // The tool's `grid:click` subscriber owns the placement.
@@ -413,9 +298,7 @@ export function useFloorplanBackgroundPlacement({
     },
     [
       activePolygonDraftPoints,
-      ceilingDraftPoints,
       clearFencePlacementDraft,
-      clearRoofPlacementDraft,
       clearWallPlacementDraft,
       emitFloorplanGridEvent,
       fenceDraftStart,
@@ -423,28 +306,19 @@ export function useFloorplanBackgroundPlacement({
       findClosestWallPoint,
       floorplanOpeningLocalY,
       getSnappedFloorplanPoint,
-      handleCeilingItemPlacementClick,
-      handleCeilingPlacementPoint,
       handleSlabPlacementPoint,
       handleZonePlacementPoint,
-      isCeilingBuildActive,
-      isCeilingItemPlacementActive,
       isFenceBuildActive,
       isFloorplanGridInteractionActive,
       isOpeningPlacementActive,
       isPolygonBuildActive,
-      isRoofBuildActive,
       isWallBuildActive,
       isZoneBuildActive,
       levelId,
-      roofDraftStart,
       registryToolOwnsSnapping,
-      roofFootprintSource,
       setCursorPoint,
       setFenceDraftEnd,
       setFenceDraftStart,
-      setRoofDraftEnd,
-      setRoofDraftStart,
       snapWallDraftPoint,
       snapPolygonDraftPoint,
       toPoint2D,

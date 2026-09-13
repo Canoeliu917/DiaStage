@@ -2,7 +2,6 @@ import type {
   AnyNode,
   AnyNodeId,
   AssetInput,
-  CeilingNode,
   ItemNode,
   LevelNode,
   WallNode,
@@ -13,31 +12,17 @@ import type { Vector3 } from 'three'
 // PLACEMENT STATE
 // ============================================================================
 
-export type SurfaceType =
-  | 'floor'
-  | 'wall'
-  | 'roof-wall'
-  | 'block-face'
-  | 'ceiling'
-  | 'item-surface'
-  | 'shelf-surface'
+export type SurfaceType = 'floor' | 'wall' | 'block-face' | 'item-surface' | 'shelf-surface'
 
 /**
  * Tracks which surface the draft item is currently on.
- * Replaces the scattered isOnWall, isOnCeiling refs and currentWallId, currentCeilingId variables.
+ * Tracks the current stage placement surface.
  */
 export interface PlacementState {
   surface: SurfaceType
   wallId: string | null
-  /**
-   * Active roof-segment when `surface === 'roof-wall'` — wall-attach
-   * items also host on the vertical wall faces a roof segment generates
-   * (base walls + coplanar gable ends).
-   */
-  roofSegmentId: string | null
   /** Active planar node face used as a wall-like attachment host. */
   blockId?: AnyNodeId | null
-  ceilingId: string | null
   surfaceItemId: string | null
   /**
    * Active shelf when `surface === 'shelf-surface'`. Items host on the
@@ -136,13 +121,6 @@ export interface SpatialValidators {
     side?: 'front' | 'back',
     ignoreIds?: string[],
   ) => { valid: boolean; adjustedY?: number; wasAdjusted?: boolean }
-  canPlaceOnCeiling: (
-    ceilingId: CeilingNode['id'],
-    position: [number, number, number],
-    dimensions: [number, number, number],
-    rotation: [number, number, number],
-    ignoreIds?: string[],
-  ) => { valid: boolean }
 }
 
 /**

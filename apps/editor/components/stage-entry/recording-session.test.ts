@@ -253,3 +253,43 @@ test('unsupported contexts and devices have distinct text fallbacks; failed reco
   expect(stream.track.ended).toBe(true)
   expect(cleared).toBeGreaterThan(0)
 })
+
+test('50 start/cancel/background cycles release tracks, intervals and AudioContexts', async () => {
+  let live = 0
+  replace(
+    'AudioContext',
+    class {
+      state = 'running'
+      constructor() {
+        live++
+      }
+      createAnalyser() {
+        return { fftSize: 1024, getByteTimeDomainData: (array: Uint8Array) => array.fill(140) }
+      }
+      createMediaStreamSource() {
+        return { connect() {}, disconnect() {} }
+      }
+      async resume() {}
+      async close() {
+        if (this.state !== 'closed') live--
+        this.state = 'closed'
+      }
+    },
+  )
+  for (let i = 0; i < 50; i++) {
+    stream = new Stream()
+    page.hidden = false
+    const controller = new AbortController(),
+      session = await start(controller)
+    Recorder.current.emit(new Blob(['synthetic audio']))
+    if (i % 3 === 0) {
+      page.hidden = true
+      page.dispatchEvent(new Event('visibilitychange'))
+    } else if (i % 3 === 1) controller.abort()
+    else session.dispose()
+    await flush()
+    expect(stream.track.stopCalls).toBe(1)
+    expect(live).toBe(0)
+  }
+  expect(cleared).toBeGreaterThanOrEqual(50)
+})

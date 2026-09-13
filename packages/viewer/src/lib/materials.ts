@@ -25,8 +25,6 @@ export type ColorPreset = 'clay' | 'white' | 'mono' | 'blueprint'
 export const CLAY_PALETTE: Record<SurfaceRole, string> = {
   wall: '#dcd6c7',
   floor: '#cfc8b6',
-  ceiling: '#e4ded0',
-  roof: '#b8ad96',
   joinery: '#c4bba6',
   glazing: '#c8d4dc',
   furnishing: '#d2ccbe',
@@ -37,8 +35,6 @@ export const CLAY_PALETTE: Record<SurfaceRole, string> = {
 export const WHITE_PALETTE: Record<SurfaceRole, string> = {
   wall: '#ebeae6',
   floor: '#e7e4dd',
-  ceiling: '#ebeae6',
-  roof: '#dedbd2',
   joinery: '#e5e2d9',
   glazing: '#dbe8ee',
   furnishing: '#e9e7e1',
@@ -47,8 +43,6 @@ export const WHITE_PALETTE: Record<SurfaceRole, string> = {
 export const MONO_PALETTE: Record<SurfaceRole, string> = {
   wall: '#c8c8c8',
   floor: '#b8b8b8',
-  ceiling: '#d8d8d8',
-  roof: '#9a9a9a',
   joinery: '#adadad',
   glazing: '#c2cbd0',
   furnishing: '#c0c0c0',
@@ -57,8 +51,6 @@ export const MONO_PALETTE: Record<SurfaceRole, string> = {
 export const BLUEPRINT_PALETTE: Record<SurfaceRole, string> = {
   wall: '#90a9c7',
   floor: '#7f98ba',
-  ceiling: '#aec0d8',
-  roof: '#5f789b',
   joinery: '#6f86a8',
   glazing: '#b6d7ea',
   furnishing: '#8ba2bf',
@@ -111,6 +103,19 @@ const surfaceRoleMaterialCache = new Map<string, THREE.Material>()
 const textureCache = new Map<string, THREE.Texture>()
 const textureLoadPromises = new Map<string, Promise<THREE.Texture | null>>()
 const textureLoader = new THREE.TextureLoader()
+let materialTextureVersion = 0
+
+/**
+ * Monotonic revision for async texture assignments.
+ *
+ * Material instances are cached and populated after their texture requests
+ * finish. Consumers that clone those materials (notably wall selection and
+ * hover variants) can poll this revision to replace a clone that captured an
+ * earlier, texture-less state.
+ */
+export function getMaterialTextureVersion(): number {
+  return materialTextureVersion
+}
 
 // `.ktx2` finish maps transcode through the shared KTX2 loader (support is
 // detected once at viewer init); everything else loads as a normal image.
@@ -417,6 +422,7 @@ function queueTextureAssignment(
     if (!texture) return
     textureMaterial[slot] = createAssignedTexture(texture, props, slot)
     material.needsUpdate = true
+    materialTextureVersion += 1
   })
 }
 
@@ -758,14 +764,6 @@ export function DEFAULT_WINDOW_MATERIAL(shading: RenderShading = 'rendered'): TH
   return material
 }
 
-export function DEFAULT_CEILING_MATERIAL(shading: RenderShading = 'rendered'): THREE.Material {
-  return cachedDefaultMaterial('ceiling', '#ebebd3', 0.95, shading)
-}
-
-export function DEFAULT_ROOF_MATERIAL(shading: RenderShading = 'rendered'): THREE.Material {
-  return cachedDefaultMaterial('roof', '#808080', 0.85, shading)
-}
-
 export function DEFAULT_SHELF_MATERIAL(shading: RenderShading = 'rendered'): THREE.Material {
   return cachedDefaultMaterial('shelf', '#e9e6e0', 0.9, shading)
 }
@@ -799,4 +797,5 @@ export function clearMaterialCache(): void {
   }
   textureCache.clear()
   textureLoadPromises.clear()
+  materialTextureVersion += 1
 }

@@ -1,9 +1,9 @@
 'use client'
 
 import { emitter, sceneRegistry } from '@pascal-app/core'
-import { GRID_LAYER, useViewer } from '@pascal-app/viewer'
+import { GRID_LAYER, useIsolatedFrame as useFrame, useViewer } from '@pascal-app/viewer'
 import { type CameraControlsImpl, Html } from '@react-three/drei'
-import { addAfterEffect, useFrame, useThree } from '@react-three/fiber'
+import { addAfterEffect, useThree } from '@react-three/fiber'
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import { Box3, type Camera, type PerspectiveCamera, Vector3 } from 'three'
 import {

@@ -5,13 +5,14 @@ import {
   type DeploymentPlan,
   fromFrameCoordinates,
   getObjectCorners,
+  type RemountObject,
   type Vec3,
   type VenueProfile,
 } from '@pascal-app/core/remount'
 import { useEditor, useInteractionScope } from '@pascal-app/editor'
-import { OVERLAY_LAYER, useViewer } from '@pascal-app/viewer'
+import { OVERLAY_LAYER, useIsolatedFrame as useFrame, useViewer } from '@pascal-app/viewer'
 import type { CameraControlsImpl } from '@react-three/drei'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import {
   Box3,
@@ -118,6 +119,11 @@ function ScanReference({ nodeId }: { nodeId: string }) {
       meshes: new Map<Mesh, Mesh>(),
       current: new Set<Mesh>(),
       inverseParent: new Matrix4(),
+      nodes: undefined as unknown,
+      revision: -1,
+      source: undefined as Object3D | undefined,
+      children: -1,
+      visible: false,
     }
   }, [])
 
@@ -127,6 +133,20 @@ function ScanReference({ nodeId }: { nodeId: string }) {
     for (let ancestor: Object3D | null | undefined = source; ancestor; ancestor = ancestor.parent) {
       if (!ancestor.visible) visible = false
     }
+    const nodes = useScene.getState().nodes
+    if (
+      preview.nodes === nodes &&
+      preview.revision === sceneRegistry.revision &&
+      preview.source === source &&
+      preview.children === (source?.children.length ?? 0) &&
+      preview.visible === visible
+    )
+      return
+    preview.nodes = nodes
+    preview.revision = sceneRegistry.revision
+    preview.source = source
+    preview.children = source?.children.length ?? 0
+    preview.visible = visible
     preview.current.clear()
     preview.group.updateWorldMatrix(true, false)
     preview.inverseParent.copy(preview.group.matrixWorld).invert()
@@ -176,16 +196,22 @@ function RemountGhosts({
   plan,
   sourceVenue,
   targetVenue,
+  sourceReferences,
+  comparisonMode,
 }: {
   plan: DeploymentPlan
   sourceVenue: VenueProfile
   targetVenue: VenueProfile
+  sourceReferences: RemountObject[]
+  comparisonMode: 'overlay' | 'source' | 'target'
 }) {
   const camera = useThree((state) => state.camera)
   const controls = useThree((state) => state.controls) as CameraControlsImpl | null
   const invalidate = useThree((state) => state.invalidate)
   const geometry = useMemo(() => {
-    const source: Vec3[] = []
+    const source: Vec3[] = sourceReferences.flatMap((object) =>
+      boxSegments(getObjectCorners(object)),
+    )
     const target = new Map<string, Vec3[]>([
       [TARGET_COLOR, []],
       [WARNING_COLOR, []],
@@ -197,7 +223,7 @@ function RemountGhosts({
         if (id && severities.get(id) !== 'error') severities.set(id, conflict.severity)
       }
     }
-    const framingPoints = [...venueCorners(sourceVenue), ...venueCorners(targetVenue)]
+    const framingPoints = [...venueCorners(sourceVenue), ...venueCorners(targetVenue), ...source]
     for (const placement of plan.placements) {
       const original = getObjectCorners({
         ...placement,
@@ -232,10 +258,11 @@ function RemountGhosts({
       sourcePaths,
       targetPaths,
       venue: boxSegments(venueCorners(targetVenue)),
+      sourceVenue: boxSegments(venueCorners(sourceVenue)),
       stageLines: stageLines.map((point) => fromFrameCoordinates(point, targetVenue.frame)),
       framingPoints,
     }
-  }, [plan, sourceVenue, targetVenue])
+  }, [plan, sourceVenue, targetVenue, sourceReferences])
 
   useEffect(() => {
     if (!controls?.setLookAt) return
@@ -274,22 +301,37 @@ function RemountGhosts({
         name="remount-target-cl-pl"
         points={geometry.stageLines}
       />
-      <PreviewLines color={SOURCE_COLOR} name="remount-source-boxes" points={geometry.source} />
-      {[...geometry.target].map(([color, points]) => (
-        <PreviewLines color={color} key={color} name="remount-target-boxes" points={points} />
-      ))}
-      <PreviewLines
-        color={SOURCE_COLOR}
-        dashed
-        name="remount-source-paths"
-        points={geometry.sourcePaths}
-      />
-      <PreviewLines
-        color={TARGET_COLOR}
-        dashed
-        name="remount-target-paths"
-        points={geometry.targetPaths}
-      />
+      {comparisonMode !== 'target' && (
+        <PreviewLines
+          color={SOURCE_COLOR}
+          name="remount-source-venue"
+          points={geometry.sourceVenue}
+          dashed
+        />
+      )}
+      {comparisonMode !== 'target' && (
+        <PreviewLines color={SOURCE_COLOR} name="remount-source-boxes" points={geometry.source} />
+      )}
+      {comparisonMode !== 'source' &&
+        [...geometry.target].map(([color, points]) => (
+          <PreviewLines color={color} key={color} name="remount-target-boxes" points={points} />
+        ))}
+      {comparisonMode !== 'target' && (
+        <PreviewLines
+          color={SOURCE_COLOR}
+          dashed
+          name="remount-source-paths"
+          points={geometry.sourcePaths}
+        />
+      )}
+      {comparisonMode !== 'source' && (
+        <PreviewLines
+          color={TARGET_COLOR}
+          dashed
+          name="remount-target-paths"
+          points={geometry.targetPaths}
+        />
+      )}
     </group>
   )
 }
@@ -333,6 +375,8 @@ export function RemountPreviewSystem({ sceneId }: { sceneId: string }) {
       plan={draft.plan}
       sourceVenue={draft.sourceVenue}
       targetVenue={draft.targetVenue}
+      sourceReferences={draft.sourceReferences}
+      comparisonMode={draft.comparisonMode}
     />
   )
 }

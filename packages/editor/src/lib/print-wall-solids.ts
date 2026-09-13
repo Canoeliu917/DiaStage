@@ -27,7 +27,6 @@ export type PrintWallSolidDiagnostic = {
   code:
     | 'invalid_wall_print_dimensions'
     | 'unsupported_wall_print_curve'
-    | 'unsupported_wall_print_terrain'
     | 'unsupported_wall_print_opening_shape'
     | 'invalid_wall_print_opening'
     | 'unresolved_wall_print_child'
@@ -255,14 +254,6 @@ export function buildPrintableWallSolids(
       severity: 'error',
       code: 'unsupported_wall_print_curve',
       message: `Curved wall ${node.id} does not yet have a canonical printable solid.`,
-      nodeIds: [node.id],
-    })
-  }
-  if (node.fillToTerrain) {
-    diagnostics.push({
-      severity: 'error',
-      code: 'unsupported_wall_print_terrain',
-      message: `Terrain-filled wall ${node.id} requires a terrain-aware printable base fixture.`,
       nodeIds: [node.id],
     })
   }

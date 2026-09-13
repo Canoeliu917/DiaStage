@@ -3,7 +3,6 @@ import type {
   DoorNode as DoorNodeType,
   HandleDescriptor,
   NodeDefinition,
-  RoofSegmentNode,
   WallNode,
 } from '@pascal-app/core'
 import type { FloorplanNodeExtension } from '@pascal-app/editor'
@@ -12,9 +11,7 @@ import {
   computeDoorFloorplanLevelData,
 } from '../shared/opening-documentation'
 import { publishOpeningResizeGuides } from '../shared/opening-guides-runtime'
-import { readRoofFaceHeightMax, readRoofFaceWidthMax } from '../shared/roof-opening-host'
-import { buildRoofWallOpeningCut } from '../shared/roof-wall-opening-cut'
-import { readHostWallCeiling } from '../shared/wall-opening-ceiling'
+import { readHostWallTop } from '../shared/wall-opening-top'
 import { wallFloorplanSiblingOverrides } from '../wall/floorplan-overrides'
 import { buildDoorContextualDimensions } from './contextual-dimensions'
 import { scaleHandleHeight } from './door-math'
@@ -53,13 +50,7 @@ function doorWidthHandle(side: 'left' | 'right'): HandleDescriptor<DoorNodeType>
     // 'max' = +X edge anchored (left arrow grows the -X edge outward).
     anchor: side === 'right' ? 'min' : 'max',
     min: MIN_DOOR_WIDTH,
-    max: (n, scene) => {
-      // Roof-hosted doors clamp against the face profile (the wall-based
-      // limits read Infinity when wallId is unset).
-      const roofMax = readRoofFaceWidthMax(n, scene, sign)
-      if (roofMax !== null) return Math.max(MIN_DOOR_WIDTH, roofMax)
-      return readWallLength(n, scene)
-    },
+    max: (n, scene) => readWallLength(n, scene),
     currentValue: (n) => n.width,
     onDrag: (node) => publishOpeningResizeGuides(node, false),
     apply: (initial, newWidth) => {
@@ -98,10 +89,8 @@ function doorHeightHandle(): HandleDescriptor<DoorNodeType> {
     anchor: 'min', // bottom anchored at wall-local Y = position[1] - height/2
     min: MIN_DOOR_HEIGHT,
     max: (n, scene) => {
-      const roofMax = readRoofFaceHeightMax(n, scene, 1)
-      if (roofMax !== null) return Math.max(MIN_DOOR_HEIGHT, roofMax)
       const bottom = n.position[1] - n.height / 2
-      return Math.max(MIN_DOOR_HEIGHT, readHostWallCeiling(n.wallId, scene) - bottom)
+      return Math.max(MIN_DOOR_HEIGHT, readHostWallTop(n.wallId, scene) - bottom)
     },
     currentValue: (n) => n.height,
     onDrag: (node) => publishOpeningResizeGuides(node, false),
@@ -195,22 +184,7 @@ export const doorDefinition: NodeDefinition<typeof DoorNode> = {
     duplicable: true,
     deletable: true,
     wallOpeningPlacement: true,
-    // Doors also host on roof-segment wall faces (base walls under the
-    // roof, gable ends). `buildCut` punches the opening into the
-    // segment's wall brush; `dirtyHandledByOwnSystem` keeps the roof-merge
-    // loop from consuming door dirty marks (DoorSystem owns them and
-    // already cascades to the host via parentId).
-    roofAccessory: {
-      buildCut: (node, hostSegment) =>
-        buildRoofWallOpeningCut(node as DoorNodeType, hostSegment as RoofSegmentNode),
-      cutScope: 'wall',
-      dirtyHandledByOwnSystem: true,
-    },
-    // `wallId` / `roofSegmentId` tie the door to its host and are
-    // re-derived from the surface under the cursor when a preset is
-    // placed. Host apps strip these at preset-save time via
-    // `getHostRefFields(def)`.
-    hostRefFields: ['wallId', 'roofSegmentId', 'roofFace'],
+    hostRefFields: ['wallId'],
     // Panel / glass slots painted through the registry. The door system tags
     // each mesh with its `userData.slotId`; paint writes `node.slots`.
     slots: () => doorSlots(),

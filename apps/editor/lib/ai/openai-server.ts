@@ -2,12 +2,16 @@ import 'server-only'
 import { StagePlanSchema } from '@pascal-app/core/stage'
 import OpenAI from 'openai'
 import { zodTextFormat } from 'openai/helpers/zod'
+import { buildRelevantSceneContext } from '../stage/relevant-context'
 import { AI_LIMITS, AiError } from './api'
 import type { ValidatedAudio } from './audio-validation'
+import { AI_TOKEN_LIMITS, THEATRE_TRANSCRIPTION_PROMPT } from './config'
 import type { PlanRequest } from './stage-planner'
+import { trackAiCall } from './usage'
 
 export const AI_MODELS = {
   command: process.env.DIASTAGE_COMMAND_MODEL || 'gpt-5.6-luna',
+  script: process.env.DIASTAGE_SCRIPT_MODEL || 'gpt-5.6-luna',
   transcribe: process.env.DIASTAGE_TRANSCRIBE_MODEL || 'gpt-transcribe',
 } as const
 
@@ -39,30 +43,42 @@ export async function generateStagePlan(
   request: PlanRequest,
   signal: AbortSignal,
 ): Promise<unknown> {
-  const response = await createOpenAIClient()
-    .responses.parse(
-      {
-        model: AI_MODELS.command,
-        store: false,
-        max_output_tokens: 16_000,
-        input: [
-          { role: 'system', content: instructions },
-          { role: 'user', content: JSON.stringify(request) },
-        ],
-        text: { format: zodTextFormat(StagePlanSchema, 'stage_plan') },
-      },
-      { signal },
-    )
-    .catch((error: unknown) => {
-      if (error instanceof OpenAI.RateLimitError)
-        throw new AiError('RATE_LIMITED', '解析服务暂时繁忙，请稍候重试。', 429, true)
-      if (
-        error instanceof OpenAI.AuthenticationError ||
-        error instanceof OpenAI.PermissionDeniedError
-      )
-        throw new AiError('INTERNAL_ERROR', '解析服务的访问配置不可用，请联系网站管理员。', 503)
-      throw error
-    })
+  const context = buildRelevantSceneContext(request.sceneContext, request.input)
+  const client = createOpenAIClient()
+  const payload = JSON.stringify({ ...request, sceneContext: context })
+  const response = await trackAiCall(
+    'stage-command',
+    AI_MODELS.command,
+    signal,
+    () =>
+      client.responses
+        .parse(
+          {
+            model: AI_MODELS.command,
+            store: false,
+            max_output_tokens: AI_TOKEN_LIMITS.commandOutput,
+            input: [
+              { role: 'system', content: instructions },
+              { role: 'user', content: payload },
+            ],
+            text: { format: zodTextFormat(StagePlanSchema, 'stage_plan') },
+          },
+          { signal },
+        )
+        .catch((error: unknown) => {
+          if (error instanceof OpenAI.RateLimitError)
+            throw new AiError('RATE_LIMITED', '解析服务暂时繁忙，请稍候重试。', 429, true)
+          if (
+            error instanceof OpenAI.AuthenticationError ||
+            error instanceof OpenAI.PermissionDeniedError
+          )
+            throw new AiError('INTERNAL_ERROR', '解析服务的访问配置不可用，请联系网站管理员。', 503)
+          throw error
+        }),
+    (result) => result.usage,
+    null,
+    instructions + payload + JSON.stringify(zodTextFormat(StagePlanSchema, 'stage_plan')),
+  )
   if (response.status !== 'completed' || response.output_parsed === null)
     throw new AiError('PLAN_INVALID', '服务未能完成这条口令，请调整描述后重试。', 422, true)
   return response.output_parsed
@@ -72,24 +88,35 @@ export async function transcribeAudio(
   audio: ValidatedAudio,
   signal: AbortSignal,
 ): Promise<unknown> {
-  return createOpenAIClient()
-    .audio.transcriptions.create(
-      {
-        model: AI_MODELS.transcribe,
-        file: new File([audio.bytes], `recording.${audio.extension}`, { type: audio.mime }),
-        language: 'zh',
-        response_format: 'json',
-      },
-      { signal },
-    )
-    .catch((error: unknown) => {
-      if (error instanceof OpenAI.RateLimitError)
-        throw new AiError('RATE_LIMITED', '转写服务暂时繁忙，请稍候重试。', 429, true)
-      if (
-        error instanceof OpenAI.AuthenticationError ||
-        error instanceof OpenAI.PermissionDeniedError
-      )
-        throw new AiError('INTERNAL_ERROR', '转写服务的访问配置不可用，请联系网站管理员。', 503)
-      throw error
-    })
+  const client = createOpenAIClient()
+  return trackAiCall(
+    'voice-transcription',
+    AI_MODELS.transcribe,
+    signal,
+    () =>
+      client.audio.transcriptions
+        .create(
+          {
+            model: AI_MODELS.transcribe,
+            file: new File([audio.bytes], `recording.${audio.extension}`, { type: audio.mime }),
+            language: 'zh',
+            prompt: THEATRE_TRANSCRIPTION_PROMPT,
+            response_format: 'json',
+          },
+          { signal },
+        )
+        .catch((error: unknown) => {
+          if (error instanceof OpenAI.RateLimitError)
+            throw new AiError('RATE_LIMITED', '转写服务暂时繁忙，请稍候重试。', 429, true)
+          if (
+            error instanceof OpenAI.AuthenticationError ||
+            error instanceof OpenAI.PermissionDeniedError
+          )
+            throw new AiError('INTERNAL_ERROR', '转写服务的访问配置不可用，请联系网站管理员。', 503)
+          throw error
+        }),
+    () => null,
+    audio.durationSeconds,
+    '',
+  )
 }

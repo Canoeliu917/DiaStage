@@ -7,7 +7,6 @@ import {
   holeEditScope,
   PanelSection,
   PanelWrapper,
-  SegmentedControl,
   SliderControl,
   triggerSFX,
   useEditingHole,
@@ -133,13 +132,6 @@ export function SlabPanel() {
       const { elevation } = clampSlabElevation(useScene.getState().nodes, current, requestedTop)
       const thickness = Math.max(MIN_SLAB_THICKNESS, elevation - anchor)
       handleUpdate({ ...requested, elevation: anchor + thickness, thickness })
-    },
-    [handleUpdate],
-  )
-
-  const handleTerrainModeChange = useCallback(
-    (mode: 'fixed' | 'terrain') => {
-      handleUpdate({ fillToTerrain: mode === 'terrain' ? true : undefined })
     },
     [handleUpdate],
   )
@@ -275,7 +267,7 @@ export function SlabPanel() {
     <PanelWrapper
       icon="/icons/floor.webp"
       onClose={handleClose}
-      title={node.name || '楼板'}
+      title={node.name || '舞台平台'}
       width={320}
     >
       <PanelSection title="标高">
@@ -327,27 +319,6 @@ export function SlabPanel() {
           />
         )}
 
-        {!node.recessed && (
-          <>
-            <div className="px-1 font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
-              基础
-            </div>
-            <SegmentedControl
-              onChange={handleTerrainModeChange}
-              options={[
-                { label: '固定', value: 'fixed' },
-                { label: '跟随地形', value: 'terrain' },
-              ]}
-              value={node.fillToTerrain ? 'terrain' : 'fixed'}
-            />
-            {node.fillToTerrain && (
-              <div className="px-1 text-[11px] text-muted-foreground">
-                将周边向下延伸至地形；平面、基座和厚度保持不变。
-              </div>
-            )}
-          </>
-        )}
-
         <div className="mt-2 grid grid-cols-2 gap-1.5 px-1 pb-1">
           {elevationPresets.map((preset) => (
             <ActionButton
@@ -375,7 +346,6 @@ export function SlabPanel() {
                 editingHole?.nodeId === selectedId && editingHole?.holeIndex === index
               const source = node.holeMetadata?.[index]?.source ?? 'manual'
               const isAutoHole = source !== 'manual'
-              const autoLabel = source === 'elevator' ? 'Auto elevator cutout' : 'Auto stair cutout'
               return (
                 <div
                   className={`flex items-center justify-between rounded-lg border p-2 transition-colors ${
@@ -393,7 +363,7 @@ export function SlabPanel() {
                     </p>
                     <p className="text-[10px] text-muted-foreground">
                       {holeArea.toFixed(2)} m² · {hole.length} 点 ·{' '}
-                      {isAutoHole ? autoLabel : '手动'}
+                      {isAutoHole ? '兼容孔洞' : '手动'}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">

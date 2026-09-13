@@ -24,6 +24,12 @@ if (!process.env.AUTOSAVE_HISTORY_FIXTURE) {
     useEffect: (effect: () => undefined | (() => void)) => effects.push(effect),
   }))
   mock.module('../lib/scene', () => ({ saveSceneToLocalStorage: () => {} }))
+  mock.module('@pascal-app/viewer', () => ({
+    useViewer: { getState: () => ({ inputDragging: false }) },
+  }))
+  mock.module('../store/use-interaction-scope', () => ({
+    default: { getState: () => ({ scope: { kind: 'idle' } }) },
+  }))
   const { SiteNode, BuildingNode, LevelNode, SlabNode, clearSceneHistory, useScene } = await import(
     '@pascal-app/core'
   )
@@ -68,9 +74,16 @@ if (!process.env.AUTOSAVE_HISTORY_FIXTURE) {
     clearTimeout: (id: number) => timers.delete(id),
   })
   const requests: { graph: SceneGraph; keepalive: boolean }[] = []
+  const local: SceneGraph[] = []
   const { authorizeSceneNodeDrop, useAutoSave } = await import('./use-auto-save')
+  const { pauseSceneHistory, resumeSceneHistory, useLiveNodeOverrides } = await import(
+    '@pascal-app/core'
+  )
   function Fixture() {
     return useAutoSave({
+      onLocalSave: async (graph) => {
+        local.push(graph)
+      },
       onSave: async (graph, options) => {
         requests.push({ graph: structuredClone(graph), keepalive: options?.keepalive ?? false })
       },
@@ -97,16 +110,34 @@ if (!process.env.AUTOSAVE_HISTORY_FIXTURE) {
     })
   }
   async function debounce() {
+    for (let i = 0; i < 10; i++) await Promise.resolve()
     const entry = timers.entries().next().value
-    assert.ok(entry, 'a dirty edit schedules autosave')
+    if (!entry) return
     timers.delete(entry[0])
     entry[1]()
-    await Promise.resolve()
-    await Promise.resolve()
+    for (let i = 0; i < 10; i++) await Promise.resolve()
   }
   function lastCount() {
     return Object.keys(requests.at(-1)!.graph.nodes).length
   }
+  loadScaffold()
+  addObjects()
+  await debounce()
+  const beforeDragLocal = local.length,
+    beforeDragNetwork = requests.length
+  pauseSceneHistory(useScene)
+  for (let i = 1; i <= 100; i++)
+    useLiveNodeOverrides.getState().set('level_added1', { name: `drag-${i}` })
+  await debounce()
+  assert.equal(local.length, beforeDragLocal, 'pointer moves do not persist intermediate states')
+  assert.equal(requests.length, beforeDragNetwork, 'pointer moves send no network save')
+  // Transform tools keep pointer moves in live overrides, then commit after resume.
+  resumeSceneHistory(useScene)
+  useScene.getState().updateNode('level_added1', { name: 'drag-100' })
+  useLiveNodeOverrides.getState().clear('level_added1')
+  await debounce()
+  assert.equal(local.length, beforeDragLocal + 1, 'release creates exactly one durable commit')
+  assert.equal(requests.length, beforeDragNetwork + 1)
   loadScaffold()
   addObjects()
   await debounce()
@@ -120,9 +151,13 @@ if (!process.env.AUTOSAVE_HISTORY_FIXTURE) {
   await debounce()
   assert.equal(lastCount(), 7)
   useScene.temporal.getState().undo()
+  for (let i = 0; i < 10; i++) await Promise.resolve()
+  const beforeExit = requests.length
   windowEvents.dispatchEvent(new Event('pagehide'))
-  assert.equal(lastCount(), 4, 'undo followed immediately by exit must persist')
-  assert.equal(requests.at(-1)?.keepalive, true)
+  assert.equal(Object.keys(local.at(-1)!.nodes).length, 4, 'undo is locally persisted before exit')
+  assert.equal(requests.length, beforeExit, 'exit does not send a full-scene PUT')
+  await debounce()
+  assert.equal(requests.at(-1)?.keepalive, false)
 
   useScene.temporal.getState().redo()
   await debounce()

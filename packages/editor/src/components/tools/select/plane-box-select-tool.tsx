@@ -192,7 +192,7 @@ function collectNodeIdsInPlaneBounds(bounds: Bounds | null): string[] {
       return segmentIntersectsBounds(node.start[0], node.start[1], node.end[0], node.end[1], bounds)
     }
 
-    if (node.type === 'slab' || node.type === 'ceiling' || node.type === 'zone') {
+    if (node.type === 'slab' || node.type === 'zone') {
       return polygonIntersectsBounds(node.polygon, bounds)
     }
 

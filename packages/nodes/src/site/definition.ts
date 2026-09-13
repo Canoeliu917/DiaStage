@@ -27,7 +27,6 @@ export const siteDefinition: NodeDefinition<typeof SiteNode> = {
     // override their selection). Same reasoning as `level`.
     duplicable: false,
     deletable: false,
-    presettable: false,
   },
 
   parametrics: siteParametrics,
@@ -50,13 +49,13 @@ export const siteDefinition: NodeDefinition<typeof SiteNode> = {
 
   presentation: {
     label: '场地',
-    description: '包含建筑、区域和用地边界的顶层容器。',
+    description: '包含舞台空间、表演区和场地边界的顶层容器。',
     icon: { kind: 'url', src: '/icons/site-flag.webp' },
     paletteSection: 'site',
     paletteOrder: 5,
   },
 
   mcp: {
-    description: 'Top-level site container.',
+    description: 'Top-level theatre venue container.',
   },
 }

@@ -7,10 +7,7 @@ export type ToolConfig = {
   catalogCategory?: CatalogCategory
 }
 
-// Shared structure-tool metadata (icons + labels). The build palette now lives
-// in the community Build sidebar; this list survives only as the lookup table
-// for cursor/floorplan indicators. Roof-mounted accessories are intentionally
-// absent — they're placed from the roof inspector's "Add element" section.
+// Shared stage-tool metadata used by cursor and floorplan indicators.
 export const tools: ToolConfig[] = [
   { id: 'block', iconSrc: '/icons/cube.webp', label: '台块 / 平台' },
   { id: 'wall', iconSrc: '/icons/wall.webp', label: '景片' },

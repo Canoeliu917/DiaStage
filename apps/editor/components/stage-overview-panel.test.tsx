@@ -1,7 +1,8 @@
+import { test } from 'bun:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
+import type { AnyNode } from '@pascal-app/core'
 
 if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   test('stage overview exposes scenery without lights and protects scene edits', () => {
@@ -11,7 +12,7 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
       timeout: 20_000,
     })
     assert.equal(child.status, 0, child.error?.message ?? `${child.stdout}\n${child.stderr}`)
-  })
+  }, 30_000)
 } else {
   globalThis.requestAnimationFrame = () => 1
   globalThis.cancelAnimationFrame = () => {}
@@ -21,8 +22,6 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   const editor = await import('@pascal-app/editor')
   const viewer = await import('@pascal-app/viewer')
   const { useCameraStudio: camera } = await import('./camera-studio/store')
-  const { useLighting: lighting } = await import('./lighting/store')
-  const { createStageLight } = await import('./lighting/model')
   const director = await import('@/lib/camera-director')
   const scene = core.useScene
   const editorStore = editor.useEditor
@@ -52,9 +51,13 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   })
   mock.module('react', () => ({
     ...React,
+    memo: <T,>(component: T) => component,
+    useRef: <T,>(current: T) => ({ current }),
+    useSyncExternalStore: (_subscribe: unknown, snapshot: () => unknown) => snapshot(),
     useMemo: <T,>(factory: () => T) => factory(),
     useState: <T,>(initial: T) => [initial, () => {}],
   }))
+  mock.module('zustand/react/shallow', () => ({ useShallow: <T,>(selector: T) => selector }))
   mock.module('@pascal-app/core', () => ({
     ...core,
     useScene: Object.assign(
@@ -102,9 +105,6 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   mock.module('./theatre/simulation-panel', () => ({
     useStageDocument: () => ({ document: null }),
     useSimulationSelection: { setState: () => {} },
-  }))
-  mock.module('./lighting/store', () => ({
-    useLighting: Object.assign(() => lighting.getState(), lighting),
   }))
   mock.module('@/lib/camera-director', () => ({
     ...director,
@@ -168,11 +168,14 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     }),
     core.ItemNode.parse({ id: 'item_lower', parentId: 'level_lower', name: '下层座椅', asset }),
     core.ItemNode.parse({ id: 'item_upper', parentId: 'level_upper', name: '上层座椅', asset }),
-    core.ItemNode.parse({
-      id: 'item_lamp',
-      parentId: 'level_upper',
-      name: '原生灯具',
-      visible: false,
+    {
+      ...core.ItemNode.parse({
+        id: 'item_lamp',
+        parentId: 'level_upper',
+        name: '原生灯具',
+        visible: false,
+        asset,
+      }),
       asset: {
         ...asset,
         interactive: {
@@ -180,9 +183,8 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
           effects: [{ kind: 'light', intensityRange: [0, 100] }],
         },
       },
-    }),
+    } as unknown as AnyNode,
   ]
-  const light = { ...createStageLight('spotlight', 0), name: '新增聚光灯' }
   function reset() {
     scene.setState({
       nodes: Object.fromEntries(fixtures.map((node) => [node.id, node])),
@@ -197,8 +199,6 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     )
     editorStore.setState({ isCaptureMode: false, isFirstPersonMode: false })
     scope.setState({ scope: { kind: 'idle' } })
-    lighting.getState().setProject({ version: 1, lights: [light] })
-    lighting.setState({ loadedSceneId: 'scene-a', draft: null, persistenceBlocked: false })
     viewerStore.setState({ sceneTheme: 'studio', shading: 'rendered', shadows: true })
     calls.length = 0
   }
@@ -209,7 +209,6 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
   view.row('上层座椅')
   assert.equal(view.rows.length, 2)
   assert.ok(!text(view.nodes).includes('原生灯具'))
-  assert.ok(!text(view.nodes).includes('新增聚光灯'))
   assert.ok(!view.nodes.some((node) => node.type === 'details'))
   assert.match(text(view.row('上层座椅')), /随上级隐藏/)
 
@@ -243,14 +242,8 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     else if (lock === 'interaction') scope.setState({ scope: { kind: 'box-select' } })
     else camera.setState({ [lock]: true })
     const beforeNodes = scene.getState().nodes
-    const beforeLights = lighting.getState().project
     stale.button('下层座椅').onClick()
     assert.equal(scene.getState().nodes, beforeNodes, `${lock}: stale model toggle is blocked`)
-    assert.equal(
-      lighting.getState().project,
-      beforeLights,
-      `${lock}: stale light toggle is blocked`,
-    )
     const locked = render()
     assert.equal(locked.button('下层座椅').disabled, true)
   }
@@ -263,9 +256,7 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
       { persist: false },
     )
     const beforeNodes = scene.getState().nodes
-    const beforeLights = lighting.getState().project
     const beforeSelection = viewerStore.getState().selection
-    const beforeLightSelection = lighting.getState().selectedLightId
     for (const name of ['下层座椅']) {
       stale.button(name, 'select').onClick()
       stale.button(name, 'action').onClick()
@@ -273,13 +264,7 @@ if (!process.env.STAGE_OVERVIEW_PANEL_TEST) {
     stale.button('下层座椅').onClick()
     assert.deepEqual(calls, [], `${status}: stale actions cannot select, focus, or switch panels`)
     assert.equal(scene.getState().nodes, beforeNodes, `${status}: model visibility is unchanged`)
-    assert.equal(
-      lighting.getState().project,
-      beforeLights,
-      `${status}: authored lights are unchanged`,
-    )
     assert.equal(viewerStore.getState().selection, beforeSelection)
-    assert.equal(lighting.getState().selectedLightId, beforeLightSelection)
     assert.equal(viewerStore.getState().shadows, true, `${status}: shadows are unchanged`)
     const locked = render()
     for (const name of ['下层座椅']) {

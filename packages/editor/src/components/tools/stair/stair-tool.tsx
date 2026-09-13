@@ -1,7 +1,6 @@
 import {
   type AnyNode,
   collectAlignmentAnchors,
-  createSurfaceOpeningPreviewController,
   emitter,
   type GridEvent,
   type LevelNode,
@@ -12,7 +11,6 @@ import {
   resolveSupportSlabPatch,
   StairNode,
   StairSegmentNode,
-  syncAutoStairOpenings,
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
@@ -20,10 +18,6 @@ import { useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { sfxEmitter } from '../../../lib/sfx-bus'
-import {
-  resolveStairDestinationLevel,
-  resolveStairPlacementLevelId,
-} from '../../../lib/stair-levels'
 
 import useAlignmentGuides from '../../../store/use-alignment-guides'
 import useEditor, {
@@ -42,22 +36,9 @@ import {
 } from '../shared/pointer-support-cap'
 import { createStairCommitGate, swallowFollowUpBrowserClick } from './stair-click-guard'
 import {
-  DEFAULT_CURVED_STAIR_INNER_RADIUS,
-  DEFAULT_CURVED_STAIR_SWEEP_ANGLE,
-  DEFAULT_SPIRAL_SHOW_CENTER_COLUMN,
-  DEFAULT_SPIRAL_SHOW_STEP_SUPPORTS,
-  DEFAULT_SPIRAL_TOP_LANDING_DEPTH,
-  DEFAULT_SPIRAL_TOP_LANDING_MODE,
-  DEFAULT_STAIR_ATTACHMENT_SIDE,
-  DEFAULT_STAIR_FILL_TO_FLOOR,
   DEFAULT_STAIR_HEIGHT,
   DEFAULT_STAIR_LENGTH,
-  DEFAULT_STAIR_OPENING_OFFSET,
-  DEFAULT_STAIR_RAILING_HEIGHT,
-  DEFAULT_STAIR_RAILING_MODE,
   DEFAULT_STAIR_STEP_COUNT,
-  DEFAULT_STAIR_THICKNESS,
-  DEFAULT_STAIR_TYPE,
   DEFAULT_STAIR_WIDTH,
 } from './stair-defaults'
 
@@ -107,14 +88,10 @@ function createStairPreviewGeometry(): THREE.BufferGeometry {
  */
 function createDefaultStairSegment() {
   return StairSegmentNode.parse({
-    segmentType: 'stair',
     width: DEFAULT_STAIR_WIDTH,
     length: DEFAULT_STAIR_LENGTH,
     height: DEFAULT_STAIR_HEIGHT,
     stepCount: DEFAULT_STAIR_STEP_COUNT,
-    attachmentSide: DEFAULT_STAIR_ATTACHMENT_SIDE,
-    fillToFloor: DEFAULT_STAIR_FILL_TO_FLOOR,
-    thickness: DEFAULT_STAIR_THICKNESS,
     position: [0, 0, 0],
   })
 }
@@ -122,14 +99,12 @@ function createDefaultStairSegment() {
 function createDefaultStairNode({
   name,
   levelId,
-  nextLevelId,
   position,
   rotation,
   segmentId,
 }: {
   name: string
   levelId: LevelNode['id']
-  nextLevelId: LevelNode['id']
   position: [number, number, number]
   rotation: number
   segmentId: StairSegmentNode['id']
@@ -138,23 +113,11 @@ function createDefaultStairNode({
     name,
     position,
     rotation,
-    stairType: DEFAULT_STAIR_TYPE,
-    fromLevelId: levelId,
-    toLevelId: nextLevelId,
-    slabOpeningMode: 'destination',
-    openingOffset: DEFAULT_STAIR_OPENING_OFFSET,
+    parentId: levelId,
+    totalRise: DEFAULT_STAIR_HEIGHT,
+    metadata: { stageKind: 'stairs', representation: 'physical' },
     width: DEFAULT_STAIR_WIDTH,
     stepCount: DEFAULT_STAIR_STEP_COUNT,
-    thickness: DEFAULT_STAIR_THICKNESS,
-    fillToFloor: DEFAULT_STAIR_FILL_TO_FLOOR,
-    innerRadius: DEFAULT_CURVED_STAIR_INNER_RADIUS,
-    sweepAngle: DEFAULT_CURVED_STAIR_SWEEP_ANGLE,
-    topLandingMode: DEFAULT_SPIRAL_TOP_LANDING_MODE,
-    topLandingDepth: DEFAULT_SPIRAL_TOP_LANDING_DEPTH,
-    showCenterColumn: DEFAULT_SPIRAL_SHOW_CENTER_COLUMN,
-    showStepSupports: DEFAULT_SPIRAL_SHOW_STEP_SUPPORTS,
-    railingHeight: DEFAULT_STAIR_RAILING_HEIGHT,
-    railingMode: DEFAULT_STAIR_RAILING_MODE,
     children: [segmentId],
   })
 }
@@ -169,29 +132,17 @@ function commitStairPlacement(
   supportSurface: PointerSupportSurface | null,
 ): void {
   const { createNodes, nodes } = useScene.getState()
-  const placementLevelId = resolveStairPlacementLevelId(
-    nodes,
-    levelId,
-    useViewer.getState().selection.buildingId,
-  )
+  const placementLevelId = nodes[levelId]?.type === 'level' ? levelId : null
   if (!placementLevelId) return
 
   const stairCount = Object.values(nodes).filter((n) => n.type === 'stair').length
-  const name = `Staircase ${stairCount + 1}`
+  const name = `舞台台阶 ${stairCount + 1}`
   const segment = createDefaultStairSegment()
-
-  const destinationPlan = resolveStairDestinationLevel({
-    createMissing: true,
-    fromLevelId: placementLevelId,
-    nodes,
-  })
-  const nextLevelId = destinationPlan?.toLevel.id ?? placementLevelId
 
   const stair = StairNode.parse({
     ...createDefaultStairNode({
       name,
       levelId: placementLevelId,
-      nextLevelId,
       position,
       rotation,
       segmentId: segment.id,
@@ -221,14 +172,7 @@ function commitStairPlacement(
     ...placementPatch,
   })
 
-  const createdLevel = destinationPlan?.createdLevel
-  const levelCreateOps =
-    createdLevel && destinationPlan.buildingId
-      ? [{ node: createdLevel, parentId: destinationPlan.buildingId }]
-      : []
-
   createNodes([
-    ...levelCreateOps,
     { node: committedStair, parentId: placementLevelId },
     { node: segment, parentId: committedStair.id },
   ])
@@ -253,7 +197,6 @@ export const StairTool: React.FC = () => {
   useEffect(() => {
     if (!currentLevelId) return
 
-    const openingPreview = createSurfaceOpeningPreviewController()
     // Refuses the duplicate commit triggers a single physical click produces
     // — see `stair-click-guard.ts`. Fresh per armed session.
     const commitGate = createStairCommitGate()
@@ -267,33 +210,19 @@ export const StairTool: React.FC = () => {
 
     const buildPreviewScene = (position: [number, number, number], rotation: number) => {
       const nodes = useScene.getState().nodes
-      const placementLevelId = resolveStairPlacementLevelId(
-        nodes,
-        currentLevelId,
-        useViewer.getState().selection.buildingId,
-      )
+      const placementLevelId = nodes[currentLevelId]?.type === 'level' ? currentLevelId : null
       if (!placementLevelId) return null
 
-      const destinationPlan = resolveStairDestinationLevel({
-        createMissing: true,
-        fromLevelId: placementLevelId,
-        nodes,
-      })
-      const nextLevelId = destinationPlan?.toLevel.id ?? placementLevelId
       const segment = createDefaultStairSegment()
       const stair = createDefaultStairNode({
-        name: 'Staircase Preview',
+        name: '舞台台阶预览',
         levelId: placementLevelId,
-        nextLevelId,
         position,
         rotation,
         segmentId: segment.id,
       })
       const previewNodes = {
         ...nodes,
-        ...(destinationPlan?.createdLevel
-          ? { [destinationPlan.createdLevel.id]: destinationPlan.createdLevel }
-          : {}),
         [stair.id]: { ...stair, parentId: placementLevelId },
         [segment.id]: { ...segment, parentId: stair.id },
       } as Record<string, AnyNode>
@@ -301,13 +230,8 @@ export const StairTool: React.FC = () => {
       return { placementLevelId, previewNodes, stair }
     }
 
-    // The preview rebuild (full-scene copy + destination-level resolution +
-    // auto-opening CSG) is expensive; `grid:move` fires it every pointer event
-    // but the placed position is grid-snapped, so within a cell every rebuild
-    // is identical. Dedupe on the snapped position + rotation so we rebuild
-    // only when the staircase would actually land somewhere new — this is the
-    // difference between a smooth and a stuttering stair tool (the elevator is
-    // cheap because it has no opening sync).
+    // Dedupe the grid-snapped preview so pointer movement inside one cell does
+    // not rebuild the same collision and support data repeatedly.
     let lastPreviewKey: string | null = null
 
     const applyDraftPreview = (
@@ -369,13 +293,6 @@ export const StairTool: React.FC = () => {
         center: [0, DEFAULT_STAIR_LENGTH / 2],
         reversed: true,
       })
-
-      if (!preview) {
-        openingPreview.clear()
-        return
-      }
-
-      openingPreview.apply(syncAutoStairOpenings(preview.previewNodes))
     }
 
     // Alignment candidates — anchors of every alignable object; refreshed
@@ -501,7 +418,6 @@ export const StairTool: React.FC = () => {
       if (!position) return
 
       commitStairPlacement(currentLevelId, position, rotationRef.current, supportSurfaceRef.current)
-      openingPreview.clear()
       // Commit cleared the opening preview, so force the next hover (even on the
       // same cell) to rebuild rather than dedupe against the just-placed key.
       lastPreviewKey = null
@@ -563,7 +479,6 @@ export const StairTool: React.FC = () => {
       emitter.off('node:move', onPointerMove)
       window.removeEventListener('keydown', onKeyDown)
       useAlignmentGuides.getState().clear()
-      openingPreview.clear()
       useFacingPose.getState().clear()
       useStairBuildPreview.getState().reset()
     }

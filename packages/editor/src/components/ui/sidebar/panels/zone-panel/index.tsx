@@ -1,6 +1,6 @@
 import { type AnyNodeId, emitter, useScene, type ZoneNode } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
-import { Camera, Hexagon, Save, Trash2 } from 'lucide-react'
+import { Camera, Hexagon, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { sfxEmitter } from './../../../../../lib/sfx-bus'
 import { collectZoneContentIds } from './../../../../../lib/zone-content'
@@ -162,14 +162,14 @@ export function ZonePanel() {
   }
 
   if (!currentLevelId) {
-    return <div className="px-3 py-4 text-muted-foreground text-sm">选择楼层以查看和创建区域</div>
+    return <div className="px-3 py-4 text-muted-foreground text-sm">选择表演层以查看和创建区域</div>
   }
 
   return (
     <div className="py-1">
       {levelZones.length === 0 ? (
         <div className="px-3 py-4 text-muted-foreground text-sm">
-          此楼层尚无区域。{' '}
+          此表演层尚无区域。{' '}
           <button className="cursor-pointer text-primary hover:underline" onClick={handleAddZone}>
             添加区域
           </button>
@@ -179,13 +179,6 @@ export function ZonePanel() {
       )}
       {selectedZone ? (
         <PanelSection className="mt-2 border-t" title="操作">
-          <ActionButton
-            className="w-full flex-none"
-            icon={<Save className="h-4 w-4" />}
-            label="保存到资源库"
-            onClick={() => emitter.emit('room-preset:create', { zoneId: selectedZone.id })}
-            type="button"
-          />
           <ActionButton
             className="w-full flex-none"
             icon={<Trash2 className="h-4 w-4 text-red-400" />}

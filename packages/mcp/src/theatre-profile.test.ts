@@ -39,20 +39,3 @@ test('default theatre MCP exposes only implemented reads and rejects mutations',
     await server.close()
   }
 })
-
-test('legacy registration requires explicit host opt-in', async () => {
-  const bridge = new SceneBridge()
-  bridge.loadDefault()
-  const server = createPascalMcpServer({ bridge, profile: 'legacy' })
-  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
-  const client = new Client({ name: 'legacy-profile-test', version: '1' })
-  await Promise.all([server.connect(serverTransport), client.connect(clientTransport)])
-  try {
-    const { tools } = await client.listTools()
-    expect(tools.some((tool) => tool.name === 'apply_patch')).toBe(true)
-    expect(client.getServerCapabilities()?.prompts).toBeDefined()
-  } finally {
-    await client.close()
-    await server.close()
-  }
-})

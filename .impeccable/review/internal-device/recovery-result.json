@@ -1,0 +1,161 @@
+{
+  "phase": "recovery",
+  "synthetic": true,
+  "viewportEvidence": "SIMULATION",
+  "realModel": "NOT_RUN",
+  "realIphone": "NOT_RUN",
+  "realIpad": "NOT_RUN",
+  "realAndroid": "NOT_RUN",
+  "errors": [],
+  "requestFailures": [
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_INTERNET_DISCONNECTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d",
+      "error": "net::ERR_INTERNET_DISCONNECTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_INTERNET_DISCONNECTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_FAILED"
+    },
+    {
+      "page": "owner",
+      "path": "/scenes",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/scenes/cd2a4f3e147f/events",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/scene/034e81e04a3c",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/1fde00fc-0dff-4bf0-80e3-751a2266163d",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "checks": [
+    {
+      "name": "phone preview is real owner Ghost and zero formal writes",
+      "status": "PASS"
+    },
+    {
+      "name": "desktop reject reaches phone",
+      "status": "PASS"
+    },
+    {
+      "name": "immediate desktop refresh recovers draft selection decision without live Ghost",
+      "status": "PASS"
+    },
+    {
+      "name": "offline phone draft and refreshed pairing recover",
+      "status": "PASS"
+    },
+    {
+      "name": "lost POST response and phone refresh retry do not duplicate message",
+      "status": "PASS",
+      "evidence": {
+        "requestIdPreserved": true
+      }
+    },
+    {
+      "name": "429 retains exact pending request and permits retry",
+      "status": "PASS"
+    },
+    {
+      "name": "503 retains exact pending request and permits retry",
+      "status": "PASS"
+    },
+    {
+      "name": "lost owner acknowledgement followed by refresh does not replay work",
+      "status": "PASS"
+    },
+    {
+      "name": "owner offline and scene switch do not produce false Ghost success",
+      "status": "PASS"
+    },
+    {
+      "name": "revoked session disables Dia and scan, stops polling and re-pairs",
+      "status": "PASS"
+    }
+  ],
+  "matrix": [],
+  "conversationFirstRenderMs": 7668,
+  "sceneFixture": "independent synthetic farewell",
+  "status": "PASS"
+}

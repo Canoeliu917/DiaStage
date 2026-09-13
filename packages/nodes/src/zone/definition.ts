@@ -1,9 +1,4 @@
-import {
-  type NodeDefinition,
-  resolveAutoZonePolygon,
-  ZoneNode as ZoneNodeSchema,
-} from '@pascal-app/core'
-import type { FloorplanNodeExtension } from '@pascal-app/editor'
+import { type NodeDefinition, ZoneNode as ZoneNodeSchema } from '@pascal-app/core'
 import { polygonMeasurementFeatures } from '../shared/polygon-measurement'
 import { buildZoneContextualDimensions } from './contextual-dimensions'
 import { buildZoneFloorplan } from './floorplan'
@@ -16,7 +11,6 @@ import {
 import { zoneFloorplanMoveTarget } from './floorplan-move'
 import { zoneParametrics } from './parametrics'
 import { zoneQuickMeasurement } from './quick-measurement'
-import { buildRoomFloorplanSchedule } from './room-documentation'
 import { ZoneNode } from './schema'
 
 /**
@@ -32,10 +26,7 @@ export const zoneDefinition: NodeDefinition<typeof ZoneNode> = {
   schema: ZoneNode,
   category: 'site',
   extensions: {
-    'pascal:editor/floorplan': {
-      contextualDimensions: buildZoneContextualDimensions,
-      schedule: buildRoomFloorplanSchedule,
-    } satisfies FloorplanNodeExtension<ZoneNode>,
+    'pascal:editor/floorplan': { contextualDimensions: buildZoneContextualDimensions },
   },
 
   defaults: () => {
@@ -48,9 +39,6 @@ export const zoneDefinition: NodeDefinition<typeof ZoneNode> = {
     selectable: { hitVolume: 'bbox' },
     duplicable: true,
     deletable: true,
-    // Zones describe regions of a site — they don't translate as
-    // reusable presets independent of their site context.
-    presettable: false,
   },
 
   parametrics: zoneParametrics,
@@ -60,7 +48,7 @@ export const zoneDefinition: NodeDefinition<typeof ZoneNode> = {
         featurePrefix: 'zone',
         height: 0,
         label: '区域',
-        polygon: resolveAutoZonePolygon(node, ctx.resolve),
+        polygon: node.polygon,
       }),
     quickMeasure: (node, ctx) => zoneQuickMeasurement(node, ctx),
   },
@@ -76,15 +64,13 @@ export const zoneDefinition: NodeDefinition<typeof ZoneNode> = {
     priority: 4,
   },
   floorplan: buildZoneFloorplan,
-  floorplanDependencies: (node) => (node.autoFromWalls ? node.boundaryWallIds : []),
-  // 2D body move — centroid-pivot polygon mover (same as slab / ceiling).
+  // 2D body move — centroid-pivot polygon mover (same as slab).
   // Without this, zone fell through to the overlay's generic free-translate
   // path, which committed a `position` field zone has no schema for, so the
   // polygon never actually moved on drop.
   floorplanMoveTarget: zoneFloorplanMoveTarget,
-  // Polygon editor when selected — same four operations slabs / ceilings
-  // expose. The shared factories key off `node.polygon`, optional
-  // `node.holes` (absent on zones). See `floorplan-affordances.ts`.
+  // Polygon editor when selected. The shared factories key off
+  // `node.polygon`; zones have no holes.
   floorplanAffordances: {
     'move-vertex': zoneMoveVertexAffordance,
     'add-vertex': zoneAddVertexAffordance,
@@ -94,13 +80,13 @@ export const zoneDefinition: NodeDefinition<typeof ZoneNode> = {
 
   presentation: {
     label: '区域',
-    description: '采用渐变材质的多边形场地区域，可表示草坪、水面或铺装。',
+    description: '用于标记表演区、调度区或安全区的多边形区域。',
     icon: { kind: 'url', src: '/icons/zone.webp' },
     paletteSection: 'site',
     paletteOrder: 20,
   },
 
   mcp: {
-    description: 'A polygon-bounded site zone with a typed surface (grass / water / paving / ...).',
+    description: 'A polygon-bounded stage area used for blocking and safety zones.',
   },
 }

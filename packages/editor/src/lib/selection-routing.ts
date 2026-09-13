@@ -138,23 +138,6 @@ export function resolveSelectedIdsForNodeClick({
   return [nodeId]
 }
 
-export function shouldPreserveSelectedRoofHostTarget({
-  node,
-  selectedIds,
-  armedRoofId,
-}: {
-  node: AnyNode
-  selectedIds: readonly string[]
-  armedRoofId: string | null
-}): boolean {
-  return (
-    node.type === 'roof' &&
-    armedRoofId === node.id &&
-    selectedIds.length === 1 &&
-    selectedIds[0] === node.id
-  )
-}
-
 export function resolveNodeSelectionTarget(node: AnyNode): NodeSelectionTarget | null {
   if (node.type === 'building') {
     return { phase: 'site' }
@@ -181,12 +164,7 @@ export function resolveNodeSelectionTarget(node: AnyNode): NodeSelectionTarget |
   if (
     node.type === 'wall' ||
     node.type === 'fence' ||
-    node.type === 'column' ||
-    node.type === 'elevator' ||
     node.type === 'slab' ||
-    node.type === 'ceiling' ||
-    node.type === 'roof' ||
-    node.type === 'roof-segment' ||
     node.type === 'stair' ||
     node.type === 'stair-segment' ||
     node.type === 'spawn' ||

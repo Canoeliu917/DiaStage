@@ -4,7 +4,6 @@ import {
   type AnyNode,
   type AnyNodeId,
   type BuildingNode,
-  type ColumnNode,
   emitter,
   getSelectableKinds,
   type ItemNode,
@@ -40,12 +39,8 @@ type SelectableNodeType =
   | 'fence'
   | 'window'
   | 'door'
-  | 'column'
   | 'item'
   | 'slab'
-  | 'ceiling'
-  | 'roof'
-  | 'roof-segment'
   | (string & {})
 
 // Expand polygon outward by a small amount to include items on edges
@@ -106,13 +101,7 @@ const isNodeOnLevel = (node: AnyNode, levelId: string): boolean => {
     if (parentNode?.type === 'wall' && parentNode.parentId === levelId) {
       return true
     }
-    // Ceiling/slab/roof-attached items: check if parent structure is on the level
-    if (
-      (parentNode?.type === 'ceiling' ||
-        parentNode?.type === 'slab' ||
-        parentNode?.type === 'roof') &&
-      parentNode.parentId === levelId
-    ) {
+    if (parentNode?.type === 'slab' && parentNode.parentId === levelId) {
       return true
     }
   }
@@ -142,11 +131,6 @@ const isNodeInZone = (node: AnyNode, levelId: string, zoneId: string): boolean =
     return pointInPolygonWithTolerance(item.position[0], item.position[2], zone.polygon)
   }
 
-  if (node.type === 'column') {
-    const column = node as ColumnNode
-    return pointInPolygonWithTolerance(column.position[0], column.position[2], zone.polygon)
-  }
-
   if (node.type === 'wall') {
     const wall = node as WallNode
     const startIn = pointInPolygonWithTolerance(wall.start[0], wall.start[1], zone.polygon)
@@ -161,7 +145,7 @@ const isNodeInZone = (node: AnyNode, levelId: string, zoneId: string): boolean =
     return startIn || endIn
   }
 
-  if (node.type === 'slab' || node.type === 'ceiling') {
+  if (node.type === 'slab') {
     const poly = (node as { polygon: [number, number][] }).polygon
     if (!poly?.length) return false
     // Check if any point of the node's polygon is in the zone (with tolerance)
@@ -173,11 +157,6 @@ const isNodeInZone = (node: AnyNode, levelId: string, zoneId: string): boolean =
       if (pointInPolygon(zx, zz, poly)) return true
     }
     return false
-  }
-
-  if (node.type === 'roof' || node.type === 'roof-segment') {
-    // Roofs on the same level are valid when zone is selected
-    return true
   }
 
   return false
@@ -244,32 +223,13 @@ const getStrategy = (): SelectionStrategy | null => {
     }
   }
 
-  // Zone selected -> can select/hover contents (walls, items, columns, slabs, ceilings, roofs, windows, doors)
+  // Zone selected -> can select or hover stage contents.
   return {
-    types: [
-      'wall',
-      'fence',
-      'item',
-      'column',
-      'slab',
-      'ceiling',
-      'roof',
-      'roof-segment',
-      'window',
-      'door',
-    ],
+    types: ['wall', 'fence', 'item', 'slab', 'window', 'door'],
     handleClick: (node, nativeEvent) => {
-      let nodeToSelect = node
-      if (node.type === 'roof-segment' && node.parentId) {
-        const parentNode = useScene.getState().nodes[node.parentId as AnyNodeId]
-        if (parentNode && parentNode.type === 'roof') {
-          nodeToSelect = parentNode
-        }
-      }
-
       const { selectedIds } = useViewer.getState().selection
       const proxyId = resolveSelectionProxyId(
-        nodeToSelect,
+        node,
         useScene.getState().nodes as Record<string, AnyNode | undefined>,
       )
       useViewer
@@ -286,18 +246,7 @@ const getStrategy = (): SelectionStrategy | null => {
       }
     },
     isValid: (node) => {
-      const validTypes = [
-        'wall',
-        'fence',
-        'item',
-        'column',
-        'slab',
-        'ceiling',
-        'roof',
-        'roof-segment',
-        'window',
-        'door',
-      ]
+      const validTypes = ['wall', 'fence', 'item', 'slab', 'window', 'door']
       if (!validTypes.includes(node.type)) return false
       return isNodeInZone(node, levelId, zoneId)
     },
@@ -317,11 +266,6 @@ export const SelectionManager = () => {
     const onEnter = (event: NodeEvent) => {
       const strategy = getStrategy()
       if (!strategy) return
-      // Ceilings are selected via their floor-plan helper and the
-      // boundary-editor vertex handles, never via a direct 3D click on
-      // the polygon. Skipping selection routing here means a click on a
-      // ceiling falls through to the item / wall / floor below it.
-      if (event.node.type === 'ceiling') return
       if (strategy.isValid(event.node)) {
         event.stopPropagation()
         if (event.node.type === 'slab') {
@@ -340,7 +284,6 @@ export const SelectionManager = () => {
     const onLeave = (event: NodeEvent) => {
       const strategy = getStrategy()
       if (!strategy) return
-      if (event.node.type === 'ceiling') return
       if (strategy.isValid(event.node)) {
         event.stopPropagation()
         const targetId = resolveSelectionProxyId(
@@ -356,7 +299,6 @@ export const SelectionManager = () => {
     const onClick = (event: NodeEvent) => {
       const strategy = getStrategy()
       if (!strategy) return
-      if (event.node.type === 'ceiling') return
       if (!strategy.isValid(event.node)) return
 
       event.stopPropagation()
@@ -376,11 +318,7 @@ export const SelectionManager = () => {
       'wall',
       'fence',
       'item',
-      'column',
       'slab',
-      'ceiling',
-      'roof',
-      'roof-segment',
       'window',
       'door',
     ]

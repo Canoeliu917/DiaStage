@@ -48,7 +48,8 @@ describe('nodeUnion', () => {
 
   test('keeps the descriptions the node schemas were authored with', () => {
     const described = AnyNode.options.filter((option) => option.description !== undefined)
-    expect(described.length).toBeGreaterThan(40)
+    expect(described.length).toBeGreaterThan(0)
+    expect(described.every((option) => option.description?.trim())).toBe(true)
 
     for (const option of AnyNode.options) {
       const authored = authoredByKind.get(nodeKindOf(option))

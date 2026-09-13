@@ -1,18 +1,26 @@
 'use client'
 
-import { type StagePlan, StagePlanSchema } from '@pascal-app/core/stage'
+import {
+  parseStageText,
+  type StagePlan,
+  StagePlanSchema,
+  validateStagePlan,
+} from '@pascal-app/core/stage'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
+import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import { currentStageContext } from '@/lib/stage/context'
+import { draftContext, mergeDraftPlan } from '@/lib/stage/creation-policy'
 import {
   confirmedScriptImport,
   type ScriptFile,
   ScriptFileSchema,
 } from '@/lib/stage/import-metadata'
 import { resolveScriptQuestions } from '@/lib/stage/script-questions'
-import { applyReviewedPlan, type ClarificationAnswer } from './command-input'
+import { applyReviewedPlan, type ClarificationAnswer, type VoiceState } from './command-input'
 import { EMPTY_STAGE_CONTEXT, StagePlanReview, useStagePlanPreview } from './plan-review'
+import { VoiceRecorder } from './voice-recorder'
 
 const ScriptResponseSchema = z.strictObject({
   requestId: z.string().min(1),
@@ -29,10 +37,15 @@ export function ScriptStageInput({ sceneId }: { sceneId?: string }) {
     [plan, setPlan] = useState<StagePlan | null>(null)
   const [context, setContext] = useState(EMPTY_STAGE_CONTEXT),
     [answers, setAnswers] = useState<ClarificationAnswer[]>([])
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle')
+  const [revisionText, setRevisionText] = useState('')
   const requestId = useRef(''),
     abort = useRef<AbortController | null>(null),
     input = useRef<HTMLInputElement>(null)
-  const busy = state === 'parsing' || state === 'applying'
+  const busy =
+    state === 'parsing' ||
+    state === 'applying' ||
+    ['recording', 'transcribing', 'requesting-permission'].includes(voiceState)
   useEffect(
     () => () => {
       abort.current?.abort()
@@ -67,7 +80,7 @@ export function ScriptStageInput({ sceneId }: { sceneId?: string }) {
       body.set('file', file)
       body.set('sceneContext', JSON.stringify(current))
       body.set('priorAnswers', JSON.stringify(priorAnswers))
-      const response = await fetch('/api/script/stage-plan', {
+      const { response } = await fetchAiWithBudgetConsent('/api/script/stage-plan', {
         method: 'POST',
         body,
         signal: controller.signal,
@@ -125,6 +138,50 @@ export function ScriptStageInput({ sceneId }: { sceneId?: string }) {
         setError(failure instanceof Error ? failure.message : '确认搭台失败，请重试。')
         setState('review')
       }
+    }
+  }
+  const revise = async () => {
+    if (!plan || busy || !revisionText.trim() || plan.questions.length) return
+    const controller = new AbortController()
+    abort.current?.abort()
+    abort.current = controller
+    const timeout = setTimeout(() => controller.abort(new Error('timeout')), 65_000)
+    setState('parsing')
+    setError('')
+    try {
+      const draft = draftContext(context, validateStagePlan(plan, context).plan)
+      const local = parseStageText(revisionText, draft, [], 'voice')
+      let next = local
+      if (!next) {
+        const { response } = await fetchAiWithBudgetConsent('/api/stage/plan', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            input: revisionText,
+            source: 'voice',
+            sceneContext: draft,
+            priorAnswers: [],
+          }),
+        })
+        const json = await response.json()
+        if (!response.ok) throw new Error(json.error?.message ?? '调整方案失败')
+        next = StagePlanSchema.parse(json.plan)
+      }
+      controller.signal.throwIfAborted()
+      const reviewed = validateStagePlan(next, draft).plan
+      if (reviewed.questions.length)
+        throw new Error(
+          `请补充调整口令后重试：${reviewed.questions.map((q) => q.message).join('；')}`,
+        )
+      setPlan(mergeDraftPlan(plan, reviewed, context))
+      setState('review')
+      setRevisionText('')
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : '调整失败，原草案已保留')
+      setState('review')
+    } finally {
+      clearTimeout(timeout)
     }
   }
   return (
@@ -209,6 +266,32 @@ export function ScriptStageInput({ sceneId }: { sceneId?: string }) {
               } else void generate(next)
             }}
           />
+          <details>
+            <summary>用语音继续调整草案</summary>
+            <p>先补齐待确认的问题，再修改台位。所有调整仍留在草案中，最后统一确认搭台。</p>
+            <VoiceRecorder
+              state={voiceState}
+              setState={setVoiceState}
+              onError={setError}
+              onTranscript={setRevisionText}
+            />
+            <label>
+              调整口令 · 可校对
+              <textarea
+                value={revisionText}
+                maxLength={10_000}
+                onChange={(e) => setRevisionText(e.target.value)}
+                placeholder="例如：把沙发向台右移动20厘米。"
+              />
+            </label>
+            <button
+              type="button"
+              disabled={busy || !revisionText.trim() || plan.questions.length > 0}
+              onClick={() => void revise()}
+            >
+              预览草案调整
+            </button>
+          </details>
         </>
       )}
       {busy && (

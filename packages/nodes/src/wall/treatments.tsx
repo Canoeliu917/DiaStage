@@ -26,7 +26,7 @@ import {
 import { memo, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries as mergeBufferGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { resolveWallOpeningCeiling } from '../shared/wall-opening-ceiling'
+import { resolveWallOpeningTop } from '../shared/wall-opening-top'
 import { treatmentMiterDataForProud, type WallTreatmentLevelData } from './treatment-level-data'
 
 const CURVE_SEGMENTS = 24
@@ -512,7 +512,7 @@ export function buildTrimGeometry(
   childrenNodes: OpeningLike[],
   levelData: WallTreatmentLevelData,
 ) {
-  const wallHeight = resolveWallOpeningCeiling(node, useScene.getState().nodes)
+  const wallHeight = resolveWallOpeningTop(node, useScene.getState().nodes)
   const height = trim.height
   const yBottom =
     kind === 'crown'

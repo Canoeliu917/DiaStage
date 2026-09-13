@@ -17,10 +17,6 @@ interface OriginalState {
   rotation: [number, number, number]
   side: ItemNode['side']
   parentId: string | null
-  // Roof-segment wall hosting — cleared/changed by surface transitions
-  // mid-move, so reverts must restore it alongside parentId.
-  roofSegmentId: ItemNode['roofSegmentId']
-  roofFace: ItemNode['roofFace']
   blockFaceId: ItemNode['blockFaceId']
   metadata: ItemNode['metadata']
 }
@@ -116,8 +112,6 @@ export function useDraftNode(): DraftNodeHandle {
       rotation: [...node.rotation] as [number, number, number],
       side: node.side,
       parentId: node.parentId,
-      roofSegmentId: node.roofSegmentId,
-      roofFace: node.roofFace,
       blockFaceId: node.blockFaceId,
       metadata: node.metadata,
     }
@@ -164,8 +158,6 @@ export function useDraftNode(): DraftNodeHandle {
           rotation: original.rotation,
           side: original.side,
           parentId: original.parentId,
-          roofSegmentId: original.roofSegmentId,
-          roofFace: original.roofFace,
           blockFaceId: original.blockFaceId,
           metadata: original.metadata,
         })
@@ -186,15 +178,7 @@ export function useDraftNode(): DraftNodeHandle {
           side: updateProps.side ?? draft.side,
           metadata: updateProps.metadata ?? stripTransient(draft.metadata),
           parentId: parentId as string,
-          // Forward the roof host explicitly: strategies set it on every
-          // commit (segment id on a roof face, undefined elsewhere), and
-          // dropping it here strands the item in the roof frame without
-          // the segment transform.
-          roofSegmentId: updateProps.roofSegmentId,
-          roofFace: updateProps.roofFace,
           blockFaceId: updateProps.blockFaceId,
-          // Only when the strategy decided about wallId (roof commits clear
-          // it) — floor/ceiling commits never managed the field.
           ...('wallId' in updateProps ? { wallId: updateProps.wallId } : {}),
           ...resolveSupportSlabPatch(effectiveNode, useScene.getState().nodes, {
             maxElevation: options?.supportElevationCap,
@@ -237,10 +221,6 @@ export function useDraftNode(): DraftNodeHandle {
         side: updateProps.side ?? draft.side,
         // Carry painted slot overrides so a duplicated item keeps its materials.
         ...(draft.slots ? { slots: draft.slots } : {}),
-        // Roof host — see the move-mode commit above for why this must be
-        // forwarded explicitly.
-        roofSegmentId: updateProps.roofSegmentId,
-        roofFace: updateProps.roofFace,
         blockFaceId: updateProps.blockFaceId,
         ...('wallId' in updateProps ? { wallId: updateProps.wallId } : {}),
         metadata: updateProps.metadata ?? stripTransient(draft.metadata),
@@ -312,8 +292,6 @@ export function useDraftNode(): DraftNodeHandle {
         rotation: original.rotation,
         side: original.side,
         parentId: original.parentId,
-        roofSegmentId: original.roofSegmentId,
-        roofFace: original.roofFace,
         blockFaceId: original.blockFaceId,
         metadata: original.metadata,
       })

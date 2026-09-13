@@ -4,8 +4,8 @@ import { useEditor } from '@pascal-app/editor'
 import { useEffect, useRef } from 'react'
 import { useCameraStudio } from './store'
 
-export const MONITOR_WIDTH = 512
-export const MONITOR_HEIGHT = 288
+export const MONITOR_WIDTH = 320
+export const MONITOR_HEIGHT = 180
 
 export function CameraMonitor({ enabled, className }: { enabled: boolean; className?: string }) {
   const canvas = useRef<HTMLCanvasElement>(null)

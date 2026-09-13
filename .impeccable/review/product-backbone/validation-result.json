@@ -1,0 +1,111 @@
+{
+  "baselineCommit": "6623136e1435898316bc9cfca8a716649d80702c",
+  "measuredAt": "2026-09-12T03:45:57.140Z",
+  "scope": "Local Windows repository validation; actual Chrome with synthetic content. Device UI is an adapter to one Dia Core.",
+  "commands": [
+    {
+      "command": "bun install --frozen-lockfile",
+      "status": "PASS",
+      "packages": 922,
+      "lockfileChanged": false,
+      "note": "Existing network proxy used after direct resolution stalled."
+    },
+    {
+      "command": "bun run check",
+      "status": "PASS",
+      "files": 1425,
+      "errors": 0,
+      "warnings": 0,
+      "existingInfo": 1
+    },
+    {
+      "command": "bun run check-types",
+      "status": "PASS",
+      "tasks": 9
+    },
+    {
+      "command": "bun run test --concurrency=1",
+      "status": "PASS",
+      "tasks": 14,
+      "pass": 2823,
+      "fail": 0,
+      "existingSkip": 1
+    },
+    {
+      "command": "bun run build",
+      "status": "PASS",
+      "tasks": 8
+    }
+  ],
+  "logHashes": {
+    "check": "87407545f0c7a1c7b2ea5a196794c1ed06a47e40043a9c2c507282bb3a71ba2a",
+    "types": "500693788696fd6fb249018d3b35fc872001ebfc78f561a4c07e2672e98e5204",
+    "tests": "5210dd7afb4193b3007db2b0da5f81f18fc21d58c0614db5fe85822e5764b94b",
+    "build": "37eccfeb9d1c5103da4240e54fd0575fab5dc1c970fb218f2a2c36cb95af60ee"
+  },
+  "hardening": {
+    "resources": {
+      "status": "PASS",
+      "checks": 2,
+      "matrix": 0
+    },
+    "matrix": {
+      "status": "PASS",
+      "checks": 26,
+      "matrix": 22
+    },
+    "recovery": {
+      "status": "PASS",
+      "checks": 10,
+      "matrix": 0
+    },
+    "faults": {
+      "status": "PASS",
+      "checks": 6,
+      "matrix": 0
+    },
+    "gesture": {
+      "status": "PASS",
+      "checks": 5,
+      "matrix": 0
+    },
+    "stress": {
+      "status": "PASS",
+      "checks": 4,
+      "matrix": 0
+    },
+    "performers": {
+      "status": "PASS",
+      "checks": 4,
+      "matrix": 0
+    },
+    "screens": {
+      "status": "PASS",
+      "checks": 3,
+      "matrix": 0
+    }
+  },
+  "acceptance": {
+    "status": "PASS",
+    "checks": 14
+  },
+  "productionStartup": {
+    "url": "http://127.0.0.1:4328/",
+    "status": 200,
+    "isolation": "Synthetic database only; not a deployment"
+  },
+  "exclusions": {
+    "realModel": "NOT_RUN",
+    "realAudio": "NOT_RUN",
+    "iPhone": "NOT_RUN",
+    "iPad": "NOT_RUN",
+    "Android": "NOT_RUN",
+    "lowEndWindows": "NOT_RUN"
+  },
+  "codeCommit": "6e31e4234b9e1649817b9fa3171a317dbca75771",
+  "cssHover": {
+    "status": "PASS",
+    "checks": 4,
+    "result": ".impeccable/review/product-backbone/remount-selected-hover-result.json"
+  }
+}

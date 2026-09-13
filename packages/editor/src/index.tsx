@@ -1,5 +1,5 @@
 // Re-exports of the scene / viewer hooks so consumers composing their
-// own shells on top of `@pascal-app/editor` (community-app, embedders)
+// own shells on top of `@pascal-app/editor`
 // don't have to learn three separate package imports. The canonical
 // definitions still live in `@pascal-app/core` / `@pascal-app/viewer`.
 export {
@@ -145,7 +145,6 @@ export { useFreshPlacementVisibility } from './components/tools/shared/fresh-pla
 export {
   type HorizontalConstructionPlane,
   publishHorizontalConstructionPlane,
-  resampleTerrainConstructionPlane,
   resolveEventConstructionPlane,
   resolveLevelConstructionPlane,
 } from './components/tools/shared/horizontal-construction-plane'
@@ -171,25 +170,10 @@ export {
   getSegmentAngleReferenceAtPoint,
   type SegmentAngleReference,
 } from './components/tools/shared/segment-angle'
-// Stair placement defaults — used by the kind-owned stair / stair-segment
-// panels. Re-exported from `components/tools/stair/stair-defaults.ts`.
 export {
-  DEFAULT_CURVED_STAIR_INNER_RADIUS,
-  DEFAULT_CURVED_STAIR_SWEEP_ANGLE,
-  DEFAULT_SPIRAL_SHOW_CENTER_COLUMN,
-  DEFAULT_SPIRAL_SHOW_STEP_SUPPORTS,
-  DEFAULT_SPIRAL_STAIR_SWEEP_ANGLE,
-  DEFAULT_SPIRAL_TOP_LANDING_DEPTH,
-  DEFAULT_SPIRAL_TOP_LANDING_MODE,
-  DEFAULT_STAIR_ATTACHMENT_SIDE,
-  DEFAULT_STAIR_FILL_TO_FLOOR,
   DEFAULT_STAIR_HEIGHT,
   DEFAULT_STAIR_LENGTH,
-  DEFAULT_STAIR_RAILING_HEIGHT,
-  DEFAULT_STAIR_RAILING_MODE,
   DEFAULT_STAIR_STEP_COUNT,
-  DEFAULT_STAIR_THICKNESS,
-  DEFAULT_STAIR_TYPE,
   DEFAULT_STAIR_WIDTH,
 } from './components/tools/stair/stair-defaults'
 export { preloadRegistryToolModules, ToolManager } from './components/tools/tool-manager'
@@ -211,11 +195,7 @@ export {
   type WallPlanPoint,
   type WallSnapRadii,
 } from './components/tools/wall/wall-drafting'
-// `ToolbarLeft` / `ToolbarRight` are the headless-spec aliases for the
-// existing `ViewerToolbarLeft` / `ViewerToolbarRight` exports — the
-// underlying components are the same; the alias just matches the names
-// used in `pascalorg/private-editor:plans/community-preset-system.md`
-// so consumer code stays close to the spec vocabulary.
+// Short aliases for the existing viewer toolbar exports.
 export {
   CameraActions as ToolbarRight,
   CameraActions as ViewerToolbarRight,
@@ -239,13 +219,11 @@ export { MetricControl } from './components/ui/controls/metric-control'
 export { PanelSection } from './components/ui/controls/panel-section'
 export { SegmentedControl } from './components/ui/controls/segmented-control'
 export { SliderControl } from './components/ui/controls/slider-control'
-export { TerrainSculptPanel } from './components/ui/controls/terrain-sculpt-panel'
 export { ToggleControl } from './components/ui/controls/toggle-control'
 export { ToolOptionsPanel } from './components/ui/controls/tool-options-panel'
 export { FloatingLevelSelector } from './components/ui/floating-level-selector'
 export { CATALOG_ITEMS } from './components/ui/item-catalog/catalog-items'
 export { THEATRE_CATALOG_ITEMS } from './components/ui/item-catalog/theatre-catalog'
-export { getTheatreNodeLabel, getTheatreNodeName, isTheatreEditableType } from './lib/theatre-presentation'
 // Item collections UI — used by the kind-owned ItemPanel in nodes/.
 export { CollectionsPopover } from './components/ui/panels/collections/collections-popover'
 // Phase 5 Stage E — kinds with bespoke editors (slab holes list,
@@ -253,6 +231,7 @@ export { CollectionsPopover } from './components/ui/panels/collections/collectio
 // a kind-owned panel and need PanelWrapper for the chrome.
 export { PanelWrapper } from './components/ui/panels/panel-wrapper'
 export { ParametricInspector as Inspector } from './components/ui/panels/parametric-inspector'
+export { ReferencePanel } from './components/ui/panels/reference-panel'
 export { PALETTE_COLORS } from './components/ui/primitives/color-dot'
 export {
   DropdownMenu,
@@ -341,13 +320,6 @@ export {
   type PlacementSurface,
   publishPlacementSurface,
 } from './lib/active-placement-surface'
-export {
-  CEILING_ALIGNMENT_THRESHOLD_M,
-  type CeilingPlanSnapInput,
-  type CeilingPlanSnapResult,
-  clearCeilingSnapFeedback,
-  resolveCeilingPlanPointSnap,
-} from './lib/ceiling-plan-snap'
 export { EDITOR_LAYER } from './lib/constants'
 export type { ContextualShortcutHint } from './lib/contextual-help'
 export {
@@ -376,31 +348,13 @@ export {
   resolveElevationSnapMatch,
   resolveStructuralElevationSnap,
 } from './lib/elevation-guides'
-export {
-  resolveCurrentBuildingId,
-  resolveElevatorNodeSupportY,
-  resolveElevatorSupportLevelId,
-  resolveElevatorSupportY,
-} from './lib/elevator-support'
 export { getFloatingMenuScale } from './lib/floating-menu-scale'
-// Floor-plan stair helpers — the cumulative-transform walk
-// (`computeFloorplanStairSegmentTransforms`) and the rich segment-entry
-// builder (`buildFloorplanStairEntry`) used by the kind-owned stair
-// floor-plan emitter in `@pascal-app/nodes/src/stair/floorplan.ts`.
-// Each flight's transform depends on every prior sibling's length /
-// height / `attachmentSide`, so individual stair-segments can't compute
-// their own polygon in isolation — the stair (parent) owns the
-// computation and emits the whole stack as one registry entry.
 export {
   alignFloorplanDraftPoint,
   applyFloorplanAlignment,
-  buildFloorplanStairEntry,
   FLOORPLAN_ALIGNMENT_THRESHOLD_M,
   FLOORPLAN_DRAFT_ALIGN_ID,
   type FloorplanAlignmentResult,
-  type FloorplanStairArrowEntry,
-  type FloorplanStairEntry,
-  type FloorplanStairSegmentEntry,
   getFloorplanWallThickness,
 } from './lib/floorplan'
 export type {
@@ -469,7 +423,6 @@ export {
 export {
   type ActivePaintMaterial,
   buildResetSurfaceMaterialUpdates,
-  buildRoofSurfaceMaterialPatch,
   buildSingleSurfaceMaterialPatch,
   buildStairSurfaceMaterialPatch,
   getActivePaintMaterialLabel,
@@ -538,11 +491,6 @@ export {
   quickMeasurementContext,
   resolveQuickMeasurementReport,
 } from './lib/quick-measurement'
-export { clearRoofDuplicateMetadata, duplicateRoofSubtree } from './lib/roof-duplication'
-// Roof wall-face hit resolution + overlap guard — shared by the
-// kind-owned door / window tools in `@pascal-app/nodes` and the item
-// placement coordinator's roof-wall strategy.
-export { hasRoofFaceChildOverlap, type RoofWallHit, resolveRoofWallHit } from './lib/roof-wall-hit'
 export type { SceneGraph } from './lib/scene'
 export { applySceneGraphToEditor } from './lib/scene'
 export { createNodesWithSceneMaterials } from './lib/scene-clipboard'
@@ -568,14 +516,6 @@ export {
 } from './lib/snapping-mode'
 export { duplicateStairSubtree } from './lib/stair-duplication'
 export {
-  getBuildingLevelsForLevel,
-  getStairLevelOptions,
-  resolveStairDestinationLevel,
-  resolveStairFromLevelId,
-  resolveStairPlacementLevelId,
-  resolveStairToLevelId,
-} from './lib/stair-levels'
-export {
   clearSurfacePlanSnapFeedback,
   resolveSurfacePlanPointSnap,
   SURFACE_ALIGNMENT_THRESHOLD_M,
@@ -583,12 +523,10 @@ export {
   type SurfacePlanSnapResult,
 } from './lib/surface-plan-snap'
 export {
-  fieldExtentForSite,
-  flattenSite,
-  resetSiteTerrain,
-  resolveFlattenTarget,
-  sculptFieldForSite,
-} from './lib/terrain-sculpt'
+  getTheatreNodeLabel,
+  getTheatreNodeName,
+  isTheatreEditableType,
+} from './lib/theatre-presentation'
 // `cn` (twMerge + clsx) — used by kind-owned panels in `@pascal-app/
 // nodes` so they don't need their own copy / their own tailwind-merge
 // dependency.
@@ -680,13 +618,6 @@ export {
   type PaletteViewProps,
   usePaletteViewRegistry,
 } from './store/use-palette-view-registry'
-export {
-  type PathDraftKind,
-  type PathDraftParameter,
-  type PathDraftParameters,
-  type PathDraftPoint,
-  usePathDraftPreview,
-} from './store/use-path-draft-preview'
 export {
   default as usePlacementPreview,
   type PlacementPreviewDimension,

@@ -4,8 +4,6 @@ import type { AnyNode, AnyNodeId } from '../schema/types'
 import { wallPlaneTopBoundaryRepro as reproFixture } from './__fixtures__/wall-plane-top-boundary-repro'
 import { DEFAULT_LEVEL_HEIGHT } from './level-height'
 import {
-  CEILING_CLAMP_MARGIN,
-  getCeilingClampBound,
   getCoveringSlabUndersideAt,
   getLevelAbove,
   getLevelBelow,
@@ -511,93 +509,5 @@ describe('getWallPlaneTop', () => {
   test('a wall partially overlapping the covering slab clamps', () => {
     const nodes = stackedNodes([slabNode('slab_deck', { elevation: 0, thickness: 0.3 })])
     expect(getWallPlaneTop(wallAt([2, 2], [8, 2]), 'level_0', nodes)).toBeCloseTo(2.2)
-  })
-})
-
-describe('getCeilingClampBound', () => {
-  const ceilingPolygon: Array<[number, number]> = [
-    [0, 0],
-    [4, 0],
-    [4, 4],
-    [0, 4],
-  ]
-
-  test('with no covering slab the bound is the storey plane minus the margin', () => {
-    const nodes = stackedNodes([])
-    expect(getCeilingClampBound('level_0', nodes, ceilingPolygon)).toBeCloseTo(
-      2.5 - CEILING_CLAMP_MARGIN,
-    )
-  })
-
-  test('a covering deck lowers the bound to its underside minus the margin', () => {
-    const nodes = stackedNodes([slabNode('slab_deck', { elevation: 0, thickness: 0.3 })])
-    expect(getCeilingClampBound('level_0', nodes, ceilingPolygon)).toBeCloseTo(
-      2.2 - CEILING_CLAMP_MARGIN,
-    )
-  })
-
-  test('uses offset-aware floor spacing for positive and negative ceiling clamps', () => {
-    const slab = slabNode('slab_deck', { elevation: 0, thickness: 0.3 })
-
-    expect(
-      getCeilingClampBound('level_0', stackedNodes([slab], 2.5, 0.4), ceilingPolygon),
-    ).toBeCloseTo(2.6 - CEILING_CLAMP_MARGIN)
-    expect(
-      getCeilingClampBound('level_0', stackedNodes([slab], 2.5, -0.4), ceilingPolygon),
-    ).toBeCloseTo(1.8 - CEILING_CLAMP_MARGIN)
-  })
-
-  test('a slab covering only the interior is caught by the centroid sample', () => {
-    // Deck hovers over the middle of the ceiling — every vertex sample
-    // misses, only the centroid (2, 2) lands inside it.
-    const nodes = stackedNodes([
-      slabNode('slab_deck', {
-        polygon: [
-          [1.5, 1.5],
-          [2.5, 1.5],
-          [2.5, 2.5],
-          [1.5, 2.5],
-        ],
-        elevation: 0,
-        thickness: 0.3,
-      }),
-    ])
-    expect(getCeilingClampBound('level_0', nodes, ceilingPolygon)).toBeCloseTo(
-      2.2 - CEILING_CLAMP_MARGIN,
-    )
-  })
-
-  test('returns Infinity for an unresolvable level', () => {
-    const nodes = stackedNodes([])
-    expect(getCeilingClampBound('level_missing', nodes, ceilingPolygon)).toBe(
-      Number.POSITIVE_INFINITY,
-    )
-  })
-
-  test('vertices on the covering slab boundary clamp identically on every side', () => {
-    // Two mirrored strips share an edge with the 4x4 deck: one along its
-    // min-z edge, one along its max-z edge. Their interiors and centroids sit
-    // outside the deck, so only the shared-edge vertices can register —
-    // ray-cast pointInPolygon used to admit the min-side vertices and reject
-    // the max-side ones, giving orientation-dependent clamps.
-    const nodes = stackedNodes([slabNode('slab_deck', { elevation: 0, thickness: 0.3 })])
-    const minSideStrip: Array<[number, number]> = [
-      [0, -1],
-      [4, -1],
-      [4, 0],
-      [0, 0],
-    ]
-    const maxSideStrip: Array<[number, number]> = [
-      [0, 4],
-      [4, 4],
-      [4, 5],
-      [0, 5],
-    ]
-    expect(getCeilingClampBound('level_0', nodes, minSideStrip)).toBeCloseTo(
-      2.2 - CEILING_CLAMP_MARGIN,
-    )
-    expect(getCeilingClampBound('level_0', nodes, maxSideStrip)).toBeCloseTo(
-      2.2 - CEILING_CLAMP_MARGIN,
-    )
   })
 })

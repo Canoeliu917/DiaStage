@@ -14,7 +14,7 @@ import {
 } from '@pascal-app/core'
 import { readFloorplanContext } from '@pascal-app/editor'
 import { formatConstructionLength } from './construction-length'
-import { resolveWallOpeningCeiling } from './wall-opening-ceiling'
+import { resolveWallOpeningTop } from './wall-opening-top'
 
 /**
  * Build placement-measurement dimension lines for a door / window
@@ -101,7 +101,7 @@ export function buildOpeningPlacementDimensions(
     siblings,
     wall: {
       length: wallLength,
-      height: resolveWallOpeningCeiling(wall, useScene.getState().nodes),
+      height: resolveWallOpeningTop(wall, useScene.getState().nodes),
     },
     // The 2D plan is top-down: sill/head height and vertical alignment aren't
     // representable here — those belong to the 3D viewport.

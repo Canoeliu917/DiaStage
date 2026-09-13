@@ -1,16 +1,4 @@
-import {
-  type FloorplanGeometry,
-  type FloorplanPoint,
-  type GeometryContext,
-  resolveAutoZonePolygon,
-  type ZoneNode,
-} from '@pascal-app/core'
-import { floorplanGeometryMetadata, readFloorplanContext } from '@pascal-app/editor'
-import {
-  type ConstructionLengthProfile,
-  formatConstructionLength,
-} from '../shared/construction-length'
-import { buildRoomClearDimensions } from './room-clear-dimensions'
+import type { FloorplanGeometry, FloorplanPoint, GeometryContext, ZoneNode } from '@pascal-app/core'
 
 /**
  * Stage C floor-plan builder for zone. Zones are colored polygons —
@@ -23,11 +11,10 @@ import { buildRoomClearDimensions } from './room-clear-dimensions'
  * furniture in the SVG document order (= z-order).
  */
 export function buildZoneFloorplan(node: ZoneNode, ctx: GeometryContext): FloorplanGeometry | null {
-  const ring = resolveAutoZonePolygon(node, ctx.resolve)
+  const ring = node.polygon
   if (!ring || ring.length < 3) return null
 
   const view = ctx.viewState
-  const floorplanContext = readFloorplanContext(ctx)
   const palette = view?.palette
   const isSelected = view?.selected ?? false
   const isHighlighted = view?.highlighted ?? false
@@ -35,8 +22,7 @@ export function buildZoneFloorplan(node: ZoneNode, ctx: GeometryContext): Floorp
 
   const points: FloorplanPoint[] = ring.map(([x, z]) => [x, z] as FloorplanPoint)
   const stroke = showSelectedChrome && palette ? palette.selectedStroke : node.color
-  const isRoom = node.spaceRole === 'room'
-  const fillOpacity = isRoom ? (isSelected ? 0.12 : 0.04) : isSelected ? 0.28 : 0.16
+  const fillOpacity = isSelected ? 0.28 : 0.16
 
   const children: FloorplanGeometry[] = [
     {
@@ -53,7 +39,7 @@ export function buildZoneFloorplan(node: ZoneNode, ctx: GeometryContext): Floorp
   ]
 
   // Polygon editor — emitted only when the zone is the active
-  // selection. Same three handle types slabs / ceilings expose:
+  // selection. Same three handle types slabs expose:
   // edge-handle (drag whole edge), midpoint-handle (insert a vertex),
   // endpoint-handle (drag an existing vertex). Order matters for
   // hit-test layering: edges (large hit area) first, then midpoints,
@@ -101,29 +87,14 @@ export function buildZoneFloorplan(node: ZoneNode, ctx: GeometryContext): Floorp
   // bbox-center fallback handles degenerate rings without throwing.
   const [cx, cy] = polygonCentroid(ring)
   const name = node.name?.trim()
-  if (isRoom) {
-    children.push(
-      ...buildRoomLabels(
-        node,
-        cx,
-        cy,
-        view?.unit ?? 'metric',
-        floorplanContext.purpose === 'document' ? 'document' : 'editor',
-        floorplanContext.metricNotation,
-        stroke,
-      ),
-    )
-    if (floorplanContext.automaticDimensions) {
-      children.push(...buildRoomClearDimensions(node, ctx))
-    }
-  } else if (name) {
+  if (name) {
     children.push({
       kind: 'text',
       x: cx,
       y: cy,
       text: name,
       // Same constants the legacy `FLOORPLAN_ZONE_LABEL_FONT_SIZE` uses
-      // (0.2 plan metres ≈ readable at typical building zooms).
+      // (0.2 plan metres remains readable at typical plan zooms).
       fontSize: ZONE_LABEL_FONT_SIZE,
       fill: '#ffffff',
       stroke: node.color,
@@ -142,61 +113,6 @@ export function buildZoneFloorplan(node: ZoneNode, ctx: GeometryContext): Floorp
 }
 
 const ZONE_LABEL_FONT_SIZE = 0.2
-const ROOM_NAME_FONT_SIZE = 0.2
-const ROOM_NUMBER_FONT_SIZE = 0.16
-const ROOM_DETAIL_FONT_SIZE = 0.11
-const ROOM_LABEL_LINE_SPACING = 0.18
-
-function buildRoomLabels(
-  node: ZoneNode,
-  x: number,
-  y: number,
-  unit: 'metric' | 'imperial',
-  profile: ConstructionLengthProfile,
-  metricNotation: 'meters' | 'millimeters',
-  color: string,
-): FloorplanGeometry[] {
-  const lines: Array<{ text: string; fontSize: number; fontWeight: number }> = []
-  const name = node.name.trim()
-  if (name) lines.push({ text: name, fontSize: ROOM_NAME_FONT_SIZE, fontWeight: 700 })
-  if (node.roomNumber) {
-    lines.push({ text: node.roomNumber, fontSize: ROOM_NUMBER_FONT_SIZE, fontWeight: 600 })
-  }
-
-  const finishes = [
-    node.floorFinish ? `FL: ${node.floorFinish}` : '',
-    node.wallFinish ? `WL: ${node.wallFinish}` : '',
-    node.ceilingFinish ? `CL: ${node.ceilingFinish}` : '',
-  ].filter(Boolean)
-  if (finishes.length > 0) {
-    lines.push({ text: finishes.join(' · '), fontSize: ROOM_DETAIL_FONT_SIZE, fontWeight: 500 })
-  }
-
-  const roomDetails = [
-    `CH: ${formatConstructionLength(node.ceilingHeight, unit, profile, { metricNotation })}`,
-  ]
-  if (node.occupancy) roomDetails.push(node.occupancy)
-  lines.push({ text: roomDetails.join(' · '), fontSize: ROOM_DETAIL_FONT_SIZE, fontWeight: 500 })
-
-  const startY = y - ((lines.length - 1) * ROOM_LABEL_LINE_SPACING) / 2
-  return lines.map((line, index) => ({
-    kind: 'text',
-    x,
-    y: startY + index * ROOM_LABEL_LINE_SPACING,
-    text: line.text,
-    fontSize: line.fontSize,
-    fill: color,
-    stroke: '#ffffff',
-    strokeWidth: line.fontSize * 0.18,
-    paintOrder: 'stroke',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-    fontWeight: line.fontWeight,
-    textAnchor: 'middle',
-    dominantBaseline: 'central',
-    upright: true,
-    metadata: floorplanGeometryMetadata({ annotationRole: 'room-label' }),
-  }))
-}
 
 /**
  * Area-weighted centroid of a simple polygon (Shoelace formula). Falls

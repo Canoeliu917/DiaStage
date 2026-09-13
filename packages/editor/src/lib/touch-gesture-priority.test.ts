@@ -8,23 +8,15 @@ import { editorOwnsOneFingerDrag } from './touch-gesture-priority'
  * the loser's handlers simply never fire.
  */
 describe('editorOwnsOneFingerDrag', () => {
-  const ALL_MODES: Mode[] = [
-    'select',
-    'edit',
-    'delete',
-    'build',
-    'material-paint',
-    'terrain-sculpt',
-  ]
+  const ALL_MODES: Mode[] = ['select', 'edit', 'delete', 'build', 'material-paint']
 
   test('the camera keeps one finger when nothing is going on', () => {
     expect(editorOwnsOneFingerDrag({ mode: 'select', activeGesture: false })).toBe(false)
   })
 
-  test('both brush modes claim it with no transient gesture at all', () => {
+  test('paint mode claims it with no transient gesture at all', () => {
     // The regression: a brush mode arms nothing that the transient terms can see,
     // so before this the camera orbited under a one-finger sculpt or paint drag.
-    expect(editorOwnsOneFingerDrag({ mode: 'terrain-sculpt', activeGesture: false })).toBe(true)
     expect(editorOwnsOneFingerDrag({ mode: 'material-paint', activeGesture: false })).toBe(true)
   })
 

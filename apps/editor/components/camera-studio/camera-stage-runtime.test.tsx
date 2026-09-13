@@ -84,6 +84,8 @@ if (!process.env.CAMERA_STAGE_RUNTIME_TEST) {
     OVERLAY_LAYER: 1,
     SCENE_LAYER: 0,
     getSceneTheme: () => ({ background: '#ffffff' }),
+    useIsolatedFrame: (fn: () => void) => frames.push(fn),
+    ViewerErrorBoundary: ({ children }: { children: unknown }) => children,
   }))
   const camera = new PerspectiveCamera(50, 16 / 9)
   camera.position.set(4, 3, 6)

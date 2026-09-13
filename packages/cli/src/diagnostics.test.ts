@@ -27,7 +27,10 @@ test('info creates private local storage on a fresh home', async () => {
 
     await collectInfo(paths)
 
-    expect((await stat(paths.root)).mode & 0o077).toBe(0)
+    const directory = await stat(paths.root)
+    expect(directory.isDirectory()).toBe(true)
+    // Windows reports synthetic POSIX bits; ACL privacy needs a Windows ACL check.
+    if (process.platform !== 'win32') expect(directory.mode & 0o077).toBe(0)
   } finally {
     await rm(root, { recursive: true, force: true })
   }

@@ -82,9 +82,9 @@ export const useCameraStudio = create<CameraStudioState>((set, get) => ({
     if (get().stageReady && !get().recording && !get().playing && !get().previewing)
       get().stageFocus?.()
   },
-  monitorVisible: true,
+  monitorVisible: false,
   monitorCanvas: null,
-  monitorStatus: 'waiting',
+  monitorStatus: 'off',
   monitorMessage: '等待机位与场景加载',
   recording: false,
   stageDraft: null,

@@ -30,10 +30,8 @@ import { Slider } from '../ui/slider'
 import { WalkthroughCrosshair } from '../walkthrough-hud'
 import { isOverlaySnapshotSave } from './snapshot-capture'
 
-// Local alias — distinct from `useEditor.captureMode` (which describes *why*
-// a capture is happening, e.g. `preset`). This one says HOW the captured
-// pixels are cropped: full-frame 16:9 (`standard`), raw canvas viewport, or
-// user-dragged area. Hosts can preselect it via `captureMode.crop`.
+// How the captured pixels are cropped: full-frame 16:9 (`standard`), raw
+// canvas viewport, or a user-dragged area.
 type CropMode = SnapshotCropMode
 type CaptureState = 'idle' | 'capturing' | 'saved'
 /** Which camera the shot is framed with: the editor's orbit camera, or one of
@@ -169,17 +167,12 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
   const captureMode = useEditor((s) => s.captureMode)
   const setCaptureMode = useEditor((s) => s.setCaptureMode)
   const isMobile = useIsMobile()
-  // `preset` capture mode locks the overlay to a square area crop with
-  // a transparent background — the user picks framing but not the
-  // crop shape. Matches the unified preset-thumbnail capture flow.
-  const isPreset = captureMode.mode === 'preset'
   const requestedCrop = captureMode.mode === 'standard' ? captureMode.crop : undefined
   const requestedAspect = captureMode.mode === 'standard' ? captureMode.standardAspect : undefined
   // Only an explicit host lock hides the crop/aspect switcher (the publish
   // cover needs its exact output shape). A plain preselected crop — the
   // Studio capbar's choice — just seeds the pill and stays user-changeable.
-  const isCropLocked =
-    isPreset || (captureMode.mode === 'standard' && captureMode.lockCrop === true)
+  const isCropLocked = captureMode.mode === 'standard' && captureMode.lockCrop === true
 
   const isFirstPersonMode = useEditor((s) => s.isFirstPersonMode)
   const firstPersonMovementMode = useEditor((s) => s.firstPersonMovementMode)
@@ -235,31 +228,16 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
     return () => observer.disconnect()
   }, [isCaptureMode])
 
-  // Reset local state when entering capture mode. Preset mode also
-  // auto-stages a centered square crop sized to ~75% of the shorter
-  // viewport dimension so the user can capture immediately — the
-  // overlay's pan/move/resize handles still apply if they want to
-  // tweak the framing, but they don't have to draw the rect first.
+  // Reset local state when entering capture mode.
   useEffect(() => {
     if (!isCaptureMode) return
-    setMode(isPreset ? 'area' : (requestedCrop ?? 'standard'))
+    setMode(requestedCrop ?? 'standard')
     setStandardAspect(requestedAspect ?? '16:9')
     setAspectMenuOpen(false)
     setIsDragging(false)
     setCaptureState('idle')
-    if (isPreset && overlayRef.current) {
-      const rect = overlayRef.current.getBoundingClientRect()
-      const side = Math.min(rect.width, rect.height) * 0.75
-      const cx = rect.width / 2
-      const cy = rect.height / 2
-      setDrag({
-        start: { x: cx - side / 2, y: cy - side / 2 },
-        end: { x: cx + side / 2, y: cy + side / 2 },
-      })
-    } else {
-      setDrag(null)
-    }
-  }, [isCaptureMode, isPreset, requestedCrop, requestedAspect])
+    setDrag(null)
+  }, [isCaptureMode, requestedCrop, requestedAspect])
 
   // Listen for snapshot saved to show feedback then exit
   useEffect(() => {
@@ -342,28 +320,11 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
           start: { x: snapshot.start.x + dx, y: snapshot.start.y + dy },
           end: { x: snapshot.end.x + dx, y: snapshot.end.y + dy },
         })
-      } else if (isPreset) {
-        // Preset mode locks the rect to a square — use the smaller
-        // axis to keep the drag predictable, sign-correct so the user
-        // can still drag in any quadrant.
-        setDrag((d) => {
-          if (!d) return null
-          const dx = pt.x - d.start.x
-          const dy = pt.y - d.start.y
-          const side = Math.min(Math.abs(dx), Math.abs(dy))
-          return {
-            start: d.start,
-            end: {
-              x: d.start.x + Math.sign(dx || 1) * side,
-              y: d.start.y + Math.sign(dy || 1) * side,
-            },
-          }
-        })
       } else {
         setDrag((d) => (d ? { start: d.start, end: pt } : null))
       }
     },
-    [isDragging, isPreset],
+    [isDragging],
   )
 
   const onPointerUp = useCallback(() => {
@@ -443,12 +404,8 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
       captureMode: mode,
       cropRegion,
       standardSize: mode === 'standard' ? STANDARD_SIZES[standardAspect] : undefined,
-      // In preset mode, the ThumbnailGenerator should keep the alpha
-      // channel transparent so the saved preset thumbnail composes
-      // cleanly onto any palette background.
-      transparent: isPreset,
     })
-  }, [captureState, mode, drag, projectId, isPreset, standardAspect])
+  }, [captureState, mode, drag, projectId, standardAspect])
 
   // Esc dismisses — in ORBIT only. In walk / drone, Esc means "free the
   // cursor" (the browser's own pointer-lock exit; FirstPersonControls pauses
@@ -515,16 +472,13 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
 
   const resolution = getResolution(mode, overlayRef.current, drag, standardAspect)
   // Walk and drone need the canvas to receive the click that grants pointer lock,
-  // so the area-drag surface steps aside — same treatment as preset mode, whose
-  // frame is fixed and camera-driven.
+  // so the area-drag surface steps aside.
   const cameraOwnsPointer = cameraNav !== 'orbit'
-  const frameLocked = isPreset || cameraOwnsPointer
-  // Preset captures are a constrained flow (fixed square, host-owned banner);
-  // they keep the plain orbit camera. Walk / drone need a keyboard, so they stay
-  // off touch. The fov control is armed by the capture rig only on a
-  // perspective camera — orthographic captures have no lens to drive.
-  const showCameraNav = !(isPreset || isMobile)
-  const fovValue = isPreset ? null : captureFov
+  const frameLocked = cameraOwnsPointer
+  // Walk / drone need a keyboard, so they stay off touch. The fov control is
+  // armed by the capture rig only on a perspective camera.
+  const showCameraNav = !isMobile
+  const fovValue = captureFov
   const cameraHint = CAMERA_NAV_HINTS[cameraNav]
 
   // Standard mode framing: the output is a center-crop of the canvas to the
@@ -622,10 +576,8 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
           onPointerUp={frameLocked ? undefined : onPointerUp}
           style={frameLocked ? undefined : { cursor: 'crosshair' }}
         >
-          {/* "No selection" hint — only when the user has to draw the
-              area themselves (`standard` capture). Preset mode always
-              has a pre-staged square, so we never show it there. */}
-          {!selectionStyle && !isPreset && (
+          {/* "No selection" hint — only when the user has to draw the area. */}
+          {!selectionStyle && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <span className="rounded-full border border-white/10 bg-neutral-950/80 px-4 py-2 text-sm text-white">
                 {cameraOwnsPointer ? '切回环绕模式后可拖选截图区域' : '拖选需要截图的区域'}
@@ -650,9 +602,7 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
             >
               {hasSelection && <ThirdsGrid />}
               <CornerAccents />
-              {/* Corner handles — preset mode locks the frame to the
-                  auto-staged centered square; the user adjusts the
-                  camera instead. Walk / drone lock it for the same reason. */}
+              {/* Walk / drone lock the frame while the camera owns input. */}
               {!frameLocked &&
                 (
                   [
@@ -683,17 +633,14 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {/* Top-center HUD — what the shot will be. Preset captures are a fixed
-          square and carry their own "Frame your item" banner up there. */}
-      {!isMobile && !isPreset && (
+      {/* Top-center HUD — what the shot will be. */}
+      {!isMobile && (
         <div className="pointer-events-none absolute top-4 left-1/2 flex -translate-x-1/2 gap-2">
           <div className={HUD_CHIP_CLASS}>
             <span className="font-mono text-[8.5px] text-white/50 uppercase tracking-[0.14em]">
               裁剪
             </span>
-            <span className="font-semibold text-white text-xs">
-              {isPreset ? '预设 · 正方形' : CROP_LABELS[mode]}
-            </span>
+            <span className="font-semibold text-white text-xs">{CROP_LABELS[mode]}</span>
           </div>
           <div className={HUD_CHIP_CLASS}>
             <span className="font-mono text-[8.5px] text-white/50 uppercase tracking-[0.14em]">
@@ -848,10 +795,7 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
           </div>
         )}
 
-        {/* Preset captures carry their own "Frame your item" banner — the
-            snapshot pitch only applies to the studio/reference flow. */}
         {!isMobile &&
-          !isPreset &&
           (cameraHint ? (
             <div className="pointer-events-none flex max-w-lg flex-wrap items-center justify-center gap-x-2.5 gap-y-1 rounded-lg border border-white/10 bg-neutral-950/85 px-3 py-1.5 text-[10px]">
               {cameraHint.map(({ keys, action }) => (
@@ -878,7 +822,7 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
           ))}
 
         <button
-          aria-label={isPreset ? '截图' : '拍摄快照'}
+          aria-label="拍摄快照"
           className="group pointer-events-auto relative grid h-14 w-14 place-items-center rounded-full disabled:opacity-50"
           disabled={captureDisabled}
           onClick={handleCapture}
@@ -904,9 +848,7 @@ export function SnapshotCaptureOverlay({ projectId }: { projectId: string }) {
             ? '正在截图…'
             : captureState === 'saved'
               ? '已保存'
-              : isPreset
-                ? '截图'
-                : '拍摄快照'}
+              : '拍摄快照'}
         </span>
       </div>
     </div>

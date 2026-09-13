@@ -11,13 +11,13 @@ import { z } from 'zod'
 import useEditor from '../../../store/use-editor'
 import { collectSelectableCandidateIds } from './select-candidates'
 
-function registerSelectableElevatorTestKind() {
-  if (nodeRegistry.has('elevator')) return
+function registerBuildingScopedTestKind() {
+  if (nodeRegistry.has('stage-reference')) return
 
   registerNode({
-    kind: 'elevator',
+    kind: 'stage-reference',
     schemaVersion: 1,
-    schema: z.object({ type: z.literal('elevator') }) as never,
+    schema: z.object({ type: z.literal('stage-reference') }) as never,
     category: 'structure',
     defaults: () => ({}),
     capabilities: { selectable: {} },
@@ -28,7 +28,7 @@ function registerSelectableElevatorTestKind() {
 
 describe('selectable candidates', () => {
   beforeAll(() => {
-    registerSelectableElevatorTestKind()
+    registerBuildingScopedTestKind()
   })
 
   beforeEach(() => {
@@ -53,13 +53,13 @@ describe('selectable candidates', () => {
     })
   })
 
-  test('includes building-scoped elevators for the active level building', () => {
+  test('includes building-scoped stage references for the active performance level', () => {
     useScene.setState({
       nodes: {
         building_test: {
           id: 'building_test',
           type: 'building',
-          children: ['level_test', 'elevator_test'],
+          children: ['level_test', 'reference_test'],
         },
         level_test: {
           id: 'level_test',
@@ -67,9 +67,9 @@ describe('selectable candidates', () => {
           parentId: 'building_test',
           children: [],
         },
-        elevator_test: {
-          id: 'elevator_test',
-          type: 'elevator',
+        reference_test: {
+          id: 'reference_test',
+          type: 'stage-reference',
           parentId: 'building_test',
           position: [1, 0, 2],
           rotation: 0,
@@ -77,10 +77,10 @@ describe('selectable candidates', () => {
       } as unknown as Record<string, AnyNode>,
     } as never)
 
-    expect(collectSelectableCandidateIds()).toContain('elevator_test')
+    expect(collectSelectableCandidateIds()).toContain('reference_test')
   })
 
-  test('includes legacy level-parented elevators already loaded in the editor', () => {
+  test('includes level-parented stage references already loaded in the editor', () => {
     useScene.setState({
       nodes: {
         building_test: {
@@ -92,11 +92,11 @@ describe('selectable candidates', () => {
           id: 'level_test',
           type: 'level',
           parentId: 'building_test',
-          children: ['elevator_test'],
+          children: ['reference_test'],
         },
-        elevator_test: {
-          id: 'elevator_test',
-          type: 'elevator',
+        reference_test: {
+          id: 'reference_test',
+          type: 'stage-reference',
           parentId: 'level_test',
           position: [1, 0, 2],
           rotation: 0,
@@ -104,6 +104,6 @@ describe('selectable candidates', () => {
       } as unknown as Record<string, AnyNode>,
     } as never)
 
-    expect(collectSelectableCandidateIds()).toContain('elevator_test')
+    expect(collectSelectableCandidateIds()).toContain('reference_test')
   })
 })

@@ -46,12 +46,14 @@ function pascalStorageOrigin(): string | null {
 }
 
 /** Static catalog materials ship in the app's public dir and resolve through
- *  the assets CDN (`/material/{category}/{slug}/{slug}_{map}_{size}.ktx2`) —
- *  a server-known KTX2 source like the storage buckets, just app-hosted. */
+ *  the application or its configured asset CDN. */
 function isAppMaterialUrl(src: string): boolean {
+  if (src.startsWith('/material/')) return true
   try {
+    const assetOrigin = ASSETS_CDN_URL || globalThis.location?.origin
+    if (!assetOrigin) return false
     const url = new URL(src)
-    return url.origin === new URL(ASSETS_CDN_URL).origin && url.pathname.startsWith('/material/')
+    return url.origin === new URL(assetOrigin).origin && url.pathname.startsWith('/material/')
   } catch {
     return false
   }

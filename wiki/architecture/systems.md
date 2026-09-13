@@ -1,116 +1,26 @@
 # Systems
 
-*Core and viewer systems architecture.*
+Systems coordinate scene behavior that cannot be expressed by a single node renderer. Prefer a registry definition (`geometry`, `renderer`, `floorPlan`, `system`) and add a dedicated system only for cross-node or runtime behavior.
 
-Applies to: `packages/core/src/systems/**`, `packages/viewer/src/systems/**`.
+## Boundaries
 
-Systems own business logic, geometry generation, and constraints. They run in the Three.js frame loop and are never rendered directly.
+- `packages/core`: deterministic scene data, geometry inputs, validation, transactions, and history. No Three.js or editor UI.
+- `packages/viewer`: React Three Fiber presentation, picking, runtime animation, and renderer recovery.
+- `packages/editor`: tools, panels, transient gestures, Camera Rehearsal, Remount preview, and app-specific runtime slots.
+- `packages/nodes`: registered stage node definitions and their minimum geometry, renderer, and editing contributions.
 
-> **For registry-driven kinds, prefer no per-kind system.** If your kind's only job is "rebuild geometry on dirty", set `def.geometry` and let the framework's `<GeometrySystem>` handle the rebuild loop. Per-kind systems remain for *extra* responsibilities — animations, cross-kind dirty cascades, named-mesh material poking. See [node-definitions.md](node-definitions.md).
+## Active viewer systems
 
-## Two Kinds of Systems
+The viewer mounts registered geometry plus level, wall, door, window, item, zone, guide, scan, interaction, and performance-settle behavior. The editor injects its own systems as children of the Viewer so Edit, first-person, Capture, Camera Rehearsal, and Remount remain independent.
 
-### Core Systems — `packages/core/src/systems/`
+Systems that maintain a cache must clear it on unmount. Expensive work must react to node or camera changes instead of traversing the full scene every frame.
 
-Pure logic: no rendering, no Three.js objects. They read nodes from `useScene`, compute derived values (geometry, constraints), and write results back.
+## Transactions
 
-| System | Responsibility |
-|---|---|
-| `WallSystem` | Wall mitering, corner joints |
-| `CeilingSystem` | Polygon-based ceiling generation |
-| `RoofSystem` | Pitched roof shape |
-| `DoorSystem` | Placement constraints on walls |
-| `WindowSystem` | Placement constraints on walls |
-| `ItemSystem` | Item transforms, collision |
+Persisted changes go through the scene store and form transmittable commits. A drag or transform uses live overrides, then writes one commit on release. Derived writes required by an operation must be included in that same commit so local recovery, undo, and remote replay agree.
 
-Slab geometry has no dedicated system: it renders through the registry `def.geometry` (`packages/nodes/src/slab/geometry.ts`, calling the pure generators in `packages/viewer/src/systems/slab/slab-system.tsx`) with a small `def.system` for dirty tracking.
+## Removed systems
 
-### Viewer Systems — `packages/viewer/src/systems/`
+DiaStage does not mount roof, ceiling, terrain, MEP, room detection, room quantities, or automatic stair-opening systems. Compatibility parsing archives their old nodes without rendering, editing, or deleting them on first open.
 
-Access Three.js objects (via `useRegistry`) and manage rendering side-effects.
-
-| System | Responsibility |
-|---|---|
-| `LevelSystem` | Stacked / exploded / solo / manual level positions |
-| `WallCutout` | Cuts door/window holes in wall geometry |
-| `ZoneSystem` | Zone display and label placement |
-| `InteractiveSystem` | Item toggles and sliders in the scene |
-| `GuideSystem` | Temporary helper geometry |
-| `ScanSystem` | Point cloud rendering |
-
-## Pattern
-
-Systems are React components that render nothing (`return null`) and use `useFrame` for per-frame logic.
-
-```tsx
-// packages/core/src/systems/my-system.tsx
-import { useFrame } from '@react-three/fiber'
-import { useScene } from '../store/use-scene'
-
-export function MySystem() {
-  const nodes = useScene(s => s.nodes)
-
-  useFrame(() => {
-    // compute and write back derived state
-  })
-
-  return null
-}
-```
-
-Core and viewer systems are mounted inside `<Viewer>` alongside renderers. See `packages/viewer/src/components/viewer/index.tsx` for the mount order.
-
-**Systems are a customization point.** Any consumer of `<Viewer>` — the editor app, an embed, a read-only preview — can inject its own systems as children. This is how editor-specific behaviour (space detection, tool feedback) is added without touching the viewer package.
-
-## Rules
-
-- **Core systems must not import Three.js** — they work with plain data.
-- **Viewer systems must not contain business logic** — delegate to core if the rule is domain-level.
-- **Never duplicate logic** between a system and a renderer — if the renderer needs it, the system should compute and store it, and the renderer reads the result.
-- Systems should be **idempotent**: given the same nodes, they produce the same output.
-- Mark nodes as `dirty` in the scene store to signal that a system should re-run. Avoid running expensive logic every frame without a dirty check.
-- **Clear module-level caches on unmount.** A cache that survives between frames also survives the mount, and one keyed by level or node ID grows with every project opened in the tab. Reset it from the system's unmount effect, the same way editor teardown calls `spatialGridManager.clear()`.
-
-## Reconciliation and scene commits
-
-Reconciliation that writes persisted scene data must keep every derived write in a transmittable
-scene commit. Space detection, for example, can create slabs and ceilings, update wall-side
-classification, and grow `level.children` in response to one wall edit. Those writes are part of
-the originating edit: they must appear in that edit's `SceneCommit.current` snapshot and remain one
-undo step.
-
-The current store-subscription ordering satisfies this contract because reconciliation finishes
-before the history middleware captures the commit. Moving reconciliation to
-`subscribeSceneCommits` breaks the contract unless it emits a separate transmittable commit: commit
-listeners run after the snapshots have already been captured, and writes made while history is
-paused would otherwise exist only in the local live store.
-
-Remote operations apply the generated nodes carried by the originating commit. Receiving clients
-must not independently regenerate them; mutation locking and read-only guards prevent clients from
-minting different IDs for the same derived surfaces.
-
-Any optimization that scopes reconciliation to a subset of nodes or rooms must be tested for
-equivalence with a full level scan. Representative create, update, delete, cascade, split, merge,
-and corridor-enclosure edits must produce the same spaces and surfaces as full reconciliation.
-
-## Adding a New System
-
-1. Decide the scope:
-   - **Domain logic** → `packages/core/src/systems/`
-   - **Viewer rendering side-effect** → `packages/viewer/src/systems/` — mount in `packages/viewer/src/components/viewer/index.tsx`
-   - **Editor-specific or integration-specific** → keep it in the consuming app (e.g. `apps/editor/components/systems/`) and inject it as a child of `<Viewer>`
-
-2. Create `<name>-system.tsx` in the appropriate directory.
-
-3. Mount it in the right place:
-   - Viewer-internal systems go in `packages/viewer/src/components/viewer/index.tsx`
-   - App-specific systems are injected as children from outside:
-     ```tsx
-     // apps/editor — editor injects its own systems without modifying the viewer
-     <Viewer>
-       <MyEditorSystem />
-       <ToolManager />
-     </Viewer>
-     ```
-
-4. **Mount order matters.** Most viewer systems run *after* renderers in the JSX tree — they consume `sceneRegistry` data that renderers populate on mount. Only place a system before renderers if it explicitly does not read the registry.
+When adding a system, keep its mount in the owning layer and add one focused test that proves its trigger and teardown behavior.

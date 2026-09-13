@@ -10,18 +10,19 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
   serverExternalPackages: ['pdfjs-dist', 'mammoth', 'fflate'],
   outputFileTracingRoot: path.join(appDirectory, '../..'),
+  // Script import extracts text only; PDF.js canvas rendering is never used.
+  ...(portableBuild
+    ? { outputFileTracingExcludes: { '/*': ['../../node_modules/@napi-rs/canvas*/**/*'] } }
+    : {}),
   outputFileTracingIncludes: {
     '/api/script/stage-plan': [
       './lib/scripts/document-worker.mjs',
-      '../../node_modules/{pdfjs-dist,mammoth,fflate,@napi-rs/canvas,@napi-rs/canvas-*,@xmldom/xmldom,argparse,base64-js,bluebird,core-util-is,dingbat-to-unicode,duck,immediate,inherits,isarray,jszip,lie,lop,option,pako,path-is-absolute,process-nextick-args,readable-stream,safe-buffer,setimmediate,sprintf-js,string_decoder,underscore,util-deprecate,xmlbuilder}/**/*',
+      '../../node_modules/{pdfjs-dist,mammoth,fflate,@xmldom/xmldom,argparse,base64-js,bluebird,core-util-is,dingbat-to-unicode,duck,immediate,inherits,isarray,jszip,lie,lop,option,pako,path-is-absolute,process-nextick-args,readable-stream,safe-buffer,setimmediate,sprintf-js,string_decoder,underscore,util-deprecate,xmlbuilder}/**/*',
     ],
   },
   ...(portableBuild ? { output: 'standalone' as const } : {}),
   logging: {
     browserToTerminal: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
   },
   // MCP / package metadata returns `/editor/<id>` (hosted route). This open-source
   // app serves saved scenes at `/scene/<id>` — redirect so links and bookmarks work.
@@ -40,11 +41,6 @@ const nextConfig: NextConfig = {
     '@pascal-app/core',
     '@pascal-app/editor',
     '@pascal-app/mcp',
-    '@pascal-app/plugin-streetscape',
-    '@pascal-app/plugin-trees',
-    '@mint/pascal-plugin',
-    '@pascal-app/plugin-bones',
-    '@dgreenheck/ez-tree',
   ],
   turbopack: {
     resolveAlias: {

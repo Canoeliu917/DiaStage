@@ -22,7 +22,7 @@ type RecordingResult = { blob: Blob; extension: 'mp4' | 'webm' }
 
 export function startCanvasRecording(
   source: HTMLCanvasElement,
-  options: RecordingOptions = { width: 1920, height: 1080, fps: 30 },
+  options: RecordingOptions = { width: 1280, height: 720, fps: 24 },
 ): { stop: () => Promise<RecordingResult>; cancel: () => void } {
   const { width, height, fps } = options
   if (
@@ -80,7 +80,7 @@ export function startCanvasRecording(
         : undefined
     recorder = new MediaRecorder(stream, {
       ...(mimeType ? { mimeType } : {}),
-      videoBitsPerSecond: 8_000_000,
+      videoBitsPerSecond: 4_000_000,
     })
   } catch (error) {
     for (const track of stream.getTracks()) track.stop()
@@ -154,8 +154,12 @@ export function startCanvasRecording(
     resolveResult({ blob, extension })
   }
 
+  let lastFrame = -Infinity
   const renderFrame = () => {
     if (finished || stopping) return
+    const now = performance.now()
+    if (now - lastFrame < 1000 / fps) return
+    lastFrame = now
     try {
       draw()
     } catch (error) {

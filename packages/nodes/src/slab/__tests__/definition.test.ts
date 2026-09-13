@@ -105,7 +105,7 @@ describe('slabDefinition handles', () => {
     expect(slab.thickness).toBe(0.2)
   })
 
-  test('previews attached stair rise while resizing a raised slab', () => {
+  test('keeps stage step dimensions independent when resizing a platform', () => {
     const slab = SlabNode.parse({
       id: 'slab_deck',
       parentId: 'level_a',
@@ -131,21 +131,16 @@ describe('slabDefinition handles', () => {
       children: ['segment_a'],
       position: [3, 0, 3],
       rotation: 0,
-      stairType: 'straight',
-      deckSlabId: slab.id,
       supportSlabId: 'ground',
     } as unknown as AnyNode
     const segment = {
       id: 'segment_a',
       type: 'stair-segment',
       parentId: 'stair_a',
-      segmentType: 'stair',
       height: 0.7,
       width: 1,
       length: 3,
       stepCount: 10,
-      fillToFloor: false,
-      thickness: 0.2,
     } as unknown as AnyNode
     const nodes = {
       [level.id]: level,
@@ -158,8 +153,9 @@ describe('slabDefinition handles', () => {
       handle.previewOverrides?.(slab, 0.4, { nodes: () => nodes } as never) ?? [],
     )
 
-    expect(preview.has(stair.id as AnyNodeId)).toBe(true)
-    expect(preview.get(segment.id as AnyNodeId)?.height).toBeCloseTo(0.9)
+    expect(preview.has(stair.id as AnyNodeId)).toBe(false)
+    expect(preview.has(segment.id as AnyNodeId)).toBe(false)
+    expect(segment).toMatchObject({ height: 0.7 })
   })
 
   test('keeps recessed slabs on their depth control only', () => {

@@ -4,7 +4,6 @@ import { type AnyNodeId, emitter, sceneRegistry, useScene, type WallNode } from 
 import {
   drainRebuiltWalls,
   getPendingWallRebuildCount,
-  isIsolationActive,
   SCENE_LAYER,
   useViewer,
   type WallMode,
@@ -186,11 +185,9 @@ function toCandidate(
  * hold still. That is true in `up`; in `cutaway`, walls stamped `wallHidden`
  * are released per wall in the same frame because WallCutout runs at priority
  * 0 and this system at 5. `down` and `translucent` make every wall see-through.
- * Isolation is the other stand-down: it hides the level root the merged mesh
- * hangs off, which would leave a focused batched wall drawn by nobody.
  */
-export function canBatchWalls(wallMode: WallMode, isolationActive: boolean): boolean {
-  return !isolationActive && (wallMode === 'up' || wallMode === 'cutaway')
+export function canBatchWalls(wallMode: WallMode): boolean {
+  return wallMode === 'up' || wallMode === 'cutaway'
 }
 
 /**
@@ -505,12 +502,12 @@ export function runBatchFrame(
     }
   }
 
-  // Isolation, `down` and `translucent` make batching unsound, so the batch
-  // stands down while they hold and sews the floors back together once they
-  // lift. `cutaway` stays live because WallCutout stamps hidden walls at
+  // `down` and `translucent` make batching unsound, so the batch stands down
+  // while they hold and sews the floors back together once they lift.
+  // `cutaway` stays live because WallCutout stamps hidden walls at
   // priority 0 and this system releases them per wall at priority 5 in the
   // same frame. See `canBatchWalls`.
-  const suspended = !canBatchWalls(useViewer.getState().wallMode, isIsolationActive())
+  const suspended = !canBatchWalls(useViewer.getState().wallMode)
   if (suspended !== batchingSuspended) {
     batchingSuspended = suspended
     for (const levelId of [...batchesByLevel.keys()]) disposeLevelBatches(levelId)

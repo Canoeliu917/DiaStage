@@ -10,9 +10,8 @@ import { triggerSFX, useDraftNode, useEditor, usePlacementCoordinator } from '@p
  *
  * Wraps the same `usePlacementCoordinator` + `useDraftNode` primitives
  * the move-tool uses. The placement coordinator runs surface strategies
- * (floor / wall / ceiling / item-surface) so the same cursor logic
- * handles wall-mounted artwork, floor furniture, ceiling fans, and
- * nested items on tables.
+ * (floor / wall / item-surface) so the same cursor logic handles
+ * wall-mounted artwork, floor furniture, and nested items on tables.
  *
  * Replaces the legacy `editor/src/components/tools/item/item-tool.tsx`.
  * The `tools` map in `tool-manager.tsx` no longer needs an `item:` entry
@@ -25,7 +24,7 @@ function ItemPlacementContent({ selectedItem }: { selectedItem: AssetInput }) {
     asset: selectedItem,
     draftNode,
     initDraft: (gridPosition) => {
-      // Only floor items get a draft on mount; wall / ceiling items are
+      // Only floor items get a draft on mount; wall items are
       // created lazily by the placement coordinator when the cursor
       // enters a surface (so the draft doesn't appear at world origin
       // before the first move event).

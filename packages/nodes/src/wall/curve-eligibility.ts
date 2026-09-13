@@ -2,7 +2,7 @@ import type { AnyNode } from '@pascal-app/core'
 
 export function hasWallCurveBlockingChildren(children: readonly AnyNode[]) {
   return children.some((child) => {
-    if (child.type === 'door' || child.type === 'window' || child.type === 'lean-to-extension') {
+    if (child.type === 'door' || child.type === 'window') {
       return true
     }
     if (child.type !== 'item') return false

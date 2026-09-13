@@ -28,7 +28,6 @@ export const buildingDefinition: NodeDefinition<typeof BuildingNode> = {
     duplicable: false,
     deletable: false,
     floorplanLevelContainer: true,
-    presettable: false,
   },
 
   // Building-wide drag (whole-building translate + R/T rotation). Routed
@@ -48,14 +47,14 @@ export const buildingDefinition: NodeDefinition<typeof BuildingNode> = {
   },
 
   presentation: {
-    label: '建筑',
-    description: '包含一个或多个楼层的建筑容器。',
+    label: '舞台空间',
+    description: '组织一个或多个表演层的舞台容器。',
     icon: { kind: 'url', src: '/icons/building.webp' },
     paletteSection: 'site',
     paletteOrder: 6,
   },
 
   mcp: {
-    description: 'A building container that groups levels.',
+    description: 'A legacy-compatible stage container that groups performance layers.',
   },
 }

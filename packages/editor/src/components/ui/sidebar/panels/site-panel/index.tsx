@@ -59,7 +59,6 @@ import { MetricControl } from '../../../controls/metric-control'
 import { LevelDuplicateDialog } from '../../../level-duplicate-dialog'
 import { InlineRenameInput } from './inline-rename-input'
 import { focusTreeNode, TreeNode } from './tree-node'
-import { TreeNodeDragProvider } from './tree-node-drag'
 
 // ============================================================================
 // PROPERTY LINE SECTION
@@ -818,7 +817,7 @@ const LevelItem = memo(function LevelItem({
 
         <div className="flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-2 py-0 pl-0.5 text-sm">
           <img
-            alt="楼层"
+            alt="表演层"
             className={cn(
               'h-4 w-4 shrink-0 object-contain transition-all duration-200',
               !isSelected && 'opacity-60 grayscale',
@@ -917,7 +916,7 @@ const LevelItem = memo(function LevelItem({
             <button
               className="flex w-full cursor-pointer items-center gap-2 rounded px-3 py-1.5 text-left text-sm transition-colors hover:bg-accent"
               onClick={() => handleDuplicateLevel()}
-              title="复制楼层"
+              title="复制表演层"
             >
               <Copy className="h-3.5 w-3.5" />
               复制
@@ -925,7 +924,7 @@ const LevelItem = memo(function LevelItem({
             <button
               className="flex w-full cursor-pointer items-center gap-2 rounded px-3 py-1.5 text-left text-sm transition-colors hover:bg-accent"
               onClick={() => setDuplicateDialogOpen(true)}
-              title="选择楼层复制内容"
+              title="选择表演层复制内容"
             >
               <Copy className="h-3.5 w-3.5" />
               选择复制内容…
@@ -934,7 +933,7 @@ const LevelItem = memo(function LevelItem({
               className="flex w-full items-center gap-2 rounded px-3 py-1.5 text-left text-sm transition-colors enabled:cursor-pointer enabled:hover:bg-accent enabled:hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={!canDeleteLevel}
               onClick={() => deleteLevelWithFallbackSelection(level.id)}
-              title={canDeleteLevel ? '删除楼层' : '不能删除地面层'}
+              title={canDeleteLevel ? '删除表演层' : '不能删除基准表演层'}
             >
               <Trash2 className="h-3.5 w-3.5" />
               删除
@@ -1040,7 +1039,7 @@ const LevelsSection = memo(function LevelsSection({
           <div className="relative z-10 flex items-center pr-1 pl-[38px]">
             <Plus className="h-3.5 w-3.5" />
           </div>
-          <span className="truncate">添加楼层</span>
+          <span className="truncate">添加表演层</span>
         </button>
         {levels.length === 0 && (
           <div className="relative flex h-8 select-none items-center border-border/50 border-b py-0 pr-2 pl-[38px] text-muted-foreground text-xs">
@@ -1048,7 +1047,7 @@ const LevelsSection = memo(function LevelsSection({
             <div className="pointer-events-none absolute top-0 bottom-1/2 left-[21px] w-px bg-border/50" />
             {/* Horizontal branch line */}
             <div className="pointer-events-none absolute top-1/2 left-[21px] h-px w-[11px] bg-border/50" />
-            尚无楼层
+            尚无表演层
           </div>
         )}
         {[...levels].reverse().map((level, index) => (
@@ -1417,7 +1416,7 @@ const ContentSection = memo(function ContentSection() {
   )
 
   if (!level) {
-    return <div className="px-3 py-4 text-muted-foreground text-sm">选择楼层以查看内容</div>
+    return <div className="px-3 py-4 text-muted-foreground text-sm">选择表演层以查看内容</div>
   }
 
   if (structureLayer === 'zones') {
@@ -1430,7 +1429,7 @@ const ContentSection = memo(function ContentSection() {
     if (levelZones.length === 0) {
       return (
         <div className="px-3 py-4 text-muted-foreground text-sm">
-          此楼层尚无区域。{' '}
+          此表演层尚无区域。{' '}
           <button className="cursor-pointer text-primary hover:underline" onClick={handleAddZone}>
             添加区域
           </button>
@@ -1448,21 +1447,19 @@ const ContentSection = memo(function ContentSection() {
   }
 
   if (elementChildren.length === 0) {
-    return <div className="px-3 py-4 text-muted-foreground text-sm">此楼层尚无元素</div>
+    return <div className="px-3 py-4 text-muted-foreground text-sm">此表演层尚无元素</div>
   }
   return (
-    <TreeNodeDragProvider>
-      <div className="flex flex-col">
-        {elementChildren.map((childId, index) => (
-          <TreeNode
-            depth={0}
-            isLast={index === elementChildren.length - 1}
-            key={childId}
-            nodeId={childId}
-          />
-        ))}
-      </div>
-    </TreeNodeDragProvider>
+    <div className="flex flex-col">
+      {elementChildren.map((childId, index) => (
+        <TreeNode
+          depth={0}
+          isLast={index === elementChildren.length - 1}
+          key={childId}
+          nodeId={childId}
+        />
+      ))}
+    </div>
   )
 })
 
@@ -1523,14 +1520,14 @@ const BuildingItem = memo(function BuildingItem({
       >
         <div className="flex h-full min-w-0 flex-1 cursor-pointer items-center gap-2 py-2 pl-3">
           <img
-            alt="建筑"
+            alt="舞台空间"
             className={cn(
               'h-5 w-5 object-contain transition-all',
               !isBuildingActive && 'opacity-60 grayscale',
             )}
             src="/icons/building.webp"
           />
-          <span className="truncate font-medium text-sm">{building.name || '建筑'}</span>
+          <span className="truncate font-medium text-sm">{building.name || '舞台空间'}</span>
         </div>
         <Popover
           onOpenChange={(open) => setBuildingCameraOpen(open ? building.id : null)}
@@ -1724,7 +1721,7 @@ export function SitePanel({ projectId, onUploadAsset, onDeleteAsset }: SitePanel
           {/* Buildings List */}
           {buildings.length === 0 ? (
             <motion.div className="px-3 py-4 text-muted-foreground text-sm" layout="position">
-              尚无建筑
+              尚无舞台空间
             </motion.div>
           ) : (
             <div className="flex min-h-0 flex-1 flex-col">

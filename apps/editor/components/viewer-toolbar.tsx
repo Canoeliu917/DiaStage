@@ -563,7 +563,7 @@ function PreviewButton() {
   )
 }
 
-export function CommunityViewerToolbarLeft() {
+export function EditorViewerToolbarLeft() {
   return (
     <>
       <CollapseSidebarButton />
@@ -633,7 +633,7 @@ export function StudioPicturePanel() {
   )
 }
 
-export function CommunityViewerToolbarRight() {
+export function EditorViewerToolbarRight() {
   return (
     <details className="theatre-view-options">
       <summary>显示与观察</summary>

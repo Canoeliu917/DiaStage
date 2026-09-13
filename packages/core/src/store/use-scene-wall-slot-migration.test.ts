@@ -185,27 +185,6 @@ describe('procedural kind surface-material → slots migration', () => {
     expect((slab as { materialPreset?: unknown }).materialPreset).toBeUndefined()
   })
 
-  test('ceiling: inline custom material mints a scene material on slots.surface', () => {
-    useScene.getState().setScene(
-      sceneWithNode({
-        type: 'ceiling',
-        polygon: [
-          [0, 0],
-          [2, 0],
-          [2, 2],
-        ],
-        material: { properties: { color: '#ddeeff' } },
-      }),
-      ['site_test'] as never,
-    )
-
-    const ceiling = (useScene.getState().nodes as Record<string, SlottedNode>).node_test!
-    const ref = ceiling.slots?.surface
-    expect(ref?.startsWith('scene:')).toBe(true)
-    expect(ceiling.material).toBeUndefined()
-    expect(Object.keys(useScene.getState().materials)).toHaveLength(1)
-  })
-
   test('fence: legacy preset fans out to every slot id (one shared ref)', () => {
     useScene.getState().setScene(
       sceneWithNode({
@@ -226,13 +205,12 @@ describe('procedural kind surface-material → slots migration', () => {
     })
   })
 
-  test('stair: per-role legacy fields map tread→treads, side→body, railing→railing', () => {
+  test('stage steps: legacy tread and side finishes map to current paint slots', () => {
     useScene.getState().setScene(
       sceneWithNode({
         type: 'stair',
         treadMaterialPreset: 'library:wood-woodplank48',
         sideMaterialPreset: 'library:concrete-plate',
-        railingMaterialPreset: 'library:metal-chrome',
       }),
       ['site_test'] as never,
     )
@@ -240,7 +218,6 @@ describe('procedural kind surface-material → slots migration', () => {
     const stair = (useScene.getState().nodes as Record<string, SlottedNode>).node_test!
     expect(stair.slots?.treads).toBe('library:wood-woodplank48')
     expect(stair.slots?.body).toBe('library:concrete-plate')
-    expect(stair.slots?.railing).toBe('library:metal-chrome')
     expect((stair as { treadMaterialPreset?: unknown }).treadMaterialPreset).toBeUndefined()
   })
 
@@ -260,71 +237,5 @@ describe('procedural kind surface-material → slots migration', () => {
     const slab = (useScene.getState().nodes as Record<string, SlottedNode>).node_test!
     expect(slab.slots).toBeUndefined()
     expect(Object.keys(useScene.getState().materials)).toHaveLength(0)
-  })
-
-  test('roof accessory role materials migrate to their matching slots', () => {
-    useScene.getState().setScene(
-      sceneWithNode({
-        type: 'box-vent',
-        baseMaterialPreset: 'library:metal-steel',
-        topMaterialPreset: 'library:metal-copper',
-      }),
-      ['site_test'] as never,
-    )
-
-    const vent = (useScene.getState().nodes as Record<string, SlottedNode>).node_test!
-    expect(vent.slots).toEqual({
-      base: 'library:metal-steel',
-      top: 'library:metal-copper',
-    })
-    expect((vent as { baseMaterialPreset?: unknown }).baseMaterialPreset).toBeUndefined()
-    expect((vent as { topMaterialPreset?: unknown }).topMaterialPreset).toBeUndefined()
-  })
-
-  test('gutter and downspout legacy paint migrates to their current slot IDs', () => {
-    useScene
-      .getState()
-      .setScene(sceneWithNode({ type: 'gutter', materialPreset: 'library:metal-steel' }), [
-        'site_test',
-      ] as never)
-    let node = (useScene.getState().nodes as Record<string, SlottedNode>).node_test!
-    expect(node.slots).toEqual({ gutter: 'library:metal-steel' })
-
-    useScene
-      .getState()
-      .setScene(sceneWithNode({ type: 'downspout', materialPreset: 'library:metal-steel' }), [
-        'site_test',
-      ] as never)
-    node = (useScene.getState().nodes as Record<string, SlottedNode>).node_test!
-    expect(node.slots).toEqual({ surface: 'library:metal-steel' })
-  })
-
-  test('renames a saved gutter surface slot without losing its material', () => {
-    useScene.getState().setScene(
-      sceneWithNode({
-        type: 'gutter',
-        slots: { surface: 'library:metal-copper' },
-      }),
-      ['site_test'] as never,
-    )
-
-    const gutter = (useScene.getState().nodes as Record<string, SlottedNode>).node_test!
-    expect(gutter.slots).toEqual({ gutter: 'library:metal-copper' })
-  })
-
-  test('seeds saved cupola louvers from the body slot', () => {
-    useScene.getState().setScene(
-      sceneWithNode({
-        type: 'cupola',
-        slots: { body: 'library:preset-softwhite' },
-      }),
-      ['site_test'] as never,
-    )
-
-    const cupola = (useScene.getState().nodes as Record<string, SlottedNode>).node_test!
-    expect(cupola.slots).toEqual({
-      body: 'library:preset-softwhite',
-      louvers: 'library:preset-softwhite',
-    })
   })
 })

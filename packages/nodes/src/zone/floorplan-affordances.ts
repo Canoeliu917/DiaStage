@@ -8,7 +8,7 @@ import {
 
 /**
  * 2D affordances for zone — same four polygon-editing operations
- * slabs and ceilings expose. Zones have no `holes` field, but the
+ * slabs expose. Zones have no `holes` field, but the
  * shared factory accepts that case (holeIndex stays undefined and the
  * boundary polygon is the target).
  *
@@ -17,23 +17,7 @@ import {
  *   - `move-edge` — drag an entire edge perpendicular to itself.
  *   - `delete-vertex` — remove a double-clicked vertex down to three.
  */
-const zoneManualEditOptions = {
-  boundaryCommitData: { autoFromWalls: false, boundaryWallIds: [] },
-}
-
-export const zoneMoveVertexAffordance = createPolygonVertexAffordance<ZoneNode>(
-  'zone',
-  zoneManualEditOptions,
-)
-export const zoneAddVertexAffordance = createPolygonAddVertexAffordance<ZoneNode>(
-  'zone',
-  zoneManualEditOptions,
-)
-export const zoneMoveEdgeAffordance = createPolygonMoveEdgeAffordance<ZoneNode>(
-  'zone',
-  zoneManualEditOptions,
-)
-export const zoneDeleteVertexAffordance = createPolygonDeleteVertexAffordance<ZoneNode>(
-  'zone',
-  zoneManualEditOptions,
-)
+export const zoneMoveVertexAffordance = createPolygonVertexAffordance<ZoneNode>('zone')
+export const zoneAddVertexAffordance = createPolygonAddVertexAffordance<ZoneNode>('zone')
+export const zoneMoveEdgeAffordance = createPolygonMoveEdgeAffordance<ZoneNode>('zone')
+export const zoneDeleteVertexAffordance = createPolygonDeleteVertexAffordance<ZoneNode>('zone')

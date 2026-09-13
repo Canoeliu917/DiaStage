@@ -4,7 +4,7 @@ import { StudioWordmark } from '@/components/studio-wordmark'
 
 export const metadata: Metadata = {
   title: '隐私政策 · 咫台',
-  description: 'Pascal Editor 与 Pascal 平台隐私政策的中文译文。',
+  description: '咫台本机版的舞台输入、模型处理和数据保存说明。',
 }
 
 export default function PrivacyPage() {
@@ -35,9 +35,49 @@ export default function PrivacyPage() {
       <main className="container mx-auto max-w-3xl px-6 py-12">
         <article className="prose prose-neutral dark:prose-invert max-w-none">
           <h1 className="mb-2 font-bold text-3xl">隐私政策</h1>
+          <section className="mb-8 space-y-4">
+            <h2 className="font-semibold text-xl">咫台本机版 · 2026 年 9 月 10 日</h2>
+            <p>
+              录音会发送至模型服务完成本次转写；复杂口令或被选中的剧本片段会发送至模型服务生成舞台方案。咫台不会把原始录音写入舞台项目，也不会把完整
+              PDF/DOCX 直接发送给规划模型。
+            </p>
+            <p>
+              建议模式下所有修改均需预览确认。只有本机工作区拥有者主动开启连续制景后，经过本地校验的安全可逆命令才会在授权时限内自动执行，并可随时停止或撤销。公网连续制景暂时禁用。
+            </p>
+            <p>
+              本机费用账本记录请求编号、功能、模型、用量、估算费用、延迟和错误类型，不记录录音、口令、转写或完整剧本。项目仅保存已确认布景所需的依据摘录。
+            </p>
+            <p>
+              模型请求使用 store: false；这不代表供应商绝不保留任何数据。供应商处理规则请参阅
+              <a
+                className="underline"
+                href="https://developers.openai.com/api/docs/guides/your-data"
+                target="_blank"
+                rel="noreferrer"
+              >
+                OpenAI 数据控制说明
+              </a>
+              。
+            </p>
+          </section>
+          <section className="mb-8 space-y-4">
+            <h2 className="font-semibold text-xl">AI 排演伙伴 · 2026 年 9 月 11 日</h2>
+            <p>
+              仅在你点击“生成排演可能”时，将输入意图、粘贴的选段、当前人物与路线、布景边界摘要发送至模型服务。不会发送完整项目或自动采用建议。
+            </p>
+            <p>
+              建议、生成依据、你的采用/部分采用/修改/拒绝以及采用后的最终调整，独立保存在当前浏览器的私有反馈记录中。项目保存与训练授权分开，训练授权默认关闭，可随时撤销。当前版本没有训练上传或模型训练流程。
+            </p>
+            <p>
+              你可在“AI 排演伙伴 →
+              私有反馈与训练授权”中导出或删除这些记录。导出的备份包含选段原文，应作为私有文件保管；删除反馈不会删除舞台。清理浏览器数据可能删除本机记录，建议定期导出项目及反馈备份。
+            </p>
+          </section>
+          <h2 className="font-semibold text-xl">上游 Pascal 历史政策参考</h2>
           <p className="mb-2 text-muted-foreground text-sm">生效日期：2026 年 2 月 20 日</p>
           <p className="mb-8 text-muted-foreground text-sm">
-            本页为 Pascal 上游隐私政策的中文译文，文中的“我们”指 Pascal Group Inc.。
+            下文为 Pascal 上游隐私政策的中文译文，文中的“我们”指 Pascal Group
+            Inc.，不代表本机咫台接入了所列账户、托管或分析服务。
           </p>
 
           <section className="mb-8 space-y-4">

@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, test } from 'bun:test'
-import { loadAssetUrl, saveAsset } from './asset-storage'
+import { deleteAsset, loadAssetUrl, releaseAssetUrl, saveAsset } from './asset-storage'
 
 function file(contents: string, name = 'test.txt'): File {
   return new File([contents], name, { type: 'text/plain' })
@@ -40,6 +40,16 @@ describe('saveAsset', () => {
 })
 
 describe('loadAssetUrl', () => {
+  test('release keeps the persisted file for undo, rollback removes only an uncommitted file', async () => {
+    const url = await saveAsset(file('scan rollback'))
+    const first = await loadAssetUrl(url)
+    releaseAssetUrl(url)
+    const second = await loadAssetUrl(url)
+    expect(second).not.toBe(first)
+    expect(second).not.toBeNull()
+    await deleteAsset(url)
+    expect(await loadAssetUrl(url)).toBeNull()
+  })
   test('round-trips a saved asset back to an object URL', async () => {
     const url = await saveAsset(file('round-trip'))
     const objectUrl = await loadAssetUrl(url)

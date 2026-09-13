@@ -6,12 +6,17 @@ import { isTheatreEditableType } from './theatre-presentation'
 const EmptyPanel = () => null
 const legacyPanel = async () => ({ default: EmptyPanel })
 const descriptor: ParametricDescriptor<AnyNode> = {
-  groups: [{ label: '尺寸', fields: [
-    { key: 'height', kind: 'custom', component: EmptyPanel },
-    { key: 'thickness', kind: 'custom', component: EmptyPanel },
-    { key: 'terrainFill', kind: 'custom', component: EmptyPanel },
-    { key: 'autoOpening', kind: 'custom', component: EmptyPanel },
-  ] }],
+  groups: [
+    {
+      label: '尺寸',
+      fields: [
+        { key: 'height', kind: 'custom', component: EmptyPanel },
+        { key: 'thickness', kind: 'custom', component: EmptyPanel },
+        { key: 'terrainFill', kind: 'custom', component: EmptyPanel },
+        { key: 'autoOpening', kind: 'custom', component: EmptyPanel },
+      ],
+    },
+  ],
   customPanel: legacyPanel,
   trailingSection: legacyPanel,
   actions: [{ label: '工程参数', onClick: () => undefined }],
@@ -35,7 +40,10 @@ describe('theatre inspector boundary', () => {
   test('isolates specialist panels and engineering fields while preserving store reconciliation', () => {
     const originalGroups = descriptor.groups
     const result = theatreParametrics('wall', descriptor)!
-    expect(result.groups.flatMap((group) => group.fields.map((field) => field.key))).toEqual(['height', 'thickness'])
+    expect(result.groups.flatMap((group) => group.fields.map((field) => field.key))).toEqual([
+      'height',
+      'thickness',
+    ])
     expect(result.customPanel).toBeUndefined()
     expect(result.trailingSection).toBeUndefined()
     expect(result.actions).toBeUndefined()
@@ -52,8 +60,8 @@ describe('theatre inspector boundary', () => {
   test('provides stage stair placement and bounded opening controls without old panels', () => {
     for (const type of ['stair', 'stair-segment']) {
       const fields = theatreParametrics(type, descriptor)!.groups.flatMap((group) => group.fields)
-      expect(fields.map((field) => field.key)).toEqual(['width', 'position'])
-      expect(fields.map((field) => field.kind)).toEqual(['number', 'vec3'])
+      expect(fields).toEqual([])
+      expect(theatreParametrics(type, descriptor)?.customPanel).toBe(legacyPanel)
     }
     for (const type of ['door', 'window']) {
       const fields = theatreParametrics(type, descriptor)!.groups.flatMap((group) => group.fields)

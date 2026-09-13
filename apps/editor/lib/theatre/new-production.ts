@@ -49,7 +49,6 @@ export function createTheatreSceneGraph(name = '未命名剧目'): SceneGraph {
     elevation: 0,
     thickness: 0.05,
     material: { preset: 'custom', properties: { color: '#626262', roughness: 1, metalness: 0 } },
-    autoFromWalls: false,
     metadata: { theatreKind: 'stage-floor' },
   })
   site.children = [container.id]

@@ -10,7 +10,6 @@ import {
   getWallCurveLength,
   getWallFaceBandConfig,
   normalizeWallCurveOffset,
-  terrainSupportLift,
   useLiveNodeOverrides,
   useScene,
   WALL_CHAIR_RAIL_DEFAULT,
@@ -38,7 +37,7 @@ import {
 import { useViewer } from '@pascal-app/viewer'
 import { Spline } from 'lucide-react'
 import { useCallback, useMemo, useRef } from 'react'
-import { resolveWallOpeningCeiling } from '../shared/wall-opening-ceiling'
+import { resolveWallOpeningTop } from '../shared/wall-opening-top'
 import { hasWallCurveBlockingChildren } from './curve-eligibility'
 
 /**
@@ -48,14 +47,9 @@ import { hasWallCurveBlockingChildren } from './curve-eligibility'
  * floor and buries the wall in any later slab.
  */
 function wallBaseRepairPatch(n: WallNode): Partial<WallNode> {
-  const nodes = useScene.getState().nodes
-  const terrainSupported =
-    n.parentId != null && terrainSupportLift(nodes, n.parentId, n.start[0], n.start[1]) != null
   return {
     supportOffset: undefined,
-    ...(n.supportSlabId === GROUND_SUPPORT_ID && !terrainSupported
-      ? { supportSlabId: undefined }
-      : {}),
+    ...(n.supportSlabId === GROUND_SUPPORT_ID ? { supportSlabId: undefined } : {}),
   }
 }
 
@@ -129,7 +123,7 @@ export default function WallPanel() {
   const resolvedHeightMeters = useScene((s) => {
     const wall = selectedId ? (s.nodes[selectedId as AnyNodeId] as WallNode | undefined) : undefined
     if (wall?.type !== 'wall') return undefined
-    return resolveWallOpeningCeiling(wall, s.nodes)
+    return resolveWallOpeningTop(wall, s.nodes)
   })
 
   // Mirror the latest node into a ref so the slider handlers below have
@@ -181,31 +175,12 @@ export default function WallPanel() {
       if (mode === 'custom' && !isCustom) {
         // Seed from the current effective height so the geometry doesn't
         // jump at the moment of detaching from the storey plane.
-        const seeded = resolveWallOpeningCeiling(n, useScene.getState().nodes)
+        const seeded = resolveWallOpeningTop(n, useScene.getState().nodes)
         handleUpdate({ height: Math.max(0.1, seeded) })
       } else if (mode === 'storey' && isCustom) {
         // Absent `height` = plane-bound; the store strips undefined keys.
         handleUpdate({ height: undefined, ...wallBaseRepairPatch(n) })
       }
-    },
-    [handleUpdate],
-  )
-
-  // Terrain infill only extends the bottom; it must never materialize an
-  // explicit height, or toggling it would silently detach the wall top from
-  // the storey plane. "Auto" is a re-election, so it carries the same base
-  // repair as the follows-level toggle — and the control fires on a click of
-  // the already-selected segment, so regression-era walls that DISPLAY Auto
-  // while secretly ground-pinned heal from a click on Auto itself.
-  const handleInfillChange = useCallback(
-    (mode: 'terrain' | 'auto') => {
-      const n = nodeRef.current
-      if (!n) return
-      if (mode === 'terrain') {
-        handleUpdate({ fillToTerrain: true })
-        return
-      }
-      handleUpdate({ fillToTerrain: undefined, ...wallBaseRepairPatch(n) })
     },
     [handleUpdate],
   )
@@ -225,7 +200,6 @@ export default function WallPanel() {
 
   const length = getWallCurveLength(node)
 
-  const followsTerrain = node.fillToTerrain === true
   const isPlaneBound = node.height == null
   const height = node.height ?? resolvedHeightMeters ?? 2.5
   const thickness = node.thickness ?? 0.1
@@ -272,7 +246,7 @@ export default function WallPanel() {
         <SegmentedControl
           onChange={handleTopModeChange}
           options={[
-            { label: '跟随楼层', value: 'storey' },
+            { label: '跟随表演层', value: 'storey' },
             { label: '自定义高度', value: 'custom' },
           ]}
           value={isPlaneBound ? 'storey' : 'custom'}
@@ -300,19 +274,6 @@ export default function WallPanel() {
         <div className="px-1 font-medium text-[10px] text-muted-foreground/80 uppercase tracking-wider">
           底部
         </div>
-        <SegmentedControl
-          onChange={handleInfillChange}
-          options={[
-            { label: '自动', value: 'auto' },
-            { label: '填充至地形', value: 'terrain' },
-          ]}
-          value={followsTerrain ? 'terrain' : 'auto'}
-        />
-        {followsTerrain && (
-          <div className="px-1 text-[11px] text-muted-foreground">
-            向下延伸至地形，高度与顶部保持不变。
-          </div>
-        )}
         <SliderControl
           label="厚度"
           max={metersToLinearUnit(1000, unit)}

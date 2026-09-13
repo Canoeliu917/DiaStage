@@ -1,46 +1,29 @@
 export type {
   BlockEvent,
-  BoxVentEvent,
   BuildingEvent,
-  CabinetEvent,
-  CabinetModuleEvent,
   CameraControlEvent,
   CameraControlFitSceneEvent,
   CameraPose,
-  CeilingEvent,
-  ChimneyEvent,
-  ColumnEvent,
   ConstructionDimensionEvent,
   DoorEvent,
-  DormerEvent,
-  ElevatorEvent,
   EventSuffix,
   FenceEvent,
   GridEvent,
   GuideEvent,
-  GutterEvent,
   ItemEvent,
-  LeanToExtensionEvent,
   LevelEvent,
   MeasurementEvent,
   NodeEvent,
-  RidgeVentEvent,
-  RoofEvent,
-  RoofSegmentEvent,
-  RoomPresetCreateEvent,
   ScanEvent,
   ShelfEvent,
   SiteEvent,
-  SkylightEvent,
   SlabEvent,
   SnapshotCaptureFailedEvent,
   SnapshotCapturePose,
   SnapshotSavedEvent,
-  SolarPanelEvent,
   SpawnEvent,
   StairEvent,
   StairSegmentEvent,
-  StructuralGridEvent,
   ThumbnailGenerateEvent,
   WallEvent,
   WindowEvent,
@@ -88,7 +71,6 @@ export {
   resolveFrozenFloorPlacementPatch,
   resolveMovedWallSupportSlabPatch,
   resolveSupportSlabPatch,
-  resolveTerrainWallConstructionOptions,
   resolveWallConstruction,
   resolveWallSupportSlabPatch,
   type SupportSlabPatch,
@@ -97,7 +79,7 @@ export {
   type WallConstructionResolution,
 } from './hooks/spatial-grid/support-host-patch'
 export { useSpatialQuery } from './hooks/spatial-grid/use-spatial-query'
-export { loadAssetUrl, saveAsset } from './lib/asset-storage'
+export { deleteAsset, loadAssetUrl, releaseAssetUrl, saveAsset } from './lib/asset-storage'
 export {
   clampDoorOperationState,
   getDoorRenderOpenAmount,
@@ -139,17 +121,6 @@ export {
   subtractPolygonsFromPolygon,
   unionPolygons,
 } from './lib/polygon-union'
-export {
-  compareRoofOverlapIdentity,
-  getRoofPlanBounds,
-  type RoofOverlapEntry,
-  type RoofPlan,
-  type RoofPlanBounds,
-  type RoofPlanSegment,
-  roofOverlapEntryOwns,
-  roofPlanBoundsOverlap,
-  roofPlanOverlapEntryOwns,
-} from './lib/roof-overlap'
 export { resolveSelectionProxyId, selectionProxyIdFromMetadata } from './lib/selection-proxy'
 export {
   getRenderableSlabPolygon,
@@ -165,86 +136,6 @@ export {
   slotLabelFromId,
 } from './lib/slots'
 export {
-  type AutoCeilingPlanningContext,
-  type AutoCeilingSyncPlan,
-  type AutoSlabPlanningContext,
-  type AutoSlabSyncPlan,
-  type AutoZoneSyncPlan,
-  detectSpacesForLevel,
-  initSpaceDetectionSync,
-  isSpaceDetectionPaused,
-  pauseSpaceDetection,
-  planAutoCeilingsForLevel,
-  planAutoSlabsForLevel,
-  planAutoZonesForLevel,
-  resolveAutoZonePolygon,
-  resumeSpaceDetection,
-  type Space,
-  type SpaceBoundaryFace,
-  wallClosesRoom,
-  wallTouchesOthers,
-} from './lib/space-detection'
-export {
-  advanceStroke,
-  type BrushSettings,
-  type BrushShape,
-  beginStroke,
-  brushHeightAt,
-  DEFAULT_BRUSH_SETTINGS,
-  detachStrokeAnchor,
-  highestOver,
-  MIN_BRUSH_RADIUS_IN_SPACINGS,
-  maxCoverage,
-  minBrushRadius,
-  RAISE_METRES_PER_STROKE,
-  sampleTarget,
-  type TerrainStroke,
-  type TerrainVerb,
-  weightAt,
-} from './lib/terrain-brush'
-export {
-  decodeHeightPatch,
-  decodeTerrainField,
-  type EncodedHeightPatch,
-  encodeHeightPatch,
-  encodeTerrainField,
-  isDatumField,
-} from './lib/terrain-codec'
-export {
-  applyHeightPatch,
-  createTerrainField,
-  DEFAULT_TERRAIN_SPACING,
-  DEFAULT_TERRAIN_STEP,
-  diffToPatches,
-  flattenPatch,
-  type HeightPatch,
-  heightAt,
-  heightAtSample,
-  isFlatOver,
-  normalAt,
-  quantize,
-  sampleRangeOver,
-  slopeAt,
-  surfaceHeightAt,
-  type TerrainField,
-} from './lib/terrain-field'
-export { raycastTerrain, type TerrainHit } from './lib/terrain-raycast'
-export {
-  commitTerrainField,
-  persistedTerrainFieldOf,
-  terrainFieldForEdit,
-  terrainFieldOf,
-} from './lib/terrain-source'
-export {
-  isLevelBaseConsumer,
-  isSiteDatum,
-  levelBaseElevationAt,
-  noteLevelBaseConsumer,
-  SITE_DATUM_EPSILON,
-  SITE_DATUM_Y,
-  terrainSupportLift,
-} from './lib/terrain-support'
-export {
   closestOnSegment,
   collectLevelWallSegments,
   nearestWallSegment,
@@ -252,11 +143,6 @@ export {
   type WallSegment,
   type WallSegmentClosest,
 } from './lib/wall-distance'
-export {
-  deriveZoneQuantityReport,
-  type ZoneQuantityReport,
-  type ZoneQuantityValue,
-} from './lib/zone-quantities'
 export {
   getCatalogMaterialById,
   getDynamicLibraryMaterials,
@@ -321,11 +207,7 @@ export {
   type ControlValue,
   type DoorAnimationState,
   type DoorInteractiveState,
-  type ElevatorInteractiveState,
-  type ElevatorPhase,
   type ItemInteractiveState,
-  type SkylightAnimationState,
-  type SkylightInteractiveState,
   useInteractive,
   type WindowAnimationState,
   type WindowInteractiveState,
@@ -335,10 +217,6 @@ export {
   getEffectiveNode,
   type LiveNodeOverrides,
 } from './store/use-live-node-overrides'
-export {
-  default as useLiveTerrain,
-  type LiveTerrainStroke,
-} from './store/use-live-terrain'
 export { default as useLiveTransforms, type LiveTransform } from './store/use-live-transforms'
 export {
   type ApplySceneSnapshotOptions,
@@ -354,40 +232,6 @@ export {
   type SceneOperationPatch,
   type ScenePatch,
 } from './store/use-scene'
-export { resolveElevatorDispatchTarget } from './systems/elevator/elevator-dispatch'
-export {
-  type ElevatorDoorSide,
-  getElevatorCabCenterZ,
-  getElevatorCabDepth,
-  getElevatorCabWidth,
-  getElevatorDoorLeafSides,
-  getElevatorDoorLeafWidth,
-  getElevatorDoorLeafX,
-  getElevatorShaftDepth,
-  getElevatorShaftWallThickness,
-  getElevatorShaftWidth,
-  getResolvedElevatorDoorPanelStyle,
-  getResolvedElevatorDoorStyle,
-  getResolvedElevatorShaftStyle,
-} from './systems/elevator/elevator-geometry'
-export { syncAutoElevatorOpenings } from './systems/elevator/elevator-opening-sync'
-export { ElevatorOpeningSystem } from './systems/elevator/elevator-opening-system'
-export {
-  createElevatorInteractiveState,
-  openElevatorDoor,
-  openElevatorDoorState,
-  queueElevatorRequest,
-  requestElevatorLevel,
-  stepElevatorRuntimeState,
-  stepElevatorRuntimes,
-} from './systems/elevator/elevator-runtime'
-export {
-  type ElevatorLevelEntry,
-  resolveElevatorBuildingLevels,
-  resolveElevatorLevels,
-  resolveElevatorServiceLevelIds,
-  resolveElevatorServiceLevels,
-} from './systems/elevator/elevator-service'
 export {
   getFenceCenterlineFrameAt,
   getFenceCenterlineLength,
@@ -408,10 +252,7 @@ export {
   type SlabElevationClamp,
 } from './systems/slab/slab-support'
 export { type StairFootprintAABB, stairFootprintAABB } from './systems/stair/stair-footprint'
-export { createSurfaceOpeningPreviewController } from './systems/stair/stair-opening-preview'
-export { syncAutoStairOpenings } from './systems/stair/stair-opening-sync'
-export { StairOpeningSystem } from './systems/stair/stair-opening-system'
-export { resolveStairTotalRise, syncStairRises } from './systems/stair/stair-rise'
+export { resolveStairTotalRise } from './systems/stair/stair-rise'
 export {
   constrainWallCurveOffsetToAvoidIntersections,
   getClampedWallCurveOffset,

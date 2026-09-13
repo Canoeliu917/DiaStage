@@ -490,7 +490,7 @@ export type HandleDescriptor<N = any> =
 
 /**
  * Static array, or a function for shape-dependent cases (column
- * crossSection / supportStyle, stair-segment segmentType, etc.).
+ * enum and boolean values used by registered node handles.
  */
 export type HandleList<N> =
   | HandleDescriptor<N>[]

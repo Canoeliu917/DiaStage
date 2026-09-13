@@ -1,7 +1,6 @@
 import { GROUND_SUPPORT_ID } from '../hooks/spatial-grid/support-host-id'
 import type { AnyNode, AnyNodeId } from '../schema/types'
 import { deriveLegacyLevelHeight } from '../services/level-height'
-import { getCeilingClampBound } from '../services/storey'
 import { computeWallSlabSupport } from '../systems/slab/slab-support'
 import { DEFAULT_WALL_HEIGHT } from '../systems/wall/wall-footprint'
 
@@ -20,9 +19,7 @@ function getStringArray(value: unknown) {
     : []
 }
 
-// Walls whose top lands within this of the storey plane become plane-bound;
-// ceilings whose stored height lands within this of their clamp bound become
-// follows-mode. The strict comparison preserves intentional 0.20-short walls.
+// Walls whose top lands within this of the storey plane become plane-bound.
 const PLANE_BOUND_EPSILON = 0.2
 
 // A ground-pinned wall counts as buried only when the elected slab's occupied
@@ -49,8 +46,8 @@ export function migrateVerticalSceneNodes(
   }
 
   // A level without `height` marks a scene saved before the vertical model
-  // landed. Compute the gate before mutating anything so stair and ceiling
-  // intent on already-migrated scenes is never reclassified.
+  // landed. Compute the gate before mutating anything so already-migrated
+  // scenes are never reclassified.
   const isLegacyScene = Object.values(nodes).some(
     (node) => node?.type === 'level' && !('height' in node),
   )
@@ -146,72 +143,40 @@ export function migrateVerticalSceneNodes(
     )
   }
 
-  if (isLegacyScene) {
-    for (const [id, node] of Object.entries(nodes)) {
-      if (node?.type !== 'ceiling' || !('height' in node)) continue
-      const dropHeight = () => {
-        const { height: _height, ...follows } = node
-        replaceNode(id, follows)
-      }
-      if (node.autoFromWalls === true) {
-        dropHeight()
-        continue
-      }
-      if (typeof node.parentId !== 'string') continue
-      const bound = getCeilingClampBound(
-        node.parentId,
-        nodes as Record<AnyNodeId, AnyNode>,
-        Array.isArray(node.polygon) ? node.polygon : [],
-      )
-      const stored = getFiniteNumber(node.height, Number.NaN)
-      if (Number.isFinite(bound) && Math.abs(stored - bound) < PLANE_BOUND_EPSILON) {
-        dropHeight()
-      }
-    }
-  }
-
-  // Terrain-sculpt-era drafting stamped `supportSlabId: 'ground'` onto walls
-  // drawn in 3D on flat scenes. The pin short-circuits slab election, so a
+  // Legacy drafting stamped `supportSlabId: 'ground'` onto some walls. The pin
+  // short-circuits slab election, so a
   // wall whose feet sit inside a floor slab keeps its base at the level floor
   // — buried in the slab, z-fighting its side faces — while the panel shows
   // the base as automatic. Heal the pin only in that buried state: a deck
-  // hovering above an intentionally grounded wall must keep its pin (dropping
-  // it would lift the wall onto the deck). Scenes with sculpted terrain are
-  // skipped wholesale — a ground host is load-bearing there, and the live
-  // terrain field isn't visible to this pure pass.
-  const hasSculptedTerrain = Object.values(nodes).some(
-    (node) => node?.type === 'site' && node.terrain != null,
-  )
-  if (!hasSculptedTerrain) {
-    for (const [id, node] of Object.entries(nodes)) {
-      if (node?.type !== 'wall' || node.supportSlabId !== GROUND_SUPPORT_ID) continue
-      const levelId = typeof node.parentId === 'string' ? node.parentId : null
-      if (!levelId || nodes[levelId]?.type !== 'level') continue
-      const siblings = Object.values(nodes).filter(
-        (sibling) => sibling != null && sibling.parentId === levelId,
-      )
-      const support = computeWallSlabSupport(
-        {
-          start: node.start,
-          end: node.end,
-          curveOffset: node.curveOffset,
-          thickness: node.thickness,
-        },
-        siblings.filter((sibling) => sibling.type === 'slab'),
-        siblings.filter((sibling) => sibling.type === 'wall'),
-      )
-      const elected = support.electedSlabId ? nodes[support.electedSlabId] : null
-      if (!elected) continue
-      const pinnedBase = getFiniteNumber(node.supportOffset, 0)
-      const electedTop = getFiniteNumber(elected.elevation, 0.05)
-      const electedBottom = electedTop - getFiniteNumber(elected.thickness, 0.05)
-      const buried =
-        electedBottom <= pinnedBase + BURIED_PIN_EPSILON &&
-        electedTop > pinnedBase + BURIED_PIN_EPSILON
-      if (!buried) continue
-      const { supportSlabId: _host, supportOffset: _offset, ...healed } = node
-      replaceNode(id, healed)
-    }
+  // hovering above an intentionally grounded wall must keep its pin.
+  for (const [id, node] of Object.entries(nodes)) {
+    if (node?.type !== 'wall' || node.supportSlabId !== GROUND_SUPPORT_ID) continue
+    const levelId = typeof node.parentId === 'string' ? node.parentId : null
+    if (!levelId || nodes[levelId]?.type !== 'level') continue
+    const siblings = Object.values(nodes).filter(
+      (sibling) => sibling != null && sibling.parentId === levelId,
+    )
+    const support = computeWallSlabSupport(
+      {
+        start: node.start,
+        end: node.end,
+        curveOffset: node.curveOffset,
+        thickness: node.thickness,
+      },
+      siblings.filter((sibling) => sibling.type === 'slab'),
+      siblings.filter((sibling) => sibling.type === 'wall'),
+    )
+    const elected = support.electedSlabId ? nodes[support.electedSlabId] : null
+    if (!elected) continue
+    const pinnedBase = getFiniteNumber(node.supportOffset, 0)
+    const electedTop = getFiniteNumber(elected.elevation, 0.05)
+    const electedBottom = electedTop - getFiniteNumber(elected.thickness, 0.05)
+    const buried =
+      electedBottom <= pinnedBase + BURIED_PIN_EPSILON &&
+      electedTop > pinnedBase + BURIED_PIN_EPSILON
+    if (!buried) continue
+    const { supportSlabId: _host, supportOffset: _offset, ...healed } = node
+    replaceNode(id, healed)
   }
 
   return changed ? { changed, nodes } : { changed, nodes: sourceNodes }

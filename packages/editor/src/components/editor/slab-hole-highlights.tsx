@@ -2,12 +2,7 @@
 
 import {
   type AnyNodeId,
-  type BuildingNode,
-  type LevelNode,
-  resolveBuildingForLevel,
-  resolveLevelId,
   type SlabNode,
-  type SurfaceHoleMetadata,
   sceneRegistry,
   useLiveNodeOverrides,
   useScene,
@@ -162,38 +157,6 @@ function clearHoveredHoleIfMatches(nodeId: string, holeIndex: number) {
   }
 }
 
-function selectOwnedNode(ownerId: string, expectedType: 'stair' | 'elevator') {
-  const nodes = useScene.getState().nodes
-  const owner = nodes[ownerId as AnyNodeId]
-  if (owner?.type !== expectedType) return
-
-  const selectedId = owner.id as AnyNodeId
-
-  if (owner.type === 'elevator') {
-    const buildingId =
-      owner.parentId && nodes[owner.parentId as AnyNodeId]?.type === 'building'
-        ? (owner.parentId as BuildingNode['id'])
-        : null
-
-    useViewer
-      .getState()
-      .setSelection(
-        buildingId ? { buildingId, selectedIds: [selectedId] } : { selectedIds: [selectedId] },
-      )
-    return
-  }
-
-  const levelId = resolveLevelId(owner, nodes)
-  const buildingId =
-    levelId && levelId !== 'default' ? resolveBuildingForLevel(levelId as AnyNodeId, nodes) : null
-
-  useViewer.getState().setSelection({
-    ...(buildingId ? { buildingId: buildingId as BuildingNode['id'] } : {}),
-    ...(levelId && levelId !== 'default' ? { levelId: levelId as LevelNode['id'] } : {}),
-    selectedIds: [selectedId],
-  })
-}
-
 function resetPointerCursor() {
   if (document.body.style.cursor === 'pointer') {
     document.body.style.cursor = ''
@@ -264,7 +227,6 @@ function SelectedSlabHoleHighlights({ slabId }: { slabId: string }) {
   const slab = node?.type === 'slab' ? (node as SlabNode) : null
   const effectiveSlab = slab ? ({ ...slab, ...(override ?? {}) } as SlabNode) : null
   const holes = effectiveSlab?.holes ?? []
-  const holeMetadata = effectiveSlab?.holeMetadata ?? []
 
   // Portal the highlights into the slab's OWN object — exactly how
   // NodeArrowHandles portals into a node object. This is what makes R3F deliver
@@ -305,7 +267,6 @@ function SelectedSlabHoleHighlights({ slabId }: { slabId: string }) {
   return createPortal(
     <group>
       {holes.map((hole, holeIndex) => {
-        const metadata = holeMetadata[holeIndex]
         if (hole.length < 3) return null
 
         const isActive =
@@ -320,7 +281,6 @@ function SelectedSlabHoleHighlights({ slabId }: { slabId: string }) {
             hole={hole}
             holeIndex={holeIndex}
             key={`${slabId}:${holeIndex}`}
-            metadata={metadata}
             slabId={slabId}
             surfaceY={surfaceY}
           />
@@ -337,7 +297,6 @@ function SlabHoleHighlight({
   hitHeight,
   hole,
   holeIndex,
-  metadata,
   slabId,
   surfaceY,
 }: {
@@ -346,7 +305,6 @@ function SlabHoleHighlight({
   hitHeight: number
   hole: HolePolygon
   holeIndex: number
-  metadata: SurfaceHoleMetadata | undefined
   slabId: string
   surfaceY: number
 }) {
@@ -389,32 +347,10 @@ function SlabHoleHighlight({
       suppressNodeClickUntilPointerUp()
       useEditor.getState().setHoveredHole({ nodeId: slabId, holeIndex })
 
-      // Auto-managed cutouts (stair / elevator) jump to their owner so the
-      // user edits the source rather than the synced hole. Everything else —
-      // manual holes and holes that predate holeMetadata — opens the editor.
-      if (metadata?.source === 'stair' && metadata.stairId) {
-        useInteractionScope
-          .getState()
-          .endIf((sc) => sc.kind === 'reshaping' && sc.reshape === 'hole')
-        useEditor.getState().setHoveredHole(null)
-        resetPointerCursor()
-        selectOwnedNode(metadata.stairId, 'stair')
-        return
-      }
-      if (metadata?.source === 'elevator' && metadata.elevatorId) {
-        useInteractionScope
-          .getState()
-          .endIf((sc) => sc.kind === 'reshaping' && sc.reshape === 'hole')
-        useEditor.getState().setHoveredHole(null)
-        resetPointerCursor()
-        selectOwnedNode(metadata.elevatorId, 'elevator')
-        return
-      }
-
       useInteractionScope.getState().begin(holeEditScope({ nodeId: slabId, holeIndex }))
       useViewer.getState().setSelection({ selectedIds: [slabId as AnyNodeId] })
     },
-    [holeIndex, metadata, slabId],
+    [holeIndex, slabId],
   )
 
   const handlePointerUp = useCallback((event: ThreeEvent<PointerEvent>) => {

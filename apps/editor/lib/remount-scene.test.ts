@@ -4,7 +4,6 @@ import {
   type AnyNodeId,
   BlockNode,
   BuildingNode,
-  ColumnNode,
   clearSceneHistory,
   getFloorPlacedElevation,
   getScaledDimensions,
@@ -16,6 +15,7 @@ import {
   SlabNode,
   spatialGridManager,
   subscribeSceneCommits,
+  useLiveNodeOverrides,
   useLiveTransforms,
   useScene,
   WallNode,
@@ -117,6 +117,7 @@ describe('remount scene boundary', () => {
       },
     })
     spatialGridManager.clear()
+    useLiveNodeOverrides.getState().clearAll()
     useLiveTransforms.getState().clearAll()
     fixture(Array.from({ length: 10 }, (_, index) => item(index)))
   })
@@ -126,6 +127,7 @@ describe('remount scene boundary', () => {
     restoreRegistry()
     spatialGridManager.clear()
     useScene.getState().setReadOnly(false)
+    useLiveNodeOverrides.getState().clearAll()
     useLiveTransforms.getState().clearAll()
   })
 
@@ -229,6 +231,52 @@ describe('remount scene boundary', () => {
     useLiveTransforms.getState().set('item_test_1', { position: [0, 0, 0], rotation: 0 })
     expect(() => applyRemount(SCENE)).toThrow('结束当前')
     expect(useScene.getState().nodes).toBe(before)
+  })
+
+  test('display-only layer hiding preserves remount mapping and allows one apply and undo', () => {
+    const before = useScene.getState().nodes
+    captureProductionLayout(SCENE, ['item_test_0'])
+    const visiblePlan = previewRemount(SCENE)
+    const hidden = { theatreSceneVisibility: true, visible: false }
+    useLiveNodeOverrides.getState().setMany([
+      ['item_test_0', hidden],
+      ['item_test_9', hidden],
+    ])
+    captureProductionLayout(SCENE, ['item_test_0'])
+    expect(previewRemount(SCENE)).toEqual(visiblePlan)
+    expect(useScene.getState().nodes).toBe(before)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(0)
+    applyRemount(SCENE)
+    expect(position('item_test_0')).toEqual([7, 0, -1])
+    expect(useScene.getState().nodes.item_test_0?.visible).toBe(true)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+    expect(undoLastRemount(SCENE)).toBe(true)
+    expect(useScene.getState().nodes).toEqual(before)
+    expect(useLiveNodeOverrides.getState().get('item_test_0')).toEqual(hidden)
+  })
+
+  test('unmarked or mixed overrides and live transforms still block remount without writing', () => {
+    captureProductionLayout(SCENE, ['item_test_0'])
+    previewRemount(SCENE)
+    const before = useScene.getState().nodes
+    for (const override of [
+      { visible: false },
+      { theatreSceneVisibility: true, visible: false, position: [9, 0, 0] },
+    ]) {
+      useLiveNodeOverrides.getState().clearAll()
+      useLiveNodeOverrides.getState().set('item_test_0', override)
+      expect(() => previewRemount(SCENE)).toThrow('结束当前')
+      expect(() => applyRemount(SCENE)).toThrow('结束当前')
+    }
+    useLiveNodeOverrides.getState().clearAll()
+    useLiveNodeOverrides.getState().set('item_test_0', {
+      theatreSceneVisibility: true,
+      visible: false,
+    })
+    useLiveTransforms.getState().set('item_test_1', { position: [9, 0, 0], rotation: 0 })
+    expect(() => applyRemount(SCENE)).toThrow('结束当前')
+    expect(useScene.getState().nodes).toBe(before)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(0)
   })
 
   test('parent and child are included once, share assembly and never inherit parent mesh scale', () => {
@@ -356,7 +404,7 @@ describe('remount scene boundary', () => {
     expect(() => saveRemountConfig('another-scene')).toThrow('场景已切换')
   })
 
-  test('existing target walls and columns become collision proxies and block Apply', () => {
+  test('existing target walls and stage blocks become collision proxies and block Apply', () => {
     const wall = WallNode.parse({
       id: 'wall_target',
       parentId: 'level_test',
@@ -365,12 +413,12 @@ describe('remount scene boundary', () => {
       thickness: 0.4,
       height: 3,
     })
-    const column = ColumnNode.parse({
-      id: 'column_target',
+    const targetBlock = BlockNode.parse({
+      id: 'block_target',
       parentId: 'level_test',
       position: [8.5, 0, -1],
     })
-    fixture([item(0), item(1), wall, column])
+    fixture([item(0), item(1), wall, targetBlock])
     captureProductionLayout(SCENE, ['item_test_0', 'item_test_1'])
     const plan = previewRemount(SCENE)
     expect(
@@ -380,7 +428,7 @@ describe('remount scene boundary', () => {
     ).toBe(true)
     expect(
       plan.conflicts.some(
-        (conflict) => conflict.type === 'collision' && conflict.otherNodeId === column.id,
+        (conflict) => conflict.type === 'collision' && conflict.otherNodeId === targetBlock.id,
       ),
     ).toBe(true)
     expect(() => applyRemount(SCENE)).toThrow('物理冲突')
@@ -443,4 +491,28 @@ describe('remount scene boundary', () => {
     expect(useRemountDraft.getState().layout).toBeNull()
     expect(() => saveRemountConfig(SCENE)).not.toThrow()
   })
+})
+
+test('native stage stairs remount as one physical assembly and undo without changing treads', async () => {
+  const { createStageStair } = await import('@pascal-app/core/stage')
+  const { stair, segment } = createStageStair(
+    { position: [-2, 0, -1], rotation: Math.PI / 2, stepCount: 3 },
+    'level_test',
+  )
+  fixture([stair, segment])
+  const before = useScene.getState().nodes
+  captureProductionLayout(SCENE, [stair.id])
+  const plan = previewRemount(SCENE)
+  expect(plan.placements).toHaveLength(1)
+  expect(plan.scale).toBe(1)
+  expect(plan.conflicts.filter((c) => c.severity === 'error')).toEqual([])
+  applyRemount(SCENE)
+  expect(useScene.getState().nodes[stair.id]).toMatchObject({
+    position: [8, 0, -1],
+    rotation: Math.PI / 2,
+  })
+  expect(useScene.getState().nodes[segment.id]).toEqual(segment)
+  expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+  expect(undoLastRemount(SCENE)).toBe(true)
+  expect(useScene.getState().nodes).toEqual(before)
 })

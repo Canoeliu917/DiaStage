@@ -294,3 +294,107 @@ test('changing stage depth checks old world positions against the new proscenium
       .position.z,
   ).toBeCloseTo(3.5, 8)
 })
+
+test('stage stairs use native nodes, atomic edit, collision rejection, duplicate and undo', () => {
+  const plan = parseStageText('在台右增加三级台阶', currentStageContext())!
+  const compiled = compileStagePlan(plan, currentStageContext(), {
+    transactionId: crypto.randomUUID(),
+    issuedAt: new Date().toISOString(),
+  })
+  expect(compiled.ok).toBe(true)
+  if (!compiled.ok) throw new Error('invalid stair plan')
+  const result = executeStageCommands(compiled.commands)
+  expect(result.error).toBeUndefined()
+  const id = result.nodeIds[0]!
+  const node = useScene.getState().nodes[id]
+  expect(node?.type).toBe('stair')
+  if (node?.type !== 'stair') throw new Error('missing native stair')
+  const segment = useScene.getState().nodes[node.children[0]!]
+  expect(segment).toMatchObject({ type: 'stair-segment', stepCount: 3 })
+  expect(currentStageContext().objects.find((n) => n.id === id)?.stepCount).toBe(3)
+  expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+  const before = useScene.getState().nodes
+  const duplicated = executeStageCommands([
+    {
+      type: 'DuplicateObject',
+      meta: commandMeta(),
+      sourceNodeId: id,
+      newNodeId: 'duplicate',
+      name: '台阶副本',
+      position: { x: 0, y: 0, z: 3 },
+    },
+  ])
+  expect(duplicated.error).toBeUndefined()
+  expect(Object.values(useScene.getState().nodes).filter((n) => n.type === 'stair')).toHaveLength(2)
+  const duplicateId = duplicated.nodeIds.find((value) => value !== id)!
+  const blocked = executeStageCommands([
+    {
+      type: 'MoveObject',
+      meta: commandMeta(),
+      nodeId: duplicateId,
+      position: currentStageContext().objects.find((n) => n.id === id)!.transform.position,
+    },
+  ])
+  expect(blocked.ok).toBe(false)
+  useScene.temporal.getState().undo()
+  expect(useScene.getState().nodes).toEqual(before)
+  const platform = executeStageCommands([
+    {
+      ...add(),
+      nodeId: 'platform',
+      name: '平台',
+      kind: 'platform',
+      dimensionsMeters: { width: 2, height: 0.45, depth: 1 },
+    },
+  ])
+  expect(platform.ok).toBe(true)
+  const movePlan = parseStageText('把台阶移到平台前方', currentStageContext())!
+  const move = compileStagePlan(movePlan, currentStageContext(), {
+    transactionId: crypto.randomUUID(),
+    issuedAt: new Date().toISOString(),
+  })
+  expect(move.ok).toBe(true)
+  if (!move.ok) throw new Error('invalid move plan')
+  expect(executeStageCommands(move.commands).error).toBeUndefined()
+  expect(useScene.getState().nodes[node.children[0]!]).toEqual(segment)
+})
+
+test('native stage-step parameter edits validate, save once and undo together', async () => {
+  const { createStageStair, updateStageStair } = await import('@pascal-app/core/stage')
+  const { subscribeSceneCommits } = await import('@pascal-app/core')
+  const level = Object.values(useScene.getState().nodes).find((node) => node.type === 'level')!
+  const { stair, segment } = createStageStair({ position: [2, 0, 0] }, level.id)
+  useScene.getState().createNodes([{ node: stair, parentId: level.id }, { node: segment }])
+  expect(useScene.getState().nodes[stair.id]).toBeDefined()
+  clearSceneHistory()
+  const original = useScene.getState().nodes
+  let commits = 0
+  const unsubscribe = subscribeSceneCommits((c) => {
+    if (c.origin === 'local') commits++
+  })
+  const update = updateStageStair(stair, original, {
+    stepCount: 4,
+    width: 1,
+    rotation: Math.PI / 2,
+  })
+  useScene.getState().applyNodeChanges({ update })
+  expect(useScene.getState().nodes[segment.id]).toMatchObject({
+    stepCount: 4,
+    width: 1,
+    height: 0.6,
+  })
+  expect(commits).toBe(1)
+  expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+  useScene.temporal.getState().undo()
+  expect(useScene.getState().nodes).toEqual(original)
+  // Legacy steps without theatre metadata still pass through the native validation gate.
+  useScene.getState().updateNode(stair.id, { metadata: {} })
+  const before = useScene.getState().nodes
+  useScene.getState().updateNode(stair.id, { position: [100, 0, 0] })
+  expect(useScene.getState().nodes).toBe(before)
+  useScene.getState().updateNode(stair.id, { position: [NaN, 0, 0] })
+  expect(useScene.getState().nodes).toBe(before)
+  useScene.getState().updateNode(segment.id, { height: Infinity })
+  expect(useScene.getState().nodes).toBe(before)
+  unsubscribe()
+})

@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { AiError } from './api'
 import { type ValidatedAudio, validateAudio } from './audio-validation'
+import { ModelBudgetError } from './model-budget'
 
 export type AudioTranscriber = (audio: ValidatedAudio, signal: AbortSignal) => Promise<unknown>
 
@@ -28,7 +29,7 @@ export async function transcribeVoice(
     result = await transcriber(audio, signal)
   } catch (error) {
     signal.throwIfAborted()
-    if (error instanceof AiError) throw error
+    if (error instanceof AiError || error instanceof ModelBudgetError) throw error
     throw new AiError(
       'TRANSCRIPTION_FAILED',
       '转写暂时失败，请重试，或直接输入舞台口令。',

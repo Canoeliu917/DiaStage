@@ -1,0 +1,142 @@
+{
+  "phase": "faults",
+  "synthetic": true,
+  "viewportEvidence": "SIMULATION",
+  "realModel": "NOT_RUN",
+  "realIphone": "NOT_RUN",
+  "realIpad": "NOT_RUN",
+  "realAndroid": "NOT_RUN",
+  "errors": [],
+  "requestFailures": [
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_INTERNET_DISCONNECTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "phone",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "page": "owner",
+      "path": "/api/remote-voice/sessions/50d8f03e-aaa6-41fc-9665-cbd223e5d70d/dia",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "checks": [
+    {
+      "name": "slow preserves pending identity without duplicate work",
+      "status": "PASS"
+    },
+    {
+      "name": "timeout preserves pending identity without duplicate work",
+      "status": "PASS"
+    },
+    {
+      "name": "offline-send preserves pending identity without duplicate work",
+      "status": "PASS"
+    },
+    {
+      "name": "late accepted response after cancel cannot resurrect Ghost",
+      "status": "PASS"
+    },
+    {
+      "name": "expired stops polling and allows re-pair",
+      "status": "PASS"
+    },
+    {
+      "name": "server session lost stops polling and allows re-pair",
+      "status": "PASS"
+    }
+  ],
+  "matrix": [],
+  "conversationFirstRenderMs": 7732,
+  "sceneFixture": "independent synthetic farewell",
+  "status": "PASS"
+}

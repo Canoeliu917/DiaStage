@@ -1,11 +1,9 @@
 import { describe, expect, test } from 'bun:test'
 import {
   BuildingNode,
-  createTerrainField,
-  encodeTerrainField,
   type GeometryContext,
   LevelNode,
-  SiteNode,
+  type SiteNode,
   SlabNode,
 } from '@pascal-app/core'
 import { Mesh } from 'three'
@@ -93,57 +91,5 @@ describe('buildSlabGeometry', () => {
       localTop = Math.max(localTop, mesh.geometry.boundingBox?.max.y ?? Number.NEGATIVE_INFINITY)
     }
     expect(localTop).toBeCloseTo(0.15)
-  })
-
-  test('adds a terrain-following perimeter below the fixed slab underside', () => {
-    const site = SiteNode.parse({
-      id: 'site_test',
-      children: ['building_test'],
-      terrain: encodeTerrainField(
-        createTerrainField({ cols: 5, rows: 5, spacing: 1, origin: [-1, -1] }),
-      ),
-    })
-    const slab = SlabNode.parse({
-      elevation: 0.8,
-      thickness: 0.2,
-      fillToTerrain: true,
-      polygon: [
-        [0, 0],
-        [2, 0],
-        [2, 2],
-        [0, 2],
-      ],
-    })
-
-    const group = buildSlabGeometry(slab, geometryContext(site), 'solid', false)
-    const meshes = group.children.filter((child): child is Mesh => child instanceof Mesh)
-    expect(meshes).toHaveLength(3)
-
-    const fill = meshes[2]!
-    fill.geometry.computeBoundingBox()
-    expect(fill.userData.slotId).toBe('side')
-    expect(fill.geometry.boundingBox?.min.y).toBeCloseTo(0)
-    expect(fill.geometry.boundingBox?.max.y).toBeCloseTo(0.6)
-  })
-
-  test('follows the flat datum before the site has a persisted terrain field', () => {
-    const site = SiteNode.parse({ id: 'site_test', children: ['building_test'] })
-    const slab = SlabNode.parse({
-      elevation: 0.4,
-      thickness: 0.1,
-      fillToTerrain: true,
-      polygon: [
-        [0, 0],
-        [1, 0],
-        [1, 1],
-        [0, 1],
-      ],
-    })
-
-    const group = buildSlabGeometry(slab, geometryContext(site), 'solid', false)
-    const fill = group.children.filter((child): child is Mesh => child instanceof Mesh)[2]!
-    fill.geometry.computeBoundingBox()
-    expect(fill.geometry.boundingBox?.min.y).toBeCloseTo(0)
-    expect(fill.geometry.boundingBox?.max.y).toBeCloseTo(0.3)
   })
 })

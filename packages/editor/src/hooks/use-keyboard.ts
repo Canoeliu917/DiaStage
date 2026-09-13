@@ -1,12 +1,4 @@
-import {
-  type AnyNode,
-  type AnyNodeId,
-  emitter,
-  nodeRegistry,
-  pauseSpaceDetection,
-  resumeSpaceDetection,
-  useScene,
-} from '@pascal-app/core'
+import { type AnyNode, type AnyNodeId, emitter, nodeRegistry, useScene } from '@pascal-app/core'
 import { cancelPerfAction, markPerfAction, useViewer } from '@pascal-app/viewer'
 import { useEffect } from 'react'
 import { Vector3 } from 'three'
@@ -31,7 +23,6 @@ import { runRedo, runUndo } from '../lib/history'
 import { isActive } from '../lib/interaction/scope'
 import { copySelectedNodesToEditorClipboard } from '../lib/scene-clipboard'
 import { sfxEmitter } from '../lib/sfx-bus'
-import { activeSiteNode, clampBrushRadius } from '../lib/terrain-sculpt'
 import { toggleWindowOpenState } from '../lib/window-interaction'
 import useDeleteConfirmation from '../store/use-delete-confirmation'
 import useEditor, { getActiveContinuationContext, getActiveSnapContext } from '../store/use-editor'
@@ -86,13 +77,9 @@ function rotateGroupSelection(direction: 1 | -1): boolean {
   // steppedRotation sense.
   const delta = -direction * (Math.PI / 4)
   const patches = rotateGroupPatches(starts, links, { x: localCenter.x, z: localCenter.z }, delta)
-  // Space detection stays out: a rigid rotation of existing walls must not
-  // re-create the room's auto floors/ceilings at the new bearing.
-  pauseSpaceDetection()
   useScene
     .getState()
     .updateNodes(patches.map(([id, data]) => ({ id, data: data as Partial<AnyNode> })))
-  resumeSpaceDetection()
   sfxEmitter.emit('sfx:item-rotate')
   return true
 }
@@ -177,26 +164,11 @@ export const runHistoryShortcut = (direction: 'undo' | 'redo') => {
 export const isToolOwnedRotation = () => {
   const editor = useEditor.getState()
   const moving = getMovingNode()
-  if (
-    moving?.type === 'door' ||
-    moving?.type === 'window' ||
-    moving?.type === 'item' ||
-    moving?.type === 'lean-to-extension'
-  )
-    return true
+  if (moving?.type === 'door' || moving?.type === 'window' || moving?.type === 'item') return true
   return (
     editor.mode === 'build' &&
-    (editor.tool === 'door' ||
-      editor.tool === 'window' ||
-      editor.tool === 'roof' ||
-      editor.tool === 'item' ||
-      editor.tool === 'lean-to-extension')
+    (editor.tool === 'door' || editor.tool === 'window' || editor.tool === 'item')
   )
-}
-
-export const isToolOwnedCanopyForm = () => {
-  const editor = useEditor.getState()
-  return editor.mode === 'build' && editor.tool === 'lean-to-extension'
 }
 
 export const canRunGlobalRotationShortcut = () =>
@@ -218,8 +190,8 @@ export const useKeyboard = ({
     }
 
     // True while an active placement tool owns R/T. Door/window tools flip the
-    // draft, item / lean-to placement rotates its draft, and the roof tool turns
-    // its draft axes. The global selection handler must stand down to avoid double-firing.
+    // draft and item placement rotates its draft, so the global selection
+    // handler must stand down to avoid double-firing.
     // Shift cycles the snapping mode (and a clean-tap Ctrl the grid step)
     // whenever there's an active snapping context — i.e. exactly when the HUD
     // shows a snapping chip. That single source covers wall/fence/item drafting,
@@ -271,34 +243,6 @@ export const useKeyboard = ({
         e.preventDefault()
         useEditor.getState().cyclePaintScope()
         sfxEmitter.emit('sfx:grid-snap')
-        return
-      }
-
-      // Brush size, on the keys every sculpting tool in the industry uses. Gated
-      // on sculpt mode so `[`/`]` stay free everywhere else. Key-repeat is
-      // allowed (unlike the cycles above) because holding to resize is the
-      // expected feel, and the step is multiplicative so one press is a
-      // proportional change at both the floor and 20 m rather than 40× coarser at
-      // the bottom of the range. The range comes from `brushRadiusRange` so this
-      // and the panel's slider cannot disagree about it — and so the low end
-      // tracks the field's sample spacing, below which a dab paints nothing.
-      if (
-        (e.key === '[' || e.key === ']') &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        useEditor.getState().mode === 'terrain-sculpt'
-      ) {
-        e.preventDefault()
-        const { terrainBrush, setTerrainBrush } = useEditor.getState()
-        const factor = e.key === ']' ? 1.25 : 1 / 1.25
-        const radius = clampBrushRadius(
-          activeSiteNode(),
-          Math.round(terrainBrush.radius * factor * 10) / 10,
-        )
-        if (radius !== terrainBrush.radius) {
-          setTerrainBrush({ radius })
-          sfxEmitter.emit('sfx:grid-snap')
-        }
         return
       }
 
@@ -381,7 +325,6 @@ export const useKeyboard = ({
         useEditor.getState().armToolMode({ mode: 'select' })
       } else if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
         if (isVersionPreviewMode) return
-        if (isToolOwnedCanopyForm()) return
         e.preventDefault()
         useEditor.getState().setPhase('furnish')
         useEditor.getState().armToolMode({ mode: 'build', tool: 'item' })

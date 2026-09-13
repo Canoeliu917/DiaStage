@@ -2,6 +2,7 @@
 // scene authority. Everything exported here must stay pure data logic with no
 // store, React, or Three.js imports so it can run in Server Components and
 // API routes.
+export { ARCHIVED_ARCHITECTURE_TYPES, archiveArchitecture } from './archive-architecture'
 export { type HealSceneResult, healSceneNodes } from './heal-scene-graph'
 export {
   type RetiredSceneNodeMigration,

@@ -296,8 +296,11 @@ test('camera source snapshots survive reload without accumulating transformation
   previewRemount(SCENE)
   applyRemount(SCENE)
   const first = cameras()
-  const graph = JSON.parse(JSON.stringify(useScene.getState().nodes))
-  useScene.getState().setScene(graph, useScene.getState().rootNodeIds)
+  const { nodes, rootNodeIds, materials, collections, installedPlugins } = useScene.getState()
+  const graph = JSON.parse(
+    JSON.stringify({ nodes, rootNodeIds, materials, collections, installedPlugins }),
+  )
+  useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
   clearSceneHistory()
   reloadRemount(SCENE)
   previewRemount(SCENE)

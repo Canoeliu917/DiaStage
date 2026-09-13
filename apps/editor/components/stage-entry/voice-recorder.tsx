@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
+import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import type { VoiceState } from './command-input'
 import {
   microphoneError,
@@ -23,11 +24,15 @@ export function VoiceRecorder({
   setState,
   onTranscript,
   onError,
+  transcribeEndpoint = '/api/ai/transcribe',
+  requestHeaders,
 }: {
   state: VoiceState
   setState: (state: VoiceState) => void
   onTranscript: (text: string) => void
   onError: (message: string) => void
+  transcribeEndpoint?: string
+  requestHeaders?: Readonly<Record<string, string>>
 }) {
   const [elapsed, setElapsed] = useState(0)
   const recording = useRef<RecordingSession | null>(null)
@@ -35,10 +40,22 @@ export function VoiceRecorder({
   const requestAbort = useRef<AbortController | null>(null)
   const pending = useRef<RecordingResult | null>(null)
   const mounted = useRef(true)
-  const callbacks = useRef({ setState, onTranscript, onError })
+  const callbacks = useRef({
+    setState,
+    onTranscript,
+    onError,
+    transcribeEndpoint,
+    requestHeaders,
+  })
   useEffect(() => {
-    callbacks.current = { setState, onTranscript, onError }
-  }, [setState, onTranscript, onError])
+    callbacks.current = {
+      setState,
+      onTranscript,
+      onError,
+      transcribeEndpoint,
+      requestHeaders,
+    }
+  }, [setState, onTranscript, onError, transcribeEndpoint, requestHeaders])
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -67,12 +84,18 @@ export function VoiceRecorder({
         result.audio.type.includes('mp4') ? 'stage-voice.m4a' : 'stage-voice.webm',
       )
       form.set('locale', 'zh-CN')
-      const response = await fetch('/api/ai/transcribe', {
+      const { response } = await fetchAiWithBudgetConsent(callbacks.current.transcribeEndpoint, {
         method: 'POST',
+        headers: callbacks.current.requestHeaders,
         body: form,
         signal: controller.signal,
       })
-      const raw: unknown = await response.json()
+      let raw: unknown
+      try {
+        raw = await response.json()
+      } catch {
+        throw new Error('转写服务返回了无法读取的内容，请保留录音片段后重试。')
+      }
       if (!response.ok) {
         const error = z.object({ error: z.object({ message: z.string() }) }).safeParse(raw)
         throw new Error(
@@ -220,7 +243,7 @@ export function VoiceRecorder({
             ? '请在浏览器提示中允许使用麦克风。'
             : state === 'transcribing'
               ? '正在把录音转为文字，完成后请先检查内容。'
-              : '录音最长90秒；也可以直接输入文字。原始录音仅暂存于本页。'}
+              : '录音最长90秒，会发送至模型服务转写，不写入舞台项目；转写后请校对文字。'}
       </p>
     </div>
   )

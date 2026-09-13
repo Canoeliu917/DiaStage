@@ -63,10 +63,6 @@
     "tooling/*"
   ],
   "patchedDependencies": {
-    "@pascal-app/plugin-trees@github:pascalorg/plugin-trees#56d978c": "patches/pascal-app-plugin-trees-zh.patch",
-    "@pascal-app/plugin-streetscape@github:sudhir9297/streetscape-pascal-plugin#1c04ec9": "patches/pascal-app-plugin-streetscape-zh.patch",
-    "@pascal-app/plugin-bones@github:pascalorg/plugin-bones#5679260": "patches/pascal-app-plugin-bones-zh.patch",
-    "@mint/pascal-plugin@github:mintdotgg/mint-pascal-plugin#902c546": "patches/mint-pascal-plugin-zh.patch",
     "three@0.185.1": "patches/three@0.185.1.patch"
   }
 }

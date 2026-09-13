@@ -31,7 +31,7 @@ const isVec2Array = (v: unknown): v is Vec2[] => Array.isArray(v) && v.length > 
 //   - 'vec3'     position + [x,y,z] rotation (items, …)
 //   - 'scalar'   position + numeric rotation (columns)
 //   - 'endpoint' start/end tuples (walls, fences)
-//   - 'polygon'  [x,z] vertex arrays (slabs, ceilings, zones) — the placement
+//   - 'polygon'  [x,z] vertex arrays (slabs, zones) — the placement
 //                lives in the vertices themselves (plus optional hole rings)
 export type ParticipantKind = 'vec3' | 'scalar' | 'endpoint' | 'polygon'
 
@@ -58,24 +58,15 @@ function isInGroupTransformScope(
   return Boolean(buildingId && node.parentId === buildingId)
 }
 
-function getLegacyScenePosition(node: AnyNode): Vec3 | null {
-  if (node.type !== 'elevator') return null
-  const object = sceneRegistry.nodes.get(node.id)
-  if (!object) return [0, 0, 0]
-  return [object.position.x, object.position.y, object.position.z]
-}
-
 function getParticipantPosition(node: AnyNode): Vec3 | null {
   const p = (node as { position?: unknown }).position
-  if (isVec3(p)) return p
-  return getLegacyScenePosition(node)
+  return isVec3(p) ? p : null
 }
 
 function getParticipantScalarRotation(node: AnyNode): number | null {
   const r = (node as { rotation?: unknown }).rotation
   if (typeof r === 'number' && Number.isFinite(r)) return r
-  if (node.type !== 'elevator') return null
-  return sceneRegistry.nodes.get(node.id)?.rotation.y ?? 0
+  return null
 }
 
 // Shape-only classification of a positioned placement (no level-scope check).

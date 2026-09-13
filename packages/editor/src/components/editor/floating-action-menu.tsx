@@ -3,15 +3,10 @@
 import {
   type AnyNode,
   type AnyNodeId,
-  type CeilingNode,
-  ColumnNode,
   createSceneApi,
   DoorNode,
-  ElevatorNode,
   emitter,
   FenceNode,
-  generateId,
-  getActiveRoofHeight,
   getEffectiveNode,
   getWallCurveLength,
   getWallEffectiveHeightForNodes,
@@ -23,13 +18,11 @@ import {
   isSplineFence,
   type NodeQuickAction,
   nodeRegistry,
-  RoofSegmentNode,
   runAsSingleSceneHistoryStep,
   type SlabNode,
   SpawnNode,
   StairSegmentNode,
   sceneRegistry,
-  summarizeSystemFor,
   useLiveNodeOverrides,
   useScene,
   WallNode,
@@ -53,7 +46,6 @@ import { resolveFloatingActionMenuVisibility } from '../../lib/interaction/overl
 import { curveReshapeScope, holeEditScope } from '../../lib/interaction/scope'
 import { playBlockedQuickActionFeedback } from '../../lib/quick-action-feedback'
 import { collectQuickActionNodeScope } from '../../lib/quick-action-nodes'
-import { duplicateRoofSubtree } from '../../lib/roof-duplication'
 import { emitDeleteSFX, sfxEmitter } from '../../lib/sfx-bus'
 import { cn } from '../../lib/utils'
 import useEditor from '../../store/use-editor'
@@ -66,39 +58,19 @@ import { IconRefGlyph } from '../ui/icon-ref'
 import { formatMeasurement, MeasurementPill } from './measurement-pill'
 import { NodeActionMenu } from './node-action-menu'
 
-/**
- * A kind shows the system pill when it exposes typed ports — `def.ports`
- * is exactly what makes a node participate in the supply/return graph the
- * pill summarizes. Keeps the menu off a hand-maintained kind list.
- */
-const hasPorts = (type: string) => nodeRegistry.get(type)?.ports != null
-
-/**
- * A kind shows the rotation-axis pill when its R/T keyboard rotation
- * turns around a user-cyclable axis (`keyboardActions.axisCycling`) —
- * duct / pipe fittings with full 3D orientation.
- */
-const hasAxisCycling = (type: string) =>
-  nodeRegistry.get(type)?.keyboardActions?.axisCycling === true
-
 const ALLOWED_TYPES = [
   'item',
   'door',
   'window',
-  'elevator',
-  'roof',
-  'roof-segment',
   'stair',
   'stair-segment',
   'wall',
   'fence',
-  'column',
   'slab',
-  'ceiling',
   'spawn',
 ]
 const DELETE_ONLY_TYPES: string[] = []
-const HOLE_TYPES = ['slab', 'ceiling']
+const HOLE_TYPES = ['slab']
 
 // World-space Y distance from a node's bbox top to the floating menu anchor.
 // Per-type because in-world chrome above the node (height-resize arrows,
@@ -116,19 +88,10 @@ const MENU_Y_OFFSETS: Record<string, number> = {
   // 0.45) plus the chevron's visual size, but kept low so the menu sits
   // close to the fence rather than floating well above it.
   fence: 0.7,
-  // Elevator: clears the cab-height arrow which sits above the SHAFT
-  // top (resolved through level entries), so the menu floats above it.
-  elevator: 0.9,
   stair: 0.2,
-  'stair-stair': 1.1,
-  'stair-landing': 0.9,
   // Slab: clears the height arrow that sits at elevation + 0.22 plus the
   // chevron's own visual reach, so the menu floats just above it.
   slab: 0.7,
-  // Ceiling: clears the upward height arrow that sits ~0.22 above the
-  // ceiling plane, plus extra headroom so the menu doesn't crowd the
-  // chevron at any zoom level.
-  ceiling: 1.0,
   // Shelf: clears the height arrow that sits at shelf.height + 0.22
   // plus the chevron's visual reach.
   shelf: 0.6,
@@ -136,9 +99,6 @@ const MENU_Y_OFFSETS: Record<string, number> = {
 
 function getMenuYOffset(node: AnyNode | null): number {
   if (!node) return MENU_Y_OFFSET_DEFAULT + EXTRA_MENU_LIFT
-  if (node.type === 'stair-segment') {
-    return (MENU_Y_OFFSETS[`stair-${node.segmentType}`] ?? MENU_Y_OFFSET_DEFAULT) + EXTRA_MENU_LIFT
-  }
   return (MENU_Y_OFFSETS[node.type] ?? MENU_Y_OFFSET_DEFAULT) + EXTRA_MENU_LIFT
 }
 
@@ -228,24 +188,6 @@ function getObjectGeometryKey(object: THREE.Object3D): string {
   return parts.join('|')
 }
 
-function setNodeDerivedMenuAnchor(
-  node: AnyNode,
-  object: THREE.Object3D,
-  target: THREE.Vector3,
-): boolean {
-  if (node.type !== 'roof-segment') return false
-
-  const visualTop =
-    node.wallHeight +
-    getActiveRoofHeight(node) +
-    Math.max(0, node.deckThickness ?? 0) +
-    Math.max(0, node.shingleThickness ?? 0)
-
-  target.set(0, visualTop, 0).applyMatrix4(object.matrixWorld)
-  target.y += getMenuYOffset(node)
-  return true
-}
-
 // Fence schema defaults — mirror packages/nodes/src/fence/definition.ts so the
 // pill reads sensibly before an explicit height / thickness is set.
 const FENCE_DEFAULT_HEIGHT = 1.8
@@ -289,8 +231,6 @@ export function FloatingActionMenu() {
   // flips only at drag start / end, so subscribing here is cheap — the live
   // height value is written imperatively in the useFrame below.
   const activeHandleDrag = useActiveHandleDrag()
-  // R/T rotation axis for kinds with full 3D orientation (duct fittings).
-  const rotationAxis = useEditor((s) => s.rotationAxis)
   const scope = useInteractionScope((s) => s.scope)
 
   const groupRef = useRef<THREE.Group>(null)
@@ -441,20 +381,14 @@ export function FloatingActionMenu() {
 
       if (needsRecompute) {
         const effectiveNode = getEffectiveNode(node)
-        if (!setNodeDerivedMenuAnchor(effectiveNode, obj, anchorRef.current)) {
-          _anchorBox.setFromObject(obj)
-          if (!_anchorBox.isEmpty()) {
-            _anchorBox.getCenter(_anchorCenter)
-            // Position above the object. Per-type offsets clear each kind's
-            // in-world chrome (height-resize arrows, measurement labels).
-            anchorRef.current.set(
-              _anchorCenter.x,
-              _anchorBox.max.y + getMenuYOffset(effectiveNode),
-              _anchorCenter.z,
-            )
-            hasAnchorRef.current = true
-          }
-        } else {
+        _anchorBox.setFromObject(obj)
+        if (!_anchorBox.isEmpty()) {
+          _anchorBox.getCenter(_anchorCenter)
+          anchorRef.current.set(
+            _anchorCenter.x,
+            _anchorBox.max.y + getMenuYOffset(effectiveNode),
+            _anchorCenter.z,
+          )
           hasAnchorRef.current = true
         }
         lastMatrixRef.current.copy(obj.matrixWorld)
@@ -501,15 +435,6 @@ export function FloatingActionMenu() {
       if (!node?.parentId) return
       sfxEmitter.emit('sfx:item-pick')
 
-      if (node.type === 'roof') {
-        try {
-          duplicateRoofSubtree(node.id as AnyNodeId, { mode: 'move' })
-        } catch (error) {
-          console.error('Failed to duplicate roof', error)
-        }
-        return
-      }
-
       useScene.temporal.getState().pause()
 
       if (duplicatesAsFreshSubtree(node as AnyNode)) {
@@ -542,19 +467,12 @@ export function FloatingActionMenu() {
           duplicate = WindowNode.parse(duplicateInfo)
         } else if (node.type === 'item') {
           duplicate = ItemNode.parse(duplicateInfo)
-        } else if (node.type === 'elevator') {
-          duplicate = ElevatorNode.parse(duplicateInfo)
-        } else if (node.type === 'column') {
-          duplicate = ColumnNode.parse(duplicateInfo)
         } else if (node.type === 'wall') {
           duplicate = WallNode.parse(duplicateInfo)
         } else if (node.type === 'fence') {
           duplicate = FenceNode.parse(duplicateInfo)
           duplicate.start = [duplicate.start[0] + 1, duplicate.start[1] + 1]
           duplicate.end = [duplicate.end[0] + 1, duplicate.end[1] + 1]
-        } else if (node.type === 'roof-segment') {
-          duplicateInfo.id = generateId('rseg')
-          duplicate = RoofSegmentNode.parse(duplicateInfo)
         } else if (node.type === 'stair-segment') {
           duplicate = StairSegmentNode.parse(duplicateInfo)
         } else if (node.type === 'spawn') {
@@ -582,62 +500,28 @@ export function FloatingActionMenu() {
       }
 
       if (duplicate) {
-        if (
-          duplicate.type === 'door' ||
-          duplicate.type === 'window' ||
-          duplicate.type === 'elevator'
-        ) {
+        if (duplicate.type === 'door' || duplicate.type === 'window') {
           useScene.getState().createNode(duplicate, duplicate.parentId as AnyNodeId)
         } else if (duplicate.type === 'wall') {
           useScene.getState().createNode(duplicate, duplicate.parentId as AnyNodeId)
         } else if (duplicate.type === 'fence') {
           useScene.getState().createNode(duplicate, duplicate.parentId as AnyNodeId)
-        } else if (duplicate.type === 'roof-segment' || duplicate.type === 'stair-segment') {
-          // Add small offset to make it visible
-          if ('position' in duplicate) {
-            duplicate.position = [
-              duplicate.position[0] + 1,
-              duplicate.position[1],
-              duplicate.position[2] + 1,
-            ]
-          }
-          useScene.getState().createNode(duplicate, duplicate.parentId as AnyNodeId)
-        } else if (
-          duplicate.type === 'item' ||
-          duplicate.type === 'chimney' ||
-          duplicate.type === 'dormer'
-        ) {
-          // Items, chimneys & dormers use pure drag-to-place: NO node is
+        } else if (duplicate.type === 'item') {
+          // Items use pure drag-to-place: NO node is
           // inserted into the scene until the user clicks to commit. The
           // `setMovingNode` call below hands the clone (with
           // `metadata.isNew = true` + no id) to its move tool —
-          // `MoveItemTool` / `MoveChimneyTool` / `MoveDormerTool` — which
+          // `MoveItemTool` creates a draft and
           // create a draft and call `createNode` on the commit click.
           // Pre-creating here would drop a second copy into the scene
           // before any click — the furnish-tab "duplicate auto-places an
           // item without clicking" bug. (Item has its own
           // draft-committing move tool, so it must skip the generic
           // registry auto-create branch below.)
-        } else if (
-          duplicate.type === 'duct-segment' ||
-          duplicate.type === 'duct-fitting' ||
-          duplicate.type === 'pipe-segment' ||
-          duplicate.type === 'lineset' ||
-          duplicate.type === 'liquid-line'
-        ) {
-          // Duct runs & fittings, DWV pipe runs, and refrigerant linesets use
-          // pure drag-to-place: NO node is inserted into the scene until the
-          // commit click. `setMovingNode` below hands the clone (with
-          // `metadata.isNew`) to its ghost tool (`MoveDuctSegmentTool` /
-          // `MoveDuctFittingTool` / `MovePipeSegmentTool` / `MoveLinesetTool`),
-          // which previews a translucent copy inside a footprint bounding box
-          // on the cursor and calls `createNode` on the drop click.
-          // Pre-creating here would drop a copy before any click — the
-          // "auto-places it" bug.
         } else if (nodeRegistry.has(duplicate.type)) {
           // Registry-driven kinds: offset slightly so the duplicate doesn't
           // overlap exactly, then create + hand to the move tool. Mirrors the
-          // roof-segment / stair-segment behavior.
+          // stair-segment behavior.
           if ('position' in duplicate && Array.isArray((duplicate as any).position)) {
             const pos = (duplicate as { position: [number, number, number] }).position
             ;(duplicate as { position: [number, number, number] }).position = [
@@ -645,24 +529,15 @@ export function FloatingActionMenu() {
               pos[1],
               pos[2] + 1,
             ]
-          } else if ('path' in duplicate && Array.isArray((duplicate as any).path)) {
-            // Other polyline kinds (pipe / lineset) carry a `path`, not a
-            // `position`. Create the copy HIDDEN so nothing is auto-placed:
-            // their shared path mover reveals it as a cursor-following
-            // preview on the first mouse move and commits on the next click.
-            ;(duplicate as { visible?: boolean }).visible = false
           }
           useScene.getState().createNode(duplicate, duplicate.parentId as AnyNodeId)
         }
         if (
           duplicate.type === 'item' ||
-          duplicate.type === 'elevator' ||
-          duplicate.type === 'column' ||
           duplicate.type === 'wall' ||
           duplicate.type === 'fence' ||
           duplicate.type === 'window' ||
           duplicate.type === 'door' ||
-          duplicate.type === 'roof-segment' ||
           duplicate.type === 'spawn' ||
           duplicate.type === 'stair-segment' ||
           // Registry-driven kinds get picked up by MoveTool's generic
@@ -680,9 +555,9 @@ export function FloatingActionMenu() {
   const handleAddHole = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
-      if (!(node && selectedId && (node.type === 'slab' || node.type === 'ceiling'))) return
+      if (!(node && selectedId && node.type === 'slab')) return
 
-      const polygon = (node as SlabNode | CeilingNode).polygon
+      const polygon = (node as SlabNode).polygon
       let cx = 0
       let cz = 0
       for (const [x, z] of polygon) {
@@ -699,7 +574,7 @@ export function FloatingActionMenu() {
         [cx + holeSize, cz + holeSize],
         [cx - holeSize, cz + holeSize],
       ]
-      const surfaceNode = node as SlabNode | CeilingNode
+      const surfaceNode = node as SlabNode
       const currentHoles = surfaceNode.holes || []
       const currentMetadata = currentHoles.map(
         (_, index) => surfaceNode.holeMetadata?.[index] ?? { source: 'manual' as const },
@@ -728,8 +603,8 @@ export function FloatingActionMenu() {
     [node?.type, selectedId, setSelection],
   )
 
-  // "Find in catalog": the editor only signals intent — the host (community)
-  // listens for `selection:find-node` and reveals the node in its browser.
+  // "Find in catalog": the editor only signals intent; the host listens for
+  // `selection:find-node` and reveals the node in its browser.
   const handleFind = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
@@ -870,94 +745,9 @@ export function FloatingActionMenu() {
                 />
               </div>
             ) : null}
-            {/* HVAC chrome above the menu — same slot as the wall height
-                pill. System pill (which tree, run length, equipment reach)
-                for every distribution kind; the rotation-axis pill stacks
-                under it for duct fittings. */}
-            {node && hasPorts(node.type) ? (
-              <div className="-translate-x-1/2 pointer-events-none absolute bottom-full left-1/2 mb-2 flex flex-col items-center gap-1">
-                <SystemSummaryPill metricNotation={metricNotation} nodeId={node.id} unit={unit} />
-                {hasAxisCycling(node.type) ? (
-                  <div className="flex items-center gap-2 whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
-                    <span className="font-medium text-foreground">
-                      轴向 {rotationAxis.toUpperCase()}
-                    </span>
-                    <span aria-hidden className="text-muted-foreground">
-                      ·
-                    </span>
-                    <span className="text-muted-foreground">R/T 旋转</span>
-                    <span aria-hidden className="text-muted-foreground">
-                      ·
-                    </span>
-                    <span className="text-muted-foreground">⌥ 切换轴向</span>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
           </div>
         </Html>
       </group>
     </group>
-  )
-}
-
-/**
- * System summary pill for a selected distribution kind (HVAC duct / DWV
- * pipe / refrigerant lineset): which supply/return tree it belongs to, its
- * run length, and whether it actually reaches a piece of equipment.
- *
- * Mounted only while an HVAC node is selected, so the full-`nodes`
- * subscription it needs (connectivity changes when ANY joint moves) doesn't
- * re-render the always-mounted parent menu on every unrelated scene tick.
- */
-function SystemSummaryPill({
-  metricNotation,
-  nodeId,
-  unit,
-}: {
-  metricNotation: 'meters' | 'millimeters'
-  nodeId: AnyNodeId
-  unit: 'metric' | 'imperial'
-}) {
-  const allNodes = useScene((s) => s.nodes)
-  const summary = useMemo(() => summarizeSystemFor(nodeId, allNodes), [nodeId, allNodes])
-  if (!summary) return null
-  return (
-    <div className="flex items-center gap-2 whitespace-nowrap rounded-full border border-border/60 bg-background/90 px-4 py-1.5 text-xs tabular-nums shadow-sm backdrop-blur">
-      <span className="font-medium text-foreground">
-        {summary.systems.length > 0
-          ? summary.systems.map((sys) => sys[0]!.toUpperCase() + sys.slice(1)).join(' + ')
-          : '系统'}
-      </span>
-      {summary.runCount > 0 ? (
-        <>
-          <span aria-hidden className="text-muted-foreground">
-            ·
-          </span>
-          <span className="text-muted-foreground">
-            {formatMeasurement(summary.runLengthM, unit, metricNotation)} · {summary.runCount}{' '}
-            {summary.runCount === 1 ? 'run' : 'runs'}
-          </span>
-        </>
-      ) : null}
-      {summary.terminalCount > 0 ? (
-        <>
-          <span aria-hidden className="text-muted-foreground">
-            ·
-          </span>
-          <span className="text-muted-foreground">
-            {summary.terminalCount} {summary.terminalCount === 1 ? 'register' : 'registers'}
-          </span>
-        </>
-      ) : null}
-      {summary.connectedToEquipment ? null : (
-        <>
-          <span aria-hidden className="text-muted-foreground">
-            ·
-          </span>
-          <span className="font-medium text-amber-500">⚠ 未配置设备</span>
-        </>
-      )}
-    </div>
   )
 }

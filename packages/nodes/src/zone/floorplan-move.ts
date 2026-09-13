@@ -16,5 +16,4 @@ export const zoneFloorplanMoveTarget: FloorplanMoveTarget<ZoneNode> = ({ node, n
     node,
     nodes,
     meshY: 0,
-    extraCommitData: node.autoFromWalls ? { autoFromWalls: false, boundaryWallIds: [] } : undefined,
   })

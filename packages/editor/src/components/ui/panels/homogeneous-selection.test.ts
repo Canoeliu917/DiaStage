@@ -39,31 +39,6 @@ describe('resolveHomogeneousSelection', () => {
     expect(resolveHomogeneousSelection(['wall_a', 'wall_b', 'wall_c'], nodes)).toBe('wall')
   })
 
-  test('proxy-promoted children resolve to the parent type', () => {
-    const nodes = {
-      cabinet_run: node('cabinet_run', 'cabinet'),
-      'cabinet-module_a': node('cabinet-module_a', 'cabinet-module', {
-        nodeSelectionProxyId: 'cabinet_run',
-      }),
-      'cabinet-module_b': node('cabinet-module_b', 'cabinet-module', {
-        nodeSelectionProxyId: 'cabinet_run',
-      }),
-      'cabinet-module_c': node('cabinet-module_c', 'cabinet-module', {
-        nodeSelectionProxyId: 'cabinet_run',
-      }),
-      cabinet_run_b: node('cabinet_run_b', 'cabinet'),
-      'cabinet-module_d': node('cabinet-module_d', 'cabinet-module', {
-        nodeSelectionProxyId: 'cabinet_run_b',
-      }),
-    }
-    expect(resolveHomogeneousSelection(['cabinet-module_a', 'cabinet-module_d'], nodes)).toBe(
-      'cabinet',
-    )
-    expect(resolveUniqueSelectionIds(['cabinet-module_a', 'cabinet-module_b', 'cabinet-module_c'], nodes)).toEqual(
-      ['cabinet_run'],
-    )
-    expect(resolveHomogeneousSelection(['cabinet-module_a', 'cabinet-module_b'], nodes)).toBeNull()
-  })
 
   test('stale ids are skipped without breaking a homogeneous remainder', () => {
     const nodes = {

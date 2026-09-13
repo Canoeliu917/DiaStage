@@ -8,6 +8,7 @@ import {
   sceneRegistry,
   useScene,
 } from '@pascal-app/core'
+import { archiveArchitecture } from '@pascal-app/core/scene-migrations'
 import { useViewer } from '@pascal-app/viewer'
 import useEditor, {
   hasCustomPersistedEditorUiState,
@@ -160,12 +161,7 @@ function getEditorUiStateForRestoredSelection(
     return {
       ...fallbackUiState,
       phase: 'site',
-      toolMode:
-        mode === 'build'
-          ? { mode, tool: 'property-line' }
-          : mode === 'terrain-sculpt'
-            ? { mode }
-            : { mode: 'select' },
+      toolMode: mode === 'build' ? { mode, tool: 'property-line' } : { mode: 'select' },
       mode,
       tool: mode === 'build' ? 'property-line' : null,
       structureLayer: 'elements',
@@ -382,7 +378,6 @@ function resetEditorInteractionState() {
     catalogCategory: null,
     selectedItem: null,
     selectedReferenceId: null,
-    spaces: {},
     hoveredHole: null,
     isPreviewMode: false,
   })
@@ -422,7 +417,8 @@ export function syncLegacyScenePlugins(): void {
 export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
   const defaultInstalledPlugins = editorHostPanelRegistry.getDefaultInstalledPluginIds()
   if (hasUsableSceneGraph(sceneGraph)) {
-    const { nodes, rootNodeIds, collections, materials, installedPlugins } = sceneGraph
+    const { nodes, rootNodeIds, collections, materials, installedPlugins } =
+      archiveArchitecture(sceneGraph)
     useScene.getState().setScene(nodes as any, rootNodeIds as any, {
       collections: collections as any,
       materials: materials as any,
@@ -446,11 +442,7 @@ export function applySceneGraphToEditor(sceneGraph?: SceneGraph | null) {
 const LOCAL_STORAGE_KEY = 'pascal-editor-scene'
 
 export function saveSceneToLocalStorage(scene: SceneGraph): void {
-  try {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(scene))
-  } catch {
-    // Swallow storage quota errors
-  }
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(scene))
 }
 
 export function loadSceneFromLocalStorage(): SceneGraph | null {

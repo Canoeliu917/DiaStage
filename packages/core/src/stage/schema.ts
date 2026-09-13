@@ -15,6 +15,7 @@ export const StageItemKindSchema = z.enum([
   'screen',
   'curtain',
   'table',
+  'round-table',
   'chair',
   'sofa',
   'counter',
@@ -57,6 +58,7 @@ export const StageItemProposalSchema = z.strictObject({
   displayName: NameSchema,
   libraryAssetId: IdSchema.nullable(),
   dimensionsMeters: StageDimensionsSchema,
+  stepCount: z.number().int().min(1).max(200).nullable().optional(),
   transform: StageTransformSchema,
   certainty: CertaintySchema,
   assumptionIds: z.array(IdSchema).max(100),
@@ -127,9 +129,11 @@ export const SceneContextObjectSchema = z.strictObject({
   kind: StageItemKindSchema,
   transform: StageTransformSchema,
   dimensionsMeters: StageDimensionsSchema,
+  stepCount: z.number().int().min(1).max(200).optional(),
 })
 export type SceneContextObject = z.infer<typeof SceneContextObjectSchema>
 export const SceneContextSummarySchema = z.strictObject({
+  doorClearanceMeters: z.number().finite().min(0.6).max(10).optional(),
   documentVersion: z.number().int().nonnegative(),
   venue: VenueProposalSchema.nullable(),
   objects: z.array(SceneContextObjectSchema).max(1000),
@@ -153,6 +157,18 @@ const camera = {
   fieldOfViewDegrees: z.number().finite().min(5).max(120),
 }
 export const StageCommandSchema = z.discriminatedUnion('type', [
+  z.strictObject({
+    type: z.literal('SetDoorClearance'),
+    ...meta,
+    meters: z.number().finite().min(0.6).max(10),
+  }),
+  z.strictObject({
+    type: z.literal('GroupObjects'),
+    ...meta,
+    nodeIds: z.array(IdSchema).min(2).max(200),
+    name: NameSchema,
+  }),
+  z.strictObject({ type: z.literal('ReplaceScenery'), ...node, libraryAssetId: IdSchema }),
   z.strictObject({ type: z.literal('CreateStage'), ...meta, venue: VenueProposalSchema }),
   z.strictObject({
     type: z.literal('AddScenery'),
@@ -161,6 +177,7 @@ export const StageCommandSchema = z.discriminatedUnion('type', [
     kind: StageItemKindSchema.exclude(['camera', 'performer-marker']),
     libraryAssetId: IdSchema.nullable(),
     dimensionsMeters: StageDimensionsSchema,
+    stepCount: z.number().int().min(1).max(200).optional(),
     transform: StageTransformSchema,
   }),
   z.strictObject({ type: z.literal('MoveObject'), ...node, position: StagePointSchema }),
@@ -169,6 +186,7 @@ export const StageCommandSchema = z.discriminatedUnion('type', [
     type: z.literal('ResizeObject'),
     ...node,
     dimensionsMeters: StageDimensionsSchema,
+    stepCount: z.number().int().min(1).max(200).optional(),
   }),
   z.strictObject({
     type: z.literal('DuplicateObject'),

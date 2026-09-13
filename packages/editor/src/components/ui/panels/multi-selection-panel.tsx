@@ -68,7 +68,7 @@ export function MultiSelectionActions() {
 /**
  * Docked multi-selection panel. Includes Group / Ungroup for session selection sets.
  */
-export function MultiSelectionPanel({ footer }: { footer?: React.ReactNode }) {
+export function MultiSelectionPanel() {
   const selectedIds = useViewer((s) => s.selection.selectedIds)
   const setSelection = useViewer((s) => s.setSelection)
   const sessionGroups = useSessionGroups((s) => s.groups)
@@ -84,7 +84,6 @@ export function MultiSelectionPanel({ footer }: { footer?: React.ReactNode }) {
 
   return (
     <PanelWrapper
-      footer={footer}
       icon="/icons/select.webp"
       onClose={() => setSelection({ selectedIds: [] })}
       title={

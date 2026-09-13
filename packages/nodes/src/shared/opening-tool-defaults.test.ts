@@ -1,6 +1,6 @@
+import { test } from 'bun:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 if (!process.env.OPENING_PRESET_RUNTIME_TEST) {
@@ -11,7 +11,7 @@ if (!process.env.OPENING_PRESET_RUNTIME_TEST) {
       timeout: 30_000,
     })
     assert.equal(child.status, 0, child.error?.message ?? `${child.stdout}\n${child.stderr}`)
-  })
+  }, 40_000)
 } else {
   const { mock } = await import('bun:test')
   const React = await import('react')
@@ -80,17 +80,6 @@ if (!process.env.OPENING_PRESET_RUNTIME_TEST) {
     clearOpeningGuides3D() {},
     publishOpeningGuidesForWallEvent() {},
     resolveSillSnap: () => null,
-  }))
-  mock.module('./roof-wall-opening-placement', () => ({
-    getRoofWallOpeningCursorPose() {},
-    resolveRoofWallOpeningTarget() {},
-    worldToSelectedBuildingLocal: (point: { toArray(): number[] }) => point.toArray(),
-  }))
-  mock.module('./dormer-wall-opening-placement', () => ({
-    dormerEventFromHostedWindow() {},
-    getDormerWindowWorldNormal() {},
-    getDormerWindowWorldYaw() {},
-    resolveDormerWindowTarget() {},
   }))
   const { doorToolParameters, windowToolParameters } = await import('./opening-tool-defaults')
   const DoorTool = (await import('../door/tool')).default

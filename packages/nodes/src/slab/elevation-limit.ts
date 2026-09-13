@@ -122,7 +122,6 @@ export function applySlabElevationPreset(slab: SlabNode, signedDepth: number): P
       elevation: anchor + signedDepth,
       recessed: true,
       recessedRimElevation: anchor,
-      fillToTerrain: undefined,
     }
   }
   const thickness = Math.max(MIN_SLAB_THICKNESS, signedDepth)

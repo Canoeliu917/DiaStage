@@ -1,5 +1,15 @@
 import { spawn } from 'node:child_process'
-import { chmod, cp, mkdir, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
+import {
+  chmod,
+  cp,
+  mkdir,
+  readdir,
+  readFile,
+  realpath,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,6 +19,23 @@ const appDirectory = path.join(repositoryRoot, 'apps/editor')
 const standaloneDirectory = path.join(appDirectory, '.next/standalone')
 const standaloneAppDirectory = path.join(standaloneDirectory, 'apps/editor')
 const outputDirectory = path.join(packageDirectory, 'dist/runtime')
+
+const buildOnlyRuntimePaths = [
+  'apps/editor/app',
+  'apps/editor/components',
+  'apps/editor/lib',
+  'apps/editor/vendor',
+  'apps/editor/AGENTS.md',
+  'apps/editor/CLAUDE.md',
+  'apps/editor/README.md',
+  'apps/editor/bunfig.toml',
+  'apps/editor/next.config.ts',
+  'apps/editor/postcss.config.mjs',
+  'apps/editor/tsconfig.json',
+  'apps/editor/vercel.json',
+  'node_modules/next/dist/server/capsize-font-metrics.json',
+  'node_modules/next/dist/server/font-utils.js',
+] as const
 
 const packageJson = JSON.parse(
   await readFile(path.join(packageDirectory, 'package.json'), 'utf8'),
@@ -20,7 +47,19 @@ await chmod(path.join(packageDirectory, 'dist/bin/pascal.js'), 0o755)
 await assertFile(path.join(standaloneAppDirectory, 'server.js'))
 await rm(outputDirectory, { recursive: true, force: true })
 await mkdir(path.dirname(outputDirectory), { recursive: true })
-await cp(standaloneDirectory, outputDirectory, { recursive: true, dereference: false })
+// Next emits absolute directory junctions on Windows. Copy their contents now:
+// recreating them needs link privileges and would point outside the packed runtime.
+await cp(standaloneDirectory, outputDirectory, {
+  recursive: true,
+  // Preserve POSIX relative links so copied packages resolve inside the new runtime.
+  ...(process.platform === 'win32' ? { dereference: true } : { verbatimSymlinks: true }),
+  // Windows tracing can follow workspace links into the previous CLI output.
+  // Never let a runtime copy contain its own previous distribution.
+  filter: (source) =>
+    !/^(?:node_modules\/@pascal-app\/cli|packages\/cli)(?:\/|$)/.test(
+      path.relative(standaloneDirectory, source).split(path.sep).join('/'),
+    ),
+})
 
 await cp(path.join(appDirectory, 'public'), path.join(outputDirectory, 'apps/editor/public'), {
   recursive: true,
@@ -33,10 +72,12 @@ await cp(
 )
 await bundleMcpServer(outputDirectory, packageJson.version)
 
-await removeUnusedSharp(outputDirectory)
+await removeUnusedNativeRenderers(outputDirectory)
 await flattenBunNodeModules(outputDirectory)
 await materializeSymlinks(outputDirectory)
 await rm(path.join(outputDirectory, 'node_modules/.bun'), { recursive: true, force: true })
+await trimPdfTextRuntime(outputDirectory)
+await pruneBuildOnlyFiles(outputDirectory)
 const nativeFiles = await findNativeModules(outputDirectory)
 if (nativeFiles.length > 0) {
   throw new Error(`portable runtime contains native modules:\n${nativeFiles.join('\n')}`)
@@ -59,6 +100,87 @@ await writeFile(
 )
 
 console.log(`Staged Pascal editor runtime ${packageJson.version} at ${outputDirectory}`)
+
+async function trimPdfTextRuntime(root: string): Promise<void> {
+  // Keep text extraction, CMaps, standard fonts and attribution. PDF viewer UI,
+  // drawing builds and source maps are not used by the document worker.
+  for (const directory of ['node_modules', 'apps/editor/.next/node_modules']) {
+    const modules = path.join(root, directory)
+    for (const name of await readdir(modules).catch(() => [])) {
+      if (name !== 'pdfjs-dist' && !name.startsWith('pdfjs-dist-')) continue
+      const pdf = path.join(modules, name)
+      for (const [folder, keep] of [
+        ['', ['legacy', 'cmaps', 'standard_fonts', 'package.json', 'LICENSE']],
+        ['legacy', ['build']],
+        ['legacy/build', ['pdf.mjs', 'pdf.worker.mjs']],
+      ] as const) {
+        for (const entry of await readdir(path.join(pdf, folder))) {
+          if (!(keep as readonly string[]).includes(entry))
+            await rm(path.join(pdf, folder, entry), { recursive: true, force: true })
+        }
+      }
+    }
+  }
+}
+
+async function pruneBuildOnlyFiles(root: string): Promise<void> {
+  await Promise.all(
+    buildOnlyRuntimePaths.map((relative) =>
+      rm(path.join(root, relative), { recursive: true, force: true }),
+    ),
+  )
+  await removeStrayItemAssets(path.join(root, 'apps/editor/public/items'))
+  await removeTraceArtifacts(path.join(root, 'apps/editor/.next'))
+}
+
+async function removeStrayItemAssets(itemsDirectory: string): Promise<void> {
+  let entries
+  try {
+    entries = await readdir(itemsDirectory, { withFileTypes: true })
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+    return
+  }
+  const isRuntimeAsset = (name: string): boolean =>
+    name === 'model.glb' || name.startsWith('thumbnail.') || name.startsWith('floor-plan.')
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue
+    const itemDirectory = path.join(itemsDirectory, entry.name)
+    for (const asset of await readdir(itemDirectory, { withFileTypes: true })) {
+      if (!asset.isFile() || isRuntimeAsset(asset.name)) continue
+      const assetPath = path.join(itemDirectory, asset.name)
+      const { size } = await stat(assetPath)
+      await rm(assetPath, { force: true })
+      console.log(
+        `Dropped unreferenced item asset ${entry.name}/${asset.name} (${formatMb(size)} MB)`,
+      )
+    }
+  }
+}
+
+function formatMb(bytes: number): string {
+  return (bytes / 1024 / 1024).toFixed(2)
+}
+
+async function removeTraceArtifacts(nextDirectory: string): Promise<void> {
+  const walk = async (directory: string): Promise<void> => {
+    let entries
+    try {
+      entries = await readdir(directory, { withFileTypes: true })
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+      return
+    }
+    for (const entry of entries) {
+      const absolute = path.join(directory, entry.name)
+      if (entry.isDirectory()) await walk(absolute)
+      else if (entry.name.endsWith('.nft.json') || entry.name.endsWith('.map')) {
+        await rm(absolute, { force: true })
+      }
+    }
+  }
+  await walk(nextDirectory)
+}
 
 async function bundleMcpServer(runtimeDirectory: string, version: string): Promise<void> {
   const output = path.join(runtimeDirectory, 'services/pascal-mcp.mjs')
@@ -100,10 +222,16 @@ async function assertFile(filePath: string): Promise<void> {
   }
 }
 
-async function removeUnusedSharp(root: string): Promise<void> {
+async function removeUnusedNativeRenderers(root: string): Promise<void> {
   const nodeModules = path.join(root, 'node_modules')
   await rm(path.join(nodeModules, 'sharp'), { recursive: true, force: true })
   await rm(path.join(nodeModules, '@img'), { recursive: true, force: true })
+  // PDF.js text extraction needs no canvas. Optional native drawing backends
+  // must not make a packed CLI specific to the build machine's OS/CPU.
+  for (const entry of await readdir(path.join(nodeModules, '@napi-rs')).catch(() => [])) {
+    if (entry === 'canvas' || entry.startsWith('canvas-'))
+      await rm(path.join(nodeModules, '@napi-rs', entry), { recursive: true, force: true })
+  }
   const bunModules = path.join(nodeModules, '.bun')
   let entries: string[] = []
   try {
@@ -115,7 +243,12 @@ async function removeUnusedSharp(root: string): Promise<void> {
   await Promise.all(
     entries
       .filter(
-        (entry) => entry === 'sharp' || entry.startsWith('sharp@') || entry.startsWith('@img+'),
+        (entry) =>
+          entry === 'sharp' ||
+          entry.startsWith('sharp@') ||
+          entry.startsWith('@img+') ||
+          entry.startsWith('@napi-rs+canvas@') ||
+          entry.startsWith('@napi-rs+canvas-'),
       )
       .map((entry) => rm(path.join(bunModules, entry), { recursive: true, force: true })),
   )

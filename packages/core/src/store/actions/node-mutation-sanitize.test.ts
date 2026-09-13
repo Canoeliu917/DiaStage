@@ -14,7 +14,7 @@ type RafFn = (cb: (t: number) => void) => number
   () => {}
 
 const SHELF_ID = 'shelf_sanitize' as AnyNodeId
-const SOLAR_PANEL_ID = 'sp_x' as AnyNodeId
+const LEGACY_NODE_ID = 'legacy_x' as AnyNodeId
 const WALL_ID = 'wall_keyremoval' as AnyNodeId
 
 function makeWall(): AnyNode {
@@ -59,28 +59,15 @@ function makeShelf(overrides: Partial<AnyNode> = {}): AnyNode {
   } as unknown as AnyNode
 }
 
-function makeSolarPanel(): AnyNode {
+function makeLegacyNode(): AnyNode {
   return {
-    id: SOLAR_PANEL_ID,
-    type: 'solar-panel',
+    id: LEGACY_NODE_ID,
+    type: 'legacy-plugin-node',
     parentId: null,
     object: 'node',
     visible: true,
-    name: 'Panel',
+    name: 'Legacy node',
     metadata: {},
-    position: [0, 0, 0],
-    rotation: 0,
-    rows: 2,
-    columns: 3,
-    panelWidth: 1,
-    panelHeight: 1.65,
-    gapX: 0.02,
-    gapY: 0.02,
-    mountingType: 'flush',
-    tiltAngle: 15,
-    standoffHeight: 0.05,
-    frameThickness: 0.04,
-    frameDepth: 0.04,
   } as unknown as AnyNode
 }
 
@@ -108,9 +95,9 @@ describe('node mutation numeric sanitization', () => {
     useScene.setState({
       nodes: {
         [SHELF_ID]: makeShelf(),
-        [SOLAR_PANEL_ID]: makeSolarPanel(),
+        [LEGACY_NODE_ID]: makeLegacyNode(),
       },
-      rootNodeIds: [SHELF_ID, SOLAR_PANEL_ID],
+      rootNodeIds: [SHELF_ID, LEGACY_NODE_ID],
       dirtyNodes: new Set(),
       collections: {},
       readOnly: false,
@@ -179,12 +166,12 @@ describe('node mutation numeric sanitization', () => {
   })
 
   test('allows non-canonical ids to receive updates', () => {
-    useScene.getState().updateNode(SOLAR_PANEL_ID, {
-      name: 'Updated panel',
+    useScene.getState().updateNode(LEGACY_NODE_ID, {
+      name: 'Updated legacy node',
     } as Partial<AnyNode>)
 
-    const panel = useScene.getState().nodes[SOLAR_PANEL_ID] as { name?: string }
-    expect(panel.name).toBe('Updated panel')
+    const legacy = useScene.getState().nodes[LEGACY_NODE_ID] as { name?: string }
+    expect(legacy.name).toBe('Updated legacy node')
   })
 
   test('updateNodes continues through schema-invalid numeric updates when reporting throws', () => {
@@ -197,7 +184,7 @@ describe('node mutation numeric sanitization', () => {
       useScene.getState().updateNodes([
         { id: SHELF_ID, data: { width: Infinity } as Partial<AnyNode> },
         {
-          id: SOLAR_PANEL_ID,
+          id: LEGACY_NODE_ID,
           data: { name: 'Updated after invalid numeric value' } as Partial<AnyNode>,
         },
       ])
@@ -206,8 +193,8 @@ describe('node mutation numeric sanitization', () => {
     }
 
     expect(shelf().width).toBe(1.2)
-    const panel = useScene.getState().nodes[SOLAR_PANEL_ID] as { name?: string }
-    expect(panel.name).toBe('Updated after invalid numeric value')
+    const legacy = useScene.getState().nodes[LEGACY_NODE_ID] as { name?: string }
+    expect(legacy.name).toBe('Updated after invalid numeric value')
   })
 
   test('sanitizes non-finite numeric values during create', () => {

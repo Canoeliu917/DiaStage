@@ -8,6 +8,7 @@ import {
   SegmentedControl,
   SliderControl,
   ToggleControl,
+  useIsMobile,
 } from '@pascal-app/editor'
 import {
   Aperture,
@@ -21,7 +22,7 @@ import {
   Save,
   Video,
 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   type CameraControlSettings,
   type CameraEase,
@@ -57,6 +58,8 @@ const transportLabels = {
 }
 
 export function CameraRehearsalPanel({ sceneId }: CameraRehearsalPanelProps) {
+  const mobile = useIsMobile()
+  const [advanced, setAdvanced] = useState(false)
   const state = useCameraDirectorState(sceneId)
   const controller = useCameraDirectorRuntime(sceneId)
   const nodes = useScene((scene) => scene.nodes)
@@ -122,7 +125,8 @@ export function CameraRehearsalPanel({ sceneId }: CameraRehearsalPanelProps) {
 
   const setOutputPreset = (preset: OutputPreset) => {
     const dimensions = dimensionsForPreset(preset)
-    patchOutput({ preset, ...dimensions })
+    const scale = advanced ? 1 : 2 / 3
+    patchOutput({ preset, width: dimensions.width * scale, height: dimensions.height * scale })
   }
 
   const copySelectedFrame = (slot: 'start' | 'end') => {
@@ -576,6 +580,20 @@ export function CameraRehearsalPanel({ sceneId }: CameraRehearsalPanelProps) {
         </PanelSection>
 
         <PanelSection className="ds-rehearsal-section" title="06 输出视频" defaultExpanded={false}>
+          <ToggleControl
+            checked={advanced}
+            label="高级设置 · 1080p 与编码参数"
+            onChange={(enabled) => {
+              setAdvanced(enabled)
+              const size = dimensionsForPreset(state.output.preset)
+              const scale = enabled ? 1 : 2 / 3
+              patchOutput({
+                width: size.width * scale,
+                height: size.height * scale,
+                ...(!enabled ? { fps: 24, bitrateMbps: 4 } : {}),
+              })
+            }}
+          />
           <SegmentedControl<OutputPreset>
             onChange={setOutputPreset}
             options={[
@@ -585,27 +603,31 @@ export function CameraRehearsalPanel({ sceneId }: CameraRehearsalPanelProps) {
             ]}
             value={state.output.preset}
           />
-          <SegmentedControl<'24' | '25' | '30' | '50' | '60'>
-            onChange={(fps) => patchOutput({ fps: Number(fps) as RenderQueueSettings['fps'] })}
-            options={[
-              { label: '24', value: '24' },
-              { label: '25', value: '25' },
-              { label: '30', value: '30' },
-              { label: '50', value: '50' },
-              { label: '60', value: '60' },
-            ]}
-            value={String(state.output.fps) as '24' | '25' | '30' | '50' | '60'}
-          />
-          <SliderControl
-            label="视频码率"
-            max={40}
-            min={2}
-            onChange={(bitrateMbps) => patchOutput({ bitrateMbps })}
-            precision={0}
-            step={1}
-            unit="Mbps"
-            value={state.output.bitrateMbps}
-          />
+          {advanced && (
+            <>
+              <SegmentedControl<'24' | '25' | '30' | '50' | '60'>
+                onChange={(fps) => patchOutput({ fps: Number(fps) as RenderQueueSettings['fps'] })}
+                options={[
+                  { label: '24', value: '24' },
+                  { label: '25', value: '25' },
+                  { label: '30', value: '30' },
+                  { label: '50', value: '50' },
+                  { label: '60', value: '60' },
+                ]}
+                value={String(state.output.fps) as '24' | '25' | '30' | '50' | '60'}
+              />
+              <SliderControl
+                label="视频码率"
+                max={40}
+                min={2}
+                onChange={(bitrateMbps) => patchOutput({ bitrateMbps })}
+                precision={0}
+                step={1}
+                unit="Mbps"
+                value={state.output.bitrateMbps}
+              />
+            </>
+          )}
           <ToggleControl
             checked={state.output.safeFrame}
             label="显示输出范围"
@@ -626,12 +648,14 @@ export function CameraRehearsalPanel({ sceneId }: CameraRehearsalPanelProps) {
             label="录制视频（WebM）"
             onClick={() => callRuntime((controller) => void controller.exportVideo())}
           />
-          <ActionButton
-            disabled={busy || !controller}
-            icon={<Download className={buttonIconClass} />}
-            label="导出逐帧图片（PNG）"
-            onClick={() => callRuntime((controller) => void controller.exportPngSequence())}
-          />
+          {!mobile && (
+            <ActionButton
+              disabled={busy || !controller}
+              icon={<Download className={buttonIconClass} />}
+              label="导出逐帧图片（PNG）"
+              onClick={() => callRuntime((controller) => void controller.exportPngSequence())}
+            />
+          )}
           <p className="text-xs text-muted-foreground leading-relaxed">
             视频可直接回放；逐帧图片打包下载，适合后期合成。
           </p>

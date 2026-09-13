@@ -8,13 +8,6 @@ import {
 import { DEFAULT_LEVEL_HEIGHT } from './level-height'
 
 /**
- * Gap kept between a ceiling's stored height and its clamp bound (storey
- * plane or covering-slab underside), so the ceiling surface never
- * coincides with the solid above it.
- */
-export const CEILING_CLAMP_MARGIN = 0.01
-
-/**
  * Stored storey height in meters (floor-to-floor). Falls back to
  * {@link DEFAULT_LEVEL_HEIGHT} for unmigrated legacy levels whose `height`
  * field is absent.
@@ -351,47 +344,4 @@ export function getWallPlaneTop(
     plane = underside
   }
   return plane
-}
-
-/**
- * Upper bound for a ceiling's stored height over `polygon` on `levelId`:
- * `min(storey plane, lowest covering-slab underside) - CEILING_CLAMP_MARGIN`.
- * The covering underside is sampled at every polygon vertex plus the
- * centroid — cheap, and a slab overlapping a convex-ish ceiling almost
- * always covers one of those points; exact polygon-vs-polygon overlap is
- * not worth its cost for a clamp bound. Ceiling outlines share footprint
- * edges with the slabs above them the same way walls do, so vertices
- * sitting exactly on a slab's boundary count as covered on every side
- * (see `slabCoversPoint`) instead of flipping with the edge orientation.
- *
- * Returns `Infinity` when `levelId` doesn't resolve, so callers clamp
- * against nothing rather than a garbage plane.
- */
-export function getCeilingClampBound(
-  levelId: string,
-  nodes: Record<AnyNodeId, AnyNode>,
-  polygon: ReadonlyArray<[number, number]>,
-): number {
-  const context = resolveCoveringSlabContext(levelId, nodes)
-  if (!context) return Number.POSITIVE_INFINITY
-
-  let bound = context.floorToFloorHeight
-  if (polygon.length > 0) {
-    let cx = 0
-    let cz = 0
-    for (const [x, z] of polygon) {
-      cx += x
-      cz += z
-    }
-    const samples: Array<[number, number]> = [
-      ...polygon,
-      [cx / polygon.length, cz / polygon.length],
-    ]
-    for (const [x, z] of samples) {
-      const underside = lowestCoveringUndersideAt(context, x, z)
-      if (underside !== null && underside < bound) bound = underside
-    }
-  }
-
-  return bound - CEILING_CLAMP_MARGIN
 }

@@ -1,27 +1,14 @@
 import type { ZodObject } from 'zod'
-import type {
-  AnyNodeDefinition,
-  BakePolicy,
-  InspectorExtension,
-  NodeRegistry,
-  Plugin,
-} from './types'
+import type { AnyNodeDefinition, BakePolicy, NodeRegistry, Plugin } from './types'
 
 const HOST_API_VERSION = 1 as const
 const BUILTIN_PLUGIN_ID = 'pascal:core'
 
 const pluginIdsByKind = new Map<string, string>()
 
-// Inspector-card sections contributed by plugins, fanned out per node kind
-// (`Plugin.inspectorExtensions`). Filled by `loadPlugin`, cleared by the
-// test reset alongside `pluginIdsByKind`. Consumers re-derive on the
-// registry-version bump — plugins load asynchronously, after first mount.
-const inspectorExtensionsByKind = new Map<string, InspectorExtension[]>()
-
 // ---------------------------------------------------------------------------
-// Registry change notification. Plugin kinds register ASYNCHRONOUSLY (app
-// bootstraps discover them via dynamic imports — see `discoverPlugins`), so
-// any consumer that snapshots the registry at mount (the selection managers'
+// Registry change notification. Plugin kinds may register after mount, so any
+// consumer that snapshots the registry at mount (the selection managers'
 // `getSelectableKinds()` subscription lists) goes stale the moment a plugin
 // loads after it. `_register` / `_reset` bump a monotonic version and notify
 // listeners; `useRegistryVersion()` (registry/use-registry-version.ts) turns
@@ -128,7 +115,6 @@ class NodeRegistryImpl implements NodeRegistry {
   _reset(): void {
     this.defs.clear()
     pluginIdsByKind.clear()
-    inspectorExtensionsByKind.clear()
     notifyRegistryChanged()
   }
 
@@ -143,16 +129,11 @@ class NodeRegistryImpl implements NodeRegistry {
   _snapshot(): () => void {
     const defs = new Map(this.defs)
     const pluginIds = new Map(pluginIdsByKind)
-    const extensions = new Map(
-      Array.from(inspectorExtensionsByKind, ([kind, list]) => [kind, [...list]] as const),
-    )
     return () => {
       this.defs.clear()
       for (const [kind, def] of defs) this.defs.set(kind, def)
       pluginIdsByKind.clear()
       for (const [kind, id] of pluginIds) pluginIdsByKind.set(kind, id)
-      inspectorExtensionsByKind.clear()
-      for (const [kind, list] of extensions) inspectorExtensionsByKind.set(kind, [...list])
       notifyRegistryChanged()
     }
   }
@@ -171,17 +152,6 @@ export function registerNode(def: AnyNodeDefinition): void {
 /** The plugin that registered a node kind, when it came through {@link loadPlugin}. */
 export function getNodePluginId(kind: string): string | undefined {
   return pluginIdsByKind.get(kind)
-}
-
-/**
- * Inspector-card sections registered for a node kind
- * ({@link InspectorExtension}), in plugin load order. Callers must still
- * apply the project's install gate (`installedPlugins` — same rule as
- * {@link isNodeKindEnabled}) before rendering. Re-derive on the
- * registry-version bump: plugins register asynchronously after mount.
- */
-export function getInspectorExtensions(kind: string): InspectorExtension[] {
-  return inspectorExtensionsByKind.get(kind) ?? []
 }
 
 /**
@@ -291,24 +261,6 @@ export function hasRegistry3DMoveTool(kind: string): boolean {
 }
 
 /**
- * Whether the kind can be saved as a reusable preset. Default: an
- * explicit `capabilities.presettable` boolean wins; otherwise the kind
- * is presettable iff it declares `def.parametrics`. Read by host apps
- * (community shell) to gate "save as preset" UI on a selection.
- */
-export function isPresettable(def: AnyNodeDefinition): boolean {
-  if (typeof def.capabilities.presettable === 'boolean') {
-    return def.capabilities.presettable
-  }
-  return def.parametrics !== undefined
-}
-
-export function isPresettableKind(kind: string): boolean {
-  const def = nodeRegistry.get(kind)
-  return def ? isPresettable(def) : false
-}
-
-/**
  * Resolve a kind's facing-triangle config, or `null` when it has none.
  * `{ reversed }` says whether the triangle points along the node's local -Z
  * (its front) instead of +Z. One reader (the editor-side `<FacingPoseIndicator>`
@@ -356,82 +308,4 @@ export async function loadPlugin(plugin: Plugin): Promise<void> {
     registerNode(def)
     pluginIdsByKind.set(def.kind, plugin.id)
   }
-  let extensionsChanged = false
-  for (const extension of plugin.inspectorExtensions ?? []) {
-    for (const kind of extension.kinds) {
-      const list = inspectorExtensionsByKind.get(kind)
-      if (!list) {
-        inspectorExtensionsByKind.set(kind, [extension])
-        extensionsChanged = true
-        continue
-      }
-      // Same-id re-registration replaces in place (dev HMR re-runs
-      // `loadPlugin`); a fresh id appends in load order.
-      const existing = list.findIndex((e) => e.id === extension.id)
-      if (existing >= 0) list[existing] = extension
-      else list.push(extension)
-      extensionsChanged = true
-    }
-  }
-  // Nodes already notified per `registerNode`; bump once more so a plugin
-  // that only contributes inspector extensions still re-renders consumers.
-  if (extensionsChanged) notifyRegistryChanged()
-}
-
-/**
- * App-level plugin discovery hook. The bootstrap loads `builtinPlugin`
- * unconditionally and then awaits this to pick up any extra plugins
- * (third-party node packs, AI-authored bundles, user-installed kinds).
- * Defaults to returning `[]` — apps that want external plugins call
- * {@link setPluginDiscovery} before the bootstrap module runs.
- *
- * Kept async so a future loader can fetch over the network without
- * changing the contract. See `wiki/architecture/plugin-authoring.md` for
- * the plugin author surface this enables.
- */
-export type PluginDiscovery = () => Promise<Plugin[]>
-
-const defaultPluginDiscovery: PluginDiscovery = async () => []
-
-let pluginDiscovery: PluginDiscovery = defaultPluginDiscovery
-
-/**
- * Replace the plugin discovery implementation. Call once at app startup
- * before {@link discoverPlugins} is invoked (bootstrap order matters).
- *
- * The contract is intentionally minimal — just "return a list of
- * plugins to load." The loader can be a static `import.meta.glob`, a
- * `fetch` against a registry endpoint, a worker IPC, etc. Each returned
- * plugin still goes through {@link loadPlugin} so the same API-version
- * gate + duplicate-kind protection applies.
- */
-export function setPluginDiscovery(fn: PluginDiscovery): void {
-  if (isDevMode() && pluginDiscovery !== defaultPluginDiscovery) {
-    console.warn(
-      '[registry] setPluginDiscovery replaced an existing discovery chain — plugins registered earlier (e.g. via extendPluginDiscovery) are dropped. Use extendPluginDiscovery to compose instead.',
-    )
-  }
-  pluginDiscovery = fn
-}
-
-/**
- * Extend the current plugin discovery instead of replacing it. Useful for app-
- * bundled example or first-party plugins that should load alongside any host-
- * provided discovery source, not clobber it.
- */
-export function extendPluginDiscovery(fn: PluginDiscovery): void {
-  const previous = pluginDiscovery
-  pluginDiscovery = async () => {
-    const [base, extra] = await Promise.all([previous(), fn()])
-    return [...base, ...extra]
-  }
-}
-
-/**
- * Run the active plugin discovery and return the discovered plugins.
- * Bootstrap code is expected to call this after `loadPlugin(builtinPlugin)`
- * and then `await loadPlugin(...)` each result in order.
- */
-export function discoverPlugins(): Promise<Plugin[]> {
-  return pluginDiscovery()
 }

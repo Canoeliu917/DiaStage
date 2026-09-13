@@ -3,7 +3,6 @@
 import dedent from 'dedent'
 import { z } from 'zod'
 import { BaseNode, nodeType, objectId } from '../base'
-import { TerrainData } from '../terrain'
 
 // 2D Polygon
 const PropertyLineData = z.object({
@@ -25,19 +24,12 @@ export const SiteNode = BaseNode.extend({
       [-15, 15],
     ],
   }),
-  /**
-   * Sculpted ground. Absent means flat ground at the datum — the state every
-   * scene that predates terrain is in, and the state an untouched site stays in
-   * so ~11 KB of base64 zeroes does not land in every saved scene.
-   */
-  terrain: TerrainData.optional(),
   children: z.array(z.string()).default([]),
 }).describe(
   dedent`
-  Site node - used to represent a site
+  Venue node - top-level theatre workspace container
   - polygon: polygon data
-  - terrain: optional sculpted heightfield; absent means flat ground
-  - children: array of child node ids (buildings, items)
+  - children: array of stage-container and item node ids
   `,
 )
 

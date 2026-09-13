@@ -39,7 +39,7 @@ export function NodeActionMenu({
 }: NodeActionMenuProps) {
   return (
     <div
-      className="pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-background/95 p-1 shadow-xl backdrop-blur-md"
+      className="node-action-menu pointer-events-auto flex items-center gap-1 rounded-lg border border-border bg-background/95 p-1 shadow-xl backdrop-blur-md"
       onPointerDown={onPointerDown}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
@@ -137,7 +137,13 @@ export function NodeActionMenu({
         <button
           aria-label="删除"
           className="tooltip-trigger rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-          onClick={onDelete}
+          onClick={(event) => {
+            if (
+              !window.matchMedia('(pointer: coarse)').matches ||
+              window.confirm('删除选中的物件？可以撤销恢复。')
+            )
+              onDelete(event)
+          }}
           title="删除"
           type="button"
         >

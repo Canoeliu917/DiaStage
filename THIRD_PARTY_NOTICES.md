@@ -21,7 +21,6 @@ Pascal-derived code is present in these areas:
 - `packages/cli/`
 - `packages/capture-viewer/`
 - `packages/capture-protocol/`
-- `packages/ifc-converter/`
 - upstream build, tooling, workflow, and architecture files retained from
   Pascal Editor
 

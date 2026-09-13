@@ -28,9 +28,6 @@ export const scanDefinition: NodeDefinition<typeof ScanNode> = {
     scalable: { axes: ['x', 'y', 'z'], min: 0.01, max: 10 },
     duplicable: false,
     deletable: true,
-    // Scans carry user-uploaded imagery — cataloging them as
-    // reusable presets is out of scope.
-    presettable: false,
   },
 
   parametrics: scanParametrics,
@@ -45,8 +42,8 @@ export const scanDefinition: NodeDefinition<typeof ScanNode> = {
   },
 
   presentation: {
-    label: '采集',
-    description: '采集会话，可包含网格、动作、媒体与传感器数据。',
+    label: '场地扫描',
+    description: '从扫描应用导入的场地参考模型，可调整位置、朝向和比例。',
     icon: { kind: 'url', src: '/icons/mesh.webp' },
     paletteSection: 'site',
     paletteOrder: 40,

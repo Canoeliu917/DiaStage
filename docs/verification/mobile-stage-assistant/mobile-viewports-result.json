@@ -1,0 +1,35 @@
+[
+  {
+    "name": "desktop",
+    "width": 1440,
+    "height": 1000,
+    "noOverflow": true,
+    "canvasCount": 1,
+    "dpr": 1,
+    "webglFallback": true,
+    "visibilitySimulationPausesDraws": true,
+    "errors": []
+  },
+  {
+    "name": "tablet",
+    "width": 1024,
+    "height": 1366,
+    "noOverflow": true,
+    "canvasCount": 1,
+    "dpr": 1,
+    "webglFallback": true,
+    "visibilitySimulationPausesDraws": true,
+    "errors": []
+  },
+  {
+    "name": "phone",
+    "width": 390,
+    "height": 844,
+    "noOverflow": true,
+    "canvasCount": 1,
+    "dpr": 1,
+    "webglFallback": true,
+    "visibilitySimulationPausesDraws": true,
+    "errors": []
+  }
+]

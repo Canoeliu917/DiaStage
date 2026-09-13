@@ -44,12 +44,7 @@ export type WallRayHitOwnership = 'self-wall' | 'other-wall' | 'selectable' | 'p
 const BUILTIN_SELECTABLE_COMPETITOR_KINDS = new Set([
   'fence',
   'item',
-  'column',
-  'elevator',
   'slab',
-  'ceiling',
-  'roof',
-  'roof-segment',
   'stair',
   'stair-segment',
   'spawn',

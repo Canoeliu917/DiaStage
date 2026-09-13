@@ -2,19 +2,15 @@ import type { AnyNode, AssetInput } from '@pascal-app/core'
 import type { ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 
-export type SnapTarget = 'wall' | 'ceiling' | 'roof'
+export type SnapTarget = 'wall'
 export type SnapTargetBadgeSize = 'tile' | 'tree'
 
 const SNAP_TARGET_ICONS: Record<SnapTarget, string> = {
   wall: '/icons/wall.webp',
-  ceiling: '/icons/ceiling.webp',
-  roof: '/icons/roof.webp',
 }
 
 const SNAP_TARGET_LABELS: Record<SnapTarget, string> = {
   wall: '附着到景片',
-  ceiling: '附着到上空遮挡',
-  roof: '附着到兼容物件',
 }
 
 const SNAP_TARGET_BADGE_SIZE_CLASSES: Record<SnapTargetBadgeSize, string> = {
@@ -29,14 +25,11 @@ const SNAP_TARGET_ICON_SIZE_CLASSES: Record<SnapTargetBadgeSize, string> = {
 
 export function resolveAssetSnapTarget(attachTo: AssetInput['attachTo']): SnapTarget | null {
   if (attachTo === 'wall' || attachTo === 'wall-side') return 'wall'
-  if (attachTo === 'ceiling') return 'ceiling'
   return null
 }
 
 export function resolveNodeSnapTarget(node: AnyNode | null | undefined): SnapTarget | null {
   if (!node) return null
-  if ('roofSegmentId' in node && typeof node.roofSegmentId === 'string') return 'roof'
-  if (node.type === 'downspout') return 'roof'
   if (node.type === 'door' || node.type === 'window') return 'wall'
   if (node.type === 'item') return resolveAssetSnapTarget(node.asset?.attachTo)
   return null

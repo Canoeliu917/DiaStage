@@ -12,8 +12,8 @@ const ScriptStageInput = dynamic(
   },
 )
 
-export function ScriptStageEntry() {
-  const [open, setOpen] = useState(false),
+export function ScriptStageEntry({ initiallyOpen = false }: { initiallyOpen?: boolean }) {
+  const [open, setOpen] = useState(initiallyOpen),
     [ready, setReady] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
   useEffect(() => setReady(true), [])

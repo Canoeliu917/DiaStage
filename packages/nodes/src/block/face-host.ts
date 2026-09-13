@@ -18,7 +18,6 @@ type BlockFaceRange = { faceId: string; start: number; count: number }
 const BLOCK_HORIZONTAL_NORMAL_MIN_Y = 0.95
 const BLOCK_VERTICAL_NORMAL_MAX_Y = 0.05
 const BLOCK_FLOOR_ROTATION_X = Math.PI / 2
-const BLOCK_CEILING_ROTATION_X = -Math.PI / 2
 const BLOCK_FACE_STICKY_PLANE_EPSILON = 0.08
 
 function blockFaceAcceptsAttachment(
@@ -26,7 +25,6 @@ function blockFaceAcceptsAttachment(
   attachTo: Parameters<FaceHostCapability['resolvePlacement']>[0]['asset']['attachTo'],
 ): boolean {
   if (!attachTo) return normalY >= BLOCK_HORIZONTAL_NORMAL_MIN_Y
-  if (attachTo === 'ceiling') return normalY <= -BLOCK_HORIZONTAL_NORMAL_MIN_Y
   if (attachTo === 'wall' || attachTo === 'wall-side') {
     return Math.abs(normalY) <= BLOCK_VERTICAL_NORMAL_MAX_Y
   }
@@ -133,14 +131,13 @@ function resolveBlockFaceTargetForFace(
     0,
   ]
   const faceBounds = { minU, maxU, minV, maxV }
-  const facePosition =
-    !attachTo || attachTo === 'ceiling'
-      ? clampBlockFaceCenterPosition(snappedPosition, faceBounds, [width, depth])
-      : clampBlockFacePosition(snappedPosition, faceBounds, [width, height])
+  const facePosition = !attachTo
+    ? clampBlockFaceCenterPosition(snappedPosition, faceBounds, [width, depth])
+    : clampBlockFacePosition(snappedPosition, faceBounds, [width, height])
   if (!facePosition) return null
 
   const [u, v] = facePosition
-  const normalOffset = attachTo === 'ceiling' && !args.asset.recessed ? args.rawDimensions[1] : 0
+  const normalOffset = 0
   const position: [number, number, number] = [u, v, normalOffset]
   const localPoint = new Vector3(...frame.origin)
     .addScaledVector(xAxis, u)
@@ -153,11 +150,7 @@ function resolveBlockFaceTargetForFace(
   const worldFrame = new Matrix4().copy(args.object.matrixWorld).multiply(localFrame)
   const worldQuaternion = new Quaternion()
   worldFrame.decompose(new Vector3(), worldQuaternion, new Vector3())
-  const rotation: [number, number, number] = !attachTo
-    ? [BLOCK_FLOOR_ROTATION_X, 0, 0]
-    : attachTo === 'ceiling'
-      ? [BLOCK_CEILING_ROTATION_X, 0, 0]
-      : [0, 0, 0]
+  const rotation: [number, number, number] = !attachTo ? [BLOCK_FLOOR_ROTATION_X, 0, 0] : [0, 0, 0]
   worldQuaternion.multiply(new Quaternion().setFromEuler(new Euler(...rotation)))
   const cursorRotation = new Euler().setFromQuaternion(worldQuaternion, 'XYZ')
 
@@ -167,8 +160,6 @@ function resolveBlockFaceTargetForFace(
       position,
       parentId: args.host.id,
       blockFaceId: faceId,
-      roofSegmentId: undefined,
-      roofFace: undefined,
       wallId: undefined,
       side: 'front',
       rotation,
@@ -203,8 +194,6 @@ export const blockFaceHost: FaceHostCapability<BlockNode> = {
       position: [position[0], position[1], position[2]],
       parentId: host.id,
       blockFaceId: item.blockFaceId,
-      roofSegmentId: undefined,
-      roofFace: undefined,
       wallId: undefined,
       side: 'front',
       rotation: item.rotation,

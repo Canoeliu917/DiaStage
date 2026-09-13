@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-10T00:00:00+08:00",
+  "generatedAt": "2026-09-11T00:00:00+08:00",
   "title": "Design System: 咫台 DiaStage",
   "extensions": {
     "colorMeta": {
@@ -305,14 +305,23 @@
       "apps/editor/components/studio-sidebar.tsx",
       "apps/editor/components/camera-studio/studio.css",
       "apps/editor/components/camera-rehearsal-panel.tsx",
+      "apps/editor/components/theatre/simulation-panel.tsx",
+      "apps/editor/components/theatre/rehearsal-partner.tsx",
+      "apps/editor/components/theatre/runtime.tsx",
+      "apps/editor/components/theatre/theatre.css",
       "apps/editor/app/scenes/page.tsx",
       "packages/editor/src/hooks/use-mobile.ts",
       "packages/editor/src/components/editor/editor-layout-v2.tsx"
     ],
     "review": {
-      "disposition": "PENDING_THEATRE_REVIEW",
-      "reviewerHandoff": "Prior captures belong to 2026-09-09. Stage A/B require fresh desktop, tablet and mobile evidence.",
-      "captures": []
+      "disposition": "ship",
+      "reviewerHandoff": "Independent V0.1 UI image review: all three original findings resolved. Image evidence only; synthetic suggestions are not real API results. Public beta is not ready: 30 of 38 dimension definitions, real API, physical-device and Gold evaluations remain unverified.",
+      "captures": [
+        ".impeccable/review/v01/desktop.png",
+        ".impeccable/review/v01/tablet.png",
+        ".impeccable/review/v01/mobile.png"
+      ],
+      "priorStateCaptures": "The desktop/tablet/mobile -entry, -simple, -professional and -analysis PNGs document the previous mode/entry pass; actor positions differ from the latest Ghost captures."
     }
   },
   "components": [
@@ -375,10 +384,10 @@
   ],
   "narrative": {
     "northStar": "The Rehearsal Prompt Desk",
-    "overview": "咫台 DiaStage uses a monochrome rehearsal desk to organize actors, action and stage placement. Subtitle: DiaStage: Theatre Rehearsal & Stage Previs. 中文副标题：戏剧排演与舞台复现。",
+    "overview": "V0.1 沿用黑白灰、英文 Courier New、中文思源黑体与现有紧凑工作台。排演从默认简单模式进入；专业模式逐步展示精确站位与分析依据，两种模式共享同一份正式排演数据。",
     "keyCharacteristics": [
       "Black, white and gray interface chrome.",
-      "Three workspaces: 置景, 排演, 复台. Rehearsal opens 人物与行动.",
+      "Three workspaces: 置景, 排演, 复台. Rehearsal opens 模拟排演 in 简单模式; 专业模式 adds precise placement and analysis.",
       "Actors and action lead; observation settings are progressively disclosed."
     ],
     "rules": [

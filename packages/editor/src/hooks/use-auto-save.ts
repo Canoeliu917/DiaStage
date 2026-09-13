@@ -1,10 +1,12 @@
 'use client'
 
-import { useScene } from '@pascal-app/core'
-import { type MutableRefObject, useCallback, useEffect, useRef } from 'react'
+import { subscribeSceneCommits, useScene } from '@pascal-app/core'
+import { useViewer } from '@pascal-app/viewer'
+import { type MutableRefObject, useEffect, useRef } from 'react'
 import { type SceneGraph, saveSceneToLocalStorage } from '../lib/scene'
+import { createSceneSaveQueue } from '../lib/scene-save-queue'
+import useInteractionScope from '../store/use-interaction-scope'
 
-const AUTOSAVE_DEBOUNCE_MS = 1000
 const STRUCTURAL_NODE_COUNT = 4
 
 type NodeSnapshot = Pick<SceneGraph, 'nodes' | 'rootNodeIds'>
@@ -98,299 +100,115 @@ export function decideExitFlush(opts: {
   return 'flush'
 }
 
-export type SaveStatus = 'idle' | 'pending' | 'saving' | 'saved' | 'paused' | 'error'
+export type SaveStatus =
+  | 'idle'
+  | 'pending'
+  | 'local-saved'
+  | 'saving'
+  | 'saved'
+  | 'paused'
+  | 'error'
 
 interface UseAutoSaveOptions {
   onSave?: (scene: SceneGraph, options?: { keepalive?: boolean }) => Promise<void>
+  /** Durable local write, completed before the network queue may send this commit. */
+  onLocalSave?: (scene: SceneGraph) => Promise<void>
   onDirty?: () => void
   onSaveStatusChange?: (status: SaveStatus) => void
   isVersionPreviewMode?: boolean
 }
 
-/**
- * Generic autosave hook. Subscribes to the scene store and debounces saves.
- * Falls back to localStorage when no `onSave` is provided.
- *
- * ⚠️  Mount in exactly ONE component (the Editor).
- */
-export function useAutoSave({
-  onSave,
-  onDirty,
-  onSaveStatusChange,
-  isVersionPreviewMode = false,
-}: UseAutoSaveOptions): { isLoadingSceneRef: MutableRefObject<boolean> } {
-  const saveTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
-  const isSavingRef = useRef(false)
-  // Starts TRUE: the scene is "loading" from mount until the Editor's load
-  // effect completes its first hydration. The Editor's load effect runs
-  // several hooks AFTER this one (hook order), so store writes in that gap —
-  // e.g. `useHostPanels` syncing default `installedPlugins` on mount — must
-  // not mark the session dirty or arm a save: the store still holds the empty
-  // pre-hydration state, and flushing it wipes the scene server-side.
+/** One subscription per Editor: committed edits only, never animation/drag notifications. */
+export function useAutoSave(options: UseAutoSaveOptions): {
+  isLoadingSceneRef: MutableRefObject<boolean>
+} {
   const isLoadingSceneRef = useRef(true)
-  const pendingSaveRef = useRef(false)
-  const executeSaveRef = useRef<(() => Promise<void>) | null>(null)
-  const hasDirtyChangesRef = useRef(false)
-  const editRevisionRef = useRef(0)
-
-  // Keep latest callback/value refs so the stable subscription always uses current values
-  const onSaveRef = useRef(onSave)
-  const onDirtyRef = useRef(onDirty)
-  const onSaveStatusChangeRef = useRef(onSaveStatusChange)
-  const isVersionPreviewModeRef = useRef(isVersionPreviewMode)
-
+  const latest = useRef(options)
+  latest.current = options
   useEffect(() => {
-    onSaveRef.current = onSave
-  }, [onSave])
-  useEffect(() => {
-    onDirtyRef.current = onDirty
-  }, [onDirty])
-  useEffect(() => {
-    onSaveStatusChangeRef.current = onSaveStatusChange
-  }, [onSaveStatusChange])
-  useEffect(() => {
-    isVersionPreviewModeRef.current = isVersionPreviewMode
-  }, [isVersionPreviewMode])
-
-  const setSaveStatus = useCallback((status: SaveStatus) => {
-    onSaveStatusChangeRef.current?.(status)
-  }, [])
-
-  // Stable subscription to scene changes
-  useEffect(() => {
-    let lastNodesSnapshot = JSON.stringify(useScene.getState().nodes)
-    const storedNodeCount = createStoredNodeCountTracker(
-      Object.keys(useScene.getState().nodes).length,
-    )
-    // Collections + scene materials are document-level state that persists with
-    // the graph but lives outside `nodes`. Track them by reference (zustand
-    // hands out a new object on every mutation) so a material edit or a
-    // collection change still triggers a save.
-    let lastCollectionsRef = useScene.getState().collections
-    let lastMaterialsRef = useScene.getState().materials
-    let lastInstalledPluginsRef = useScene.getState().installedPlugins
-    // zundo splices the target out before notifying scene subscribers. Keep the
-    // previous arrays so only an actual history jump can authorize that target.
-    let pastSnapshots = [...useScene.temporal.getState().pastStates]
-    let futureSnapshots = [...useScene.temporal.getState().futureStates]
-    const unsubscribeHistory = useScene.temporal.subscribe((history) => {
-      pastSnapshots = [...history.pastStates]
-      futureSnapshots = [...history.futureStates]
+    const tracker = createStoredNodeCountTracker(Object.keys(useScene.getState().nodes).length)
+    let past = [...useScene.temporal.getState().pastStates]
+    let future = [...useScene.temporal.getState().futureStates]
+    const queue = createSceneSaveQueue({
+      persist: options.onLocalSave ? (graph) => latest.current.onLocalSave!(graph) : undefined,
+      sync: async (graph) => {
+        if (latest.current.onSave) await latest.current.onSave(graph)
+        else saveSceneToLocalStorage(graph)
+      },
+      paused: () =>
+        isLoadingSceneRef.current ||
+        !!latest.current.isVersionPreviewMode ||
+        useViewer.getState().inputDragging ||
+        useInteractionScope.getState().scope.kind !== 'idle',
+      status: (status) => latest.current.onSaveStatusChange?.(status),
     })
-
-    async function executeSave() {
-      if (isLoadingSceneRef.current || isVersionPreviewModeRef.current) {
-        pendingSaveRef.current = true
-        setSaveStatus('paused')
+    let committed: SceneGraph | undefined
+    function enqueue(graph: SceneGraph, intentional = false) {
+      if (isLoadingSceneRef.current || latest.current.isVersionPreviewMode) return
+      const count = Object.keys(graph.nodes).length
+      if (
+        !graph.rootNodeIds.length ||
+        !tracker.allowWrite(count, intentional || isAuthorizedNodeDrop(graph))
+      ) {
+        latest.current.onSaveStatusChange?.('error')
         return
       }
-
-      const { nodes, rootNodeIds, collections, materials, installedPlugins } = useScene.getState()
-      const sceneGraph = {
-        nodes,
-        rootNodeIds,
-        collections,
-        materials,
-        installedPlugins,
-      } as SceneGraph
-
-      const currentNodeCount = Object.keys(nodes).length
-      const previousNodeCount = storedNodeCount.count
-      const authorizedNodeDrop = isAuthorizedNodeDrop(sceneGraph)
-      if (isSuspiciousNodeDrop(previousNodeCount, currentNodeCount) && !authorizedNodeDrop) {
-        console.warn(
-          `[autosave] Blocked: scene dropped from ${previousNodeCount} to ${currentNodeCount} nodes. Likely accidental deletion.`,
-        )
-        setSaveStatus('error')
-        return
-      }
-
-      isSavingRef.current = true
-      pendingSaveRef.current = false
-      const savedRevision = editRevisionRef.current
-      setSaveStatus('saving')
-
-      try {
-        if (onSaveRef.current) {
-          await onSaveRef.current(sceneGraph)
-        } else {
-          saveSceneToLocalStorage(sceneGraph)
-        }
-        // A failed request must not weaken the guard's persisted baseline.
-        storedNodeCount.allowWrite(currentNodeCount, authorizedNodeDrop)
-        // A completed request only covers edits present when it started.
-        // Keep later edits dirty so an exit before the next debounce still flushes them.
-        hasDirtyChangesRef.current = editRevisionRef.current !== savedRevision
-        setSaveStatus('saved')
-      } catch {
-        setSaveStatus('error')
-      } finally {
-        isSavingRef.current = false
-
-        if (pendingSaveRef.current) {
-          pendingSaveRef.current = false
-          setSaveStatus('pending')
-          saveTimeoutRef.current = setTimeout(() => {
-            saveTimeoutRef.current = undefined
-            executeSave()
-          }, AUTOSAVE_DEBOUNCE_MS)
-        }
-      }
+      const { nodes, rootNodeIds, collections, materials, installedPlugins } = graph
+      committed = { nodes, rootNodeIds, collections, materials, installedPlugins }
+      latest.current.onDirty?.()
+      queue.enqueue(committed)
     }
-
-    executeSaveRef.current = executeSave
-
-    const unsubscribe = useScene.subscribe((state) => {
-      if (!isAuthorizedNodeDrop(state)) authorizedNodeDropSnapshot = null
+    const stopCommits = subscribeSceneCommits((commit) => {
+      if (commit.origin === 'load') return
+      // Delete/undo may intentionally return to the scaffold. Empty unloads remain blocked.
+      const removed = Object.keys(commit.before.nodes).some(
+        (id) => !Object.hasOwn(commit.current.nodes, id),
+      )
+      enqueue(
+        commit.current,
+        removed && !!commit.changedNodeIds?.size && commit.current.rootNodeIds.length > 0,
+      )
+    })
+    const stopScene = useScene.subscribe((state) => {
       if (isLoadingSceneRef.current) {
-        authorizedNodeDropSnapshot = null
-        lastNodesSnapshot = JSON.stringify(state.nodes)
-        storedNodeCount.trackLoadedGraph(Object.keys(state.nodes).length)
-        lastCollectionsRef = state.collections
-        lastMaterialsRef = state.materials
-        lastInstalledPluginsRef = state.installedPlugins
-        return
-      }
-
-      if (isVersionPreviewModeRef.current) {
-        setSaveStatus('paused')
-        lastNodesSnapshot = JSON.stringify(state.nodes)
-        lastCollectionsRef = state.collections
-        lastMaterialsRef = state.materials
-        lastInstalledPluginsRef = state.installedPlugins
-        return
-      }
-
-      const history = useScene.temporal.getState()
-      const restored =
-        (history.pastStates.length < pastSnapshots.length &&
-          pastSnapshots.some((snapshot) => snapshot.nodes === state.nodes)) ||
-        (history.futureStates.length < futureSnapshots.length &&
-          futureSnapshots.some((snapshot) => snapshot.nodes === state.nodes))
-      if (restored) authorizeSceneNodeDrop(state)
-
-      const currentNodesSnapshot = JSON.stringify(state.nodes)
-      const changed =
-        currentNodesSnapshot !== lastNodesSnapshot ||
-        state.collections !== lastCollectionsRef ||
-        state.materials !== lastMaterialsRef ||
-        state.installedPlugins !== lastInstalledPluginsRef
-      if (!changed) return
-
-      lastNodesSnapshot = currentNodesSnapshot
-      lastCollectionsRef = state.collections
-      lastMaterialsRef = state.materials
-      lastInstalledPluginsRef = state.installedPlugins
-      hasDirtyChangesRef.current = true
-      editRevisionRef.current += 1
-      onDirtyRef.current?.()
-      setSaveStatus('pending')
-
-      if (isSavingRef.current) {
-        pendingSaveRef.current = true
-        return
-      }
-
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-
-      saveTimeoutRef.current = setTimeout(() => {
-        saveTimeoutRef.current = undefined
-        executeSave()
-      }, AUTOSAVE_DEBOUNCE_MS)
-    })
-
-    // Flush any unsaved change while the page is going away. The network
-    // save MUST set `keepalive` — a normal fetch is cancelled by the browser
-    // the moment the page unloads, so a quick refresh right after an edit
-    // would otherwise drop the change entirely. `pagehide` fires in cases
-    // (mobile Safari, bfcache) where `beforeunload` does not.
-    function flushOnExit() {
-      const { nodes, rootNodeIds, collections, materials, installedPlugins } = useScene.getState()
-      const currentNodeCount = Object.keys(nodes).length
-      const previousNodeCount = storedNodeCount.count
-      const authorizedNodeDrop = isAuthorizedNodeDrop({ nodes, rootNodeIds })
-      const decision = decideExitFlush({
-        isLoadingScene: isLoadingSceneRef.current,
-        hasDirtyChanges: hasDirtyChangesRef.current,
-        storedNodeCount: previousNodeCount,
-        currentNodeCount,
-        authorizedNodeDrop,
-      })
-      if (decision === 'skip-clean') return
-      if (decision === 'skip-loading') {
-        console.warn(
-          '[autosave] Skipped unload flush: a scene load is in flight, the store content is transient. Nothing user-authored is lost.',
-        )
-        return
-      }
-      if (decision === 'blocked-suspicious') {
-        console.warn(
-          `[autosave] Blocked unload flush: scene dropped from ${previousNodeCount} to ${currentNodeCount} nodes. Likely accidental deletion.`,
-        )
-        setSaveStatus('error')
-        return
-      }
-      // 'flush' — adopt the write as the new stored baseline.
-      storedNodeCount.allowWrite(currentNodeCount, authorizedNodeDrop)
-
-      hasDirtyChangesRef.current = false
-      const sceneGraph = {
-        nodes,
-        rootNodeIds,
-        collections,
-        materials,
-        installedPlugins,
-      } as SceneGraph
-      if (onSaveRef.current) {
-        onSaveRef.current(sceneGraph, { keepalive: true }).catch(() => {})
+        tracker.trackLoadedGraph(Object.keys(state.nodes).length)
+        const { nodes, rootNodeIds, collections, materials, installedPlugins } = state
+        committed = { nodes, rootNodeIds, collections, materials, installedPlugins }
       } else {
-        saveSceneToLocalStorage(sceneGraph)
+        const history = useScene.temporal.getState()
+        const restored =
+          (history.pastStates.length < past.length && past.some((s) => s.nodes === state.nodes)) ||
+          (history.futureStates.length < future.length &&
+            future.some((s) => s.nodes === state.nodes))
+        if (restored && state.nodes !== committed?.nodes) enqueue(state, true)
       }
+    })
+    const stopHistory = useScene.temporal.subscribe((state) => {
+      past = [...state.pastStates]
+      future = [...state.futureStates]
+    })
+    const retry = () => {
+      if (committed && !isLoadingSceneRef.current && !latest.current.isVersionPreviewMode)
+        queue.enqueue(committed)
+      queue.retry()
     }
-
-    window.addEventListener('beforeunload', flushOnExit)
-    window.addEventListener('pagehide', flushOnExit)
-
+    const warnUnsaved = (event: BeforeUnloadEvent) => {
+      if (!queue.unsavedLocally) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+    window.addEventListener('online', retry)
+    window.addEventListener('scene:retry-save', retry)
+    window.addEventListener('beforeunload', warnUnsaved)
     return () => {
-      executeSaveRef.current = null
-      window.removeEventListener('beforeunload', flushOnExit)
-      window.removeEventListener('pagehide', flushOnExit)
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
-      flushOnExit()
-      unsubscribe()
-      unsubscribeHistory()
+      stopCommits()
+      stopScene()
+      stopHistory()
+      queue.dispose()
+      window.removeEventListener('online', retry)
+      window.removeEventListener('scene:retry-save', retry)
+      window.removeEventListener('beforeunload', warnUnsaved)
     }
-  }, [setSaveStatus])
-
-  // Handle version preview mode transitions
-  useEffect(() => {
-    if (isVersionPreviewMode) {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-        saveTimeoutRef.current = undefined
-      }
-      if (hasDirtyChangesRef.current) {
-        pendingSaveRef.current = true
-      }
-      setSaveStatus('paused')
-      return
-    }
-
-    if (isSavingRef.current) return
-
-    if (hasDirtyChangesRef.current) {
-      setSaveStatus('pending')
-      if (!saveTimeoutRef.current) {
-        saveTimeoutRef.current = setTimeout(() => {
-          saveTimeoutRef.current = undefined
-          executeSaveRef.current?.()
-        }, AUTOSAVE_DEBOUNCE_MS)
-      }
-      return
-    }
-
-    setSaveStatus('saved')
-  }, [isVersionPreviewMode, setSaveStatus])
-
+  }, [options.onLocalSave])
   return { isLoadingSceneRef }
 }

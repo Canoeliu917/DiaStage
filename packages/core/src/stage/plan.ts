@@ -53,7 +53,7 @@ function spatialItem(item: StageItemProposal): SpatialItem {
   return { ...item, id: item.proposalId, name: item.displayName }
 }
 
-function extents(item: SpatialItem) {
+export function stageObjectBounds(item: SpatialItem) {
   const corners = getObjectCorners(asObject(item))
   return {
     minX: Math.min(...corners.map((p) => p[0])),
@@ -152,6 +152,18 @@ export function resolveStagePlan(input: unknown, sceneContext: SceneContextSumma
         }
         continue
       }
+      if (relation.referenceId === null && venue) {
+        const bounds = stageObjectBounds(spatialItem(item))
+        const p = item.transform.position
+        if (relation.direction === 'stage-right')
+          p.x += venue.widthMeters / 2 - relation.gapMeters - bounds.maxX
+        else if (relation.direction === 'stage-left')
+          p.x += -venue.widthMeters / 2 + relation.gapMeters - bounds.minX
+        else if (relation.direction === 'upstage')
+          p.z += venue.depthMeters - relation.gapMeters - bounds.maxZ
+        else p.z += relation.gapMeters - bounds.minZ
+        continue
+      }
       if (!relation.referenceId || relation.referenceId === id) {
         plan.warnings.push(
           warning('missing-reference', `${item.displayName} 缺少有效参照布景。`, [id]),
@@ -170,8 +182,8 @@ export function resolveStagePlan(input: unknown, sceneContext: SceneContextSumma
         )
         continue
       }
-      const target = extents(anchor)
-      const bounds = extents(spatialItem(item))
+      const target = stageObjectBounds(anchor)
+      const bounds = stageObjectBounds(spatialItem(item))
       const p = item.transform.position
       const old = { ...p }
       const anchorP = anchor.transform.position
@@ -333,7 +345,7 @@ export function validateStagePlan(
     const obstacle = door === a ? b : a
     if (door && !['door-flat', 'window-flat', 'scenic-flat', 'curtain'].includes(obstacle.kind)) {
       const passage = asObject(door)
-      passage.dimensions[2] += 1.2
+      passage.dimensions[2] += 2 * (context.doorClearanceMeters ?? 0.6)
       if (objectSeparation(passage, asObject(obstacle)).intersects) {
         warnings.push(
           warning(
@@ -440,6 +452,8 @@ export function compileStagePlan(
             },
       )
     } else if (item.existingNodeId) {
+      if (item.libraryAssetId)
+        add({ type: 'ReplaceScenery', meta: meta(), nodeId, libraryAssetId: item.libraryAssetId })
       add({ type: 'MoveObject', meta: meta(), nodeId, position: item.transform.position })
       add({
         type: 'RotateObject',
@@ -447,7 +461,13 @@ export function compileStagePlan(
         nodeId,
         rotationDegrees: item.transform.rotationDegrees,
       })
-      add({ type: 'ResizeObject', meta: meta(), nodeId, dimensionsMeters: item.dimensionsMeters })
+      add({
+        type: 'ResizeObject',
+        meta: meta(),
+        nodeId,
+        dimensionsMeters: item.dimensionsMeters,
+        stepCount: item.stepCount ?? undefined,
+      })
     } else {
       add({
         type: 'AddScenery',
@@ -457,6 +477,7 @@ export function compileStagePlan(
         kind: item.kind,
         libraryAssetId: item.libraryAssetId,
         dimensionsMeters: item.dimensionsMeters,
+        stepCount: item.stepCount ?? undefined,
       })
     }
   })

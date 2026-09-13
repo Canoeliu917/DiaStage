@@ -45,7 +45,7 @@ export const SlabBoundaryEditor: React.FC<{ slabId: SlabNode['id'] }> = ({ slabI
   const handlePolygonChange = useCallback(
     (newPolygon: Array<[number, number]>) => {
       clearSlabSnapFeedback()
-      updateNode(slabId, { polygon: newPolygon, autoFromWalls: false })
+      updateNode(slabId, { polygon: newPolygon })
       setSelection({ selectedIds: [slabId] })
     },
     [slabId, updateNode, setSelection],

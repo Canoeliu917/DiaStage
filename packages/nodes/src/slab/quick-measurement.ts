@@ -11,8 +11,8 @@ export function slabQuickMeasurement(node: SlabNode): QuickMeasurementReport | n
   const thickness = node.thickness ?? 0.05
 
   return {
-    title: node.name ?? '楼板',
-    kindLabel: '楼板',
+    title: node.name ?? '舞台平台',
+    kindLabel: '舞台平台',
     anchor: polygonReportAnchor(node.polygon, elevation + 0.04),
     metrics: [
       {
@@ -37,6 +37,6 @@ export function slabQuickMeasurement(node: SlabNode): QuickMeasurementReport | n
         value: thickness,
       },
     ],
-    note: node.holes.length > 0 ? '表面积已扣除楼板孔洞。' : undefined,
+    note: node.holes.length > 0 ? '表面积已扣除舞台平台孔洞。' : undefined,
   }
 }

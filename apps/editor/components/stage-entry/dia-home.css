@@ -1,0 +1,83 @@
+.dia-home { background: #f2f2f2; color: #1a1a1a; caret-color: #1a1a1a; }
+.dia-home ::selection { background: #1a1a1a; color: #f5f5f5; }
+.dia-home .ds-library-main { max-width: 1200px; padding-top: 56px; }
+.dia-home a { text-underline-offset: 5px; }
+.dia-home button, .dia-home input, .dia-home textarea { font: inherit; }
+.dia-home button, .dia-home a { touch-action: manipulation; }
+.dia-home :is(button,a) { min-width:44px; }
+.dia-home-phone-entry { display:none; }
+.dia-home :is(p,blockquote,textarea) { overflow-wrap:anywhere; }
+.dia-home-conversation > * { min-width:0; }
+.dia-home button { cursor: pointer; }
+.dia-home button:disabled { cursor: wait; opacity: .55; }
+.dia-home-conversation { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(230px, 1fr); column-gap: 80px; }
+.dia-home-introduction h1 { font-size: clamp(32px, 4vw, 46px); font-weight: 500; line-height: 1.25; text-wrap: balance; }
+.dia-home-introduction h1 span { display: block; margin-top: 8px; }
+.dia-home-introduction > p { max-width: 36em; margin-top: 20px; line-height: 1.8; color: #555; }
+.dia-home .dia-home-demo-label { display: inline-block; margin-top: 20px; padding: 6px 10px; border: 1px solid #555; font-size: 12px; line-height: 1.6; color: #333; }
+.dia-home-example { padding-top: 8px; }
+.dia-home-example > p { font-size: 13px; color: #555; margin-bottom: 18px; }
+.dia-home-example blockquote, .dia-demo-entry blockquote { font-size: 24px; line-height: 1.9; }
+.dia-home-composer { grid-column: 1 / -1; margin-top: 32px; padding: 24px; border: 1px solid #aaa; background: #fff; }
+.dia-home-composer label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+.dia-home-composer textarea { width: 100%; display: block; resize: vertical; max-height: 40dvh; min-height: 88px; border: 0; background: transparent; font-size: 16px; line-height: 1.7; color: #1a1a1a; }
+.dia-home-composer textarea::placeholder { color: #666; }
+.dia-home-input-actions, .dia-home-input-actions > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dia-home-input-actions { justify-content: space-between; margin-top: 16px; }
+.dia-home-input-actions button, .dia-home-prompts > *, .dia-home-shortcuts a, .dia-home-tool-list > section > :is(button, a) { min-height: 44px; display: inline-flex; align-items: center; padding: 9px 12px; }
+.dia-home-input-actions button { border: 1px solid #aaa; border-radius: 3px; background: transparent; color: #333; }
+.dia-home .dia-home-primary { min-height: 44px; padding: 11px 22px; border: 1px solid #191919; border-radius: 3px; background: #191919; color: #f5f5f5; }
+.dia-home .dia-home-primary:hover { background: #3a3a3a; }
+.dia-home button:not(.dia-home-primary):hover { background: #e7e7e7; color: #1a1a1a; }
+.dia-home-hint { margin-top: 14px; color: #555; font-size: 12px; line-height: 1.7; }
+.dia-home-composer .stage-voice-recorder { margin-top: 20px; color: #444; line-height: 1.7; }
+.dia-home-composer [role="alert"] { margin-top: 16px; line-height: 1.7; }
+.dia-home-prompts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: 13px; }
+.dia-home-prompts > * { color: #444; }
+.dia-home-prompts a:hover, .dia-home-shortcuts a:hover { text-decoration: underline; }
+.dia-home-shortcuts { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 24px; margin-top: 28px; padding-block: 12px; border-top: 1px solid #aaa; }
+.dia-home-shortcuts a { padding-inline: 0; font-size: 14px; }
+.dia-home-tools { margin-top: 38px; scroll-margin-top: 24px; }
+.dia-home-tools > h2 { margin-bottom: 20px; font-size: 19px; font-weight: 500; }
+.dia-home-tool-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 40px; }
+.dia-home-tool-list > section { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #c0c0c0; padding-block: 22px; min-width: 0; }
+.dia-home-tool-list h3 { font-size: 15px; font-weight: 600; }
+.dia-home-tool-list p { color: #555; line-height: 1.7; font-size: 13px; margin-top: 6px; }
+.dia-home-tool-list > section > :is(button, a) { border: 1px solid #888; border-radius: 3px; font-size: 13px; }
+.dia-home-tool-list .stage-entry-form { flex-basis: 100%; }
+.dia-home-footer { margin-top: 28px; padding-block: 20px; border-top: 1px solid #c0c0c0; color: #555; font-size: 12px; }
+.dia-home-tools > details > summary { min-height:44px; padding-block:12px; cursor:pointer; }
+.dia-brand-explanation { border-top:1px solid #c0c0c0; margin-top:20px; line-height:1.8; }
+.dia-brand-explanation :is(p,dl) { margin-block:16px; max-width:60em; }
+.dia-brand-explanation dl { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:20px; }
+.dia-brand-explanation dt { font-weight:600; }
+.dia-demo-entry { max-width: 760px; }
+.dia-demo-entry h1 { font-size: 32px; line-height: 1.4; }
+.dia-demo-entry blockquote { margin-block: 28px; }
+.dia-demo-entry [role] { margin-block: 20px; line-height: 1.8; }
+@media (max-width: 700px) {
+  .dia-home .ds-library-header { align-items: center; flex-wrap: wrap; }
+  .dia-home .ds-home-links { gap: 16px; font-size: 12px; }
+  .dia-home .ds-library-main { padding-top: 30px; }
+  .dia-home-conversation { display: flex; flex-direction: column; gap: 0; }
+  .dia-home-introduction h1 { font-size: 30px; }
+  .dia-home-introduction h1 span { margin-top: 6px; }
+  .dia-home-introduction > p { font-size: 14px; margin-top: 16px; }
+  .dia-home .dia-home-demo-label { margin-top: 14px; font-size: 11px; }
+  .dia-home-example { margin-top: 20px; padding-top: 0; }
+  .dia-home-example > p { margin-bottom: 6px; font-size: 12px; }
+  .dia-home-example .dia-home-phone-entry { display:flex; align-items:center; min-height:44px; padding:8px 12px; border:1px solid currentColor; }
+  .dia-home-example > :is(p,blockquote) { display:none; }
+  .dia-home-example blockquote { font-size: 16px; line-height: 1.75; }
+  .dia-home-composer { margin-top: 20px; padding: 16px; }
+  .dia-home-input-actions { gap: 12px; }
+  .dia-home-input-actions > .dia-home-primary { width: 100%; justify-content: center; }
+  .dia-home-hint { font-size: 11px; }
+  .dia-home-prompts { gap: 0 4px; font-size: 12px; }
+  .dia-home-prompts > * { padding-inline: 8px; }
+  .dia-home-shortcuts { margin-top: 12px; padding-block: 8px; gap: 4px 20px; }
+  .dia-home-shortcuts a { font-size: 13px; }
+  .dia-home-tools { margin-top: 28px; }
+  .dia-home-tool-list { grid-template-columns: 1fr; }
+  .dia-home-footer { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
+}

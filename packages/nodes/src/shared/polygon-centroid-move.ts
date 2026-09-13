@@ -72,15 +72,8 @@ export function createPolygonCentroidMoveTarget(args: {
   nodes: Record<AnyNodeId, AnyNode>
   /** 3D mesh Y the kind's system parks the group at on rebuild. */
   meshY: number
-  /**
-   * Extra fields merged into the commit payload. Use for kind-specific flags
-   * that a manual drag should clear — e.g. slab `autoFromWalls: false`, so the
-   * space-detection sync stops re-deriving the polygon from walls and
-   * snapping the slab back to its original position.
-   */
-  extraCommitData?: Record<string, unknown>
 }): FloorplanMoveTargetSession {
-  const { node, nodes, meshY, extraCommitData } = args
+  const { node, nodes, meshY } = args
   const id = node.id as AnyNodeId
   const typeGuard = node.type
   const originalPolygon = node.polygon.map(([x, z]) => [x, z] as [number, number])
@@ -150,9 +143,6 @@ export function createPolygonCentroidMoveTarget(args: {
       }
       if (hasHoles) {
         data.holes = originalHoles.map((h) => translatePolygon(h, dx, dz))
-      }
-      if (extraCommitData) {
-        Object.assign(data, extraCommitData)
       }
       useScene.getState().updateNodes([{ id, data }])
       useScene.getState().markDirty(id)

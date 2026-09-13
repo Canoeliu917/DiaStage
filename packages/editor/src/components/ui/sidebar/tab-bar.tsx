@@ -1,7 +1,6 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { editorHostPanelRegistry } from '../../../lib/plugin-panels'
 import { triggerSFX } from './../../../lib/sfx-bus'
 import { cn } from './../../../lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../primitives/tooltip'
@@ -82,14 +81,6 @@ interface IconRailProps {
  * Labels stay visible below the icon, with a tooltip on the right.
  */
 export function IconRail({ tabs, activeTab, collapsed, onIconClick }: IconRailProps) {
-  const pluginPanelIds = new Set(
-    editorHostPanelRegistry.getSnapshot().flatMap((panel) =>
-      panel.pluginId ? [panel.id] : [],
-    ),
-  )
-  const defaultTabs = tabs.filter((tab) => !pluginPanelIds.has(tab.id) && tab.id !== 'plugins')
-  const pluginTabs = tabs.filter((tab) => pluginPanelIds.has(tab.id) || tab.id === 'plugins')
-
   const renderTab = (tab: SidebarTab) => {
     const showActive = activeTab === tab.id && (!collapsed || tab.noPanel === true)
     return (
@@ -124,12 +115,7 @@ export function IconRail({ tabs, activeTab, collapsed, onIconClick }: IconRailPr
   return (
     <TooltipProvider delayDuration={0} disableHoverableContent>
       <div className="diastage-tool-rail flex h-full w-[72px] shrink-0 flex-col items-center gap-1 overflow-y-auto border-border/50 border-r py-2">
-        {defaultTabs.map(renderTab)}
-        {pluginTabs.length > 0 && (
-          <div className="mt-1 flex w-16 flex-col items-center gap-1 border-border/70 border-t pt-2">
-            {pluginTabs.map(renderTab)}
-          </div>
-        )}
+        {tabs.map(renderTab)}
       </div>
     </TooltipProvider>
   )

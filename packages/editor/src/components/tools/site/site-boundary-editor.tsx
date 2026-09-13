@@ -448,9 +448,6 @@ export const SiteBoundaryEditor: React.FC = () => {
     isDraggingSiteBoundaryRef.current = true
     setIsDraggingSiteBoundary(true)
     const editor = useEditor.getState()
-    // A boundary drag takes ownership away from the terrain brush. Going
-    // through setMode releases the sustained sculpting scope before the
-    // PolygonEditor begins its handle-drag scope.
     if (editor.mode !== 'select') editor.setMode('select')
     if (editor.phase !== 'site') editor.setPhase('site')
     selectSiteFloorplanContext()
@@ -464,9 +461,6 @@ export const SiteBoundaryEditor: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    // Terrain sculpting also lives in the site phase so the 3D flags stay
-    // available, but its ordinary terrain clicks belong to the brush. Only
-    // select mode treats an empty site-grid click as "leave site editing".
     if (!isSiteEditing || mode !== 'select') return
 
     const onGridClick = () => {

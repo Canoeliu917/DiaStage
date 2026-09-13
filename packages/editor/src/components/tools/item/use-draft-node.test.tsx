@@ -308,8 +308,6 @@ describe('useDraftNode block face commit', () => {
         surface: 'block-face',
         blockId: BLOCK_ID,
         wallId: null,
-        roofSegmentId: null,
-        ceilingId: null,
         surfaceItemId: null,
         shelfId: null,
       },

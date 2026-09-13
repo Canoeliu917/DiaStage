@@ -1,7 +1,7 @@
 {
   "name": "@pascal-app/cli",
   "version": "1.0.0-beta.1",
-  "description": "Run the open-source Pascal 3D editor, local projects, and MCP agent tools from your terminal",
+  "description": "Run the local DiaStage rehearsal editor, projects, and MCP agent tools from your terminal",
   "type": "module",
   "bin": {
     "pascal": "dist/bin/pascal.js"
@@ -41,14 +41,12 @@
     "node": ">=22.13.0"
   },
   "keywords": [
-    "pascal",
+    "diastage",
+    "theatre",
+    "stage-rehearsal",
     "editor",
     "3d-editor",
     "3d",
-    "architecture",
-    "building-design",
-    "cad",
-    "bim",
     "local-first",
     "cli",
     "mcp",
@@ -56,7 +54,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pascalorg/editor.git",
+    "url": "git+https://github.com/Canoeliu917/DiaStage.git",
     "directory": "packages/cli"
   },
   "license": "MIT",
@@ -68,6 +66,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "homepage": "https://editor.pascal.app/docs/developers/local-editor",
-  "bugs": "https://github.com/pascalorg/editor/issues"
+  "homepage": "https://github.com/Canoeliu917/DiaStage",
+  "bugs": "https://github.com/Canoeliu917/DiaStage/issues"
 }

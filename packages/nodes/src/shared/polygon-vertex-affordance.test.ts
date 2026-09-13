@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test } from 'bun:test'
 import { type AnyNode, type AnyNodeId, useScene } from '@pascal-app/core'
-import { ceilingDefinition } from '../ceiling/definition'
 import { slabDefinition } from '../slab/definition'
 import { zoneDefinition } from '../zone/definition'
 import { createPolygonDeleteVertexAffordance } from './polygon-vertex-affordance'
@@ -108,10 +107,9 @@ describe('polygon delete-vertex floorplan affordance', () => {
     ])
   })
 
-  test('registers delete-vertex for every registry-driven polygon surface', () => {
+  test('registers delete-vertex for active polygon stage elements', () => {
     expect(zoneDefinition.floorplanAffordances?.['delete-vertex']).toBeDefined()
     expect(slabDefinition.floorplanAffordances?.['delete-vertex']).toBeDefined()
-    expect(ceilingDefinition.floorplanAffordances?.['delete-vertex']).toBeDefined()
   })
 
   test('applies kind-owned detachment data with a manual ring edit', () => {

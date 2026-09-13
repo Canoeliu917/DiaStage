@@ -1,27 +1,12 @@
 'use client'
 
-import {
-  type AnyNodeId,
-  nodeRegistry,
-  StairOpeningSystem,
-  sceneRegistry,
-  useScene,
-} from '@pascal-app/core'
+import { type AnyNodeId, nodeRegistry, sceneRegistry, useScene } from '@pascal-app/core'
 import { Canvas, extend, type ThreeElement, useFrame, useThree } from '@react-three/fiber'
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import * as THREE from 'three/webgpu'
 import { hasDrawableGeometry } from '../../lib/drawable-geometry'
 import { PERF_OVERLAY_ENABLED } from '../../lib/gpu-perf'
-import { applyIsolation, clearIsolation } from '../../lib/isolation'
 import { ensureKtx2Support } from '../../lib/ktx2-loader'
 import type { ColorPreset, RenderShading } from '../../lib/materials'
 import { initializeGpuRenderer, type RendererPowerPreference } from '../../lib/renderer-capability'
@@ -42,6 +27,11 @@ import { PerfPanel } from './perf-panel'
 import { PointerRaycastLayers } from './pointer-raycast-layers'
 import PostProcessing, { DEFAULT_HOVER_STYLES, type HoverStyles } from './post-processing'
 import { RegisteredSystems } from './registered-systems'
+import {
+  stableRenderBudget,
+  useNeutralRenderEnvironment,
+  useStableRenderMode,
+} from './render-environment'
 import { SceneBvh } from './scene-bvh'
 import { SelectionManager } from './selection-manager'
 import { UnsupportedGpuViewerFallback } from './unsupported-gpu-fallback'
@@ -82,17 +72,7 @@ extend(THREE as any)
 const WEBGPU_RENDERER_CACHE = new WeakMap<HTMLCanvasElement, Promise<THREE.WebGPURenderer>>()
 const SCENE_READY_SETTLED_FRAMES = 2
 const SCENE_READY_MAX_WAIT_FRAMES = 180
-const DIRTY_BUILD_KINDS = new Set([
-  'ceiling',
-  'door',
-  'item',
-  'roof',
-  'roof-segment',
-  'stair',
-  'stair-segment',
-  'wall',
-  'window',
-])
+const DIRTY_BUILD_KINDS = new Set(['door', 'item', 'stair', 'stair-segment', 'wall', 'window'])
 
 const warnedEmptyDraw = process.env.NODE_ENV === 'production' ? null : new WeakSet<object>()
 
@@ -322,15 +302,6 @@ interface ViewerProps {
     colorPreset?: ColorPreset
   }
   /**
-   * Visibility filter on the live canvas. When non-null, every registered
-   * node group whose id is not in `isolate` (or in the isolated set's
-   * ancestor / descendant closure) is hidden. Pass `null` (or omit) to
-   * clear. Powers the unified preset-capture flow (community modal sets
-   * this to the subtree it wants to thumbnail) and is the building block
-   * for a future focus-mode UX.
-   */
-  isolate?: AnyNodeId[] | null
-  /**
    * Host-controlled key for scene readiness. Change it whenever a new scene
    * graph is being loaded; the viewer will report not-ready until the graph is
    * mounted, build systems have had a frame to settle, and one rendered frame
@@ -370,37 +341,26 @@ interface ViewerProps {
   renderPaused?: boolean
 }
 
-/** Imperative handle exposed via `ref` on `<Viewer>`. */
-export type ViewerHandle = {
-  /**
-   * Apply / clear the same visibility filter as the `isolate` prop. Useful
-   * for transient cases (a temporary hover-to-isolate UX) where holding
-   * the value in React state would be over-engineering. Passing `null`
-   * clears.
-   */
-  setIsolated(ids: AnyNodeId[] | null): void
-}
-
-const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
-  {
-    children,
-    hoverStyles = DEFAULT_HOVER_STYLES,
-    selectionManager = 'default',
-    perf = false,
-    useBvh = true,
-    renderContext = 'editor',
-    transparent,
-    defaultRender,
-    isolate,
-    sceneReadyKey,
-    onSceneReadyChange,
-    sceneReadyMaxWaitMs,
-    maxFps = 50,
-    disablePostFx = false,
-    renderPaused = false,
-  },
-  ref,
-) {
+function Viewer({
+  children,
+  hoverStyles = DEFAULT_HOVER_STYLES,
+  selectionManager = 'default',
+  perf = false,
+  useBvh = true,
+  renderContext = 'editor',
+  transparent,
+  defaultRender,
+  sceneReadyKey,
+  onSceneReadyChange,
+  sceneReadyMaxWaitMs,
+  maxFps = 50,
+  disablePostFx = false,
+  renderPaused = false,
+}: ViewerProps) {
+  const stable = useStableRenderMode()
+  const neutral = useNeutralRenderEnvironment()
+  const coarse = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches
+  const budget = stableRenderBudget(coarse)
   useEffect(() => {
     if (nodeRegistry.size === 0) {
       console.warn(
@@ -408,28 +368,6 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
       )
     }
   }, [])
-
-  useImperativeHandle(
-    ref,
-    () => ({
-      setIsolated: (ids) => applyIsolation(ids),
-    }),
-    [],
-  )
-
-  // Track the most recently-applied isolation so the cleanup path can
-  // restore visibility even if the prop is removed while the component is
-  // still mounted. `clearIsolation()` is a no-op when nothing was applied.
-  const isolateRef = useRef<AnyNodeId[] | null | undefined>(undefined)
-  useEffect(() => {
-    isolateRef.current = isolate ?? null
-    applyIsolation(isolate ?? null)
-    return () => {
-      // Only clear if this effect was the one that applied — protects
-      // against a parent unmount racing with a setIsolated() consumer.
-      if (isolateRef.current === isolate) clearIsolation()
-    }
-  }, [isolate])
 
   const [rendererInitFailed, setRendererInitFailed] = useState(false)
   const [rendererGeneration, setRendererGeneration] = useState(0)
@@ -527,8 +465,7 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
   // Coarse-pointer devices (phones/tablets) get a tighter DPR ceiling to keep
   // fragment-shader cost down — saves another ~30% over 1.5x on high-DPI mobile.
   // Desktops (fine pointer) keep the original 1.5 cap.
-  const maxDpr =
-    typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches ? 1.25 : 1.5
+  const maxDpr = stable ? budget.dpr : coarse ? 1.25 : 1.5
   const showGpuFallback = rendererInitFailed || deviceLost
   // When we can't mount the GPU canvas, the SceneReadyTracker never mounts and
   // the host editor would otherwise wait on its scene-readiness timeout. Signal
@@ -653,10 +590,14 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
         }}
         shadows={{
           type: THREE.PCFShadowMap,
-          enabled: shadowsEnabled,
+          enabled: shadowsEnabled && !stable && !neutral,
         }}
       >
-        <FrameLimiter fps={maxFps} paused={renderPaused} />
+        <FrameLimiter
+          fps={stable ? Math.min(maxFps, budget.fps) : maxFps}
+          paused={renderPaused}
+          onError={() => setDeviceLost(true)}
+        />
         <ViewerCamera />
         <PointerRaycastLayers />
         <GPUDeviceWatcher />
@@ -689,14 +630,11 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
             builder, swaps the registered group's children. See
             wiki/architecture/node-definitions.md. */}
           <GeometrySystem />
-          {/* Automated stair opening sync — updates slab/ceiling cutouts
-            whenever stairs, slabs, or levels change. */}
-          <StairOpeningSystem />
           {/* Mounts systems contributed by registry-backed kinds. Each
             kind's `def.system` is loaded via lazy() and rendered here,
             ordered by `system.priority`. */}
           <RegisteredSystems />
-          <PostProcessing disablePostFx={disablePostFx} hoverStyles={hoverStyles} />
+          <PostProcessing disablePostFx={disablePostFx || stable} hoverStyles={hoverStyles} />
           {selectionManager === 'default' && <SelectionManager />}
           {(perf || PERF_OVERLAY_ENABLED) && <PerfMonitor />}
           {/* Feeds the action-cost ledger the frame's settle state (dirty
@@ -710,6 +648,6 @@ const Viewer = forwardRef<ViewerHandle, ViewerProps>(function Viewer(
       </Canvas>
     </>
   )
-})
+}
 
 export default Viewer

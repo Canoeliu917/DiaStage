@@ -13,7 +13,7 @@ import { acquireSceneHistoryPause, useScene } from '@pascal-app/core'
  *  1. zundo reads `isTracking` AFTER the store's subscribers run for a
  *     write. A subscriber that takes a balanced
  *     `pauseSceneHistory`/`resumeSceneHistory` pair during a mid-drag
- *     write (the space-detection sync does exactly this when a reparent
+ *     write (a derived-geometry sync can do this when a reparent
  *     touches a wall's `children`) sees depth 0 → its resume re-enables
  *     tracking — and the mid-drag write that TRIGGERED it, plus every
  *     write after, lands in `pastStates`. That is night-6's door-drag

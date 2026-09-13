@@ -202,7 +202,7 @@ describe('camera director persistence and runtime isolation', () => {
       hydrateCameraDirector(id)
       expect(getCameraDirectorState(id).transport.error).toContain('缓存')
       expect(getCameraDirectorState(id).take.sampleRate).toBe(30)
-      expect(getCameraDirectorState(id).output.fps).toBe(30)
+      expect(getCameraDirectorState(id).output.fps).toBe(24)
       expect(entries.get(key(id))).toBe(raw)
     }
   })

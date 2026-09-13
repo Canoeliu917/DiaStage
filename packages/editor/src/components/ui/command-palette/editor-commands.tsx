@@ -98,7 +98,7 @@ export function EditorCommands() {
       },
       {
         id: 'editor.tool.stair',
-        label: '台阶工具',
+        label: '舞台台阶工具',
         group: '场景',
         icon: <ArrowRight className="h-4 w-4" />,
         keywords: ['stairs', 'staircase', 'flight', 'landing', 'steps'],

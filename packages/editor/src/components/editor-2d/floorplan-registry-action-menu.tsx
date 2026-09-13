@@ -3,7 +3,6 @@
 import {
   type AnyNode,
   type AnyNodeId,
-  type CeilingNode,
   createSceneApi,
   getWallMidpointHandlePoint,
   type NodeQuickAction,
@@ -108,13 +107,13 @@ function collectQuickActionNodes(
  * Buttons:
  *  - Move: sets `movingNode` in useEditor. Enabled when the kind has
  *    `capabilities.movable`, `def.floorplanMoveTarget`, OR
- *    `def.affordanceTools.move` (slab / ceiling). The
+ *    `def.affordanceTools.move` (slab). The
  *    `<FloorplanRegistryMoveOverlay>` / dispatcher picks the right path.
  *    Walls are excluded — their move is reached via the side-arrow
  *    handles emitted from `def.floorplan`, not via a menu button.
  *  - Curve (wall only): enters curve reshape mode. The selected wall's
  *    midpoint curve handle remains visible so it can be dragged in plan.
- *  - Add hole (slab + ceiling only): inserts a small default-square
+ *  - Add hole (slab only): inserts a small default-square
  *    hole at the polygon centroid via `updateNode`. Mirrors the legacy
  *    `handleAddHole` in `floating-action-menu.tsx`.
  *  - Duplicate: creates a fresh subtree when the kind opts in, otherwise a
@@ -244,7 +243,7 @@ export function FloorplanRegistryActionMenu() {
   // Move button is enabled when any of:
   //   - `capabilities.movable` (generic translate-on-XZ — shelf / spawn / fence)
   //   - `def.floorplanMoveTarget` (anchor-aware 2D — door / window / item)
-  //   - `def.affordanceTools.move` (kind-owned 3D mover — slab / ceiling / wall)
+  //   - `def.affordanceTools.move` (kind-owned 3D mover — slab / wall)
   // From the menu's perspective all three are "this kind can move from
   // the floor plan." The `MoveTool` dispatcher resolves the right path —
   // walls land on their bespoke `MoveWallTool` (perpendicular slide
@@ -253,7 +252,7 @@ export function FloorplanRegistryActionMenu() {
     !!def.capabilities.movable || !!def.floorplanMoveTarget || !!def.affordanceTools?.move
   const canDuplicate = def.capabilities.duplicable !== false
   const canDelete = def.capabilities.deletable !== false
-  const canAddHole = node.type === 'slab' || node.type === 'ceiling'
+  const canAddHole = node.type === 'slab'
 
   const handleMove = () => {
     sfxEmitter.emit('sfx:item-pick')
@@ -266,7 +265,7 @@ export function FloorplanRegistryActionMenu() {
     setMovingNodeOrigin('2d')
     // Match the legacy 3D `floating-action-menu`: clear selection so
     // selection-gated affordances unmount during the drag. Specifically
-    // the slab / ceiling boundary editor (`ToolManager` shows it when
+    // the slab boundary editor (`ToolManager` shows it when
     // `selectedSlabId !== undefined`) would otherwise stay visible
     // and render its vertex / edge handles on top of the moving mesh
     // in split-view 3D. The move overlay reads `movingNode`, not the
@@ -277,7 +276,7 @@ export function FloorplanRegistryActionMenu() {
 
   const handleAddHole = () => {
     if (!canAddHole) return
-    const surfaceNode = node as SlabNode | CeilingNode
+    const surfaceNode = node as SlabNode
     const polygon = surfaceNode.polygon
     if (!polygon || polygon.length < 3) return
 

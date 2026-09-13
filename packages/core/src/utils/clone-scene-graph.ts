@@ -84,30 +84,6 @@ export function cloneSceneGraph(sceneGraph: SceneGraph): SceneGraph {
         | undefined
     }
 
-    // Remap roofSegmentId (doors/windows/items hosted on roof wall faces)
-    if ('roofSegmentId' in clonedNode && typeof clonedNode.roofSegmentId === 'string') {
-      ;(clonedNode as Record<string, unknown>).roofSegmentId = idMap.get(
-        clonedNode.roofSegmentId,
-      ) as string | undefined
-    }
-
-    if ('hostRoofId' in clonedNode && typeof clonedNode.hostRoofId === 'string') {
-      ;(clonedNode as Record<string, unknown>).hostRoofId = idMap.get(clonedNode.hostRoofId) as
-        | string
-        | undefined
-    }
-
-    if ('hostRoofSegmentId' in clonedNode && typeof clonedNode.hostRoofSegmentId === 'string') {
-      ;(clonedNode as Record<string, unknown>).hostRoofSegmentId = idMap.get(
-        clonedNode.hostRoofSegmentId,
-      ) as string | undefined
-    }
-
-    if (clonedNode.type === 'roof' && clonedNode.support?.kind === 'roof') {
-      clonedNode.support.roofSegmentId = (idMap.get(clonedNode.support.roofSegmentId) ??
-        clonedNode.support.roofSegmentId) as typeof clonedNode.support.roofSegmentId
-    }
-
     // Remap supportSlabId (persisted slab-support hosts). The 'ground'
     // sentinel is not a node id — keep it as-is.
     if (
@@ -118,12 +94,6 @@ export function cloneSceneGraph(sceneGraph: SceneGraph): SceneGraph {
       ;(clonedNode as Record<string, unknown>).supportSlabId = idMap.get(
         clonedNode.supportSlabId,
       ) as string | undefined
-    }
-
-    if ('deckSlabId' in clonedNode && typeof clonedNode.deckSlabId === 'string') {
-      ;(clonedNode as Record<string, unknown>).deckSlabId = idMap.get(clonedNode.deckSlabId) as
-        | string
-        | undefined
     }
 
     if (clonedNode.type === 'measurement') {
@@ -283,37 +253,11 @@ export function cloneLevelSubtree(
       ;(cloned as Record<string, unknown>).wallId = idMap.get(cloned.wallId) ?? cloned.wallId
     }
 
-    // Remap roofSegmentId (doors/windows/items hosted on roof wall faces)
-    if ('roofSegmentId' in cloned && typeof cloned.roofSegmentId === 'string') {
-      ;(cloned as Record<string, unknown>).roofSegmentId =
-        idMap.get(cloned.roofSegmentId) ?? cloned.roofSegmentId
-    }
-
-    if ('hostRoofId' in cloned && typeof cloned.hostRoofId === 'string') {
-      ;(cloned as Record<string, unknown>).hostRoofId =
-        idMap.get(cloned.hostRoofId) ?? cloned.hostRoofId
-    }
-
-    if ('hostRoofSegmentId' in cloned && typeof cloned.hostRoofSegmentId === 'string') {
-      ;(cloned as Record<string, unknown>).hostRoofSegmentId =
-        idMap.get(cloned.hostRoofSegmentId) ?? cloned.hostRoofSegmentId
-    }
-
-    if (cloned.type === 'roof' && cloned.support?.kind === 'roof') {
-      cloned.support.roofSegmentId = (idMap.get(cloned.support.roofSegmentId) ??
-        cloned.support.roofSegmentId) as typeof cloned.support.roofSegmentId
-    }
-
     // Remap supportSlabId when the host slab is inside the cloned subtree;
     // preserve it otherwise (like wallId, the reference may point outside).
     if ('supportSlabId' in cloned && typeof cloned.supportSlabId === 'string') {
       ;(cloned as Record<string, unknown>).supportSlabId =
         idMap.get(cloned.supportSlabId) ?? cloned.supportSlabId
-    }
-
-    if ('deckSlabId' in cloned && typeof cloned.deckSlabId === 'string') {
-      ;(cloned as Record<string, unknown>).deckSlabId =
-        idMap.get(cloned.deckSlabId) ?? cloned.deckSlabId
     }
 
     if (cloned.type === 'measurement') {

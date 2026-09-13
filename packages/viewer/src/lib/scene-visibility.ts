@@ -4,19 +4,18 @@ import { BATCHED_LAYER, SCENE_LAYER, SHADOW_ONLY_LAYER } from './layers'
 /**
  * Why an object is currently held off the scene layer.
  *
- * - `isolated` — outside the focused subtree of the viewer's isolation filter.
  * - `shadow-only` — solo mode: out of the color passes, still casting shadows.
  * - `batched` — a level's merged wall mesh draws this wall now.
  */
-export type HiddenReason = 'isolated' | 'shadow-only' | 'batched' | 'wall-batched'
+export type HiddenReason = 'shadow-only' | 'batched' | 'wall-batched'
 
 /**
  * Single owner of `Object3D.layers` for every feature that hides an object.
  *
- * Isolation, solo's shadow-caster pass and wall batching all hide by clearing
- * {@link SCENE_LAYER}, and they overlap freely — a wall can be sewn into a
- * batch, then soloed, then isolated. While each stashed and restored the mask privately, the
- * second to finish wrote back a mask the first had since changed. Recording
+ * Solo's shadow-caster pass and wall batching both hide by clearing
+ * {@link SCENE_LAYER}, and they overlap freely. While each stashed and
+ * restored the mask privately, the second to finish wrote back a mask the
+ * first had since changed. Recording
  * *reasons* rather than masks makes the order irrelevant: the mask is
  * recomputed from the one snapshot taken when the first reason arrived, and
  * handed back only when the last one leaves.
@@ -61,7 +60,7 @@ export function temporarilyShowShadowOnly(root: Object3D): () => void {
     const reasons = new Set(hold.reasons)
     reasons.delete('shadow-only')
     // A capture needs the original scene geometry, while editor overlays and
-    // objects hidden by isolation or batching must retain their own masks.
+    // objects hidden by batching must retain their own masks.
     if (reasons.size === 0) obj.layers.mask = hold.original
     else applyHold(obj, { original: hold.original, reasons })
   })

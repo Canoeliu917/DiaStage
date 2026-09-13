@@ -4,17 +4,10 @@ import type { AssetInput } from '@pascal-app/core'
 import {
   type AnyNode,
   type AnyNodeId,
-  type BrushSettings,
   type BuildingNode,
-  type ChimneyMaterialRole,
-  DEFAULT_BRUSH_SETTINGS,
-  type DormerSurfaceMaterialRole,
   type LevelNode,
   nodeRegistry,
-  type RoofSurfaceMaterialRole,
-  type Space,
   type StairSurfaceMaterialRole,
-  type TerrainVerb,
   useScene,
   type WallSurfaceSide,
 } from '@pascal-app/core'
@@ -67,15 +60,6 @@ export type ViewMode = '3d' | '2d' | 'split'
 export type SplitOrientation = 'horizontal' | 'vertical'
 export type WorkspaceMode = 'edit' | 'studio'
 
-// Snapshot capture is invoked from two surfaces with different policies.
-// `standard` mirrors the existing user-driven UX — pick region / viewport /
-// area, save the blob as a project thumbnail. `preset` is the constrained
-// variant for the unified preset capture flow (community save-as-preset
-// modal): the overlay locks to a square crop, the renderer clears alpha
-// (transparent background), and the rendered set is locked to `isolated`
-// — `ThumbnailGenerator` consults `captureMode.mode === 'preset'` and
-// applies those constraints. Keeping it a discriminated union lets us
-// add future modes without surfacing the choice to end users.
 // How the captured pixels are cropped: full-frame 16:9, raw canvas viewport,
 // or user-dragged area. Hosts (e.g. the studio capture bar) can preselect it
 // when entering capture mode.
@@ -93,16 +77,6 @@ export type CaptureMode =
        *  hide the crop/aspect switcher instead of merely preselecting it. */
       lockCrop?: boolean
     }
-  | {
-      mode: 'preset'
-      isolated: AnyNodeId[]
-      framingBounds?: {
-        min: [number, number]
-        max: [number, number]
-        center: [number, number]
-        size: [number, number]
-      }
-    }
 
 /**
  * How the first-person camera moves. `walk` is the grounded street-view
@@ -117,22 +91,7 @@ export const CAPTURE_FOV_MIN = 15
 export const CAPTURE_FOV_MAX = 110
 
 export type Phase = 'site' | 'structure' | 'furnish'
-
-/**
- * `terrain-sculpt` is a mode, not a build tool, and that is the whole answer to
- * "how does terrain editing avoid conflicting with everything else".
- *
- * A build tool places a node and hands the pointer back. Sculpting is a
- * sustained brush over the *ground* — the one surface every other tool uses as
- * its reference plane — so while it is armed, clicks must not select a wall,
- * drag a window, or arm a ghost. Modeling it as a mode gets that for free: it is
- * mutually exclusive with `build`/`select`/`delete` by construction, every
- * selection manager already early-returns unless `mode === 'select'`, and it
- * holds a `sculpting` interaction scope for its whole lifetime so conflicting
- * controls stay stepped back. `material-paint` is the existing precedent for
- * exactly this shape.
- */
-export type Mode = 'select' | 'edit' | 'delete' | 'build' | 'material-paint' | 'terrain-sculpt'
+export type Mode = 'select' | 'edit' | 'delete' | 'build' | 'material-paint'
 
 // Structure mode tools (building elements)
 type BuiltInStructureTool =
@@ -141,11 +100,7 @@ type BuiltInStructureTool =
   | 'room'
   | 'custom-room'
   | 'slab'
-  | 'ceiling'
-  | 'roof'
   | 'column'
-  | 'structural-grid'
-  | 'elevator'
   | 'stair'
   | 'item'
   | 'zone'
@@ -153,32 +108,12 @@ type BuiltInStructureTool =
   | 'window'
   | 'door'
   | 'shelf'
-  | 'box-vent'
-  | 'ridge-vent'
-  | 'turbine-vent'
-  | 'cupola'
-  | 'eyebrow-vent'
-  | 'chimney'
-  | 'solar-panel'
-  | 'skylight'
-  | 'dormer'
-  | 'gutter'
-  | 'downspout'
-  | 'duct-segment'
-  | 'duct-fitting'
-  | 'duct-terminal'
-  | 'hvac-equipment'
-  | 'lineset'
-  | 'liquid-line'
-  | 'pipe-segment'
-  | 'pipe-fitting'
-  | 'pipe-trap'
 
 /** Registry node kinds are valid build tools without central union edits. */
 export type StructureTool = BuiltInStructureTool | (string & {})
 
 // Furnish mode tools (items and decoration)
-export type FurnishTool = 'item' | 'cabinet'
+export type FurnishTool = 'item'
 
 // Site mode tools
 export type SiteTool = 'property-line'
@@ -227,7 +162,6 @@ export type ToolMode =
   | { mode: 'delete' }
   | { mode: 'build'; tool: StructureTool }
   | { mode: 'material-paint' }
-  | { mode: 'terrain-sculpt' }
 
 /**
  * Starting parameters seeded into a draw tool before it mints a node.
@@ -240,9 +174,6 @@ export type ToolDefaults = Record<string, unknown>
 export type MaterialTargetRole =
   | WallSurfaceSide
   | StairSurfaceMaterialRole
-  | RoofSurfaceMaterialRole
-  | ChimneyMaterialRole
-  | DormerSurfaceMaterialRole
   | SingleSurfaceMaterialRole
   | string
 
@@ -298,8 +229,6 @@ type EditorState = {
    */
   placementDragMode: boolean
   setPlacementDragMode: (dragMode: boolean) => void
-  roofHostDragArmedId: AnyNodeId | null
-  setRoofHostDragArmedId: (nodeId: AnyNodeId | null) => void
   setMovingNode: (node: AnyNode | null) => void
   /**
    * Which view (2D floor plan or 3D viewer) most recently completed
@@ -334,7 +263,7 @@ type EditorState = {
   setActivePaintMaterial: (material: ActivePaintMaterial | null) => void
   activePaintTarget: PaintableMaterialTarget
   setActivePaintTarget: (target: PaintableMaterialTarget) => void
-  // Live vertex count of an in-progress polygon draft (slab / ceiling), so the
+  // Live vertex count of an in-progress slab polygon draft, so the
   // contextual HUD can gate hints on it (e.g. "Finish" only once ≥ 3 points).
   // 0 when not drafting. Not persisted.
   draftVertexCount: number
@@ -353,35 +282,12 @@ type EditorState = {
   paintEraser: boolean
   setPaintEraser: (eraser: boolean) => void
   primeMaterialPaintFromSelection: () => MaterialPaintSelectionSnapshot
-  /**
-   * Terrain sculpt state. Lives here rather than in the tool component so the
-   * bottom-bar HUD, the keyboard shortcuts, and the brush all read one source —
-   * the same reason the paint mode's material/scope/eraser live here.
-   */
-  terrainVerb: TerrainVerb
-  setTerrainVerb: (verb: TerrainVerb) => void
-  terrainBrush: BrushSettings
-  setTerrainBrush: (settings: Partial<BrushSettings>) => void
-  /**
-   * Absolute height in metres the `flatten` verb aims at. Sampled by clicking
-   * the ground with the eyedropper, or typed. `null` means "sample on first
-   * click", which is what makes flatten usable without ever opening a number
-   * field.
-   */
-  terrainFlattenTarget: number | null
-  setTerrainFlattenTarget: (metres: number | null) => void
-  /**
-   * True while the next click should sample a flatten target instead of
-   * sculpting. One-shot: sampling clears it.
-   */
-  terrainSampling: boolean
-  setTerrainSampling: (sampling: boolean) => void
   // What the cursor is over in paint mode: the scopes it offers + labels for the
   // HUD chip. `null` when not over a paintable surface (drives the "hover a
   // surface" hint). Set by the selection-manager paint hover; not persisted.
   paintHover: PaintHoverInfo | null
   setPaintHover: (info: PaintHoverInfo | null) => void
-  // Embedder capability: true when a host (e.g. community) can locate a selected
+  // Embedder capability: true when a host can locate a selected
   // node in its catalog browser. Gates the node action menu's "Find" button; the
   // editor itself emits `selection:find-node` and lets the host fulfil it. Not
   // persisted — it's a per-mount capability the host registers.
@@ -399,8 +305,6 @@ type EditorState = {
   setGuideScaleReferenceVisible: (guideId: string, visible: boolean) => void
   clearGuideUi: (guideId: string) => void
   // Space detection for cutaway mode
-  spaces: Record<string, Space>
-  setSpaces: (spaces: Record<string, Space>) => void
   hoveredHole: SurfaceHoleTarget | null
   setHoveredHole: (hole: SurfaceHoleTarget | null) => void
   // Preview mode (viewer-like experience inside the editor)
@@ -427,10 +331,6 @@ type EditorState = {
   toggleFloorplanOpen: () => void
   isFloorplanHovered: boolean
   setFloorplanHovered: (hovered: boolean) => void
-  // Toggleable DWV riser-diagram (plumbing isometric) overlay.
-  isRiserOpen: boolean
-  setRiserOpen: (open: boolean) => void
-  toggleRiserOpen: () => void
   navigationSyncPose: NavigationSyncPose | null
   publishNavigationSyncPose: (pose: NavigationSyncPoseInput) => void
   floorplanSelectionTool: FloorplanSelectionTool
@@ -573,8 +473,6 @@ export const DEFAULT_PERSISTED_EDITOR_LAYOUT_STATE: PersistedEditorLayoutState =
     wall: CONTINUATION_PROFILES.wall.default,
     fence: CONTINUATION_PROFILES.fence.default,
     point: CONTINUATION_PROFILES.point.default,
-    cabinet: CONTINUATION_PROFILES.cabinet.default,
-    canopy: CONTINUATION_PROFILES.canopy.default,
   },
   showReferenceFloor: false,
   referenceFloorOffset: 1,
@@ -622,8 +520,7 @@ function readPersistedToolMode(state: Partial<PersistedEditorUiState> | null | u
     candidate?.mode === 'edit' ||
     candidate?.mode === 'delete' ||
     candidate?.mode === 'build' ||
-    candidate?.mode === 'material-paint' ||
-    candidate?.mode === 'terrain-sculpt'
+    candidate?.mode === 'material-paint'
   ) {
     return {
       mode: candidate.mode,
@@ -644,10 +541,10 @@ function withMaterializedToolMode(
 }
 
 function normalizeModeForPhase(phase: Phase, mode: Mode | undefined): Mode {
-  // Site has its own property-line build tool and terrain brush. The remaining
-  // modes have nothing to act on at site scope, so they restore as select.
+  // Site has its own property-line build tool. The remaining modes have nothing
+  // to act on at site scope, so they restore as select.
   if (phase === 'site') {
-    return mode === 'build' || mode === 'terrain-sculpt' ? mode : 'select'
+    return mode === 'build' ? mode : 'select'
   }
 
   return mode === 'build' || mode === 'delete' || mode === 'material-paint' ? mode : 'select'
@@ -676,13 +573,6 @@ export function normalizePersistedEditorUiState(
     viewMode = 'split'
   }
   const isFloorplanOpen = viewMode !== '3d'
-
-  // Both are persisted independently, and rehydrate goes through neither setter,
-  // so this is the third place the sculpt/2D pair has to be reconciled. The view
-  // wins here for the same reason it does in `setViewMode`: a brush armed over a
-  // hidden canvas is a mode the user cannot use, and reviving one on load is
-  // worse than reviving it mid-session — nothing on screen explains it.
-  if (mode === 'terrain-sculpt' && viewMode === '2d') mode = 'select'
 
   if (phase === 'site') {
     return withMaterializedToolMode({
@@ -789,12 +679,6 @@ function normalizeContinuationByContext(
     point:
       migrateContinuationMode(state?.continuationByContext?.point, 'point') ??
       CONTINUATION_PROFILES.point.default,
-    cabinet:
-      migrateContinuationMode(state?.continuationByContext?.cabinet, 'cabinet') ??
-      CONTINUATION_PROFILES.cabinet.default,
-    canopy:
-      migrateContinuationMode(state?.continuationByContext?.canopy, 'canopy') ??
-      CONTINUATION_PROFILES.canopy.default,
   }
 }
 
@@ -948,33 +832,19 @@ let viewModeBeforeCapture: ViewMode | null = null
 /**
  * Hold the interaction scope that belongs to a sustained brush mode.
  *
- * Paint and sculpt are the two modes whose scope lifetime is the *mode*, not a
- * pointer gesture. Both must be released whenever the mode changes for any
- * reason. A stuck `sculpting` scope would leave selection disabled across the
- * whole editor, so the ToolMode transition owns this side effect.
- *
- * The eyedropper arm rides along for the same reason: it is one-shot state whose
- * UI is unmounted the moment sculpt mode ends, so it has to be cleared on every
- * exit path and not just the one through `setMode`.
- *
- * View-swapping actions are the dangerous class: they unmount `ToolManager`
- * (via `noEditing`), so the sculpt tool that would otherwise release the scope
- * on unmount is gone, and a leaked scope is unrecoverable without a reload.
+ * Paint mode holds its interaction scope for the lifetime of the mode rather
+ * than for one pointer gesture.
  */
 function syncBrushModeScope(mode: Mode): void {
   const scope = useInteractionScope.getState()
   if (mode === 'material-paint') scope.begin({ kind: 'painting' })
-  else if (mode === 'terrain-sculpt') scope.begin({ kind: 'sculpting' })
-  // `isBrushMode` is the same set as the two branches above — kept as one
-  // predicate so an added brush mode cannot be handled here and missed there.
   else {
-    scope.endIf((s) => s.kind === 'painting' || s.kind === 'sculpting')
-    if (useEditor.getState().terrainSampling) useEditor.getState().setTerrainSampling(false)
+    scope.endIf((s) => s.kind === 'painting')
   }
 }
 
 /**
- * Whether `mode` is one of the two sustained brush modes.
+ * Whether `mode` is a sustained brush mode.
  *
  * Named because callers *outside* this store need the same test: a scope is
  * single-owner, so anything that calls `begin()` while a brush mode holds its
@@ -985,7 +855,7 @@ function syncBrushModeScope(mode: Mode): void {
  * `pasteSelectionAndPickUp`), so they have to ask.
  */
 export function isBrushMode(mode: Mode): boolean {
-  return mode === 'material-paint' || mode === 'terrain-sculpt'
+  return mode === 'material-paint'
 }
 
 const useEditor = create<EditorState>()(
@@ -1036,14 +906,7 @@ const useEditor = create<EditorState>()(
           structureLayer,
         )
 
-        if (next.mode === 'terrain-sculpt') {
-          phase = 'site'
-          structureLayer = 'elements'
-          if (viewMode === '2d') {
-            viewMode = 'split'
-            isFloorplanOpen = true
-          }
-        } else if (next.mode === 'build' && next.tool === 'property-line') {
+        if (next.mode === 'build' && next.tool === 'property-line') {
           phase = 'site'
           structureLayer = 'elements'
         } else if (next.mode === 'build' && next.tool === 'zone') {
@@ -1078,9 +941,6 @@ const useEditor = create<EditorState>()(
           else selectDefaultBuildingAndLevel()
         }
         if (next.mode === 'material-paint') get().primeMaterialPaintFromSelection()
-        if (next.mode === 'terrain-sculpt') {
-          useViewer.getState().setSelection({ selectedIds: [], zoneId: null })
-        }
         syncBrushModeScope(next.mode)
       },
       armMaterialPaint: (material) => {
@@ -1147,13 +1007,11 @@ const useEditor = create<EditorState>()(
       setSelectedItem: (item) => set({ selectedItem: item }),
       placementDragMode: false,
       setPlacementDragMode: (dragMode) => set({ placementDragMode: dragMode }),
-      roofHostDragArmedId: null,
-      setRoofHostDragArmedId: (nodeId) => set({ roofHostDragArmedId: nodeId }),
       // The node being placed/moved now lives inside the interaction scope
       // (`useMovingNode` / `getMovingNode`), not a `useEditor` flag. This setter
       // remains the single entry point: it drives the scope and still touches
       // `movingNodeOrigin` / `placementDragMode` so cross-store subscribers that
-      // watch this store (community placement) keep firing on move start/end.
+      // watch this store keep firing on move start/end.
       setMovingNode: (node) => {
         const scope = useInteractionScope.getState()
         if (node === null) {
@@ -1253,21 +1111,6 @@ const useEditor = create<EditorState>()(
       },
       paintHover: null,
       setPaintHover: (info) => set({ paintHover: info }),
-      terrainVerb: 'flatten',
-      setTerrainVerb: (verb) =>
-        set({
-          terrainVerb: verb,
-          // Switching away from flatten drops the sampling arm — an eyedropper
-          // that survives into the raise brush would swallow its first click.
-          terrainSampling: verb === 'flatten' ? get().terrainSampling : false,
-        }),
-      terrainBrush: DEFAULT_BRUSH_SETTINGS,
-      setTerrainBrush: (settings) => set({ terrainBrush: { ...get().terrainBrush, ...settings } }),
-      terrainFlattenTarget: null,
-      setTerrainFlattenTarget: (metres) =>
-        set({ terrainFlattenTarget: metres, terrainSampling: false }),
-      terrainSampling: false,
-      setTerrainSampling: (sampling) => set({ terrainSampling: sampling }),
       canFindNode: false,
       setCanFindNode: (canFind) => set({ canFindNode: canFind }),
       selectedReferenceId: null,
@@ -1304,8 +1147,6 @@ const useEditor = create<EditorState>()(
           delete guideUi[guideId]
           return { guideUi }
         }),
-      spaces: {},
-      setSpaces: (spaces) => set({ spaces }),
       hoveredHole: null,
       setHoveredHole: (hole) =>
         set((state) =>
@@ -1369,11 +1210,6 @@ const useEditor = create<EditorState>()(
       viewMode: DEFAULT_PERSISTED_EDITOR_UI_STATE.viewMode,
       setViewMode: (mode) => {
         set({ viewMode: mode, isFloorplanOpen: mode !== '3d' })
-        // Going the other way, the view wins and the mode yields. Hiding the 3D
-        // pane leaves the brush unreachable, and a held `sculpting` scope would
-        // then keep selection suppressed in a floorplan the user is trying to
-        // work in — a mode you cannot use and cannot see how to leave.
-        if (mode === '2d' && get().mode === 'terrain-sculpt') get().setMode('select')
       },
       splitOrientation: DEFAULT_PERSISTED_EDITOR_LAYOUT_STATE.splitOrientation,
       setSplitOrientation: (orientation) => set({ splitOrientation: orientation }),
@@ -1386,9 +1222,6 @@ const useEditor = create<EditorState>()(
         }),
       isFloorplanHovered: false,
       setFloorplanHovered: (hovered) => set({ isFloorplanHovered: hovered }),
-      isRiserOpen: false,
-      setRiserOpen: (open) => set({ isRiserOpen: open }),
-      toggleRiserOpen: () => set((state) => ({ isRiserOpen: !state.isRiserOpen })),
       navigationSyncPose: null,
       publishNavigationSyncPose: (pose) => {
         const navigationSyncPose = {
@@ -1556,10 +1389,7 @@ const useEditor = create<EditorState>()(
             : {}),
         }
       },
-      // `toolMode` is persisted, but the interaction scope a brush mode holds is not
-      // — it lives in a separate, non-persisted store. Rehydrating into
-      // `terrain-sculpt` (or paint) without re-claiming the scope would restore
-      // the brush with selection still enabled, so every dab could grab a wall.
+      // `toolMode` is persisted, but the interaction scope held by paint mode is not.
       onRehydrateStorage: () => (state) => {
         if (state) syncBrushModeScope(state.mode)
       },

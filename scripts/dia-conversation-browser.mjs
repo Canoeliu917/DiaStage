@@ -1,0 +1,54 @@
+const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
+import { mkdir, writeFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+// Run against an isolated local database: this creates new synthetic rehearsal scenes.
+const base=process.env.BASE_URL || 'http://127.0.0.1:4326';
+assert.ok(['localhost','127.0.0.1'].includes(new URL(base).hostname));
+const browser=await chromium.launch({channel:'chrome',headless:true});
+const context=await browser.newContext({viewport:{width:1440,height:1000}});
+const page=await context.newPage();page.setDefaultTimeout(45000);
+const result={synthetic:true,realModel:'NOT_RUN',physicalDevices:'NOT_RUN',desktop:false,continuousContext:false,revision:false,humanAuthority:false,feedbackLineage:false,remote:false,errors:[]};
+page.on('pageerror',e=>result.errors.push(e.message));
+const panel=page.getByRole('region',{name:'Dia 排演对话',exact:true});
+const status=value=>page.locator(`[data-dia-state="${value}"]`).waitFor();
+const send=async text=>{await panel.getByRole('textbox',{name:'你想试什么？',exact:true}).fill(text);await panel.getByRole('button',{name:'发送',exact:true}).click();await status('proposal-ready')};
+const readLog=sceneId=>page.evaluate(async sceneId=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('diastage-rehearsal-feedback');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});const get=name=>new Promise(resolve=>{const r=db.transaction(name).objectStore(name).index('sceneId').getAll(sceneId);r.onsuccess=()=>resolve(r.result)});const [interactions,events,threads]=await Promise.all([get('interactions'),get('events'),get('threads')]);db.close();return {interactions:interactions.sort((a,b)=>a.createdAt.localeCompare(b.createdAt)),events,threads}},sceneId);
+let id;
+const readScene=async()=>{const r=await context.request.get(`${base}/api/scenes/${id}`);assert.equal(r.status(),200);const data=await r.json();return Object.values(data.graph.nodes).find(n=>n.type==='site').metadata.diastageTheatre.rehearsalSimulation};
+try {
+ await page.goto(base,{waitUntil:'domcontentloaded'});await page.getByRole('button',{name:'打开原创示例',exact:true}).click();
+ await page.waitForURL(/\/scene\//);id=new URL(page.url()).pathname.split('/').at(-1);await panel.getByRole('textbox',{name:'你想试什么？',exact:true}).waitFor();
+ console.log('demo ready',id);
+ await send('他们现在太近了，我想让关系更克制');assert.equal(await panel.locator('.dia-proposal').count(),2);const original=await readScene();
+ await panel.getByRole('button',{name:'在舞台上试试',exact:true}).first().click();await status('waiting-human');assert.deepEqual(await readScene(),original);
+ await panel.getByRole('button',{name:'采用',exact:true}).click();await status('applied');await page.waitForTimeout(1800);
+ const adopted=await readScene();assert.notDeepEqual(adopted,original);result.humanAuthority=true;
+ const actor=adopted.performers.find(p=>p.name==='A');await page.getByRole('combobox',{name:'操作模式',exact:true}).selectOption('professional');await page.getByLabel('选择人物',{exact:true}).selectOption(actor.id);
+ await page.getByRole('spinbutton',{name:'左右（米）',exact:true}).fill('-1.5');await page.getByRole('spinbutton',{name:'左右（米）',exact:true}).blur();await status('stale');await page.waitForTimeout(1800);
+ await send('现在呢？');let log=await readLog(id);assert.deepEqual(log.interactions.at(-1).inputContext.performers.find(p=>p.id===actor.id).position,[-1.5,0,0]);result.continuousContext=true;
+ const parent=log.interactions.at(-1).proposals[1];await send('第二个可以，但A不要动');log=await readLog(id);const revised=log.interactions.at(-1).proposals[0];assert.equal(revised.revision.parentProposalId,parent.proposalId);assert.equal(revised.suggestions.find(s=>s.performerId===actor.id).movement,'hold');result.revision=true;
+ await panel.getByRole('button',{name:'在舞台上试试',exact:true}).first().click();await status('waiting-human');const beforeReject=await readScene();await panel.getByRole('button',{name:'不成立',exact:true}).click();await status('rejected');assert.deepEqual(await readScene(),beforeReject);
+ log=await readLog(id);assert.equal(log.events.filter(e=>e.decision==='adopt').length,1);assert.equal(log.events.find(e=>e.decision==='reject').previewedProposal.revision.parentProposalId,parent.proposalId);result.feedbackLineage=true;
+ await page.reload({waitUntil:'domcontentloaded'});await status('rejected');assert.match(await panel.innerText(),/第二个可以/);result.desktop=true;console.log('desktop flow pass');
+ await send('换几个方向');
+ await panel.getByText('连接手机舞台助手',{exact:true}).click();await panel.getByRole('button',{name:'生成配对码',exact:true}).click();const code=(await panel.locator('.phone-voice-link__code').innerText()).replace(/[^A-Z0-9]/g,'');assert.equal(code.length,8,'pairing code has eight characters');
+ const phoneContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});const phone=await phoneContext.newPage();phone.setDefaultTimeout(45000);phone.on('pageerror',e=>result.errors.push(e.message));
+ await phone.goto(base+'/remote-voice',{waitUntil:'networkidle'});await phone.getByLabel('8 位配对码',{exact:true}).fill(code);await phone.getByRole('button',{name:'连接舞台',exact:true}).click();await phone.getByRole('button',{name:'预演到舞台',exact:true}).first().waitFor();
+ await phone.getByRole('button',{name:'预演到舞台',exact:true}).first().click();await status('waiting-human');await phone.getByText('已发送到舞台，等待你的决定。',{exact:true}).waitFor();result.remote=true;console.log('remote flow pass');
+ await mkdir('.impeccable/review/conversation',{recursive:true});
+ await page.getByRole('combobox',{name:'对话模式',exact:true}).selectOption('default');
+ await panel.locator('.dia-dialogue').evaluate(e=>e.scrollTop=e.scrollHeight/3);
+ await page.screenshot({path:'.impeccable/review/conversation/desktop.png',fullPage:true});
+ await page.setViewportSize({width:1024,height:1366});
+ await page.getByRole('button',{name:'展开侧栏',exact:true}).waitFor();
+ await page.waitForTimeout(500);
+ assert.ok((await page.locator('.diastage-viewer-column').boundingBox()).width >= 500);
+ await page.screenshot({path:'.impeccable/review/conversation/tablet.png',fullPage:true});
+ await phone.screenshot({path:'.impeccable/review/conversation/phone.png',fullPage:true});
+ await phone.goto(base,{waitUntil:'domcontentloaded'});
+ const shortcuts=await phone.getByRole('navigation',{name:'继续排演与轻量入口'}).boundingBox();
+ assert.ok(shortcuts.y+shortcuts.height <= 844,'light navigation fits in phone first screen');
+ await phone.screenshot({path:'.impeccable/review/conversation/phone-home.png',fullPage:true});
+ await phoneContext.close();assert.deepEqual(result.errors,[]);console.log(JSON.stringify(result));
+} catch(e) {console.log('FAIL',e.message);console.log((await page.locator('body').innerText()).slice(-9000));await mkdir('.impeccable/review/conversation',{recursive:true});await page.screenshot({path:'.tmp-conversation-failure.png',fullPage:true});throw e}
+finally {await writeFile('.impeccable/review/conversation/browser-result.json',JSON.stringify(result,null,2));await browser.close()}

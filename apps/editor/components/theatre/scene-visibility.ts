@@ -1,5 +1,10 @@
+'use client'
+
 import { useLiveNodeOverrides, useScene } from '@pascal-app/core'
+import { useEffect, useMemo } from 'react'
+import { theatreNodeLayer } from '@/lib/theatre/venue-model'
 import { getStageNodeSelection } from '../stage-overview-data'
+import { useSimulationSelection } from './simulation-panel'
 
 export function rehearsalSceneSelection(sceneId: string, nodes = useScene.getState().nodes) {
   const object =
@@ -17,8 +22,8 @@ export function createTheatreSceneVisibility() {
     owned.delete(id)
   }
   return {
-    apply(activeSceneId: string | null) {
-      const hidden = new Set<string>()
+    apply(activeSceneId: string | null, hiddenNodeIds: string[] = []) {
+      const hidden = new Set(hiddenNodeIds)
       if (activeSceneId) {
         for (const node of Object.values(useScene.getState().nodes)) {
           if (
@@ -44,4 +49,38 @@ export function createTheatreSceneVisibility() {
       for (const id of [...owned]) clear(id)
     },
   }
+}
+
+/** The existing override owner feeds both 2D and 3D; saved visibility stays untouched. */
+export function SceneLayersRuntime({ enabled }: { enabled: boolean }) {
+  const nodes = useScene((state) => state.nodes)
+  const showVenue = useSimulationSelection((state) => state.showVenue)
+  const showScenery = useSimulationSelection((state) => state.showScenery)
+  const display = useMemo(() => createTheatreSceneVisibility(), [])
+  useEffect(() => {
+    useSimulationSelection.setState({
+      showVenue: true,
+      showScenery: true,
+      showPerformers: true,
+      showGhost: true,
+    })
+    return () => display.restore()
+  }, [display])
+  useEffect(() => {
+    display.apply(
+      null,
+      enabled
+        ? Object.values(nodes)
+            .filter((node) => {
+              const layer = theatreNodeLayer(node)
+              return (
+                node.visible !== false &&
+                ((layer === 'venue' && !showVenue) || (layer === 'scenery' && !showScenery))
+              )
+            })
+            .map((node) => node.id)
+        : [],
+    )
+  }, [nodes, showVenue, showScenery, enabled, display])
+  return null
 }

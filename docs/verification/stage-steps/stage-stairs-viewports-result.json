@@ -1,0 +1,41 @@
+[
+  {
+    "name": "desktop",
+    "coarse": false,
+    "canvases": [
+      {
+        "width": 1320,
+        "css": 1056,
+        "dpr": 1.25
+      }
+    ],
+    "stable": "true",
+    "errors": []
+  },
+  {
+    "name": "tablet",
+    "coarse": true,
+    "canvases": [
+      {
+        "width": 640,
+        "css": 640,
+        "dpr": 1
+      }
+    ],
+    "stable": "true",
+    "errors": []
+  },
+  {
+    "name": "phone",
+    "coarse": true,
+    "canvases": [
+      {
+        "width": 390,
+        "css": 390,
+        "dpr": 1
+      }
+    ],
+    "stable": "true",
+    "errors": []
+  }
+]

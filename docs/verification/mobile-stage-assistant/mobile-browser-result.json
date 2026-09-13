@@ -1,0 +1,12 @@
+{
+  "sceneId": "7b7897440bb7",
+  "url": "http://127.0.0.1:4323/scene/7b7897440bb7?workspace=remount",
+  "voiceRequiresConfirmation": true,
+  "voiceTransactions": 1,
+  "scanTransactions": 1,
+  "scanCount": 1,
+  "versionTransactions": 2,
+  "crashRecovered": true,
+  "reconnectPut": 1,
+  "errors": []
+}

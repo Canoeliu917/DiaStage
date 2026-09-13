@@ -1027,19 +1027,10 @@ function nodeDisplayLabel(node: AnyNode): string {
       return 'Door'
     case 'window':
       return 'Window'
-    case 'cabinet':
-    case 'cabinet-module':
-      return 'Cabinet'
     case 'slab':
       return 'Slab'
-    case 'ceiling':
-      return 'Ceiling'
-    case 'roof':
-      return 'Roof'
     case 'fence':
       return 'Fence'
-    case 'column':
-      return 'Column'
     case 'stair':
       return 'Stairs'
     default:

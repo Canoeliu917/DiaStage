@@ -7,7 +7,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { DoubleSide, type Mesh, PlaneGeometry, Quaternion, Vector2, Vector3 } from 'three'
 import { color, float, fract, fwidth, mix, positionLocal, uniform } from 'three/tsl'
 import { MeshBasicNodeMaterial } from 'three/webgpu'
-import { useCeilingEvents } from '../../hooks/use-ceiling-events'
 import { useGridEvents } from '../../hooks/use-grid-events'
 import { getPlacementSurface, usesOrientedPlacementPlane } from '../../lib/active-placement-surface'
 import useEditor, { isGridSnapActive } from '../../store/use-editor'
@@ -166,11 +165,6 @@ export const Grid = ({
 
   // Use custom raycasting for grid events (independent of mesh events)
   useGridEvents(gridY)
-  // Same technique for ceiling-item placement: a math-plane raycast per ceiling,
-  // so commits don't depend on hitting the thin, single-sided `ceiling-grid`
-  // overlay mesh (which dropped clicks even with the green box showing).
-  useCeilingEvents()
-
   // Track the last world-space cursor hit. The reveal-fade shader reads
   // `positionLocal.xy` (vertex position on the un-transformed plane), and the
   // laid-flat orientation maps `positionLocal.y` to world `-Z` relative to the
@@ -282,8 +276,8 @@ export const Grid = ({
 
     // The grid is a placement aid: a tight cursor patch (no always-on baseline)
     // shown whenever the active context is in grid-snap mode — ANY armed
-    // draft/build tool (wall / slab / fence / ceiling / zone / column / MEP / …),
-    // a node move, or a reshape — and hidden in select/idle, paint, and non-grid
+    // draft/build tool, a node move, or a reshape.
+    // It is hidden in select/idle, paint, and non-grid
     // (lines/off) modes. `isGridSnapActive()` already derives the snap context
     // from the interaction scope OR the armed build tool and is true only when
     // that context resolves to grid, so it IS the gate. (Previously this also

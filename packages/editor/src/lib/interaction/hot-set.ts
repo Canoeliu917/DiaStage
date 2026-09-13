@@ -3,7 +3,7 @@
 // It is never hand-authored per interaction. It falls out of the node's
 // `asset.attachTo` plus whether a candidate exposes a top surface. "Floor item"
 // really means surface-resting: it rests on the floor *or* any host's top
-// surface. Walls and ceilings are the special attach modes. Adding a node kind
+// surface. Walls are the only special attach mode. Adding a node kind
 // = set `attachTo` (or leave blank); the hot-set follows with zero per-kind
 // wiring.
 
@@ -12,11 +12,10 @@ import type { InteractionScope } from './scope'
 // What a node attaches to, collapsed to the three classes the hot-set cares
 // about. `wall-side` is a wall attachment; everything without an explicit
 // `attachTo` is surface-resting.
-export type AttachClass = 'wall' | 'ceiling' | 'surface'
+export type AttachClass = 'wall' | 'surface'
 
 export function attachClassOf(attachTo: string | undefined | null): AttachClass {
   if (attachTo === 'wall' || attachTo === 'wall-side') return 'wall'
-  if (attachTo === 'ceiling') return 'ceiling'
   return 'surface'
 }
 
@@ -32,8 +31,6 @@ export type HotSetCandidate = {
   exposesTop: boolean
   // The candidate declares wall-like side faces through registry surfaces.
   exposesSides?: boolean
-  // The candidate's own attach class. A ceiling fan is `ceiling`: it hangs from
-  // the ceiling and must never act as a host top (Track E).
   attachClass: AttachClass
 }
 
@@ -41,13 +38,9 @@ export type HotSetCandidate = {
 // host/surface to pick during placement or move?
 export function isPickableForAttach(placed: AttachClass, candidate: HotSetCandidate): boolean {
   if (placed === 'wall') return candidate.type === 'wall' || candidate.exposesSides === true
-  if (placed === 'ceiling') return candidate.type === 'ceiling'
-  // Surface-resting: the floor, or any host that exposes a top surface — but
-  // never a ceiling-mounted host (a floor lamp must not land on a ceiling fan).
+  // Surface-resting: the floor or any host that exposes a top surface.
   if (candidate.isFloorLike) return true
-  if (!candidate.exposesTop) return false
-  if (candidate.attachClass === 'ceiling') return false
-  return true
+  return candidate.exposesTop
 }
 
 // The hot-set predicate for a whole scope. For placing/moving it derives from

@@ -23,7 +23,7 @@ import { installBundledRuntime } from '../runtime.js'
 import { TerminalProgress } from '../terminal-progress.js'
 import { version } from '../version.js'
 
-const HELP = `Pascal — local 3D editor
+const HELP = `DiaStage — local stage rehearsal editor
 
 FIRST RUN:
   npx @pascal-app/cli editor
@@ -53,12 +53,12 @@ USAGE:
   pascal mcp connect | status | config | setup <client>
   pascal plugin list [--json]
 
-Documentation: https://editor.pascal.app/docs/developers/local-editor
+Documentation: https://github.com/Canoeliu917/DiaStage
 `
 
-const MCP_HELP = `Pascal MCP — connect AI agents to local projects
+const MCP_HELP = `DiaStage MCP — connect AI agents to local projects
 
-The authenticated MCP service starts and stops with the Pascal editor.
+The authenticated MCP service starts and stops with the DiaStage editor.
 
 USAGE:
   pascal mcp status [--json]       Check the managed MCP service
@@ -68,9 +68,9 @@ USAGE:
   pascal mcp connect               Start the stdio client connector
 
 MCP clients should run "pascal mcp connect"; the connector discovers the
-dynamic loopback port without exposing Pascal's private local token.
+dynamic loopback port without exposing DiaStage's private local token.
 
-Documentation: https://editor.pascal.app/docs/developers/mcp
+Documentation: https://github.com/Canoeliu917/DiaStage
 `
 
 const paths = resolvePascalPaths()

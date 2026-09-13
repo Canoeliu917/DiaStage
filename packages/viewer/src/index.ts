@@ -4,7 +4,7 @@
 // into viewer's internal paths.
 
 export type { SurfaceRole } from '@pascal-app/core'
-export { ErrorBoundary } from './components/error-boundary'
+export { ErrorBoundary, ErrorBoundary as ViewerErrorBoundary } from './components/error-boundary'
 // Stage A wrap-exports for the rest of the kinds — `@pascal-app/nodes`
 // registers each via `def.renderer` (and `def.system` when present)
 // Generic dispatch component used by recursive renderers (e.g. level →
@@ -12,7 +12,7 @@ export { ErrorBoundary } from './components/error-boundary'
 // `@pascal-app/nodes/<kind>/renderer.tsx` and are loaded by the registry
 // — no per-kind re-exports needed.
 export { NodeRenderer } from './components/renderers/node-renderer'
-export { default as Viewer, type ViewerHandle } from './components/viewer'
+export { default as Viewer } from './components/viewer'
 export {
   type BVHEcctrlApi,
   default as BVHEcctrl,
@@ -52,18 +52,17 @@ export {
   DEFAULT_HOVER_STYLES,
   SSGI_PARAMS,
 } from './components/viewer/post-processing'
-export { NeutralRenderEnvironment } from './components/viewer/render-environment'
+export { NeutralRenderEnvironment, StableRenderMode } from './components/viewer/render-environment'
 export { SceneEnvironment } from './components/viewer/scene-environment'
 export { useAssetUrl } from './hooks/use-asset-url'
 export { useGLTFKTX2 } from './hooks/use-gltf-ktx2'
+export { useIsolatedFrame } from './hooks/use-isolated-frame'
 export { useLibraryMaterialsVersion } from './hooks/use-library-materials-version'
 export { useNodeEvents } from './hooks/use-node-events'
 export { ASSETS_CDN_URL, resolveAssetUrl, resolveCdnUrl } from './lib/asset-url'
 export { backdropGradient, deepSkyColor, horizonHazeColor } from './lib/backdrop'
 export { applyWorldScaleBoxUVs } from './lib/box-uv'
-// CSG primitives — used by chimney's roof-trim and other kinds whose
-// geometry subtracts pieces against their host. Lives in viewer
-// because three-bvh-csg / three-mesh-bvh are viewer-only deps.
+// CSG primitives used by parametric stage geometry.
 export {
   ADDITION,
   Brush,
@@ -86,12 +85,6 @@ export {
   temporarilyHideNodeTypes,
   unionRegisteredNodeBounds,
 } from './lib/hero-pose'
-export {
-  applyIsolation,
-  clearIsolation,
-  collectIsolationSubtree,
-  isIsolationActive,
-} from './lib/isolation'
 export { configureKtx2Support, ensureKtx2Support } from './lib/ktx2-loader'
 export {
   BATCHED_LAYER,
@@ -113,9 +106,7 @@ export {
   createMaterial,
   createMaterialFromPresetRef,
   createSurfaceRoleMaterial,
-  DEFAULT_CEILING_MATERIAL,
   DEFAULT_DOOR_MATERIAL,
-  DEFAULT_ROOF_MATERIAL,
   DEFAULT_SHELF_MATERIAL,
   DEFAULT_SLAB_MATERIAL,
   DEFAULT_STAIR_MATERIAL,
@@ -170,10 +161,6 @@ export {
   THUMBNAIL_WIDTH,
 } from './lib/snapshot-pipeline'
 export {
-  buildTerrainPerimeterFillGeometry,
-  type TerrainPerimeterPoint,
-} from './lib/terrain-perimeter-fill'
-export {
   getPascalTextureRef,
   type PascalTextureColorSpace,
   type PascalTextureMap,
@@ -186,23 +173,14 @@ export {
   requestWalkthroughPointerLock,
   shouldHandleWalkthroughLook,
 } from './lib/walkthrough-pointer-lock'
-export { useItemLightPool } from './store/use-item-light-pool'
 export {
   applyCountryUnitDefault,
   default as useViewer,
   type MetricNotation,
   type WallMode,
 } from './store/use-viewer'
-export { CeilingSystem } from './systems/ceiling/ceiling-system'
-export {
-  createColumnBoxGeometry,
-  createColumnCylinderGeometry,
-  createColumnSphereGeometry,
-  createColumnTorusGeometry,
-} from './systems/column/column-geometry'
 export { DoorAnimationSystem } from './systems/door/door-animation-system'
 export { buildDoorPreviewMesh, DoorSystem, poseDoorMovingParts } from './systems/door/door-system'
-export { ElevatorInteractionSystem } from './systems/elevator/elevator-interaction-system'
 // Fence system follows the wall re-export pattern — composed into the
 // registry-driven fence definition's `def.system`. Removed in Phase 6
 // alongside the legacy fence mount point.
@@ -218,48 +196,23 @@ export {
 export { FloorElevationSystem } from './systems/floor-elevation/floor-elevation-system'
 export { GuideSystem } from './systems/guide/guide-system'
 export { InteractiveSystem } from './systems/interactive/interactive-system'
-// Item systems for the registry-driven item definition. ItemSystem
-// applies attachTo-driven transforms each frame; ItemLightSystem
-// manages item-mounted light sources.
+// Item system for the registry-driven item definition.
 export { ItemSystem } from './systems/item/item-system'
-export { ItemLightSystem } from './systems/item-light/item-light-system'
 export { LevelSystem } from './systems/level/level-system'
 export {
   EXPLODED_GAP,
   getLevelPresentationY,
   snapLevelsToTruePositions,
 } from './systems/level/level-utils'
-export { getRoofMaterialArray } from './systems/roof/roof-materials'
-// Generic roof-segment primitives. Kinds that compose CSG against
-// the roof shell (chimney's self-trim, dormer's virtual-segment cut)
-// read these through the public surface. No kind-specific helpers
-// belong here — those live in `@pascal-app/nodes/<kind>/`.
-export {
-  clipGeometryBySegmentTrim,
-  generateRoofSegmentGeometry,
-  getRoofOuterSurfaceFrameAtPoint,
-  getRoofSegmentBrushes,
-  mapRoofGroupMaterialIndex,
-  ROOF_MATERIAL_SLOT_COUNT,
-  RoofSystem,
-  remapRoofShellFaces,
-  roofCsgDummyMats,
-  type SurfaceFrame,
-} from './systems/roof/roof-system'
 export { ScanSystem } from './systems/scan/scan-system'
 // Pure slab geometry generator — composed into the registry-driven slab
 // definition's `def.geometry` in `@pascal-app/nodes`.
 export { generateSlabGeometry } from './systems/slab/slab-system'
 export {
   getStairBodyMaterials,
-  getStairRailingMaterial,
-  getStraightStairSegmentBodyMaterials,
   type StairBodyMaterials,
 } from './systems/stair/stair-materials'
-export { StairSystem } from './systems/stair/stair-system'
-// Pure opening-cutout profile math shared by the wall CSG pipeline and
-// roof-wall opening cuts in `@pascal-app/nodes` — keeps shaped holes
-// (arch / rounded / frameless opening) identical across both hosts.
+// Pure opening-cutout profile math shared by wall doors and windows.
 export {
   buildOpeningCutoutGeometry,
   getOpeningCutoutBottomPadding,

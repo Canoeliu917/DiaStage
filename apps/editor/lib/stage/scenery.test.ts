@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test'
-import { AnyNode, BlockNode, inspectBlockTopology } from '@pascal-app/core'
+import { AnyNode, BlockNode, getBlockFaceNormal, inspectBlockTopology } from '@pascal-app/core'
 import { type StageCommand, StageCommandSchema, StageItemKindSchema } from '@pascal-app/core/stage'
-import { dimensionsOf, makeScenery, SCENERY_LIBRARY } from './scenery'
+import { dimensionsOf, makeScenery, SCENERY_LIBRARY, sceneryProxyParts } from './scenery'
 
 type AddScenery = Extract<StageCommand, { type: 'AddScenery' }>
 
@@ -25,7 +25,9 @@ function command(kind: AddScenery['kind'], libraryAssetId: string | null = null)
 }
 
 function create(kind: AddScenery['kind']) {
-  return BlockNode.parse(makeScenery(command(kind), 'level_test', [1, 0, 2], [0, Math.PI / 2, 0]))
+  return BlockNode.parse(
+    makeScenery(command(kind), 'level_test', [1, 0, 2], [0, Math.PI / 2, 0])[0],
+  )
 }
 
 function occupied(node: BlockNode, point: [number, number, number]) {
@@ -46,7 +48,8 @@ function occupied(node: BlockNode, point: [number, number, number]) {
 
 describe('stage scenery adapter', () => {
   test('every allowed proxy is editable, finite, correctly sized and rests at y=0', () => {
-    for (const kind of StageItemKindSchema.exclude(['camera', 'performer-marker']).options) {
+    for (const kind of StageItemKindSchema.exclude(['camera', 'performer-marker', 'stairs'])
+      .options) {
       const node = create(kind)
       expect(AnyNode.safeParse(node).success).toBe(true)
       expect(inspectBlockTopology(node.topology)).toEqual([])
@@ -75,6 +78,64 @@ describe('stage scenery adapter', () => {
     expect(occupied(window, [0.5, 0.3, 0])).toBe(true)
   })
 
+  test('round tables have closed editable curved tops and a grounded pedestal', () => {
+    const input = command('round-table')
+    input.dimensionsMeters = { width: 1.2, height: 0.75, depth: 1.2 }
+    const node = BlockNode.parse(makeScenery(input, 'level_test', [0, 0, 0], [0, 0, 0])[0])
+    expect(dimensionsOf(node)).toEqual(input.dimensionsMeters)
+    const edges = new Map<string, number>()
+    for (const face of node.topology.faces) {
+      face.vertexIds.forEach((id, i) => {
+        const key = [id, face.vertexIds[(i + 1) % face.vertexIds.length]!].sort().join(':')
+        edges.set(key, (edges.get(key) ?? 0) + 1)
+      })
+      const normal = getBlockFaceNormal(node.topology, face)!
+      expect(normal.every(Number.isFinite)).toBe(true)
+      if (face.id.endsWith(':top')) expect(normal[1]).toBeCloseTo(1)
+      if (face.id.endsWith(':bottom')) expect(normal[1]).toBeCloseTo(-1)
+    }
+    expect([...edges.values()].every((count) => count === 2)).toBe(true)
+    const top = node.topology.vertices.filter((vertex) => vertex.id.startsWith('part-0:'))
+    expect(top.length).toBeGreaterThan(8)
+    for (const vertex of top)
+      expect(Math.hypot(vertex.position[0], vertex.position[2])).toBeCloseTo(0.6)
+    expect(
+      sceneryProxyParts('round-table', input.dimensionsMeters).map((part) => part.shape),
+    ).toEqual(['cylinder', 'cylinder', 'cylinder'])
+  })
+
+  test('Ghost parts share the formal proxy extents and preserve recognisable openings and steps', () => {
+    for (const kind of ['round-table', 'table', 'chair', 'door-flat'] as const) {
+      const node = create(kind)
+      const parts = sceneryProxyParts(kind, command(kind).dimensionsMeters)
+      for (const [index, part] of parts.entries()) {
+        const vertices = node.topology.vertices.filter((vertex) =>
+          vertex.id.startsWith(`part-${index}:`),
+        )
+        for (const axis of [0, 1, 2] as const) {
+          expect(Math.min(...vertices.map((vertex) => vertex.position[axis]))).toBeCloseTo(
+            part.position[axis] - part.size[axis] / 2,
+          )
+          expect(Math.max(...vertices.map((vertex) => vertex.position[axis]))).toBeCloseTo(
+            part.position[axis] + part.size[axis] / 2,
+          )
+        }
+      }
+      expect(parts.length).toBeGreaterThan(1)
+    }
+    const steps = sceneryProxyParts('stairs', { width: 1.2, height: 0.45, depth: 0.9 }, 3)
+    expect(steps).toHaveLength(3)
+    steps.forEach((part, i) => {
+      expect(part.size[1]).toBeCloseTo(0.15 * (i + 1))
+      expect(part.position[2]).toBeCloseTo(-0.45 + 0.3 * (i + 0.5))
+      expect(part.position[1] - part.size[1] / 2).toBeCloseTo(0)
+    })
+    expect(() =>
+      sceneryProxyParts('stairs', command('stairs').dimensionsMeters, Infinity),
+    ).toThrow()
+    expect(() => sceneryProxyParts('round-table', { width: NaN, height: 1, depth: 1 })).toThrow()
+  })
+
   test('large scenery has usable silhouettes and open spaces', () => {
     expect(occupied(create('table'), [0, 0.5, 0])).toBe(false)
     expect(occupied(create('table'), [0, 1.75, 0])).toBe(true)
@@ -82,15 +143,18 @@ describe('stage scenery adapter', () => {
     expect(occupied(create('chair'), [0, 1.2, 0.35])).toBe(true)
     expect(occupied(create('sofa'), [0, 1.1, -0.2])).toBe(false)
     expect(occupied(create('sofa'), [0, 1.1, 0.35])).toBe(true)
-    expect(occupied(create('stairs'), [0, 1.5, -0.3])).toBe(false)
-    expect(occupied(create('stairs'), [0, 1.5, 0.3])).toBe(true)
     expect(occupied(create('shelf'), [0.2, 0.35, 0])).toBe(false)
   })
 
   test('catalog models retain normalization and use separate requested size scale', () => {
     for (const { kind, asset } of SCENERY_LIBRARY) {
       const before = JSON.stringify(asset)
-      const node = makeScenery(command(kind, asset.id), 'level_test', [2, 0, 3], [0.1, 0.2, 0.3])
+      const node = makeScenery(
+        command(kind, asset.id),
+        'level_test',
+        [2, 0, 3],
+        [0.1, 0.2, 0.3],
+      )[0]!
       expect(node.type).toBe('item')
       if (node.type !== 'item') throw new Error('Expected item')
       expect(node.asset.src).toBe(asset.src)

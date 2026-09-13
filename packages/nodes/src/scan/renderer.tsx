@@ -1,88 +1,117 @@
 'use client'
 
-import { type ScanNode, useRegistry } from '@pascal-app/core'
-import { useAssetUrl, useGLTFKTX2, useViewer } from '@pascal-app/viewer'
-import { Suspense, useMemo, useRef } from 'react'
-import type { Group, Material, Mesh } from 'three'
+import { releaseAssetUrl, type ScanNode, useRegistry } from '@pascal-app/core'
+import { useAssetUrl, useGLTFKTX2, useViewer, ViewerErrorBoundary } from '@pascal-app/viewer'
+import { Html, useGLTF } from '@react-three/drei'
+import { Suspense, useEffect, useMemo, useRef } from 'react'
+import { type Group, type Material, Mesh, Texture } from 'three'
 
+const activeModels = new Map<string, number>()
 export const ScanRenderer = ({ node }: { node: ScanNode }) => {
   const showScans = useViewer((s) => s.showScans)
-  const visible = showScans && node.visible
   const ref = useRef<Group>(null!)
   useRegistry(node.id, 'scan', ref)
-
   return (
     <group
-      position={node.position}
       ref={ref}
+      position={node.position}
       rotation={node.rotation}
-      scale={[node.scale, node.scale, node.scale]}
-      visible={visible}
+      scale={node.scale}
+      visible={showScans && node.visible}
     >
-      {visible && (node.layers?.model ?? true) && node.url && (
-        <ScanAsset opacity={node.opacity} url={node.url} />
+      {showScans && node.visible && (node.layers?.model ?? true) && node.url && (
+        <ViewerErrorBoundary
+          scope="scan-reference"
+          resetKey={node.url}
+          fallback={
+            <Html center>
+              <span role="alert">扫描显示失败，场景仍可编辑。请隐藏或重新导入扫描。</span>
+            </Html>
+          }
+        >
+          <ScanAsset opacity={node.opacity} url={node.url} />
+        </ViewerErrorBoundary>
       )}
     </group>
   )
 }
-
-const ScanAsset = ({ url, opacity }: { url: string; opacity: number }) => {
-  const resolvedUrl = useAssetUrl(url)
-
-  if (!resolvedUrl) return null
-
-  return (
-    <Suspense>
-      <ScanModel opacity={opacity} url={resolvedUrl} />
+function ScanAsset({ url, opacity }: { url: string; opacity: number }) {
+  const resolved = useAssetUrl(url)
+  return resolved ? (
+    <Suspense fallback={null}>
+      <ScanModel url={resolved} sourceUrl={url} opacity={opacity} />
     </Suspense>
-  )
+  ) : null
 }
-
-const ScanModel = ({ url, opacity }: { url: string; opacity: number }) => {
-  const gltf = useGLTFKTX2(url) as any
-  const scene = gltf.scene
-
-  useMemo(() => {
-    const normalizedOpacity = opacity / 100
-    const isTransparent = normalizedOpacity < 1
-
-    const updateMaterial = (material: Material) => {
-      if (isTransparent) {
-        material.transparent = true
-        material.opacity = normalizedOpacity
-        material.depthWrite = false
-      } else {
-        material.transparent = false
-        material.opacity = 1
-        material.depthWrite = true
+function ScanModel({
+  url,
+  sourceUrl,
+  opacity,
+}: {
+  url: string
+  sourceUrl: string
+  opacity: number
+}) {
+  const gltf = useGLTFKTX2(url)
+  const model = useMemo(() => {
+    const scene = gltf.scene.clone(true)
+    const materials: Material[] = []
+    scene.traverse((child) => {
+      if (!(child instanceof Mesh)) return
+      const clone = (material: Material) => {
+        const copy = material.clone()
+        materials.push(copy)
+        return copy
       }
+      child.material = Array.isArray(child.material)
+        ? child.material.map(clone)
+        : clone(child.material)
+      child.raycast = () => {}
+    })
+    return { scene, materials, users: 0 }
+  }, [gltf.scene])
+  useEffect(() => {
+    for (const material of model.materials) {
+      material.opacity = opacity / 100
+      material.transparent = opacity < 100
+      material.depthWrite = opacity === 100
       material.needsUpdate = true
     }
-
-    scene.traverse((child: any) => {
-      if ((child as Mesh).isMesh) {
-        const mesh = child as Mesh
-
-        // Disable raycasting
-        mesh.raycast = () => {}
-
-        // Exclude from bounding box calculations
-        mesh.geometry.boundingBox = null
-        mesh.geometry.boundingSphere = null
-        mesh.frustumCulled = false
-
-        if (Array.isArray(mesh.material)) {
-          mesh.material.forEach((material) => {
-            updateMaterial(material)
-          })
-        } else {
-          updateMaterial(mesh.material)
+  }, [model, opacity])
+  useEffect(() => {
+    model.users++
+    activeModels.set(url, (activeModels.get(url) ?? 0) + 1)
+    return () => {
+      model.users--
+      activeModels.set(url, (activeModels.get(url) ?? 1) - 1)
+      // Defer final disposal one task so StrictMode's cleanup/setup pair retains live resources.
+      setTimeout(() => {
+        if (!model.users) for (const material of model.materials) material.dispose()
+        if (!activeModels.has(url) || activeModels.get(url)) return
+        activeModels.delete(url)
+        const materials = new Set<Material>(),
+          textures = new Set<Texture>()
+        gltf.scene.traverse((child) => {
+          if (!(child instanceof Mesh)) return
+          child.geometry.dispose()
+          for (const material of Array.isArray(child.material) ? child.material : [child.material])
+            materials.add(material)
+        })
+        for (const material of materials) {
+          for (const value of Object.values(material))
+            if (value instanceof Texture) textures.add(value)
+          material.dispose()
         }
-      }
-    })
-  }, [scene, opacity])
-
-  return <primitive object={scene} />
+        for (const texture of textures) {
+          texture.dispose()
+          if (typeof ImageBitmap !== 'undefined' && texture.image instanceof ImageBitmap)
+            texture.image.close()
+        }
+        useGLTF.clear(url)
+        releaseAssetUrl(sourceUrl)
+      }, 0)
+    }
+  }, [gltf.scene, model, sourceUrl, url])
+  return <primitive object={model.scene} dispose={null} />
 }
-
 export default ScanRenderer

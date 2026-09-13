@@ -223,7 +223,7 @@ function LevelRow({
               <button
                 className="mr-0.5 shrink-0 whitespace-nowrap rounded px-1 py-0.5 font-mono text-[10px] text-muted-foreground/50 tabular-nums transition-colors hover:bg-white/5 hover:text-foreground"
                 onClick={(e) => e.stopPropagation()}
-                title="楼层高度"
+                title="表演层高度"
                 type="button"
               >
                 {storeyHeightLabel}
@@ -237,7 +237,7 @@ function LevelRow({
               sideOffset={8}
             >
               <SliderControl
-                label="楼层高度"
+                label="表演层高度"
                 max={20}
                 min={1}
                 onChange={(v) => updateNode(level.id, { height: v })}
@@ -280,7 +280,7 @@ function LevelRow({
                 type="button"
               >
                 <Copy className="h-3 w-3" />
-                复制楼层
+                复制表演层
               </button>
               <button
                 className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-muted-foreground text-xs transition-colors hover:bg-white/10 hover:text-foreground"
@@ -313,11 +313,11 @@ function LevelRow({
                   e.stopPropagation()
                   onRequestDelete()
                 }}
-                title={canDeleteLevel ? '删除楼层' : '不能删除地面层'}
+                title={canDeleteLevel ? '删除表演层' : '不能删除地面层'}
                 type="button"
               >
                 <Trash2 className="h-3 w-3" />
-                删除楼层
+                删除表演层
               </button>
             </PopoverContent>
           </Popover>
@@ -581,7 +581,7 @@ export function FloatingLevelSelector() {
               // read only from outside: nothing here depends on it.
               data-guide-target="level-add"
               onClick={handleAddAbove}
-              title="在上方添加楼层"
+              title="在上方添加表演层"
               type="button"
             >
               <Plus className="h-2.5 w-2.5" />
@@ -593,7 +593,7 @@ export function FloatingLevelSelector() {
             <button
               className={cn(addButtonClass, 'bottom-0 translate-y-1/2')}
               onClick={handleAddBelow}
-              title="在下方添加楼层"
+              title="在下方添加表演层"
               type="button"
             >
               <Plus className="h-2.5 w-2.5" />
@@ -645,7 +645,7 @@ export function FloatingLevelSelector() {
                         <button
                           className={cn(addButtonClass, 'bottom-0 translate-y-1/2')}
                           onClick={() => handleInsertBetween(sortedIndex - 1)}
-                          title="在此插入楼层"
+                          title="在此插入表演层"
                           type="button"
                         >
                           <Plus className="h-2.5 w-2.5" />
@@ -664,10 +664,10 @@ export function FloatingLevelSelector() {
       <Dialog onOpenChange={(open) => !open && setDeletingLevel(null)} open={!!deletingLevel}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle>删除楼层</DialogTitle>
+            <DialogTitle>删除表演层</DialogTitle>
             <DialogDescription>
               确定删除 <strong>{deletingLevel ? getLevelDisplayName(deletingLevel) : ''}</strong>
-              ？此楼层的全部墙体、楼板和物体都将移除。
+              ？此表演层的全部墙体、舞台平台和物体都将移除。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

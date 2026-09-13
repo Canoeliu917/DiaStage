@@ -4,7 +4,7 @@ import { formatSelectionBreakdown } from './selection-breakdown'
 describe('formatSelectionBreakdown', () => {
   test('counts per type in first-appearance order with Chinese labels', () => {
     expect(formatSelectionBreakdown(['slab', 'stair', 'fence', 'fence'])).toBe(
-      '1 个舞台地面 · 1 个台阶 · 2 个栏杆',
+      '1 个舞台地面 · 1 个舞台台阶 · 2 个栏杆',
     )
   })
 

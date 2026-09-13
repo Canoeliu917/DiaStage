@@ -34,7 +34,7 @@ export const THUMBNAIL_HEIGHT = 1080
  * Captures are re-renderable artifacts, not user originals, so they encode as
  * webp: a 1920×1080 hero shot lands roughly an order of magnitude under PNG,
  * which is what listings and the catalog actually ship over the wire. Alpha
- * survives, so transparent item/preset captures keep working.
+ * survives for transparent exports.
  */
 export const SNAPSHOT_MIME = 'image/webp'
 export const SNAPSHOT_QUALITY = 0.9

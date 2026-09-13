@@ -3,11 +3,6 @@ import { z } from 'zod'
 import { nodeRegistry, registerNode } from '../registry'
 import type { AnyNodeDefinition } from '../registry/types'
 import type { AnyNode } from '../schema/types'
-import {
-  getElevatorShaftDepth,
-  getElevatorShaftWallThickness,
-  getElevatorShaftWidth,
-} from '../systems/elevator/elevator-geometry'
 import { stairFootprintAABB } from '../systems/stair/stair-footprint'
 import {
   collectAlignmentAnchors,
@@ -41,28 +36,23 @@ function floorPlacedDef(kind: string, applies?: (n: AnyNode) => boolean): AnyNod
   } as AnyNodeDefinition
 }
 
-// Mirrors the real elevator/stair definitions, which expose their plan
-// footprint via the `alignmentFootprint` capability rather than a hardcoded
-// branch in the anchor bridge. The glue (shaft-outset box / stair AABB) is
-// reproduced here from the same core helpers production uses.
-function elevatorDef(): AnyNodeDefinition {
+// Minimal building-scoped kind that exposes the generic alignment-footprint
+// capability without pulling a product-specific system into this test.
+function alignmentBoxDef(): AnyNodeDefinition {
   return {
-    kind: 'elevator',
+    kind: 'alignment-box',
     schemaVersion: 1,
-    schema: z.object({ type: z.literal('elevator') }) as any,
+    schema: z.object({ type: z.literal('alignment-box') }) as any,
     category: 'structure',
     defaults: () => ({}) as any,
     capabilities: {
-      alignmentFootprint: (n: AnyNode) => {
-        const e = n as any
-        const wall = getElevatorShaftWallThickness(e)
-        return {
-          shape: 'box',
-          dimensions: [getElevatorShaftWidth(e) + wall * 2, 1, getElevatorShaftDepth(e) + wall * 2],
-          rotation: [0, e.rotation ?? 0, 0],
-        }
-      },
+      alignmentFootprint: (n: AnyNode) => ({
+        shape: 'box',
+        dimensions: (n as { dimensions?: [number, number, number] }).dimensions ?? [1, 1, 1],
+        rotation: (n as { rotation?: [number, number, number] }).rotation ?? [0, 0, 0],
+      }),
     },
+    floorplanScope: 'building',
     renderer: { kind: 'parametric', module: async () => ({ default: () => null }) },
   } as AnyNodeDefinition
 }
@@ -129,16 +119,18 @@ describe('footprintAABB', () => {
     expect(footprintAABB(node({ id: 'w1', type: 'wall', position: [0, 0, 0] }))).toBeNull()
   })
 
-  test('derives an elevator footprint from its OUTER SHAFT, not the cab', () => {
-    // Aligns to the visible shaft outline: cab 2×4 + 0.09 m wall each side →
-    // 2.18 × 4.18, centred at (10, 20). The cab corners alone would sit ~9 cm
-    // inside the drawn edge (past the 8 cm snap), so a guide never appeared.
-    // The footprint comes from the elevator's `alignmentFootprint` (box) cap.
-    registerNode(elevatorDef())
+  test('reads a declared alignment box footprint', () => {
+    registerNode(alignmentBoxDef())
     const aabb = footprintAABB(
-      node({ id: 'e1', type: 'elevator', position: [10, 0, 20], width: 2, depth: 4, rotation: 0 }),
+      node({
+        id: 'box1',
+        type: 'alignment-box',
+        position: [10, 0, 20],
+        dimensions: [2, 1, 4],
+        rotation: [0, 0, 0],
+      }),
     )
-    expect(aabb).toEqual({ minX: 8.91, minZ: 17.91, maxX: 11.09, maxZ: 22.09 })
+    expect(aabb).toEqual({ minX: 9, minZ: 18, maxX: 11, maxZ: 22 })
   })
 
   test('returns null when the kind predicate excludes the node', () => {
@@ -208,7 +200,6 @@ describe('movingAlignmentAnchors', () => {
         type: 'stair',
         position: [0, 0, 0],
         rotation: 0,
-        stairType: 'straight',
         width: 1,
         children: ['seg'],
       }),
@@ -219,7 +210,6 @@ describe('movingAlignmentAnchors', () => {
         width: 1,
         length: 3,
         height: 2.5,
-        attachmentSide: 'front',
       }),
     }
 
@@ -237,7 +227,6 @@ describe('movingAlignmentAnchors', () => {
         type: 'stair',
         position: [0, 0, 0],
         rotation: 0,
-        stairType: 'straight',
         width: 1,
         children: ['seg'],
       }),
@@ -248,7 +237,6 @@ describe('movingAlignmentAnchors', () => {
         width: 1,
         length: 3,
         height: 2.5,
-        attachmentSide: 'front',
       }),
     }
 
@@ -337,7 +325,7 @@ describe('collectAlignmentAnchors', () => {
 
   test('levelId filter keeps only nodes resolving to that level (incl. nested)', () => {
     registerNode(floorPlacedDef('box'))
-    registerNode(elevatorDef())
+    registerNode(alignmentBoxDef())
     const nodes = {
       b: node({ id: 'b', type: 'building' }),
       L1: node({ id: 'L1', type: 'level', parentId: 'b' }),
@@ -349,19 +337,18 @@ describe('collectAlignmentAnchors', () => {
       otherFloor: node({ id: 'otherFloor', type: 'box', parentId: 'L2', position: [5, 0, 5] }),
       // Building-scoped (parented to the building, no level ancestor) — spans
       // every floor, so it stays in the pool regardless of the active level.
-      elevator: node({
-        id: 'elevator',
-        type: 'elevator',
+      buildingScoped: node({
+        id: 'buildingScoped',
+        type: 'alignment-box',
         parentId: 'b',
         position: [9, 0, 9],
-        width: 1.6,
-        depth: 1.6,
+        dimensions: [1.6, 1, 1.6],
       }),
     }
     const ids = collectAlignmentAnchors(nodes, 'moving', 'L1').map((a) => a.nodeId)
     expect(ids.filter((id) => id === 'sameFloor')).toHaveLength(4)
     expect(ids.filter((id) => id === 'nested')).toHaveLength(4)
-    expect(ids.filter((id) => id === 'elevator')).toHaveLength(4)
+    expect(ids.filter((id) => id === 'buildingScoped')).toHaveLength(4)
     expect(ids).not.toContain('otherFloor')
   })
 
@@ -373,7 +360,6 @@ describe('collectAlignmentAnchors', () => {
         type: 'stair',
         position: [0, 0, 0],
         rotation: 0,
-        stairType: 'straight',
         width: 1,
         children: ['seg'],
       }),
@@ -385,7 +371,6 @@ describe('collectAlignmentAnchors', () => {
         width: 1,
         length: 3,
         height: 2.5,
-        attachmentSide: 'front',
       }),
     }
     const anchors = collectAlignmentAnchors(nodes, '').filter((a) => a.nodeId === 'st')
@@ -393,57 +378,5 @@ describe('collectAlignmentAnchors', () => {
     expect(anchors.every((a) => a.kind === 'corner')).toBe(true)
     expect(new Set(anchors.map((a) => a.x))).toEqual(new Set([-0.5, 0.5]))
     expect(new Set(anchors.map((a) => a.z))).toEqual(new Set([0, 3]))
-  })
-
-  test('curved stair contributes its sector bounding-box corners', () => {
-    registerNode(stairDef())
-    const nodes = {
-      cs: node({
-        id: 'cs',
-        type: 'stair',
-        position: [0, 0, 0],
-        rotation: 0,
-        stairType: 'curved',
-        width: 1,
-        innerRadius: 1,
-        sweepAngle: Math.PI / 2,
-      }),
-    }
-    const anchors = collectAlignmentAnchors(nodes, '').filter((a) => a.nodeId === 'cs')
-    expect(anchors).toHaveLength(4)
-    // outerRadius = inner(1) + width(1) = 2, sweep π/2 centred on +X. Outer rim
-    // reaches X=2 at the bisector; min X is the inner rim's ±π/4 ends (cos45·1);
-    // Z spans ±(outer·sin45).
-    const xs = anchors.map((a) => a.x)
-    const zs = anchors.map((a) => a.z)
-    expect(Math.max(...xs)).toBeCloseTo(2, 5)
-    expect(Math.min(...xs)).toBeCloseTo(Math.SQRT1_2, 5)
-    expect(Math.max(...zs)).toBeCloseTo(Math.SQRT2, 5)
-    expect(Math.min(...zs)).toBeCloseTo(-Math.SQRT2, 5)
-  })
-
-  test('spiral stair contributes a full-circle bounding box', () => {
-    registerNode(stairDef())
-    const nodes = {
-      sp: node({
-        id: 'sp',
-        type: 'stair',
-        position: [5, 0, 5],
-        rotation: 0,
-        stairType: 'spiral',
-        width: 1,
-        innerRadius: 0.5,
-        sweepAngle: Math.PI * 2,
-      }),
-    }
-    const anchors = collectAlignmentAnchors(nodes, '').filter((a) => a.nodeId === 'sp')
-    expect(anchors).toHaveLength(4)
-    // outerRadius = inner(0.5) + width(1) = 1.5, a full revolution about (5, 5).
-    const xs = anchors.map((a) => a.x)
-    const zs = anchors.map((a) => a.z)
-    expect(Math.max(...xs)).toBeCloseTo(6.5, 2)
-    expect(Math.min(...xs)).toBeCloseTo(3.5, 2)
-    expect(Math.max(...zs)).toBeCloseTo(6.5, 2)
-    expect(Math.min(...zs)).toBeCloseTo(3.5, 2)
   })
 })

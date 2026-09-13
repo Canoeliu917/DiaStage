@@ -9,7 +9,7 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { useViewer } from '@pascal-app/viewer'
-import { Check, ChevronDown, Eye, EyeOff, Layers2, Plus, Trash2, Waypoints } from 'lucide-react'
+import { Check, ChevronDown, Eye, EyeOff, Layers2, Plus, Trash2 } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { getLevelDisplayName } from '@pascal-app/core'
@@ -262,7 +262,7 @@ function GuidesControl() {
             <div className="min-w-0 flex-1">
               <p className="font-medium text-foreground text-sm">参考图</p>
               {hasGuides && (
-                <p className="text-muted-foreground text-xs">当前楼层有 {guides.length} 张参考图</p>
+                <p className="text-muted-foreground text-xs">当前表演层有 {guides.length} 张参考图</p>
               )}
             </div>
             <UploadButton onError={setUploadError} />
@@ -435,7 +435,7 @@ function ScansControl() {
             <div className="min-w-0 flex-1">
               <p className="font-medium text-foreground text-sm">扫描</p>
               {hasScans && (
-                <p className="text-muted-foreground text-xs">当前楼层有 {scans.length} 个扫描</p>
+                <p className="text-muted-foreground text-xs">当前表演层有 {scans.length} 个扫描</p>
               )}
             </div>
             <UploadButton onError={setUploadError} />
@@ -567,7 +567,7 @@ function ReferenceListSection({
           {hasItems && (
             <p className="text-muted-foreground text-xs">
               {nodes.length} {noun}
-              位于当前楼层
+              位于当前表演层
             </p>
           )}
         </div>
@@ -784,7 +784,7 @@ function ReferenceFloorControl() {
           )}
           disabled={!hasLowerLevels}
           label={
-            selectedLevelName && showReferenceFloor ? `参考楼层：${selectedLevelName}` : '参考楼层'
+            selectedLevelName && showReferenceFloor ? `参考表演层：${selectedLevelName}` : '参考表演层'
           }
           onClick={() => {
             if (hasLowerLevels) toggleReferenceFloor()
@@ -803,7 +803,7 @@ function ReferenceFloorControl() {
         <PopoverTrigger asChild>
           <button
             aria-expanded={isOpen}
-            aria-label="参考楼层设置"
+            aria-label="参考表演层设置"
             className={cn(
               'flex h-11 w-6 items-center justify-center rounded-r-lg transition-colors',
               showReferenceFloor && selectedLevel
@@ -834,13 +834,13 @@ function ReferenceFloorControl() {
               <Layers2 className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-medium text-foreground text-sm">参考楼层</p>
+              <p className="font-medium text-foreground text-sm">参考表演层</p>
               {selectedLevelName && (
                 <p className="truncate text-muted-foreground text-xs">{selectedLevelName}</p>
               )}
             </div>
             <button
-              aria-label={showReferenceFloor ? '隐藏参考楼层' : '显示参考楼层'}
+              aria-label={showReferenceFloor ? '隐藏参考表演层' : '显示参考表演层'}
               className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/40 text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
               disabled={!hasLowerLevels}
               onClick={toggleReferenceFloor}
@@ -902,35 +902,12 @@ function ReferenceFloorControl() {
             </>
           ) : (
             <div className="rounded-xl border border-border/45 border-dashed bg-background/60 px-3 py-4 text-muted-foreground text-sm">
-              没有更低楼层。
+              没有更低表演层。
             </div>
           )}
         </div>
       </PopoverContent>
     </Popover>
-  )
-}
-
-// ── Riser diagram control ────────────────────────────────────────────────────
-
-function RiserControl() {
-  const isRiserOpen = useEditor((state) => state.isRiserOpen)
-  const toggleRiserOpen = useEditor((state) => state.toggleRiserOpen)
-
-  return (
-    <ActionButton
-      className={cn(
-        isRiserOpen
-          ? 'bg-white/15'
-          : 'opacity-60 grayscale hover:bg-white/5 hover:opacity-100 hover:grayscale-0',
-      )}
-      label="立管图"
-      onClick={toggleRiserOpen}
-      size="icon"
-      variant="ghost"
-    >
-      <Waypoints className="h-4 w-4" />
-    </ActionButton>
   )
 }
 
@@ -950,7 +927,6 @@ export function ViewToggles() {
       <ScansControl />
       <GuidesControl />
       <ReferenceFloorControl />
-      <RiserControl />
     </div>
   )
 }

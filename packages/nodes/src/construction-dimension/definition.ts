@@ -55,7 +55,6 @@ export const constructionDimensionDefinition: NodeDefinition<typeof Construction
     selectable: { hitVolume: 'bbox' },
     deletable: true,
     duplicable: true,
-    presettable: false,
   },
 
   dirtyTracking: false,
@@ -78,7 +77,7 @@ export const constructionDimensionDefinition: NodeDefinition<typeof Construction
   ],
 
   presentation: {
-    label: '建筑尺寸标注',
+    label: '舞台尺寸标注',
     description: '关联式线性、曲线、圆形、角度或坐标平面尺寸标注。',
     icon: { kind: 'iconify', name: 'lucide:ruler-dimension-line' },
     hidden: true,
