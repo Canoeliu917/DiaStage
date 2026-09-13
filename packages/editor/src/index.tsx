@@ -245,7 +245,6 @@ export { ToolOptionsPanel } from './components/ui/controls/tool-options-panel'
 export { FloatingLevelSelector } from './components/ui/floating-level-selector'
 export { CATALOG_ITEMS } from './components/ui/item-catalog/catalog-items'
 export { THEATRE_CATALOG_ITEMS } from './components/ui/item-catalog/theatre-catalog'
-export { getTheatreNodeLabel, getTheatreNodeName, isTheatreEditableType } from './lib/theatre-presentation'
 // Item collections UI — used by the kind-owned ItemPanel in nodes/.
 export { CollectionsPopover } from './components/ui/panels/collections/collections-popover'
 // Phase 5 Stage E — kinds with bespoke editors (slab holes list,
@@ -589,6 +588,11 @@ export {
   resolveFlattenTarget,
   sculptFieldForSite,
 } from './lib/terrain-sculpt'
+export {
+  getTheatreNodeLabel,
+  getTheatreNodeName,
+  isTheatreEditableType,
+} from './lib/theatre-presentation'
 // `cn` (twMerge + clsx) — used by kind-owned panels in `@pascal-app/
 // nodes` so they don't need their own copy / their own tailwind-merge
 // dependency.

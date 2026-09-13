@@ -1,4 +1,5 @@
 import { Keyboard } from 'lucide-react'
+import { Ue5ControlsGuide } from './ue5-controls-guide'
 import { Button } from './../../../../../components/ui/primitives/button'
 import {
   Dialog,
@@ -192,8 +193,13 @@ const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
       },
       {
         keys: ['Middle click'],
-        action: '平移摄像机',
-        note: '按住鼠标中键拖动，或按住空格键并用鼠标左键拖动。',
+        action: '环绕观察舞台',
+        note: '在三维视图中按住滚轮拖动，围绕当前观察中心旋转视角，道具本身不动。',
+      },
+      {
+        keys: ['Shift', 'Middle click'],
+        action: '平移观察视角',
+        note: '按住 Shift 和滚轮拖动；Alt+中键也可平移。滚动滚轮拉近或拉远。',
       },
       {
         keys: ['Right click'],
@@ -223,42 +229,51 @@ export function KeyboardShortcutsDialog() {
       <DialogTrigger asChild>
         <Button className="w-full justify-start gap-2" variant="outline">
           <Keyboard className="size-4" />
-          键盘快捷键
+          用户指南与快捷键
         </Button>
       </DialogTrigger>
       <DialogContent className="flex max-h-[85vh] flex-col overflow-hidden p-0 sm:max-w-3xl">
         <DialogHeader className="shrink-0 border-b px-6 py-4">
-          <DialogTitle>键盘快捷键</DialogTitle>
+          <DialogTitle>用户指南与快捷键</DialogTitle>
           <DialogDescription>
-            快捷键随操作场景变化。默认启用引导约束，操作时按住 Shift 可自由建模。
+            以 UE5 为主的操作指南，另提供中键环绕。完整 UE5 键位适配尚未完成。
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 space-y-5 overflow-y-auto px-6 py-4">
-          {SHORTCUT_CATEGORIES.map((category) => (
-            <section className="space-y-2" key={category.title}>
-              <h3 className="font-medium text-sm">{category.title}</h3>
-              <div className="overflow-hidden rounded-md border border-border/80">
-                {category.shortcuts.map((shortcut, index) => (
-                  <div
-                    className="grid grid-cols-[minmax(130px,220px)_1fr] gap-3 px-3 py-2"
-                    key={`${category.title}-${shortcut.action}`}
-                  >
-                    <ShortcutKeys keys={shortcut.keys} />
-                    <div>
-                      <p className="text-sm">{shortcut.action}</p>
-                      {shortcut.note ? (
-                        <p className="text-muted-foreground text-xs">{shortcut.note}</p>
+          <Ue5ControlsGuide />
+          <details className="space-y-4">
+            <summary className="cursor-pointer font-medium text-sm">
+              当前版本快捷键（UE5 适配前）
+            </summary>
+            <p className="text-muted-foreground text-xs">
+              以下记录当前行为；完成 UE5 适配后将统一更新。
+            </p>
+            {SHORTCUT_CATEGORIES.map((category) => (
+              <section className="space-y-2" key={category.title}>
+                <h3 className="font-medium text-sm">{category.title}</h3>
+                <div className="overflow-hidden rounded-md border border-border/80">
+                  {category.shortcuts.map((shortcut, index) => (
+                    <div
+                      className="grid grid-cols-[minmax(130px,220px)_1fr] gap-3 px-3 py-2"
+                      key={`${category.title}-${shortcut.action}`}
+                    >
+                      <ShortcutKeys keys={shortcut.keys} />
+                      <div>
+                        <p className="text-sm">{shortcut.action}</p>
+                        {shortcut.note ? (
+                          <p className="text-muted-foreground text-xs">{shortcut.note}</p>
+                        ) : null}
+                      </div>
+                      {index < category.shortcuts.length - 1 ? (
+                        <div className="col-span-2 border-border/60 border-b" />
                       ) : null}
                     </div>
-                    {index < category.shortcuts.length - 1 ? (
-                      <div className="col-span-2 border-border/60 border-b" />
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+                  ))}
+                </div>
+              </section>
+            ))}
+          </details>
         </div>
       </DialogContent>
     </Dialog>

@@ -16,7 +16,12 @@ import { installBundledRuntime, readActiveRuntime } from './runtime.js'
 const roots: string[] = []
 
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })))
+  // Windows may release a terminated child's file handles after its PID disappears.
+  await Promise.all(
+    roots
+      .splice(0)
+      .map((root) => rm(root, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })),
+  )
 })
 
 describe('managed runtime', () => {
@@ -213,7 +218,14 @@ describe('managed runtime', () => {
     )
 
     await expect(stopEditor(paths)).rejects.toMatchObject({ code: 'state_conflict' })
-    expect(await stopEditor(paths, { force: true })).toBe(true)
+    if (process.platform === 'win32') {
+      // Without a command-identity verifier, Windows must refuse an unverified PID.
+      await expect(stopEditor(paths, { force: true })).rejects.toMatchObject({
+        code: 'state_conflict',
+      })
+      await writeFile(paths.state, JSON.stringify(started.state))
+      expect(await stopEditor(paths)).toBe(true)
+    } else expect(await stopEditor(paths, { force: true })).toBe(true)
   })
 
   test('force-stops the recorded editor when its runtime manifest is damaged', async () => {
@@ -227,7 +239,13 @@ describe('managed runtime', () => {
       `${JSON.stringify({ ...started.state, instanceId: 'no-longer-healthy' }, null, 2)}\n`,
     )
 
-    expect(await stopEditor(paths, { force: true })).toBe(true)
+    if (process.platform === 'win32') {
+      await expect(stopEditor(paths, { force: true })).rejects.toMatchObject({
+        code: 'state_conflict',
+      })
+      await writeFile(paths.state, JSON.stringify(started.state))
+      expect(await stopEditor(paths)).toBe(true)
+    } else expect(await stopEditor(paths, { force: true })).toBe(true)
   })
 
   test('restores the previous running runtime when a candidate fails health', async () => {

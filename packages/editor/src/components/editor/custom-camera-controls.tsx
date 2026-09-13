@@ -695,7 +695,7 @@ export const CustomCameraControls = () => {
 
     return {
       left: isPreviewMode ? CameraControlsImpl.ACTION.SCREEN_PAN : CameraControlsImpl.ACTION.NONE,
-      middle: CameraControlsImpl.ACTION.SCREEN_PAN,
+      middle: CameraControlsImpl.ACTION.ROTATE,
       right: CameraControlsImpl.ACTION.ROTATE,
       wheel: wheelAction,
     }
@@ -755,10 +755,8 @@ export const CustomCameraControls = () => {
     if (isFirstPersonMode) return
 
     const keyState = {
-      shiftRight: false,
-      shiftLeft: false,
-      controlRight: false,
-      controlLeft: false,
+      shift: false,
+      alt: false,
       space: false,
     }
     let ownsNavigationCursor = false
@@ -811,8 +809,8 @@ export const CustomCameraControls = () => {
     const updateConfig = () => {
       if (!controls.current) return
 
-      const shift = keyState.shiftRight || keyState.shiftLeft
-      const control = keyState.controlRight || keyState.controlLeft
+      const shift = keyState.shift
+      const alt = keyState.alt
       const space = keyState.space
 
       const wheelAction =
@@ -820,7 +818,8 @@ export const CustomCameraControls = () => {
           ? CameraControlsImpl.ACTION.ZOOM
           : CameraControlsImpl.ACTION.DOLLY
       controls.current.mouseButtons.wheel = wheelAction
-      controls.current.mouseButtons.middle = CameraControlsImpl.ACTION.SCREEN_PAN
+      controls.current.mouseButtons.middle =
+        shift || alt ? CameraControlsImpl.ACTION.TRUCK : CameraControlsImpl.ACTION.ROTATE
       controls.current.mouseButtons.right = CameraControlsImpl.ACTION.ROTATE
       if (isPreviewMode) {
         // In preview mode, left-click is always pan (viewer-style)
@@ -833,6 +832,9 @@ export const CustomCameraControls = () => {
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
+      keyState.shift = event.shiftKey
+      keyState.alt = event.altKey
+      updateConfig()
       if (isKeyboardPanKey(event.code)) {
         if (
           !(event.metaKey || event.ctrlKey || event.altKey) &&
@@ -852,22 +854,13 @@ export const CustomCameraControls = () => {
         keyState.space = true
         updateNavigationCursor()
       }
-      if (event.code === 'ShiftRight') {
-        keyState.shiftRight = true
-      }
-      if (event.code === 'ShiftLeft') {
-        keyState.shiftLeft = true
-      }
-      if (event.code === 'ControlRight') {
-        keyState.controlRight = true
-      }
-      if (event.code === 'ControlLeft') {
-        keyState.controlLeft = true
-      }
       updateConfig()
     }
 
     const onKeyUp = (event: KeyboardEvent) => {
+      keyState.shift = event.shiftKey
+      keyState.alt = event.altKey
+      updateConfig()
       if (isKeyboardPanKey(event.code)) {
         const changed = setKeyboardPanKey(keyboardPanKeys.current, event.code, false)
         if (changed) {
@@ -888,18 +881,6 @@ export const CustomCameraControls = () => {
         }
         updateNavigationCursor()
       }
-      if (event.code === 'ShiftRight') {
-        keyState.shiftRight = false
-      }
-      if (event.code === 'ShiftLeft') {
-        keyState.shiftLeft = false
-      }
-      if (event.code === 'ControlRight') {
-        keyState.controlRight = false
-      }
-      if (event.code === 'ControlLeft') {
-        keyState.controlLeft = false
-      }
       updateConfig()
     }
 
@@ -907,6 +888,12 @@ export const CustomCameraControls = () => {
       if (!(event.target instanceof Node) || !gl.domElement.contains(event.target)) return
       if (event.button !== 1 && !(event.button === 0 && keyState.space)) return
 
+      // Capture the event's modifiers even when their keydown happened outside this window.
+      if (event.button === 1) {
+        keyState.shift = event.shiftKey
+        keyState.alt = event.altKey
+        updateConfig()
+      }
       panPointerId = event.pointerId
       panPointerButton = event.button
       updateNavigationCursor()
@@ -915,6 +902,10 @@ export const CustomCameraControls = () => {
     const onWheel = () => {
       beginLocalCameraInteraction()
       cameraDraggingLifecycle.scheduleEnd()
+    }
+
+    const onMouseDown = (event: MouseEvent) => {
+      if (event.button === 1) event.preventDefault()
     }
 
     const onPointerUp = (event: PointerEvent) => {
@@ -928,7 +919,10 @@ export const CustomCameraControls = () => {
     }
 
     const onBlur = () => {
+      controls.current?.cancel()
       keyState.space = false
+      keyState.shift = false
+      keyState.alt = false
       clearKeyboardPanKeys()
       panPointerId = null
       panPointerButton = null
@@ -944,6 +938,7 @@ export const CustomCameraControls = () => {
     window.addEventListener('pointercancel', onPointerUp, true)
     window.addEventListener('blur', onBlur)
     gl.domElement.addEventListener('wheel', onWheel, { capture: true, passive: true })
+    gl.domElement.addEventListener('mousedown', onMouseDown)
     updateConfig()
 
     return () => {
@@ -954,6 +949,7 @@ export const CustomCameraControls = () => {
       window.removeEventListener('pointercancel', onPointerUp, true)
       window.removeEventListener('blur', onBlur)
       gl.domElement.removeEventListener('wheel', onWheel, true)
+      gl.domElement.removeEventListener('mousedown', onMouseDown)
       clearKeyboardPanKeys()
       clearNavigationCursor()
       cameraDraggingLifecycle.end()

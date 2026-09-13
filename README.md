@@ -15,6 +15,10 @@
 
 **观察与记录**属于排演。人物位置和路线由模拟排演数据定义。
 
+## 用户指南
+
+[用户指南：UE5 主布局与中键环绕](USER_GUIDE.md)以 UE5.6 关卡编辑器为主规范，覆盖观察、变换、支点、吸附和编组，并提供中键环绕、Shift/Alt+中键平移的三维观察扩展。编辑器设置中的“用户指南与快捷键”提供操作说明与方块练习。完整 UE5 键位仍待适配，差异及 [Codex 实施说明](docs/UE5_CONTROLS_IMPLEMENTATION.md)均已列出。
+
 ## 本地启动
 
 需要 Node.js 22.13 或更新版本。Windows 可在仓库根目录运行：
@@ -99,3 +103,4 @@ bun x turbo run build --filter=editor --env-mode=loose
 DiaStage 自有部分见 [DIASTAGE_COPYRIGHT.md](DIASTAGE_COPYRIGHT.md)，其他代码与字体来源见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。产品身份调整不改变上游权利声明。
 
 重构前的五份文档、原文中的上游贡献者与技术记录完整保存在 [历史目录](docs/history/2026-09-10-before-theatre/)。
+

@@ -46,7 +46,9 @@ function activateBuildTool(kind: string): void {
   if (
     !isFloorplanToolAvailableInMode(extension?.availableModes, useFloorplanMode.getState().mode)
   ) {
-    useFloorplanMode.getState().showExpertModeNotice(BASE_BUILD_TYPES.find((type) => type.kind === kind)?.label ?? '布景')
+    useFloorplanMode
+      .getState()
+      .showExpertModeNotice(BASE_BUILD_TYPES.find((type) => type.kind === kind)?.label ?? '布景')
     return
   }
   const preferredView = extension?.preferredView
@@ -72,7 +74,14 @@ function BuildPresetPanel({ kind }: { kind: string | null }) {
     return BUILD_PRESETS.filter((preset) => {
       if (!BASE_BUILD_TYPES.some((type) => type.kind === preset.rootKind)) return false
       if (/浴|车库|商用/.test(buildPresetLabel(preset))) return false
-      if (preset.nodeData.descendants.some((node) => !BASE_BUILD_TYPES.some((type) => type.kind === node.type) && node.type !== 'stair-segment')) return false
+      if (
+        preset.nodeData.descendants.some(
+          (node) =>
+            !BASE_BUILD_TYPES.some((type) => type.kind === node.type) &&
+            node.type !== 'stair-segment',
+        )
+      )
+        return false
       const matchesKind = allKinds || !kind || preset.rootKind === kind
       return (
         matchesKind &&
@@ -95,7 +104,6 @@ function BuildPresetPanel({ kind }: { kind: string | null }) {
       ),
     [presets, materials],
   )
-
 
   const activatePreset = (preset: BuildPreset) => {
     try {
@@ -215,11 +223,17 @@ export function BuildTab() {
       <p className="text-xs text-muted-foreground">选择布景，再点击舞台绘制或放置。Esc 取消。</p>
       <div className="grid grid-cols-2 gap-1.5">
         {BASE_BUILD_TYPES.map((type) => {
-          const active = type.id === 'painting' ? mode === 'material-paint' : mode === 'build' && type.kind === activeTool
+          const active =
+            type.id === 'painting'
+              ? mode === 'material-paint'
+              : mode === 'build' && type.kind === activeTool
           return (
             <button
               aria-pressed={active}
-              className={cn('flex min-h-16 items-center gap-2 rounded border border-border/50 p-2 text-left text-xs hover:bg-muted', active && 'bg-muted ring-1 ring-foreground')}
+              className={cn(
+                'flex min-h-16 items-center gap-2 rounded border border-border/50 p-2 text-left text-xs hover:bg-muted',
+                active && 'bg-muted ring-1 ring-foreground',
+              )}
               disabled={readOnly}
               key={type.id}
               onClick={() => {
@@ -229,13 +243,25 @@ export function BuildTab() {
               }}
               type="button"
             >
-              <Image alt="" className="size-8 object-contain" height={32} src={type.iconSrc} width={32} />
+              <Image
+                alt=""
+                className="size-8 object-contain"
+                height={32}
+                src={type.iconSrc}
+                width={32}
+              />
               {type.label}
             </button>
           )
         })}
       </div>
-      {mode === 'material-paint' ? <div className="min-h-0 flex-1 overflow-y-auto"><MaterialPaintPanel /></div> : <BuildPresetPanel kind={mode === 'build' ? activeType?.kind ?? null : null} />}
+      {mode === 'material-paint' ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <MaterialPaintPanel />
+        </div>
+      ) : (
+        <BuildPresetPanel kind={mode === 'build' ? (activeType?.kind ?? null) : null} />
+      )}
     </div>
   )
 }
