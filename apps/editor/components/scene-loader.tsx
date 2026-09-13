@@ -598,9 +598,9 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 sidebarTopSlot={sidebarTopSlot}
                 showPluginPanels={false}
                 showLevelSelector={false}
-                viewerToolbarLeft={<EditorViewerToolbarLeft />}
-                viewerToolbarRight={
-                  <EditorViewerToolbarRight
+                viewerToolbarRight={<EditorViewerToolbarRight />}
+                viewerToolbarLeft={
+                  <EditorViewerToolbarLeft
                     settings={
                         <button
                           aria-pressed={stableMode}

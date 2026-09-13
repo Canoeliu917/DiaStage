@@ -219,8 +219,9 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     button(label).onClick()
     assert.deepEqual(
       renderSidebar('navigation-test').sidebarTabs.filter((tab) => !tab.hidden).map((tab) => tab.label),
-      ['资产', '场景', '属性'],
+      ['资产', '属性'],
     )
+    assert.equal(renderSidebar('navigation-test').sidebarTopSlot?.type, StageOverviewPanel, 'desktop scene stays in the lower dock')
     for (const panel of expected) {
       assert.equal(openStudioPanel(panel), true)
       store.setState({ playing: true, previewing: true, time: 2 })

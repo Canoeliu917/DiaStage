@@ -202,11 +202,11 @@ if (!process.env.SIDEBAR_SPLIT_TEST) {
       view.tree.findIndex((node) => node.props['data-layout-pane'] === 'overview'),
     'tools are above the overview',
   )
-  assert.equal(ratio(), 50)
+  assert.equal(ratio(), 60)
   key('ArrowUp')
-  assert.equal(ratio(), 45)
+  assert.equal(ratio(), 55)
   key('ArrowDown')
-  assert.equal(ratio(), 50)
+  assert.equal(ratio(), 60)
   key('Home')
   assert.equal(ratio(), 15)
   key('ArrowUp')

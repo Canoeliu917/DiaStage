@@ -266,14 +266,18 @@ function StageTransformToolbar() {
       )
         return
       const key = event.key.toLowerCase()
-      if (key !== 'r' || !editable) return
+      if (!['v', 'g', 't', 'r'].includes(key)) return
+      if (key !== 'v' && (!editable || draft)) return
       event.preventDefault()
-      event.stopPropagation()
-      openPropSettings('[data-stage-dimensions]')
+      event.stopImmediatePropagation()
+      if (key === 'v') select()
+      else if (key === 'g') move()
+      else if (key === 't') useStageRotation.setState({ armed: !useStageRotation.getState().armed })
+      else openPropSettings('[data-stage-dimensions]')
     }
     window.addEventListener('keydown', keydown, true)
     return () => window.removeEventListener('keydown', keydown, true)
-  }, [editable, exclusive])
+  }, [editable, exclusive, draft, select, move])
   return (
     <div
       className={cn(TOOLBAR_CONTAINER, 'stage-transform-toolbar')}
@@ -285,20 +289,24 @@ function StageTransformToolbar() {
         className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
         disabled={exclusive}
         onClick={select}
-        title="选择道具"
+        title="V · 选择道具；Esc 取消当前操作"
+        aria-label="选择"
+        aria-keyshortcuts="V"
       >
         <MousePointer2 size={14} />
-        选择
+        选择 <kbd>V</kbd>
       </button>
       <button
         type="button"
         className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
         disabled={!editable || !!draft}
         onClick={move}
-        title="整件移动"
+        title="G · 移动所选道具，点击落位；Esc 取消"
+        aria-label="移动"
+        aria-keyshortcuts="G"
       >
         <Hand size={14} />
-        移动
+        移动 <kbd>G</kbd>
       </button>
       <button
         type="button"
@@ -306,10 +314,12 @@ function StageTransformToolbar() {
         disabled={!editable || !!draft}
         onClick={() => useStageRotation.setState({ armed: !rotating })}
         aria-pressed={rotating}
-        title="旋转：按住右键左右拖动，15°一格，松开确定；Esc取消"
+        title="T · 旋转：按住右键左右拖动，15°一格，松开确定；Esc取消"
+        aria-label="旋转"
+        aria-keyshortcuts="T"
       >
         <RotateCw size={14} />
-        旋转
+        旋转 <kbd>T</kbd>
       </button>
       <button
         type="button"
@@ -317,9 +327,11 @@ function StageTransformToolbar() {
         disabled={!editable || !!draft}
         onClick={() => openPropSettings('[data-stage-dimensions]')}
         title="R · 打开缩放设置"
+        aria-label="缩放"
+        aria-keyshortcuts="R"
       >
         <Maximize2 size={14} />
-        缩放
+        缩放 <kbd>R</kbd>
       </button>
       <StageGridToolbar />
       <StageRotationRuntime />
@@ -703,11 +715,30 @@ function PreviewButton() {
   )
 }
 
-export function EditorViewerToolbarLeft() {
+export function EditorViewerToolbarLeft({ settings }: { settings?: ReactNode } = {}) {
   return (
     <>
       <CollapseSidebarButton />
-      <StageTransformToolbar />
+      <div className="stage-edit-toolbar">
+        <StageTransformToolbar />
+        <div className="stage-display-toolbar" role="group" aria-label="舞台显示与视图">
+          <DisplayMenu />
+          <WallModeToggle />
+          <button type="button" onClick={() => openStudioPanel('view')}>视图 / 归位</button>
+          {settings}
+          <PreviewButton />
+          <details className="stage-controls-help">
+            <summary>操作帮助</summary>
+            <div>
+              <p>V 选择 · G 移动 · T 旋转 · R 尺寸设置；先选中道具，再操作。</p>
+              <p>旋转时按住右键左右拖动，每格 15°，松开确定；Esc 取消。</p>
+              <p>轻按 Ctrl 循环切换网格：50 → 25 → 10 → 5 cm。</p>
+              <p>WASD 移动视角 · Q 下降 · E 上升 · F 聚焦所选道具。</p>
+              <p>中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远。</p>
+            </div>
+          </details>
+        </div>
+      </div>
     </>
   )
 }
@@ -755,32 +786,10 @@ export function StudioPicturePanel() {
   )
 }
 
-export function EditorViewerToolbarRight({ settings }: { settings?: React.ReactNode } = {}) {
+export function EditorViewerToolbarRight() {
   return (
     <div className="stage-view-toolbar">
       <ViewModeControl />
-      <details className="theatre-view-options">
-        <summary>场景选项</summary>
-        <div className={TOOLBAR_CONTAINER}>
-          {settings}
-          <WallModeToggle />
-          <button type="button" onClick={() => openStudioPanel('view')}>视图 / 归位</button>
-          <div className="my-1.5 w-px bg-border/50" />
-          <DisplayMenu />
-          <div className="my-1.5 w-px bg-border/50" />
-          <PreviewButton />
-          <details className="w-full text-xs text-muted-foreground">
-            <summary>操作帮助</summary>
-            <p className="mt-2">
-              中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远 · F 聚焦所选道具。
-            </p>
-            <p className="mt-2">
-              WASD 前后左右移动观察视角 · Q 下降 · E
-              上升。点击旋转后按住右键左右拖动，松开确定；点击缩放或按 R 也可打开缩放设置。
-            </p>
-          </details>
-        </div>
-      </details>
     </div>
   )
 }

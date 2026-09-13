@@ -162,8 +162,12 @@ export function StageGridToolbar() {
   const showGrid = useViewer((state) => state.showGrid)
   return (
     <details className="stage-grid-controls">
-      <summary>网格 {Math.round(step * 100)}cm <span>· {snap.grid ? '吸附' : snap.guides ? '贴边' : '自由'}</span></summary>
+      <summary title="点击调整网格大小与道具放置方式">
+        每格 {Math.round(step * 100)} cm · {snap.grid ? '按网格放置' : snap.guides ? '边缘贴合' : '自由放置'} ▾
+      </summary>
       <div className="stage-grid-popover">
+        <strong>网格与道具放置</strong>
+        <p>格距对应地面上的网格线。按网格放置时，道具移动或落位会对齐到网格。</p>
         {view !== '3d' && (
           <button
             type="button"
@@ -184,7 +188,7 @@ export function StageGridToolbar() {
           </button>
         )}
         <label className="stage-grid-size">
-          <Grid2X2 size={16} />
+          <span><Grid2X2 size={16} />每格尺寸</span>
           <select
             aria-label="网格格距"
             value={step}
@@ -197,13 +201,14 @@ export function StageGridToolbar() {
             ))}
           </select>
         </label>
+        <p>轻按一次 Ctrl 按 50 → 25 → 10 → 5 cm 循环切换；输入文字时不生效。</p>
         <button
           type="button"
           aria-pressed={showGrid}
           onClick={() => useViewer.getState().setShowGrid(!showGrid)}
           title="切换网格线与纯地面显示，落位步长不变"
         >
-          {showGrid ? '网格' : '地面'}
+          网格线：{showGrid ? '显示' : '隐藏（纯地面）'}
         </button>
         <button
           type="button"
@@ -211,8 +216,9 @@ export function StageGridToolbar() {
           onClick={() => setStageGrid(snap.grid, !snap.guides)}
           title="靠近景片边缘时优先贴合；可能离开网格"
         >
-          贴边
+          景片边缘贴合：{snap.guides ? '开启' : '关闭'}
         </button>
+        <p>贴合开启后，靠近的景片边缘优先贴齐，可能离开网格线。</p>
         <button
           type="button"
           className="stage-free-placement"
@@ -222,6 +228,7 @@ export function StageGridToolbar() {
         >
           特殊：自由放置
         </button>
+        <p>自由放置允许任意落点；再次点击返回网格。隐藏网格线不改变放置方式。</p>
       </div>
     </details>
   )

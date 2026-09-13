@@ -359,79 +359,143 @@ export function StageLibraryPanel() {
   const venue = currentStageContext().venue
   return (
     <section className="stage-manual stage-library" aria-label="舞台库">
-      <header className="stage-library-heading">
-        <h2>舞台库</h2>
-        <span>22 件</span>
-      </header>
-      <StagePresets />
-      <div className="stage-category-grid" role="group" aria-label="舞台库分类">
-        {STAGE_LIBRARY_CATEGORIES.map(({ label, source }, i) => (
-          <button
-            type="button"
-            key={label}
-            aria-pressed={category === i}
-            onClick={() => {
-              setCategory(i)
+      <div className="stage-library-browser">
+        <header className="stage-library-heading">
+          <h2>舞台库</h2>
+          <span>22 件</span>
+        </header>
+        <StagePresets />
+        <label className="stage-library-category">
+          资产分类
+          <select
+            value={category}
+            onChange={(event) => {
+              const index = Number(event.target.value)
+              const source = STAGE_LIBRARY_CATEGORIES[index]?.source
+              setCategory(index)
               setQuery('')
               setSelectedId(STAGE_LIBRARY.find(({ menu }) => !source || menu.category === source)!.menu.id)
             }}
           >
-            {label}
-          </button>
-        ))}
-      </div>
-      <input
-        type="search"
-        aria-label="搜索道具名称或编号"
-        placeholder="搜索名称或编号"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-      />
-      <div className="stage-library-grid">
-        {visible.map(({ menu, entry }) => (
-          <button
-            type="button"
-            key={menu.id}
-            data-stage-asset-id={menu.id}
-            data-model-ready={entry !== null}
-            draggable={!readOnly && !!entry}
-            aria-pressed={selectedId === menu.id}
-            onClick={() => setSelectedId(menu.id)}
-            onDoubleClick={() => !readOnly && entry && startStagePlacement(entry)}
-            onDragStart={(event) => {
-              if (readOnly || !entry) {
-                event.preventDefault()
-                return
-              }
-              event.dataTransfer.setData('application/x-diastage-scenery', entry.id)
-              event.dataTransfer.effectAllowed = 'copy'
-              setSelectedId(menu.id)
-              startStagePlacement(entry)
-            }}
-          >
-            <img
-              src={stagePropAssetUrl(menu.thumbnail)}
-              srcSet={`${stagePropAssetUrl(menu.thumbnail)} 256w, ${stagePropAssetUrl(menu.preview)} 512w`}
-              sizes="140px"
-              alt=""
-              draggable={false}
-              loading="lazy"
-              width={256}
-              height={256}
-            />
-            {selectedId === menu.id && (
-              <span className="stage-library-check" aria-hidden="true">
-                ✓
+            {STAGE_LIBRARY_CATEGORIES.map(({ label }, index) => (
+              <option key={label} value={index}>{label}</option>
+            ))}
+          </select>
+        </label>
+        <input
+          type="search"
+          aria-label="搜索道具名称或编号"
+          placeholder="搜索名称或编号"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <div className="stage-library-grid">
+          {visible.map(({ menu, entry }) => (
+            <button
+              type="button"
+              key={menu.id}
+              data-stage-asset-id={menu.id}
+              data-model-ready={entry !== null}
+              draggable={!readOnly && !!entry}
+              aria-pressed={selectedId === menu.id}
+              onClick={() => setSelectedId(menu.id)}
+              onDoubleClick={() => !readOnly && entry && startStagePlacement(entry)}
+              onDragStart={(event) => {
+                if (readOnly || !entry) {
+                  event.preventDefault()
+                  return
+                }
+                event.dataTransfer.setData('application/x-diastage-scenery', entry.id)
+                event.dataTransfer.effectAllowed = 'copy'
+                setSelectedId(menu.id)
+                startStagePlacement(entry)
+              }}
+            >
+              <img
+                src={stagePropAssetUrl(menu.thumbnail)}
+                srcSet={`${stagePropAssetUrl(menu.thumbnail)} 256w, ${stagePropAssetUrl(menu.preview)} 512w`}
+                sizes="140px"
+                alt=""
+                draggable={false}
+                loading="lazy"
+                width={256}
+                height={256}
+              />
+              {selectedId === menu.id && (
+                <span className="stage-library-check" aria-hidden="true">
+                  ✓
+                </span>
+              )}
+              <span className="stage-library-copy">
+                <strong>{menu.name}</strong>
+                <small>{menu.dimension_label}</small>
               </span>
-            )}
-            <span className="stage-library-copy">
-              <strong>{menu.name}</strong>
-              <small>{menu.dimension_label}</small>
+            </button>
+          ))}
+        </div>
+        {!visible.length && <p>没有找到匹配道具。</p>}
+        <details className="stage-library-snaps">
+          <summary>网格与贴边说明</summary>
+          <p>
+            默认按画面网格落位，每小格 10 厘米；轻按并松开 Ctrl
+            切换格距。工具栏末尾的“特殊：自由放置”允许离开网格。贴边开启后，靠近的景片边缘会优先贴合。
+          </p>
+          <div className="stage-manual-snaps">
+            <label>
+              网格
+              <select
+                aria-label="落位网格"
+                value={state.snap.grid}
+                onChange={(event) => {
+                  const grid = Number(event.target.value) as PlacementSnap['grid']
+                  setStageGrid(grid)
+                }}
+              >
+                {[0.05, 0.1, 0.25, 0.5].map((step) => (
+                  <option value={step} key={step}>
+                    {step ? `${Math.round(step * 100)} 厘米` : '关闭'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={state.snap.guides}
+                onChange={(event) =>
+                  useStagePlacement.setState({
+                    snap: { ...state.snap, guides: event.target.checked },
+                  })
+                }
+              />
+              景片边缘贴合
+            </label>
+          </div>
+        </details>
+        {position && venue && (
+          <div className="stage-placement-readout" aria-live="polite">
+            <strong>{stagePositionLabel(position, venue.depthMeters)}</strong>
+            <span>
+              距中心线 {Math.abs(position.x).toFixed(2)} 米 · 距台口 {position.z.toFixed(2)} 米
             </span>
+            <span>{state.snapLabels.join(' · ') || '自由落位'}</span>
+            <button type="button" onClick={cancelStagePlacement}>
+              取消落位
+            </button>
+          </div>
+        )}
+        <p className="stage-notice" role="status">
+          {state.notice}
+        </p>
+        <div className="stage-manual-actions">
+          <button type="button" onClick={() => runUndo()}>
+            撤销
           </button>
-        ))}
+          <button type="button" onClick={() => runRedo()}>
+            重做
+          </button>
+        </div>
       </div>
-      {!visible.length && <p>没有找到匹配道具。</p>}
       {selected && (
         <section className="stage-library-preview" aria-label="道具预览">
           <button
@@ -485,67 +549,6 @@ export function StageLibraryPanel() {
           </dialog>
         </section>
       )}
-      <details className="stage-library-snaps">
-        <summary>网格与贴边说明</summary>
-        <p>
-          默认按画面网格落位，每小格 10 厘米；轻按并松开 Ctrl
-          切换格距。工具栏末尾的“特殊：自由放置”允许离开网格。贴边开启后，靠近的景片边缘会优先贴合。
-        </p>
-        <div className="stage-manual-snaps">
-          <label>
-            网格
-            <select
-              aria-label="落位网格"
-              value={state.snap.grid}
-              onChange={(event) => {
-                const grid = Number(event.target.value) as PlacementSnap['grid']
-                setStageGrid(grid)
-              }}
-            >
-              {[0.05, 0.1, 0.25, 0.5].map((step) => (
-                <option value={step} key={step}>
-                  {step ? `${Math.round(step * 100)} 厘米` : '关闭'}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={state.snap.guides}
-              onChange={(event) =>
-                useStagePlacement.setState({
-                  snap: { ...state.snap, guides: event.target.checked },
-                })
-              }
-            />
-            景片边缘贴合
-          </label>
-        </div>
-      </details>
-      {position && venue && (
-        <div className="stage-placement-readout" aria-live="polite">
-          <strong>{stagePositionLabel(position, venue.depthMeters)}</strong>
-          <span>
-            距中心线 {Math.abs(position.x).toFixed(2)} 米 · 距台口 {position.z.toFixed(2)} 米
-          </span>
-          <span>{state.snapLabels.join(' · ') || '自由落位'}</span>
-          <button type="button" onClick={cancelStagePlacement}>
-            取消落位
-          </button>
-        </div>
-      )}
-      <p className="stage-notice" role="status">
-        {state.notice}
-      </p>
-      <div className="stage-manual-actions">
-        <button type="button" onClick={() => runUndo()}>
-          撤销
-        </button>
-        <button type="button" onClick={() => runRedo()}>
-          重做
-        </button>
-      </div>
     </section>
   )
 }

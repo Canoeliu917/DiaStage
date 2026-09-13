@@ -43,7 +43,7 @@ function LeftColumn({
 
   const isResizing = useRef<{ startX: number; startWidth: number } | null>(null)
   const [layout, setLayout] = useState({
-    topRatio: 0.5,
+    topRatio: 0.6,
     toolsHidden: false,
     overviewHidden: false,
     toolsLocked: false,

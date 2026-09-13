@@ -1,6 +1,6 @@
 'use client'
 
-import { type SidebarTab, useEditor } from '@pascal-app/editor'
+import { type SidebarTab, useEditor, useIsMobile } from '@pascal-app/editor'
 import { Layers, Package, SlidersHorizontal } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useState } from 'react'
@@ -31,6 +31,7 @@ function PropertiesDock() {
 }
 
 export function useStudioSidebar(sceneId: string) {
+  const isMobile = useIsMobile()
   useEffect(() => observeRehearsalFeedback(sceneId), [sceneId])
   const activePanel = useEditor((s) => s.activeSidebarPanel)
   const [selectedGroup, setSelectedGroup] = useState<StudioGroup>('set')
@@ -44,8 +45,8 @@ export function useStudioSidebar(sceneId: string) {
 
   const sidebarTabs = useMemo<(SidebarTab & { component: React.ComponentType })[]>(() => [
     { id: 'items', label: '资产', icon: <Package className="h-5 w-5" />, component: AssetsDock },
-    { id: 'stage-overview', label: '场景', icon: <Layers className="h-5 w-5" />,
-      component: () => <StageOverviewPanel sceneId={sceneId} /> },
+    ...(isMobile ? [{ id: 'stage-overview', label: '场景', icon: <Layers className="h-5 w-5" />,
+      component: () => <StageOverviewPanel sceneId={sceneId} /> }] : []),
     { id: 'build', label: '属性', icon: <SlidersHorizontal className="h-5 w-5" />, component: PropertiesDock },
     { id: 'theatre-venue', label: '场地', hidden: true, component: () => <VenuePanel initialExpanded /> },
     { id: 'versions', label: '版本 / 历史', hidden: true, component: () => <VersionsPanel sceneId={sceneId} /> },
@@ -61,12 +62,12 @@ export function useStudioSidebar(sceneId: string) {
       if (opened && !('hidden' in entry && entry.hidden)) setSelectedGroup('set')
       return opened
     },
-  })), [sceneId])
+  })), [sceneId, isMobile])
 
   return {
     group,
     sidebarTabs,
-    sidebarTopSlot: undefined,
+    sidebarTopSlot: isMobile ? undefined : <StageOverviewPanel sceneId={sceneId} />,
     onGroupChange: (input: StudioGroup) => {
       const next = migrateStudioGroup(input)
       if (openStudioPanel({ set: 'items', rehearse: 'items', remount: 'remount' }[next]))
