@@ -206,7 +206,6 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     onSaveStatusChange: (status: SaveStatus) => void
     onDirty: () => void
     onThumbnailCapture?: unknown
-    navbarSlot: Element
   }
   function elements(value: unknown): Element[] {
     if (!value || typeof value !== 'object') return []
@@ -237,7 +236,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     const props = nodes.find((node) => node.type === Editor)?.props as unknown as EditorProps
     assert.equal(props.onThumbnailCapture, undefined, 'the missing thumbnail endpoint is not wired')
     onApplyDirty = props.onDirty
-    return { nodes, props }
+    const navigation = nodes.find((node) => node.props?.actions)?.props
+    return { nodes, props, navigation }
   }
   function click(label: string) {
     const action = render().nodes.find(
@@ -247,7 +247,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     ;(action as () => void)()
   }
   function status() {
-    return elements(render().props.navbarSlot.props?.actions).find(
+    return elements(render().navigation?.actions).find(
       (node) => node.props?.role === 'status',
     )?.props?.children
   }
@@ -276,7 +276,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   assert.equal(matchVersion(0), '7')
   assert.deepEqual(sentGraph(0).graph, initialScene)
   assert.equal(sentGraph(0).name, '排演', 'legacy graphs keep their existing scene name')
-  assert.equal(render().props.navbarSlot.props?.sceneName, '排演')
+  assert.equal(render().navigation?.sceneName, '排演')
 
   liveGraph = structuredClone(initialScene)
   liveGraph.nodes[prop.id] = { ...prop, position: [2, 0, 4] }
@@ -479,7 +479,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   }
   displayedDocument = renamed
   assert.equal(
-    render().props.navbarSlot.props?.sceneName,
+    render().navigation?.sceneName,
     renamed.production.name,
     'the navigation title follows the live validated production name',
   )
@@ -509,6 +509,6 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     liveGraph,
     'invalid theatre metadata remains preserved for recovery',
   )
-  assert.equal(render().props.navbarSlot.props?.sceneName, '排演')
+  assert.equal(render().navigation?.sceneName, '排演')
   for (const source of sources) source.close()
 }

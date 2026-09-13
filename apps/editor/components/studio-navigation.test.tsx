@@ -57,6 +57,8 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     },
   }
   mock.module('@pascal-app/editor', () => ({
+    runUndo: () => {},
+    runRedo: () => {},
     useEditor: Object.assign((select: (state: typeof editor) => unknown) => select(editor), {
       getState: () => editor,
     }),
@@ -209,15 +211,15 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     assert.equal(renderNavigation().filter((node) => node.props?.['aria-pressed']).length, 1)
     await Promise.resolve()
   }
-  assert.equal(renderNavigation().length, 2, 'only Build and Remount workspaces')
+  assert.equal(renderNavigation().filter((node) => 'aria-pressed' in (node.props ?? {})).length, 2, 'only Build and Remount workspaces')
   for (const [label, expected, group] of [
     ['置景', ['build', 'view', 'display', 'versions'], 'set'],
     ['复台', ['versions', 'remount', 'build'], 'remount'],
   ] as const) {
     button(label).onClick()
     assert.deepEqual(
-      renderSidebar('navigation-test').sidebarTabs.map((tab) => tab.label),
-      ['场地', '资产', '属性'],
+      renderSidebar('navigation-test').sidebarTabs.filter((tab) => !tab.hidden).map((tab) => tab.label),
+      ['资产', '场景', '属性'],
     )
     for (const panel of expected) {
       assert.equal(openStudioPanel(panel), true)
@@ -234,7 +236,11 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
         ['build', 'items'].includes(panel) ? 'build' : 'select',
         'rehearsal and venue panels disarm placement even while workspace remains edit',
       )
-      assert.equal(renderSidebar('navigation-test').group, group, 'task panels retain their group')
+      assert.equal(
+        renderSidebar('navigation-test').group,
+        tab.hidden ? group : 'set',
+        'primary dock tabs return to Build; auxiliary panels retain their workspace',
+      )
       assert.equal(collapsed, false)
       assert.equal(store.getState().playing, false)
     }
@@ -258,9 +264,10 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   isMobile = true
   for (const label of ['置景', '复台']) {
     button(label).onClick()
-    const content = elements(renderSidebar('navigation-test').sidebarTopSlot).find(
-      (entry) => entry.type === StageOverviewPanel,
-    )
+    const sidebar = renderSidebar('navigation-test')
+    assert.equal(sidebar.sidebarTopSlot, undefined, 'no simultaneous overview panel')
+    const sceneTab = sidebar.sidebarTabs.find((tab) => tab.id === 'stage-overview')
+    const content = elements((sceneTab!.component as () => unknown)()).find((entry) => entry.type === StageOverviewPanel)
     assert.ok(content)
     assert.equal(content.props?.sceneId, 'navigation-test')
   }

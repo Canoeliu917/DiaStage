@@ -100,8 +100,8 @@ export function DiaRecords({
   return (
     <>
       {!!rounds.length && (
-        <details className="dia-conversation-records dia-secondary" aria-label="对话">
-          <summary>舞台记录 · 最近 {rounds.length} 轮</summary>
+        <details open className="dia-conversation-records" aria-label="对话">
+          <summary>对话 · 最近 {rounds.length} 轮</summary>
           <div className="dia-message-log" role="region" aria-label="最近20轮舞台提案记录">
             {rounds.flat().map((message) => (
               <DiaMessageRecord

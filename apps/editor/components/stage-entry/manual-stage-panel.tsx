@@ -68,6 +68,7 @@ export const STAGE_LIBRARY = STAGE_PROP_MENU.assets.map((menu) => {
   return { spec, entry, menu }
 })
 export const STAGE_LIBRARY_CATEGORIES = [
+  { label: '全部', source: null },
   { label: '景片', source: '空间围合' },
   { label: '门窗', source: '门窗' },
   { label: '台块', source: '台块与支撑' },
@@ -350,7 +351,7 @@ export function StageLibraryPanel() {
   const visible = STAGE_LIBRARY.filter(({ menu }) =>
     search
       ? `${menu.name} ${menu.id}`.toLocaleLowerCase().includes(search)
-      : menu.category === STAGE_LIBRARY_CATEGORIES[category]?.source,
+      : category === 0 || menu.category === STAGE_LIBRARY_CATEGORIES[category]?.source,
   )
   const state = useStagePlacement()
   const readOnly = useScene((s) => s.readOnly)
@@ -372,7 +373,7 @@ export function StageLibraryPanel() {
             onClick={() => {
               setCategory(i)
               setQuery('')
-              setSelectedId(STAGE_LIBRARY.find(({ menu }) => menu.category === source)!.menu.id)
+              setSelectedId(STAGE_LIBRARY.find(({ menu }) => !source || menu.category === source)!.menu.id)
             }}
           >
             {label}
@@ -411,7 +412,7 @@ export function StageLibraryPanel() {
             <img
               src={stagePropAssetUrl(menu.thumbnail)}
               srcSet={`${stagePropAssetUrl(menu.thumbnail)} 256w, ${stagePropAssetUrl(menu.preview)} 512w`}
-              sizes="64px"
+              sizes="140px"
               alt=""
               draggable={false}
               loading="lazy"

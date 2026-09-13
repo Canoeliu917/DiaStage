@@ -1526,9 +1526,10 @@ function EditorContent({
 
     const tabBarTabs = [
       ...(visibleSidebarTabs?.map(
-        ({ id, label, mobileDefaultSnap, mobileIcon, icon, noPanel, onSelect }) => ({
+        ({ id, label, hidden, mobileDefaultSnap, mobileIcon, icon, noPanel, onSelect }) => ({
           id,
           label,
+          hidden,
           mobileDefaultSnap,
           mobileIcon,
           icon,

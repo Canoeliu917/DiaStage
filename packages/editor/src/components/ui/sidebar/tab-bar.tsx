@@ -14,6 +14,8 @@ export function sidebarTabLabel(label: string) {
 export type SidebarTab = {
   id: string
   label: string
+  /** Routeable auxiliary panel without a primary dock tab. */
+  hidden?: boolean
   mobileDefaultSnap?: number
   mobileIcon?: ReactNode
   /** Desktop icon shown in the vertical rail (v2 layout). */
@@ -39,7 +41,7 @@ interface TabBarProps {
 export function TabBar({ tabs, activeTab, onTabChange }: TabBarProps) {
   return (
     <div className="flex h-10 shrink-0 items-center gap-0.5 border-border/50 border-b px-2">
-      {tabs.map((tab) => {
+      {tabs.filter((tab) => !tab.hidden).map((tab) => {
         const isActive = activeTab === tab.id
         return (
           <button
@@ -115,7 +117,7 @@ export function IconRail({ tabs, activeTab, collapsed, onIconClick }: IconRailPr
   return (
     <TooltipProvider delayDuration={0} disableHoverableContent>
       <div className="diastage-tool-rail flex h-full w-[72px] shrink-0 flex-col items-center gap-1 overflow-y-auto border-border/50 border-r py-2">
-        {tabs.map(renderTab)}
+        {tabs.filter((tab) => !tab.hidden).map(renderTab)}
       </div>
     </TooltipProvider>
   )

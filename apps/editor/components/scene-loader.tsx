@@ -510,52 +510,32 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
               </button>
             </div>
           )}
+          <StudioNavigation
+            sceneName={document?.production.name ?? meta.name}
+            group={group}
+            onGroupChange={onGroupChange}
+            actions={
+              <>
+                <span className="studio-save-status" role="status">
+                  {
+                    {
+                      idle: '自动保存',
+                      pending: '待保存',
+                      'local-saved': '本机已保存',
+                      saving: '保存中…',
+                      saved: '本机已保存 · 已同步',
+                      paused: '保存已暂停',
+                      error: '保存失败',
+                    }[saveStatus]
+                  }
+                </span>
+
+              </>
+            }
+          />
           <div className="dia-stage-layout">
             <div className="dia-editor">
               <Editor
-                navbarSlot={
-                  <StudioNavigation
-                    sceneName={document?.production.name ?? meta.name}
-                    group={group}
-                    onGroupChange={onGroupChange}
-                    actions={
-                      <>
-                        <span className="studio-save-status" role="status">
-                          {
-                            {
-                              idle: '自动保存',
-                              pending: '待保存',
-                              'local-saved': '本机已保存',
-                              saving: '保存中…',
-                              saved: '本机已保存 · 已同步',
-                              paused: '保存已暂停',
-                              error: '保存失败',
-                            }[saveStatus]
-                          }
-                        </span>
-                        <button
-                          aria-pressed={stableMode}
-                          className={cn(
-                            'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
-                            lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
-                          )}
-                          onClick={() => {
-                            setStableMode(!stableMode)
-                            try {
-                              localStorage.setItem('diastage:stable-mode', String(!stableMode))
-                            } catch {
-                              /* Session choice still applies. */
-                            }
-                          }}
-                          title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据与复台计算"
-                          type="button"
-                        >
-                          稳定模式
-                        </button>
-                      </>
-                    }
-                  />
-                }
                 disablePostFx={lightPreview}
                 layoutVersion="v2"
                 selectionPanelSlot={<StageSelectionPanel />}
@@ -619,7 +599,31 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 showPluginPanels={false}
                 showLevelSelector={false}
                 viewerToolbarLeft={<EditorViewerToolbarLeft />}
-                viewerToolbarRight={<EditorViewerToolbarRight />}
+                viewerToolbarRight={
+                  <EditorViewerToolbarRight
+                    settings={
+                        <button
+                          aria-pressed={stableMode}
+                          className={cn(
+                            'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
+                            lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
+                          )}
+                          onClick={() => {
+                            setStableMode(!stableMode)
+                            try {
+                              localStorage.setItem('diastage:stable-mode', String(!stableMode))
+                            } catch {
+                              /* Session choice still applies. */
+                            }
+                          }}
+                          title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据与复台计算"
+                          type="button"
+                        >
+                          稳定模式
+                        </button>
+                    }
+                  />
+                }
               />
               {cameraEnabled && (
                 <ViewerErrorBoundary

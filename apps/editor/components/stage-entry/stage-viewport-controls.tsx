@@ -9,9 +9,9 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { stageToWorldPosition } from '@pascal-app/core/stage'
-import { runUndo, useEditor, useInteractionScope } from '@pascal-app/editor'
+import { useEditor, useInteractionScope } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
-import { Compass, Grid2X2, Undo2 } from 'lucide-react'
+import { Compass, Grid2X2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import { currentStageContext, stageFrame } from '@/lib/stage/context'
@@ -160,72 +160,70 @@ export function StageGridToolbar() {
   const step = useEditor((state) => state.gridSnapStep)
   const view = useEditor((state) => state.viewMode)
   const showGrid = useViewer((state) => state.showGrid)
-  const readOnly = useScene((state) => state.readOnly)
   return (
-    <>
-      <button type="button" onClick={() => runUndo()} disabled={readOnly} title="撤销 · Ctrl+Z">
-        <Undo2 size={16} />
-        撤销
-      </button>
-      {view !== '3d' && (
+    <details className="stage-grid-controls">
+      <summary>网格 {Math.round(step * 100)}cm <span>· {snap.grid ? '吸附' : snap.guides ? '贴边' : '自由'}</span></summary>
+      <div className="stage-grid-popover">
+        {view !== '3d' && (
+          <button
+            type="button"
+            aria-label="指南针：居中归正平面"
+            onClick={() => {
+              const venue = currentStageContext().venue
+              if (!venue) return
+              useEditor.getState().publishNavigationSyncPose({
+                source: '2d',
+                target: stageToWorldPosition({ x: 0, y: 0, z: venue.depthMeters / 2 }, stageFrame()),
+                azimuth: 0,
+                viewWidth: Math.max(venue.widthMeters, venue.depthMeters) * 1.3,
+              })
+            }}
+          >
+            <Compass size={16} />
+            归正
+          </button>
+        )}
+        <label className="stage-grid-size">
+          <Grid2X2 size={16} />
+          <select
+            aria-label="网格格距"
+            value={step}
+            onChange={(event) => setStageGrid(Number(event.target.value) as typeof step)}
+          >
+            {[0.05, 0.1, 0.25, 0.5].map((value) => (
+              <option key={value} value={value}>
+                每格 {value * 100} cm
+              </option>
+            ))}
+          </select>
+        </label>
         <button
           type="button"
-          aria-label="指南针：居中归正平面"
-          onClick={() => {
-            const venue = currentStageContext().venue
-            if (!venue) return
-            useEditor.getState().publishNavigationSyncPose({
-              source: '2d',
-              target: stageToWorldPosition({ x: 0, y: 0, z: venue.depthMeters / 2 }, stageFrame()),
-              azimuth: 0,
-              viewWidth: Math.max(venue.widthMeters, venue.depthMeters) * 1.3,
-            })
-          }}
+          aria-pressed={showGrid}
+          onClick={() => useViewer.getState().setShowGrid(!showGrid)}
+          title="切换网格线与纯地面显示，落位步长不变"
         >
-          <Compass size={16} />
-          归正
+          {showGrid ? '网格' : '地面'}
         </button>
-      )}
-      <label className="stage-grid-size">
-        <Grid2X2 size={16} />
-        <select
-          aria-label="网格格距"
-          value={step}
-          onChange={(event) => setStageGrid(Number(event.target.value) as typeof step)}
+        <button
+          type="button"
+          aria-pressed={snap.guides}
+          onClick={() => setStageGrid(snap.grid, !snap.guides)}
+          title="靠近景片边缘时优先贴合；可能离开网格"
         >
-          {[0.05, 0.1, 0.25, 0.5].map((value) => (
-            <option key={value} value={value}>
-              每格 {value * 100} cm
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
-        type="button"
-        aria-pressed={showGrid}
-        onClick={() => useViewer.getState().setShowGrid(!showGrid)}
-        title="切换网格线与纯地面显示，落位步长不变"
-      >
-        {showGrid ? '网格' : '地面'}
-      </button>
-      <button
-        type="button"
-        aria-pressed={snap.guides}
-        onClick={() => setStageGrid(snap.grid, !snap.guides)}
-        title="靠近景片边缘时优先贴合；可能离开网格"
-      >
-        贴边
-      </button>
-      <button
-        type="button"
-        className="stage-free-placement"
-        aria-pressed={!snap.grid && !snap.guides}
-        onClick={() => setStageGrid(snap.grid || snap.guides ? 0 : step)}
-        title="特殊选项：允许任意落点；再次点击回到网格"
-      >
-        特殊：自由放置
-      </button>
-    </>
+          贴边
+        </button>
+        <button
+          type="button"
+          className="stage-free-placement"
+          aria-pressed={!snap.grid && !snap.guides}
+          onClick={() => setStageGrid(snap.grid || snap.guides ? 0 : step)}
+          title="特殊选项：允许任意落点；再次点击回到网格"
+        >
+          特殊：自由放置
+        </button>
+      </div>
+    </details>
   )
 }
 

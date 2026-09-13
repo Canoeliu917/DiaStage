@@ -28,6 +28,7 @@ test('the library exposes exactly the 22 supplied object definitions in their si
     ),
   ).toEqual([3, 4, 5, 2, 4, 4])
   expect(STAGE_LIBRARY_CATEGORIES.map(({ label }) => label)).toEqual([
+    '全部',
     '景片',
     '门窗',
     '台块',
@@ -36,7 +37,7 @@ test('the library exposes exactly the 22 supplied object definitions in their si
     '沙发',
   ])
   expect(
-    STAGE_LIBRARY_CATEGORIES.map(
+    STAGE_LIBRARY_CATEGORIES.filter(({ source }) => source !== null).map(
       ({ source }) => STAGE_LIBRARY.filter(({ menu }) => menu.category === source).length,
     ),
   ).toEqual([3, 4, 5, 4, 4, 2])
@@ -49,8 +50,8 @@ test('official models link by canonical ID while browsing loads only their suppl
   useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
   const before = useScene.getState().nodes
   const html = renderToStaticMarkup(<StageLibraryPanel />)
-  expect((html.match(/data-model-ready="true"/g) ?? []).length).toBe(3)
-  expect((html.match(/draggable="true"/g) ?? []).length).toBe(3)
+  expect((html.match(/data-model-ready="true"/g) ?? []).length).toBe(22)
+  expect((html.match(/draggable="true"/g) ?? []).length).toBe(22)
   expect((html.match(/单片宽 90 cm/g) ?? []).length).toBe(2)
   expect(html).toContain(stagePropAssetUrl('thumbnails/256/SCN-FOLD-02.png'))
   expect(html).toContain(stagePropAssetUrl('thumbnails/512/SCN-FOLD-02.png'))

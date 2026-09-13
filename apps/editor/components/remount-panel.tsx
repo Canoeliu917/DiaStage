@@ -176,7 +176,12 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
   const director = useCameraDirectorState(sceneId)
   const blocked =
     readOnly || exclusive || editing || playing || director.transport.status !== 'idle'
-  const [step, setStep] = useState(0)
+  const [step, setCurrentStep] = useState(0)
+  const [furthestStep, setFurthestStep] = useState(0)
+  const setStep = (next: number) => {
+    setCurrentStep(next)
+    setFurthestStep((previous) => Math.max(previous, next))
+  }
   const [selected, setSelected] = useState<string[]>([])
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -261,10 +266,13 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
             key={label}
             type="button"
             aria-current={step === index ? 'step' : undefined}
+            data-state={step === index ? 'current' : index <= furthestStep ? 'visited' : 'upcoming'}
+            aria-label={`0${index + 1} ${label}`}
+            title={label}
             onClick={() => setStep(index)}
           >
             <span>0{index + 1}</span>
-            {label}
+            <span className="rm-step-name">{label}</span>
           </button>
         ))}
       </nav>
@@ -789,6 +797,8 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
         </fieldset>
       )}
       <footer className="rm-footer">
+        <details>
+        <summary>配置与草稿</summary>
         <div className="rm-actions">
           <button
             type="button"
@@ -822,6 +832,7 @@ export function RemountPanel({ sceneId }: { sceneId: string }) {
           </button>
         </div>
         <p>米 / 弧度 · 确定性坐标映射 · 第一阶段</p>
+        </details>
       </footer>
     </div>
   )

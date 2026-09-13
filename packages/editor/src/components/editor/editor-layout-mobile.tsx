@@ -288,7 +288,7 @@ export function EditorLayoutMobile({
       </div>
 
       {!isCaptureMode && sidebarTabs.length > 0 && (
-        <MobileTabBar activeTab={activePanel} onTabPress={handleTabPress} tabs={sidebarTabs} />
+        <MobileTabBar activeTab={activePanel} onTabPress={handleTabPress} tabs={sidebarTabs.filter((tab) => !tab.hidden)} />
       )}
     </div>
   )

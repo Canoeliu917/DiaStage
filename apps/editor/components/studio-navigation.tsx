@@ -1,7 +1,7 @@
 'use client'
 
-import { useEditor, useIsMobile, useSidebarStore } from '@pascal-app/editor'
-import { Hammer, Layers, ScanLine } from 'lucide-react'
+import { runRedo, runUndo, useEditor, useIsMobile, useSidebarStore } from '@pascal-app/editor'
+import { Hammer, History, Layers, Redo2, ScanLine, Undo2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
@@ -42,6 +42,16 @@ export function StudioNavigation({
   const menu = (
     <>
       {actions}
+      <button type="button" className="studio-history-action" aria-label="撤销" title="撤销 · Ctrl+Z" onClick={() => runUndo()} disabled={exclusive}>
+        <Undo2 size={15} />
+      </button>
+      <button type="button" className="studio-history-action" aria-label="重做" title="重做 · Ctrl+Shift+Z" onClick={() => runRedo()} disabled={exclusive}>
+        <Redo2 size={15} />
+      </button>
+      <button type="button" onClick={() => openStudioPanel('versions')} disabled={exclusive}>
+        <History size={16} />
+        版本 / 历史
+      </button>
       <Link href="/scenes">
         <Layers size={16} />
         剧目库

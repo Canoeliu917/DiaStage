@@ -228,15 +228,25 @@ export function RehearsalPartner({
         <h2 className="dia-notation">DIA</h2>
         <span className="dia-header-note">{state.synthetic ? '示例对话' : '舞台对话'}</span>
       </header>
-      <div
-        ref={setDrawingContainer}
-        className="dia-pinned-plan stage-plan-review stage-plan-compact"
-        role="region"
-        aria-label="Dia预演"
-      >
-        {(!build || settled || stale) && <LiveStagePlan />}
-      </div>
+      <details className="dia-stage-context">
+        <summary>舞台上下文 <span>当前布景与选中对象</span></summary>
+        <div
+          ref={setDrawingContainer}
+          className="dia-pinned-plan stage-plan-review stage-plan-compact"
+          role="region"
+          aria-label="Dia预演"
+        >
+          {(!build || settled || stale) && <LiveStagePlan />}
+        </div>
+      </details>
       <div ref={dialogue} className="dia-dialogue" role="region" aria-label="本场对话记录">
+        {!state.thread?.messages.length && (
+          <div className="dia-welcome">
+            <h3>你想试什么？</h3>
+            <p>说说想放入或调整的布景。我们先在舞台上试，再由你决定。</p>
+          </div>
+        )}
+        <DiaRecords sceneId={sceneId} controller={controller} />
         {build && (
           <section className="dia-proposals" aria-label="Dia预演确认">
             <p className="dia-section-label">
@@ -272,13 +282,6 @@ export function RehearsalPartner({
             )}
           </section>
         )}
-        {!state.thread?.messages.length && (
-          <div className="dia-welcome">
-            <h3>你想试什么？</h3>
-            <p>说说想放入或调整的布景。我们先在舞台上试，再由你决定。</p>
-          </div>
-        )}
-        <DiaRecords sceneId={sceneId} controller={controller} />
         {BETA_REHEARSAL_ENABLED && state.interaction && !build && (
           <div ref={currentProposals} className="dia-proposals" role="group" aria-label="本轮方案">
             <p className="dia-section-label">
@@ -873,7 +876,7 @@ export function RehearsalPartner({
           {state.notice || '说说你想怎么调整。'}
         </p>
         <GhostFeedbackError />
-        <details className="dia-input-examples" open>
+        <details className="dia-input-examples">
           <summary>试着这样说</summary>
           <div className="dia-shortcut-rows">
             {SHORTCUTS.map(({ label, items }) => (

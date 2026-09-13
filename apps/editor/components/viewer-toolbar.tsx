@@ -755,14 +755,16 @@ export function StudioPicturePanel() {
   )
 }
 
-export function EditorViewerToolbarRight() {
+export function EditorViewerToolbarRight({ settings }: { settings?: React.ReactNode } = {}) {
   return (
     <div className="stage-view-toolbar">
       <ViewModeControl />
       <details className="theatre-view-options">
         <summary>场景选项</summary>
         <div className={TOOLBAR_CONTAINER}>
+          {settings}
           <WallModeToggle />
+          <button type="button" onClick={() => openStudioPanel('view')}>视图 / 归位</button>
           <div className="my-1.5 w-px bg-border/50" />
           <DisplayMenu />
           <div className="my-1.5 w-px bg-border/50" />
