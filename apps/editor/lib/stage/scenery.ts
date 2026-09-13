@@ -16,8 +16,7 @@ import {
   StageDimensionsSchema,
   sceneryProxyParts,
 } from '@pascal-app/core/stage'
-import { THEATRE_CATALOG_ITEMS } from '@pascal-app/editor'
-import { AVAILABLE_STAGE_SCENERY, type SceneryLibraryItem } from './prop-assets'
+import { AVAILABLE_STAGE_SCENERY } from './prop-assets'
 
 type AddScenery = Extract<StageCommand, { type: 'AddScenery' }>
 type Vec3 = [number, number, number]
@@ -28,38 +27,7 @@ export {
   sceneryProxyParts,
 } from '@pascal-app/core/stage'
 
-const ASSET_KINDS: Record<string, AddScenery['kind']> = {
-  'dining-table-mo9ms5yh': 'table',
-  'dining-table': 'table',
-  'office-table': 'table',
-  'coffee-table': 'table',
-  'pool-table': 'table',
-  'standing-desk-mo8wgz95': 'table',
-  'livingroom-chair': 'chair',
-  'dining-chair': 'chair',
-  'lounge-chair': 'chair',
-  'office-chair': 'chair',
-  'herman-miller-aeron-mo8x36k9': 'chair',
-  stool: 'chair',
-  sofa: 'sofa',
-  'my-leather-couch-modp80ha': 'sofa',
-  bookshelf: 'shelf',
-  shelf: 'shelf',
-  'ikea-kallax-1x4-moa2y49n': 'shelf',
-  'single-bed': 'bed',
-  'double-bed': 'bed',
-  bunkbed: 'bed',
-  column: 'neutral-block',
-  pillar: 'neutral-block',
-}
-
-export const SCENERY_LIBRARY: SceneryLibraryItem[] = [
-  ...AVAILABLE_STAGE_SCENERY,
-  ...THEATRE_CATALOG_ITEMS.flatMap((asset) => {
-    const kind = ASSET_KINDS[asset.id]
-    return kind ? [{ kind, asset }] : []
-  }),
-]
+export const SCENERY_LIBRARY = AVAILABLE_STAGE_SCENERY
 
 function cylinderTopology(width: number, height: number, depth: number): BlockTopology {
   const n = SCENERY_ROUND_SEGMENTS

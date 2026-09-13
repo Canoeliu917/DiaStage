@@ -1,12 +1,12 @@
 import type { CatalogItem } from './catalog-items'
 import { CATALOG_ITEMS } from './catalog-items'
 
-const THEATRE_CATEGORIES = new Set(['furniture', 'props', 'scenery'])
+const STAGE_ASSET_IDS = new Set(CATALOG_ITEMS.map((item) => item.id))
 
 export function theatreCatalogItems(items: CatalogItem[]): CatalogItem[] {
   return items.filter(
     (item) =>
-      THEATRE_CATEGORIES.has(item.category) &&
+      STAGE_ASSET_IDS.has(item.id) &&
       (!item.tool || item.tool === 'item'),
   )
 }

@@ -20,18 +20,20 @@ describe('theatre presentation boundary', () => {
   })
 
   test('all default asset categories and search candidates are theatrical', () => {
+    expect(CATALOG_ITEMS).toHaveLength(22)
+    expect(THEATRE_CATALOG_ITEMS).toHaveLength(22)
     expect(new Set(THEATRE_CATALOG_ITEMS.map((item) => item.category))).toEqual(
-      new Set(['furniture', 'props', 'scenery']),
+      new Set(['scenery']),
     )
     expect(
-      THEATRE_CATALOG_ITEMS.some((item) => item.id === 'wine-bottle' && item.category === 'props'),
+      THEATRE_CATALOG_ITEMS.every((item) => item.src.startsWith('/stage-library/models/')),
     ).toBe(true)
     expect(
-      THEATRE_CATALOG_ITEMS.some((item) => item.id === 'books' && item.category === 'props'),
-    ).toBe(true)
-    expect(THEATRE_CATALOG_ITEMS.some((item) => item.id === 'dishwasher-movn72ls')).toBe(false)
-    expect(
-      theatreCatalogItems(CATALOG_ITEMS.filter((item) => item.id === 'dishwasher-movn72ls')),
+      theatreCatalogItems([
+        { ...CATALOG_ITEMS[0]!, id: 'wine-bottle' },
+        { ...CATALOG_ITEMS[0]!, id: 'books' },
+        { ...CATALOG_ITEMS[0]!, id: 'dishwasher-movn72ls' },
+      ]),
     ).toEqual([])
     expect(THEATRE_CATALOG_ITEMS.every((item) => !item.tool || item.tool === 'item')).toBe(true)
   })

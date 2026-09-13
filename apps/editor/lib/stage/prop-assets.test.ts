@@ -30,6 +30,7 @@ const context: SceneContextSummary = {
 test('installed menu maps 22 canonical models and 44 correctly sized PNGs without modifying source bytes', () => {
   expect(AVAILABLE_STAGE_ASSET_IDS).toHaveLength(22)
   expect(new Set(AVAILABLE_STAGE_ASSET_IDS).size).toBe(22)
+  expect(SCENERY_LIBRARY).toHaveLength(22)
   expect(
     STAGE_PROP_MENU.categories.map(
       (category) => STAGE_PROP_MENU.assets.filter((prop) => prop.category === category).length,
@@ -54,6 +55,15 @@ test('installed menu maps 22 canonical models and 44 correctly sized PNGs withou
     expect(SCENERY_LIBRARY.find(({ asset }) => asset.id === prop.id)).toBe(installed)
     expect(installed.asset.src).toBe(stagePropAssetUrl(prop.model))
     expect(installed.asset.thumbnail).toBe(stagePropAssetUrl(prop.thumbnail))
+    const [min, max] = prop.bounds_m
+    const center = [
+      (min![0]! + max![0]!) / 2,
+      (min![2]! + max![2]!) / 2,
+      -(min![1]! + max![1]!) / 2,
+    ]
+    center.forEach((value, axis) => {
+      expect(installed.asset.boundsCenter![axis]).toBeCloseTo(value, 12)
+    })
     const bounds = resolveStageObjectSpecs(prop.id)[0]!.modelDimensions!
     expect(installed.asset.dimensions![0]).toBeCloseTo(bounds.width, 12)
     expect(installed.asset.dimensions![1]).toBeCloseTo(bounds.height, 12)
