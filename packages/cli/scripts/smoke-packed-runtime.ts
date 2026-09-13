@@ -181,9 +181,11 @@ function enforceArtifactBudget(artifact: {
   unpackedSize: number
   entryCount: number
 }): void {
-  const maximumSize = 105 * 1024 * 1024
-  const maximumUnpackedSize = 160 * 1024 * 1024
-  const maximumEntryCount = 4_000
+  // This branch already ships the offline catalog, audio, materials and Chinese font.
+  // CI measures 188.6 / 251.8 MiB and 5,195 files after removing native PDF renderers.
+  const maximumSize = 200 * 1024 * 1024
+  const maximumUnpackedSize = 275 * 1024 * 1024
+  const maximumEntryCount = 5_500
   if (
     artifact.size > maximumSize ||
     artifact.unpackedSize > maximumUnpackedSize ||
