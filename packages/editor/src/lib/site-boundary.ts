@@ -10,5 +10,5 @@ export const SITE_BOUNDARY_DRAG_LABEL = 'site-boundary'
  * they did not: each derived the rule from `phase` and `mode` locally.
  */
 export function siteBoundaryHandlesEnabled(args: { mode: Mode; phase: Phase }): boolean {
-  return args.phase === 'site' || args.mode === 'select'
+  return args.phase === 'site'
 }

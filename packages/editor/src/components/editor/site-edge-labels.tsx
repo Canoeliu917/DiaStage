@@ -108,28 +108,30 @@ export function SiteEdgeLabels() {
     })
   }, [polygon])
 
-  if (!shouldShowLabels || !siteObj || edges.length === 0) return null
+  if (!siteObj || edges.length === 0) return null
 
   return createPortal(
     <>
-      {edges.map((edge, i) => (
+      {(shouldShowLabels ? edges : edges.slice(0, 1)).map((edge, i) => (
         <Html
           center
           calculatePosition={calculateLabelPosition}
           key={`${cameraMode}-${camera.uuid}-edge-${i}`}
           occlude
-          position={[edge.midX, edge.midY, edge.midZ]}
+          position={[edge.midX, shouldShowLabels ? edge.midY : 0.04, edge.midZ]}
           style={{ pointerEvents: 'none', userSelect: 'none' }}
           zIndexRange={[10, 0]}
         >
           <div
-            className="whitespace-nowrap font-bold font-mono text-[15px]"
+            className="whitespace-nowrap rounded border border-neutral-500/30 bg-background/90 px-2 py-1 font-sans text-xs"
             style={{
               color,
-              textShadow: `-1.5px -1.5px 0 ${shadowColor}, 1.5px -1.5px 0 ${shadowColor}, -1.5px 1.5px 0 ${shadowColor}, 1.5px 1.5px 0 ${shadowColor}, 0 0 4px ${shadowColor}, 0 0 4px ${shadowColor}`,
+              textShadow: `0 1px 2px ${shadowColor}`,
             }}
           >
-            {formatLinearMeasurement(edge.dist, unit, metricNotation)}
+            {shouldShowLabels
+              ? formatLinearMeasurement(edge.dist, unit, metricNotation)
+              : '场地边界 · 在「场地」中调整尺寸'}
           </div>
         </Html>
       ))}

@@ -15,11 +15,9 @@ describe('siteBoundaryHandlesEnabled', () => {
     }
   })
 
-  test('select mode offers them outside the site phase', () => {
-    // The flags double as the affordance that *enters* site editing, so select mode
-    // has to show them from structure/furnish or the lot becomes unreachable.
-    expect(siteBoundaryHandlesEnabled({ mode: 'select', phase: 'structure' })).toBe(true)
-    expect(siteBoundaryHandlesEnabled({ mode: 'select', phase: 'furnish' })).toBe(true)
+  test('ordinary selection cannot grab the site boundary while placing props', () => {
+    expect(siteBoundaryHandlesEnabled({ mode: 'select', phase: 'structure' })).toBe(false)
+    expect(siteBoundaryHandlesEnabled({ mode: 'select', phase: 'furnish' })).toBe(false)
   })
 
   test('a drafting or painting mode outside the site phase hides them', () => {

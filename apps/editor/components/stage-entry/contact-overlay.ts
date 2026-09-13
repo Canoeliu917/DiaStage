@@ -1,6 +1,14 @@
 import { BATCHED_LAYER, OVERLAY_LAYER, SCENE_LAYER } from '@pascal-app/viewer'
 import { BackSide, DoubleSide, Group, Matrix4, Mesh, type Object3D } from 'three'
-import { modelScale, normalLocal, positionLocal } from 'three/tsl'
+import {
+  cameraProjectionMatrix,
+  modelScale,
+  modelViewMatrix,
+  normalLocal,
+  positionLocal,
+  screenSize,
+  vec4,
+} from 'three/tsl'
 import { ClippingGroup, MeshBasicNodeMaterial } from 'three/webgpu'
 import { DIA_COLORS } from '@/lib/visual-system'
 
@@ -21,9 +29,9 @@ export function createStageContactOverlay(selection = false) {
   })
   const feedbackMaterials = selection
     ? [
-        [0.09, 0.12, DIA_COLORS.ink],
-        [0.05, 0.6, DIA_COLORS.ink],
-        [0.015, 0.95, DIA_COLORS.ivory],
+        [3, 0.12, DIA_COLORS.ink],
+        [1.75, 0.65, DIA_COLORS.ink],
+        [0.5, 0.8, DIA_COLORS.ivory],
       ].map(([width, opacity, color]) => {
         const outline = new MeshBasicNodeMaterial({
           color: color as string,
@@ -33,7 +41,20 @@ export function createStageContactOverlay(selection = false) {
           depthWrite: false,
           toneMapped: false,
         })
-        outline.positionNode = positionLocal.add(normalLocal.div(modelScale).mul(width as number))
+        // Pixel-sized feedback stays delicate in close-ups and orthographic views.
+        const clip = cameraProjectionMatrix.mul(modelViewMatrix.mul(vec4(positionLocal, 1)))
+        const worldPerPixel = clip.w
+          .abs()
+          .mul(2)
+          .div(
+            cameraProjectionMatrix
+              .mul(vec4(0, 1, 0, 0))
+              .y.abs()
+              .mul(screenSize.y),
+          )
+        outline.positionNode = positionLocal.add(
+          normalLocal.div(modelScale).mul(worldPerPixel.mul(width as number)),
+        )
         return outline
       })
     : [material]
