@@ -1,0 +1,36 @@
+{"id":"cam-001","utterance":"从上面看一下","expected_intent":"elevated_perspective","expected_projection":"perspective","clarify":false}
+{"id":"cam-002","utterance":"从俯视图角度看一下","expected_intent":"top_orthographic","expected_projection":"orthographic","clarify":false}
+{"id":"cam-003","utterance":"切到俯视图","expected_intent":"top_orthographic","expected_projection":"orthographic","clarify":false}
+{"id":"cam-004","utterance":"切到顶视图","expected_intent":"top_orthographic","expected_projection":"orthographic","clarify":false}
+{"id":"cam-005","utterance":"看一下平面图","expected_intent":"top_orthographic","expected_projection":"orthographic","clarify":false}
+{"id":"cam-006","utterance":"从正上方看整个舞台","expected_intent":"top_orthographic","expected_target":"stage","expected_projection":"orthographic","clarify":false}
+{"id":"cam-007","utterance":"top view","expected_intent":"top_orthographic","expected_projection":"orthographic","clarify":false}
+{"id":"cam-008","utterance":"plan view","expected_intent":"top_orthographic","expected_projection":"orthographic","clarify":false}
+{"id":"cam-009","utterance":"镜头高一点","expected_intent":"elevated_perspective","expected_projection":"perspective","clarify":false}
+{"id":"cam-010","utterance":"从高一点看","expected_intent":"elevated_perspective","expected_projection":"perspective","clarify":false}
+{"id":"cam-011","utterance":"把视角抬高一点看看","expected_intent":"elevated_perspective","expected_projection":"perspective","clarify":false}
+{"id":"cam-012","utterance":"从观众席上方看看","expected_intent":"elevated_perspective","expected_projection":"perspective","clarify":false}
+{"id":"cam-013","utterance":"从上面看看这张桌子","expected_intent":"elevated_perspective","expected_target":"selected_or_table","expected_projection":"perspective","clarify":false}
+{"id":"cam-014","utterance":"往下看一点","expected_intent":"tilt_down","expected_projection":"perspective","clarify":false}
+{"id":"cam-015","utterance":"镜头往下压一点","expected_intent":"tilt_down","expected_projection":"perspective","clarify":false}
+{"id":"cam-016","utterance":"再俯一点","expected_intent":"tilt_down","expected_projection":"perspective","clarify":false}
+{"id":"cam-017","utterance":"镜头升高一点","expected_intent":"raise_camera","expected_projection":"perspective","clarify":false}
+{"id":"cam-018","utterance":"相机抬高","expected_intent":"raise_camera","expected_projection":"perspective","clarify":false}
+{"id":"cam-019","utterance":"从观众席看","expected_intent":"audience_view","clarify":false}
+{"id":"cam-020","utterance":"看看观众看到的效果","expected_intent":"audience_view","clarify":false}
+{"id":"cam-021","utterance":"从正面看","expected_intent":"front_view","clarify":false}
+{"id":"cam-022","utterance":"从台口正面看看","expected_intent":"front_view","clarify":false}
+{"id":"cam-023","utterance":"绕到左边看看","expected_intent":"orbit_left","clarify":false}
+{"id":"cam-024","utterance":"往右绕一点","expected_intent":"orbit_right","clarify":false}
+{"id":"cam-025","utterance":"从桌子右侧看看","expected_intent":"orbit_right","expected_target":"table","clarify":false}
+{"id":"cam-026","utterance":"聚焦这个物件","expected_intent":"focus_selection","expected_target":"selection","clarify":false}
+{"id":"cam-027","utterance":"对准我选中的景片","expected_intent":"focus_selection","expected_target":"selection","clarify":false}
+{"id":"cam-028","utterance":"上面看看","expected_intent":"clarify_vertical_view","clarify":true}
+{"id":"cam-029","utterance":"俯视一下","expected_intent":"clarify_vertical_view","clarify":true}
+{"id":"cam-030","utterance":"从高处","expected_intent":"clarify_vertical_view","clarify":true}
+{"id":"cam-031","utterance":"镜头高一点，再往下看一点","expected_intents":["raise_camera","tilt_down"],"expected_projection":"perspective","clarify":false}
+{"id":"cam-032","utterance":"从正上方看看这张桌子","expected_intent":"top_orthographic","expected_target":"table","expected_projection":"orthographic","clarify":false}
+{"id":"cam-033","utterance":"从上面看看整个舞台，但不要切平面图","expected_intent":"elevated_perspective","expected_target":"stage","expected_projection":"perspective","clarify":false}
+{"id":"cam-034","utterance":"切到俯视图看这张桌子","expected_intent":"top_orthographic","expected_target":"table","expected_projection":"orthographic","clarify":false}
+{"id":"cam-035","utterance":"高一点看舞台，不要变成俯视图","expected_intent":"elevated_perspective","expected_target":"stage","expected_projection":"perspective","clarify":false}
+{"id":"cam-036","utterance":"先从观众席看，再把镜头抬高一点","expected_intents":["audience_view","raise_camera"],"clarify":false}
