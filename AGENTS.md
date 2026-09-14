@@ -39,6 +39,10 @@ Read the relevant page in `wiki/architecture/` **before** writing code. The page
 - Anything in `packages/viewer` → `viewer-isolation.md`, `layers.md`
 - Anything touching selection → `selection-managers.md`, `scene-registry.md`, `events.md`
 
+## When tuning Dia language understanding
+
+Invoke the `dia-language-trainer` skill (`.agents/skills/dia-language-trainer/SKILL.md`) whenever the user reports that Dia misunderstood a phrase, asks Dia to learn vocabulary, or requests changes to camera/view, placement, spatial-relation, scene-composition, or object-operation language understanding. The skill owns the correction → contrast pair → eval → smallest safe implementation loop. Do not patch one phrase directly without adding a reusable semantic boundary and regression case.
+
 ## When reviewing a PR
 
 Invoke the `review-architecture` skill (`.agents/skills/review-architecture/SKILL.md`). It loads the required architecture pages, fetches the diff, classifies each new file by layer, and reports findings grouped by severity.
