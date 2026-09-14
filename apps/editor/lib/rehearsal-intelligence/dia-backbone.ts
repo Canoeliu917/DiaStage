@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { SpatialSolutionSchema } from '../stage/spatial-constraints'
 import { InteractionEnvelopeSchema } from './interaction-envelope'
 import { DiaStageProposalSchema } from './knowledge/stage-proposal'
+import { StructuredGroundingSchema } from './open-language'
 import { RehearsalContextSchema, type ThreadMessage } from './schema'
 
 export const DiaBuildProposalSchema = z
@@ -21,6 +22,10 @@ export const DiaBuildProposalSchema = z
     previewedPlan: StagePlanSchema.nullable(),
     knowledgeProposal: DiaStageProposalSchema.optional(),
     spatialSolution: SpatialSolutionSchema.optional(),
+    structuredGrounding: StructuredGroundingSchema.optional(),
+    groundingProvider: z
+      .strictObject({ provider: z.enum(['deterministic', 'openai']), model: z.string().nullable() })
+      .optional(),
     status: z.enum(['proposed', 'previewed', 'prepared', 'applied', 'rejected']),
     finalSceneVersion: z.string().nullable(),
     privateProjectData: z.literal(true),
