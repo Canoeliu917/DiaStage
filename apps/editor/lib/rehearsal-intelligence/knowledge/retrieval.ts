@@ -12,8 +12,23 @@ import {
 
 export type AliasLookupResult =
   | { kind: 'match'; query: string; concept: DiaKnowledgeConcept }
-  | { kind: 'ambiguous'; query: string; candidates: DiaKnowledgeConcept[] }
+  | {
+      kind: 'ambiguous'
+      query: string
+      clarificationRequired: true
+      clarification: string
+      candidates: DiaKnowledgeConcept[]
+    }
   | { kind: 'not_found'; query: string; candidates: [] }
+
+export type KnowledgeExplanation = {
+  concept: DiaKnowledgeConcept
+  definitionStatus: DiaKnowledgeConcept['definitionStatus']
+  qualification: 'none' | 'heuristic_not_universal' | 'tradition_specific' | 'contested'
+  universal: false | null
+  disputedNotes: string[]
+  statement: string
+}
 
 export type RelationLookupResult = {
   relation: KnowledgeRelation
@@ -209,7 +224,14 @@ export function lookupAlias(query: string): AliasLookupResult {
     a.id.localeCompare(b.id),
   )
   if (candidates.length === 0) return { kind: 'not_found', query, candidates: [] }
-  if (candidates.length > 1) return { kind: 'ambiguous', query, candidates }
+  if (candidates.length > 1)
+    return {
+      kind: 'ambiguous',
+      query,
+      clarificationRequired: true,
+      clarification: `“${query}”可能指：${candidates.map((item) => item.label).join('、')}。请明确所指概念。`,
+      candidates,
+    }
   return { kind: 'match', query, concept: candidates[0]! }
 }
 
@@ -248,4 +270,44 @@ export function lookupSource(sourceId: string): SourceLookupResult | undefined {
 export function getExecutableIntents(id: string) {
   const concept = lookupCanonical(id)
   return concept?.executionEligibility === 'allowed' ? [...concept.executableIntents] : []
+}
+
+export function explainConcept(id: string): KnowledgeExplanation | undefined {
+  const concept = lookupCanonical(id)
+  if (!concept) return undefined
+  if (concept.definitionStatus === 'heuristic')
+    return {
+      concept,
+      definitionStatus: concept.definitionStatus,
+      qualification: 'heuristic_not_universal',
+      universal: false,
+      disputedNotes: [...concept.disputedNotes],
+      statement: `启发式提示（非普遍规律）：${concept.definition} ${concept.disputedNotes.join(' ')}`,
+    }
+  if (concept.definitionStatus === 'tradition_specific')
+    return {
+      concept,
+      definitionStatus: concept.definitionStatus,
+      qualification: 'tradition_specific',
+      universal: false,
+      disputedNotes: [...concept.disputedNotes],
+      statement: `在 ${concept.tradition} 传统中：${concept.definition}`,
+    }
+  if (concept.definitionStatus === 'contested')
+    return {
+      concept,
+      definitionStatus: concept.definitionStatus,
+      qualification: 'contested',
+      universal: null,
+      disputedNotes: [...concept.disputedNotes],
+      statement: `存在定义争议：${concept.definition} ${concept.disputedNotes.join(' ')}`,
+    }
+  return {
+    concept,
+    definitionStatus: concept.definitionStatus,
+    qualification: 'none',
+    universal: null,
+    disputedNotes: [...concept.disputedNotes],
+    statement: concept.definition,
+  }
 }

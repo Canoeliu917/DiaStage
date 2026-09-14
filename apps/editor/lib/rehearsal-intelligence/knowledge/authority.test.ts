@@ -12,7 +12,7 @@ describe('Theatre Terminology Authority Review', () => {
   })
 
   test('exam sources are candidate, alias or historical evidence, never authority definitions', () => {
-    const examSourceIds = new Set([
+    const examSourceIds = new Set<string>([
       SOURCE_IDS.encyclopedia,
       SOURCE_IDS.mindmap,
       SOURCE_IDS.zhongxi,
@@ -21,9 +21,7 @@ describe('Theatre Terminology Authority Review', () => {
     const refs = DIA_KNOWLEDGE.concepts.flatMap((item) => item.sourceRefs)
     expect(
       refs
-        .filter((ref) =>
-          examSourceIds.has(ref.sourceId as (typeof SOURCE_IDS)[keyof typeof SOURCE_IDS]),
-        )
+        .filter((ref) => examSourceIds.has(ref.sourceId))
         .every((ref) =>
           ['candidate_definition', 'alias', 'historical_terminology'].includes(ref.role),
         ),
