@@ -1,0 +1,20 @@
+{"id":"knowledge-001","query":{"kind":"canonical","value":"stage-left"},"expected":{"result":"match","conceptIds":["stage-left"]}}
+{"id":"knowledge-002","query":{"kind":"canonical","value":"scenic-flat"},"expected":{"result":"match","conceptIds":["scenic-flat"]}}
+{"id":"knowledge-003","query":{"kind":"alias","value":"舞台左侧"},"expected":{"result":"match","conceptIds":["stage-left"]}}
+{"id":"knowledge-004","query":{"kind":"alias","value":"景 片"},"expected":{"result":"match","conceptIds":["scenic-flat"]}}
+{"id":"knowledge-005","query":{"kind":"alias","value":"左边"},"expected":{"result":"ambiguous","conceptIds":["audience-left","stage-left"]}}
+{"id":"knowledge-006","query":{"kind":"alias","value":"右边"},"expected":{"result":"ambiguous","conceptIds":["audience-right","stage-right"]}}
+{"id":"knowledge-007","query":{"kind":"alias","value":"前面"},"expected":{"result":"ambiguous","conceptIds":["downstage","foreground"]}}
+{"id":"knowledge-008","query":{"kind":"domain","value":"stage_assets","status":"ACTIVE"},"expected":{"result":"list","count":9}}
+{"id":"knowledge-009","query":{"kind":"domain","value":"scenic_flats","status":"ACTIVE"},"expected":{"result":"list","count":18}}
+{"id":"knowledge-010","query":{"kind":"domain","value":"spatial_directing","status":"ACTIVE"},"expected":{"result":"list","count":23}}
+{"id":"knowledge-011","query":{"kind":"relation","value":"stage-left","relationType":"distinct_from"},"expected":{"result":"list","conceptIds":["audience-left"]}}
+{"id":"knowledge-012","query":{"kind":"relation","value":"fold-flat","relationType":"distinct_from"},"expected":{"result":"list","conceptIds":["rotate-whole"]}}
+{"id":"knowledge-013","query":{"kind":"source","value":"dia-src-seagull-cn-v1"},"expected":{"result":"source","conceptCount":0,"exampleCount":4}}
+{"id":"knowledge-014","query":{"kind":"source","value":"dia-src-cyrano-cn-v1"},"expected":{"result":"source","conceptCount":0,"exampleCount":5}}
+{"id":"knowledge-015","query":{"kind":"source","value":"dia-src-zhongxi-glossary-v1"},"expected":{"result":"source","containsConceptId":"stage-space"}}
+{"id":"knowledge-016","query":{"kind":"executable","value":"stage-left"},"expected":{"result":"list","values":["place_stage_left"]}}
+{"id":"knowledge-017","query":{"kind":"executable","value":"focus"},"expected":{"result":"list","values":[]}}
+{"id":"knowledge-018","query":{"kind":"executable","value":"subtext"},"expected":{"result":"list","values":[]}}
+{"id":"knowledge-019","query":{"kind":"alias","value":"台左"},"expected":{"result":"match","conceptIds":["stage-left"]}}
+{"id":"knowledge-020","query":{"kind":"alias","value":"观众左"},"expected":{"result":"match","conceptIds":["audience-left"]}}
