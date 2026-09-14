@@ -6,6 +6,7 @@ import {
   getNodeLock,
   type LiveTransform,
   useLiveTransforms,
+  useLiveNodeOverrides,
   useScene,
 } from '@pascal-app/core'
 import { inverseRotatePoint, rotatePoint, subtract } from '@pascal-app/core/remount'
@@ -22,6 +23,7 @@ import { stageContactIds } from '@/lib/stage/contacts'
 import { stageFrame } from '@/lib/stage/context'
 import { useStageContext } from '@/lib/stage/live-context'
 import { useStagePlanPreview } from '@/lib/stage/plan-preview'
+import { prepareSpatialFold } from '@/lib/stage/spatial-fold'
 import { SCENERY_ROUND_SEGMENTS, sceneryProxyParts } from '@/lib/stage/scenery'
 import { DIA_COLORS } from '@/lib/visual-system'
 import { useSimulationSelection } from '../theatre/simulation-panel'
@@ -42,6 +44,8 @@ function usesLivePlanTransform(node: AnyNode | undefined, nodes: SceneNodes) {
 
 export function StagePlanPreviewSystem({ enabled }: { enabled: boolean }) {
   const storedPlan = useStagePlanPreview((state) => state.plan)
+  const clearanceRegions = useStagePlanPreview((state) => state.clearanceRegions)
+  const folds = useStagePlanPreview((state) => state.folds)
   const dragPlan = useStagePlanPreview((state) => state.draft)
   const showGhost = useSimulationSelection((state) => state.showGhost)
   const buildPlan = dragPlan ?? (showGhost ? storedPlan : null)
@@ -85,6 +89,20 @@ export function StagePlanPreviewSystem({ enabled }: { enabled: boolean }) {
     (state) => !state.isPreviewMode && !state.isFirstPersonMode && !state.isCaptureMode,
   )
   const owned = useRef(new Map<string, LiveTransform>())
+  useLayoutEffect(() => {
+    if (!enabled || !editing || !loaded || !storedPlan || !plan || suspended || !folds?.length)
+      return
+    const entries = folds.flatMap((fold) => {
+      const node = nodes[fold.subject as AnyNodeId]
+      const patch = node?.type === 'item' && prepareSpatialFold(node, fold)
+      return patch ? [[fold.subject, patch] as const] : []
+    })
+    useLiveNodeOverrides.getState().setMany(entries)
+    return () => {
+      for (const [id] of entries)
+        useLiveNodeOverrides.getState().clearFields(id, ['controls', 'asset'])
+    }
+  }, [enabled, editing, loaded, storedPlan, plan, suspended, folds, nodes])
   const restore = useCallback(() => {
     const transforms = useLiveTransforms.getState().transforms
     let next: typeof transforms | undefined
@@ -170,6 +188,35 @@ export function StagePlanPreviewSystem({ enabled }: { enabled: boolean }) {
   const frame = { ...stageFrame(), ...(venue ? { depthMeters: venue.depthMeters } : {}) }
   return (
     <group userData={{ viewerLineStyle: 'colored' }}>
+      {(storedPlan ? (clearanceRegions ?? []) : []).map((region, index) => {
+        const points = region.polygon.map(([x, z]) =>
+          stageToWorldPosition({ x, y: 0.06, z }, frame),
+        )
+        const a = points[0]!,
+          b = points[1]!,
+          d = points[3]!
+        return (
+          <mesh
+            key={`clearance-${index}`}
+            name={`spatial-${region.type}`}
+            renderOrder={10}
+            position={[(a[0] + points[2]![0]) / 2, a[1], (a[2] + points[2]![2]) / 2]}
+            rotation={[-Math.PI / 2, 0, -Math.atan2(b[2] - a[2], b[0] - a[0])]}
+            raycast={() => null}
+          >
+            <planeGeometry
+              args={[Math.hypot(b[0] - a[0], b[2] - a[2]), Math.hypot(d[0] - a[0], d[2] - a[2])]}
+            />
+            <meshBasicMaterial
+              color={DIA_COLORS.blue}
+              transparent
+              opacity={0.25}
+              depthTest={false}
+              depthWrite={false}
+            />
+          </mesh>
+        )
+      })}
       {venue && (
         <group name="stage-plan-venue-outline" position={frame.origin} raycast={() => null}>
           {[-1, 1].map((side) => (

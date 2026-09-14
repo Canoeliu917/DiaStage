@@ -36,6 +36,7 @@ export type StagePlacementIntent = {
   region?: 'center'
   count?: number
   angleDegrees?: number
+  openingRequired?: boolean
   shape?: 'straight' | 'corner' | 'u' | 'enclosure' | 'unspecified'
   clarify: boolean
   message?: string
@@ -76,7 +77,7 @@ export function parseStagePlacementIntent(input: string): StagePlacementIntent |
       shape: 'straight',
       clarify: false,
     }
-  if (/^(?:让)?两块景片(?:拐成|拼成|摆成)(?:一个)?(?:90度|九十度|直角)$/.test(text))
+  if (/^(?:让)?两块景片(?:拐成?|拼成|摆成)(?:一个)?(?:90度|九十度|直角)$/.test(text))
     return {
       kind: 'connect_flats',
       subject: '$scenic-flats',
@@ -85,7 +86,7 @@ export function parseStagePlacementIntent(input: string): StagePlacementIntent |
       shape: 'corner',
       clarify: false,
     }
-  if (/^三联景片(?:折成|折为)(?:一个)?U形$/i.test(text))
+  if (/^三联景片(?:折成|折为)(?:一个)?U[形型]$/i.test(text))
     return {
       kind: 'fold_hinge',
       subject: '三联景片',
@@ -102,14 +103,23 @@ export function parseStagePlacementIntent(input: string): StagePlacementIntent |
       shape: 'unspecified',
       clarify: false,
     }
-  if (/^(?:用)?三块景片围(?:成)?(?:一个)?空间[，,]?中间留(?:一个)?入口$/.test(text))
+  const enclosure = text.match(
+    /^(?:用)?三块景片(?:围(?:成)?(?:一个)?空间|(?:围成|拼成)U[形型])(?:[，,]?中间留(?:一个)?(?:(.+?)宽(?:的)?)?入口)?$/i,
+  )
+  if (enclosure) {
+    const width = enclosure[1] ? parseStageLength(enclosure[1]) : undefined
+    if (width === null || (width !== undefined && width <= 0))
+      return ambiguous('请说明有效的入口净宽。')
     return {
       kind: 'enclose_with_opening',
       subject: '$scenic-flats',
       count: 3,
       shape: 'enclosure',
+      openingRequired: text.includes('入口'),
+      ...(width === undefined ? {} : { amountMeters: width }),
       clarify: false,
     }
+  }
   if (/^舞台右后(?:一定)?是最弱的位置吗[？?]?$/.test(text))
     return {
       kind: 'knowledge_question',

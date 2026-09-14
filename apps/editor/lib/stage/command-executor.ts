@@ -62,6 +62,8 @@ import {
 } from './context'
 import { ScriptImportSchema } from './import-metadata'
 import { makeScenery, SCENERY_LIBRARY } from './scenery'
+import { prepareSpatialFold } from './spatial-fold'
+import { SpatialFoldConfigurationSchema } from './spatial-constraints'
 
 export const useStageCommandNotice = create<{ error: string }>(() => ({ error: '' }))
 export type StageExecutionResult = {
@@ -210,6 +212,7 @@ export function executeStageCommands(
   input: unknown,
   scriptImport?: unknown,
   diaEnvelope?: InteractionEnvelope,
+  foldConfigurations?: unknown,
 ): StageExecutionResult {
   try {
     const commands = StageCommandSchema.array().min(1).max(500).parse(input)
@@ -303,6 +306,18 @@ export function executeStageCommands(
     const update = (node: AnyNode) => {
       nodes[node.id] = node
       changed.add(node.id)
+    }
+    const folds = SpatialFoldConfigurationSchema.array()
+      .max(1)
+      .parse(foldConfigurations ?? [])
+    if (folds.length && !envelope) throw new Error('空间折叠必须经过 Proposal 人工确认。')
+    for (const fold of folds) {
+      const node = positioned(nodes, fold.subject)
+      if (node.type !== 'item') throw new Error('折叠对象不是景片。')
+      const patch = prepareSpatialFold(node, fold)
+      if (!patch) throw new Error('折叠模型不可用，请重新生成候选。')
+      update({ ...node, ...patch })
+      spatial.add(node.id)
     }
     for (const command of commands) {
       if (command.type === 'SetDoorClearance') {

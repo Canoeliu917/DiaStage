@@ -2,6 +2,7 @@ import {
   type SceneContextObject,
   type SceneContextSummary,
   stageFootprintGap,
+  footprintHull,
 } from '@pascal-app/core/stage'
 import { stageVisibleFootprints } from './model-contact'
 import { snapStageObject } from './placement-snap'
@@ -63,8 +64,8 @@ export function scenicConnectionTransforms(
     }
     const movingFootprints = stageVisibleFootprints(oriented)
     const targetFootprints = stageVisibleFootprints(target)
-    const movingVertices = movingFootprints.flat()
-    const targetVertices = targetFootprints.flat()
+    const movingVertices = footprintHull(movingFootprints.flat())
+    const targetVertices = footprintHull(targetFootprints.flat())
     for (const from of movingVertices)
       for (const to of targetVertices) {
         const dx = to[0] - from[0]

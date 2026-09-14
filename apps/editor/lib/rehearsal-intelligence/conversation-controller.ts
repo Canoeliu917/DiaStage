@@ -15,6 +15,9 @@ import { draftContext, mergeDraftPlan } from '../stage/creation-policy'
 import { groundStageAssets } from '../stage/ground-assets'
 import { useStagePlanPreview } from '../stage/plan-preview'
 import { SCENERY_LIBRARY } from '../stage/scenery'
+import { spatialConstraintsForProposal, type SpatialSolution } from '../stage/spatial-constraints'
+import { spatialCandidatePlan } from '../stage/spatial-solver'
+import { solveStageSpatialProposal } from '../stage/spatial-fold'
 import { assertTheatreWritable } from '../theatre/scene-adapter'
 import { readStageDocument } from '../theatre/simulation-store'
 import {
@@ -733,6 +736,7 @@ export class DiaConversation {
     parent: DiaBuildProposal | null,
     signal: AbortSignal,
     knowledgeProposal?: DiaStageProposal,
+    spatialSolution?: SpatialSolution,
   ) {
     this.navigate?.('items')
     if (this.store.getState().builds.length >= 200)
@@ -749,6 +753,7 @@ export class DiaConversation {
       originalPlan: structuredClone(plan),
       previewedPlan: null,
       ...(knowledgeProposal ? { knowledgeProposal } : {}),
+      ...(spatialSolution ? { spatialSolution } : {}),
       status: 'proposed',
       finalSceneVersion: null,
       privateProjectData: true,
@@ -822,6 +827,49 @@ export class DiaConversation {
     void this.persist().catch((error) => this.fail(error))
   }
 
+  async chooseSpatialCandidate(candidateId: string) {
+    const proposal = this.buildProposal()
+    if (
+      !proposal?.spatialSolution ||
+      this.store.getState().busy ||
+      ['applied', 'rejected', 'prepared'].includes(proposal.status)
+    )
+      return
+    const candidate = proposal.spatialSolution.candidates.find(
+      (item) => item.candidateId === candidateId,
+    )
+    if (!candidate) return
+    useStagePlanPreview.setState({ plan: null })
+    this.replaceBuild({
+      ...proposal,
+      plan: candidate.plan,
+      previewedPlan: null,
+      status: 'proposed',
+      spatialSolution: { ...proposal.spatialSolution, selectedCandidateId: candidateId },
+    })
+    await this.previewBuild(candidate.plan)
+  }
+
+  private assertSpatialCandidate(proposal: DiaBuildProposal, current: SceneContextSummary) {
+    if (!proposal.spatialSolution) return
+    if (!proposal.knowledgeProposal) throw new Error('空间候选缺少 Knowledge 来源。')
+    const fresh = solveStageSpatialProposal(proposal.knowledgeProposal, current)
+    if (JSON.stringify(fresh.constraints) !== JSON.stringify(proposal.spatialSolution.constraints))
+      throw new Error('空间约束与当前来源不一致。')
+    const candidate = fresh.candidates.find(
+      (item) => item.candidateId === proposal.spatialSolution!.selectedCandidateId,
+    )
+    const stored = proposal.spatialSolution.candidates.find(
+      (item) => item.candidateId === candidate?.candidateId,
+    )
+    if (
+      !candidate ||
+      JSON.stringify(candidate.plan) !== JSON.stringify(proposal.plan) ||
+      JSON.stringify(candidate.folds) !== JSON.stringify(stored?.folds)
+    )
+      throw new Error('当前候选未通过空间约束复检，请重新生成方案。')
+  }
+
   private assertBuildCurrent(proposal: DiaBuildProposal) {
     if (this.currentContext().sceneVersion !== proposal.sceneVersion)
       throw new Error('舞台已经变化，请重新生成搭台方案。')
@@ -845,6 +893,7 @@ export class DiaConversation {
       await checkCurrentScene(this.sceneId)
       signal.throwIfAborted()
       const current = this.assertBuildCurrent(proposal)
+      this.assertSpatialCandidate(proposal, current)
       const result = validateStagePlan(plan, current)
       if (!result.valid)
         throw new Error(result.warnings.map((w) => w.message).join('；') || '请先补齐方案信息。')
@@ -861,7 +910,17 @@ export class DiaConversation {
       await this.persist()
       signal.throwIfAborted()
       this.assertBuildCurrent(proposal)
-      useStagePlanPreview.setState({ plan: result.plan })
+      useStagePlanPreview.setState({
+        plan: result.plan,
+        clearanceRegions:
+          proposal.spatialSolution?.candidates.find(
+            (candidate) => candidate.candidateId === proposal.spatialSolution!.selectedCandidateId,
+          )?.clearanceRegions ?? [],
+        folds:
+          proposal.spatialSolution?.candidates.find(
+            (candidate) => candidate.candidateId === proposal.spatialSolution!.selectedCandidateId,
+          )?.folds ?? [],
+      })
       this.status('waiting-human', '半透明布景是搭台建议，完整场地保持原样；确认后才落位。')
       await this.event('proposal_previewed')
     })
@@ -913,12 +972,16 @@ export class DiaConversation {
       )
         throw new Error('搭台预演已经结束或变化，请重新预演后再采用。')
       const context = this.assertBuildCurrent(proposal)
+      this.assertSpatialCandidate(proposal, context)
       const compiled = compileStagePlan(plan, context, {
         transactionId: proposal.id,
         issuedAt: new Date().toISOString(),
       })
       if (!compiled.ok) throw new Error('搭台方案未通过边界与冲突检查。')
-      const result = executeStageCommands(compiled.commands, undefined, prepared.envelope)
+      const folds = proposal.spatialSolution?.candidates.find(
+        (candidate) => candidate.candidateId === proposal.spatialSolution!.selectedCandidateId,
+      )?.folds
+      const result = executeStageCommands(compiled.commands, undefined, prepared.envelope, folds)
       if (!result.ok) throw new Error(result.error)
       useStagePlanPreview.setState({ plan: null })
       const siteId = stageSite().id
@@ -1033,6 +1096,26 @@ export class DiaConversation {
       this.store.setState({ placementProposal: grounded.placement })
       if (grounded.placement.status === 'clarify') {
         await reply(grounded.placement.message)
+        return true
+      }
+      const knowledge = grounded.placement.knowledgeProposal
+      const constraints = knowledge ? spatialConstraintsForProposal(knowledge) : []
+      if (knowledge && constraints.length) {
+        if (parent) {
+          await reply('请先采用或取消当前提案，再生成独立空间候选。')
+          return true
+        }
+        const solution = solveStageSpatialProposal(knowledge, formalContext)
+        await this.proposeBuildPlan(
+          text,
+          solution.candidates[0]?.plan ?? spatialCandidatePlan([]),
+          formalContext,
+          context.sceneVersion!,
+          null,
+          signal,
+          knowledge,
+          solution,
+        )
         return true
       }
       const runtime = compileStageProposalPreview(grounded.placement, groundingContext)

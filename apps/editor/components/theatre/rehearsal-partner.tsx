@@ -289,6 +289,28 @@ export function RehearsalPartner({
                 </details>
               </article>
             )}
+            {build.spatialSolution && (
+              <div aria-label="空间候选方案">
+                {build.spatialSolution.warnings.map((warning) => (
+                  <p key={warning}>{warning}</p>
+                ))}
+                <div className="dia-actions">
+                  {build.spatialSolution.candidates.map((candidate, index) => (
+                    <button
+                      type="button"
+                      key={candidate.candidateId}
+                      aria-pressed={
+                        candidate.candidateId === build.spatialSolution!.selectedCandidateId
+                      }
+                      disabled={state.busy || settled || stale || readOnly}
+                      onClick={() => void controller.chooseSpatialCandidate(candidate.candidateId)}
+                    >
+                      方案 {String.fromCharCode(65 + index)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             {settled || stale ? (
               <p>
                 {stale
@@ -297,11 +319,15 @@ export function RehearsalPartner({
                     ? '已采用，可撤销或继续调整。'
                     : '已放下这个方向，正式舞台未改变。'}
               </p>
+            ) : build.spatialSolution?.candidates.length === 0 ? (
+              <button type="button" disabled={state.busy} onClick={() => void controller.reject()}>
+                取消
+              </button>
             ) : (
               <StagePlanReview
                 compact
                 drawingContainer={drawingContainer}
-                key={build.id}
+                key={`${build.id}:${build.spatialSolution?.selectedCandidateId ?? ''}`}
                 plan={build.plan}
                 context={build.context}
                 onChange={(plan) => controller.editBuild(plan)}

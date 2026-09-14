@@ -102,6 +102,7 @@ if (!process.env.BUILD_GHOST_RUNTIME_TEST) {
   mock.module('../../lib/stage/context', () => ({
     stageFrame: () => frame,
   }))
+  mock.module('../../lib/stage/spatial-fold', () => ({ prepareSpatialFold: () => null }))
   mock.module('../../lib/stage/contacts', () => ({
     stageContactIds: () =>
       new Set((store.draft ?? store.plan).warnings.flatMap((warning) => warning.itemIds)),

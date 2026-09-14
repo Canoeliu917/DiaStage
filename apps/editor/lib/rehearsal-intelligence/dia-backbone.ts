@@ -1,5 +1,6 @@
 import { SceneContextSummarySchema, StagePlanSchema } from '@pascal-app/core/stage'
 import { z } from 'zod'
+import { SpatialSolutionSchema } from '../stage/spatial-constraints'
 import { InteractionEnvelopeSchema } from './interaction-envelope'
 import { DiaStageProposalSchema } from './knowledge/stage-proposal'
 import { RehearsalContextSchema, type ThreadMessage } from './schema'
@@ -19,6 +20,7 @@ export const DiaBuildProposalSchema = z
     originalPlan: StagePlanSchema,
     previewedPlan: StagePlanSchema.nullable(),
     knowledgeProposal: DiaStageProposalSchema.optional(),
+    spatialSolution: SpatialSolutionSchema.optional(),
     status: z.enum(['proposed', 'previewed', 'prepared', 'applied', 'rejected']),
     finalSceneVersion: z.string().nullable(),
     privateProjectData: z.literal(true),

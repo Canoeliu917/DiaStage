@@ -222,6 +222,45 @@ export function stageVisibleFootprints(item: ContactObject): [number, number][][
   return stageModelFootprints(item) ?? stageObjectFootprints(item)
 }
 
+export function stageClearanceFootprints(
+  item: ContactObject,
+  height: number,
+): [number, number][][] {
+  return (modelParts(item) ?? proxyParts(item)).flatMap((part) => {
+    const matrix = pose(item).multiply(part.local)
+    const positions = part.geometry.getAttribute('position'),
+      indices = part.geometry.index
+    const polygons: [number, number][][] = []
+    const clip = (points: Vector3[], level: number, above: boolean) => {
+      const result: Vector3[] = []
+      for (let i = 0; i < points.length; i++) {
+        const a = points[i]!,
+          b = points[(i + 1) % points.length]!
+        const insideA = above ? a.y >= level : a.y <= level
+        const insideB = above ? b.y >= level : b.y <= level
+        if (insideA) result.push(a)
+        if (insideA !== insideB) result.push(a.clone().lerp(b, (level - a.y) / (b.y - a.y)))
+      }
+      return result
+    }
+    for (let i = 0; i < (indices?.count ?? positions.count); i += 3) {
+      const triangle = [0, 1, 2].map((offset) =>
+        new Vector3()
+          .fromBufferAttribute(positions, indices?.getX(i + offset) ?? i + offset)
+          .applyMatrix4(matrix),
+      )
+      const polygon = footprintHull(
+        clip(clip(triangle, 0, true), height, false).map((point): [number, number] => [
+          point.x,
+          point.z,
+        ]),
+      )
+      if (polygon.length >= 3) polygons.push(polygon)
+    }
+    return polygons
+  })
+}
+
 export function stageModelBelowFloor(item: ContactObject): boolean | null {
   const projected = projectModel(item)
   return projected ? projected.bottom + item.transform.position.y < -1e-7 : null

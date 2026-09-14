@@ -28,6 +28,8 @@ import { NativePlanFoldHandles } from './stage-plan-fold-handles'
 
 export function StagePlanPreviewFloorplan({ enabled }: { enabled: boolean }) {
   const plan = useStagePlanPreview((state) => state.draft ?? state.plan)
+  const storedPlan = useStagePlanPreview((state) => state.plan)
+  const clearanceRegions = useStagePlanPreview((state) => state.clearanceRegions)
   const inspectedId = useStagePlanPreview((state) => state.inspectedId)
   const placement = useStagePlacement((state) => state.draft)
   const movingNode = useMovingNode()
@@ -137,6 +139,20 @@ export function StagePlanPreviewFloorplan({ enabled }: { enabled: boolean }) {
   const labels: [number, number][] = []
   return (
     <g pointerEvents="none" aria-label="搭台方案平面预览">
+      {visiblePlan &&
+        storedPlan &&
+        clearanceRegions.map((region, index) => (
+          <polygon
+            key={`clearance-${index}`}
+            data-spatial-clearance={region.type}
+            points={region.polygon.map(([x, z]) => project(x, z)).join(' ')}
+            fill={DIA_COLORS.blue}
+            fillOpacity={0.2}
+            stroke={DIA_COLORS.blue}
+            strokeWidth={unit}
+            strokeDasharray={`${5 * unit} ${3 * unit}`}
+          />
+        ))}
       {visiblePlan?.venue && (
         <polygon
           points={[

@@ -398,12 +398,14 @@ export function resolveKnowledgeForProposal(
             sourceIntent: intent.kind,
             knowledgeConceptIds: safe('scenic-flat', 'splice', 'enclosure'),
           })
-        constraints.push({
-          type: 'leave_opening',
-          subject: '$enclosure',
-          sourceIntent: intent.kind,
-          knowledgeConceptIds: applicableConstraint('opening', 'entrance'),
-        })
+        if (intent.openingRequired !== false)
+          constraints.push({
+            type: 'leave_opening',
+            subject: '$enclosure',
+            ...(intent.amountMeters === undefined ? {} : { widthMeters: intent.amountMeters }),
+            sourceIntent: intent.kind,
+            knowledgeConceptIds: applicableConstraint('opening', 'entrance'),
+          })
         break
       case 'preserve_path':
         constraints.push({
@@ -453,7 +455,7 @@ export function resolveKnowledgeForProposal(
     ambiguities.push({
       term: '90度转角方向',
       candidates: ['顺时针直角预演', '逆时针直角预演'],
-      clarification: '当前仅显示离原位置更近的确定性预演；采用前请确认折向。',
+      clarification: '几何引擎将生成合法折向候选，请切换 Ghost 后选择。',
     })
   if (intent.kind === 'fold_hinge')
     ambiguities.push({
@@ -468,7 +470,7 @@ export function resolveKnowledgeForProposal(
     ambiguities.push({
       term: '围合与入口几何',
       candidates: ['入口朝台前', '入口朝台左', '入口朝台右'],
-      clarification: '请明确入口方向与宽度；当前只保留多动作和开口约束。',
+      clarification: '几何引擎将检验三面围合与入口净宽；请在候选 Ghost 中选择开口朝向。',
     })
 
   const rationale = (() => {
@@ -483,7 +485,7 @@ export function resolveKnowledgeForProposal(
     if (intent.kind === 'enclose_with_opening')
       return '围合被保留为多个连接动作和入口约束，不会退化成单个坐标移动。'
     if (intent.kind === 'preserve_path')
-      return '通道是本次方案约束；当前不会借此自动移动门或其他布景。'
+      return '通道净空由几何引擎验证；必要的布景避让仅作为候选，采用前正式舞台不变。'
     if (intent.kind === 'ambiguous') return placement.message
     if (actions.some((action) => action.type === 'stack_on'))
       return 'stack-on 保留现有 Stage Placement 权限；Knowledge 只补充资产来源，不创造别名。'
