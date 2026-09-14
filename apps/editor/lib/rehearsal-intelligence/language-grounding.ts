@@ -8,11 +8,13 @@ import {
 } from '@pascal-app/core/stage'
 import { betaCapabilityNotice } from '../beta-capabilities'
 import { VERTICAL_VIEW_QUESTION } from './camera-intents'
+import { mapStagePlacementIntent, type StagePlacementProposal } from './stage-placement-actions'
+import { parseStagePlacementIntent } from './stage-placement-intents'
 import { parseViewCommand, type ViewCommand } from './view-commands'
 
 export type GroundedInput = {
   intent: string
-  capability: 'build' | 'view' | 'clarify' | 'unsupported'
+  capability: 'build' | 'view' | 'placement' | 'clarify' | 'unsupported'
   target: string[]
   direction: string | null
   amount: { degree: 'exact' | 'small'; meters?: number; degrees?: number } | null
@@ -21,6 +23,7 @@ export type GroundedInput = {
   normalizedInput: string
   plan?: StagePlan
   view?: ViewCommand
+  placement?: StagePlacementProposal
 }
 
 export function groundLanguage(
@@ -91,6 +94,18 @@ export function groundLanguage(
           ? '请先选中一个要观察的物品。'
           : null,
     }
+  const placementIntent = parseStagePlacementIntent(text)
+  if (placementIntent) {
+    const placement = mapStagePlacementIntent(placementIntent, context)
+    return {
+      ...base,
+      intent: placementIntent.kind,
+      capability: 'placement',
+      placement,
+      clarificationRequired: placement.status === 'clarify',
+      clarification: placement.status === 'clarify' ? placement.message : null,
+    }
+  }
   if (
     /视角|观察位|镜头/.test(text) ||
     /^(?:台左|台右|台前|台后)[。！!？?]?$/.test(text) ||

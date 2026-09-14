@@ -56,6 +56,7 @@ import { LOCAL_REHEARSAL_MODEL_VERSION, localRehearsalOutput } from './local-reh
 import { requestProposal } from './proposal-client'
 import { createInteraction } from './proposal-generator'
 import type { Interaction, RehearsalProposal, Suggestion } from './schema'
+import type { StagePlacementProposal } from './stage-placement-actions'
 import {
   isSyntheticDemoScene,
   readSyntheticDemoIntention,
@@ -79,6 +80,7 @@ export type DiaView = {
   synthetic: boolean
   builds: DiaBuildProposal[]
   activeBuildId: string | null
+  placementProposal: StagePlacementProposal | null
 }
 
 /** One controller owns a scene's requests; the panel and paired remote share it. */
@@ -98,6 +100,7 @@ export class DiaConversation {
     synthetic: false,
     builds: [],
     activeBuildId: null,
+    placementProposal: null,
   }))
   private revision = 0
   private queue = Promise.resolve()
@@ -404,7 +407,7 @@ export class DiaConversation {
   }
 
   private fail(error: unknown) {
-    this.store.setState({ busy: false })
+    this.store.setState({ busy: false, placementProposal: null })
     this.status(
       'failed',
       error instanceof Error
@@ -419,7 +422,7 @@ export class DiaConversation {
     this.epoch++
     clearProposalGhost()
     useStagePlanPreview.setState({ plan: null })
-    this.store.setState({ busy: false })
+    this.store.setState({ busy: false, placementProposal: null })
     this.status(state, notice)
     const thread = this.store.getState().thread
     if (thread) this.message('system-state', notice, thread.sceneVersion)
@@ -432,7 +435,7 @@ export class DiaConversation {
     const request = new AbortController(),
       epoch = ++this.epoch
     this.request = request
-    this.store.setState({ busy: true, draft: text.trim() })
+    this.store.setState({ busy: true, draft: text.trim(), placementProposal: null })
     const viewOnly = groundLanguage(text.trim(), currentStageContext())?.capability === 'view'
     if (!viewOnly) {
       clearProposalGhost()
@@ -948,6 +951,12 @@ export class DiaConversation {
           CorrectInterpretation: grounded,
           SceneContext: formalContext,
         })
+    }
+    if (grounded?.placement) {
+      // Language-only drafts must not fall through into the legacy XYZ planner.
+      this.store.setState({ placementProposal: grounded.placement })
+      await reply(grounded.placement.message)
+      return true
     }
     if (grounded?.clarificationRequired && grounded.capability !== 'build') {
       await reply(grounded.clarification!, grounded.capability === 'view')

@@ -66,7 +66,15 @@ export const STAGE_COMMAND_NORMAL_CASES: EvalCase[] = [
   build('添加软椅', 'SCN-CHAIR-050'),
   build('添加长凳', 'SCN-BENCH-100'),
   build('添加板凳', 'SCN-STOOL-035'),
-  move('把圆桌放在台中。', 'table', 'center', null),
+  {
+    input: '把圆桌放在台中。',
+    expectedIntent: 'center_on_stage',
+    expectedCapability: 'placement',
+    expectedTarget: [],
+    expectedDirection: null,
+    expectedAmount: null,
+    clarificationRequired: false,
+  },
   move('桌子往台右一点。', 'table', 'stage-right', { degree: 'small' }),
   move('把桌子往台前移动30厘米。', 'table', 'downstage', { degree: 'exact', meters: 0.3 }),
   {
