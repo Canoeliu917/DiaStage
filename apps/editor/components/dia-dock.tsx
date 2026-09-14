@@ -2,13 +2,21 @@
 
 import { LockKeyhole, LockKeyholeOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { DiaEdgeTab, useDiaTouchViewport } from './dia-edge-tab'
 import './workspace-layout.css'
 
 const MIN_WIDTH = 300
 const MAX_WIDTH = 640
 
 export function DiaDock({ hidden, children }: { hidden: boolean; children: ReactNode }) {
-  const [layout, setLayout] = useState({ width: 370, open: true, locked: false })
+  const [layout, setLayout] = useState({
+    width: 370,
+    open: true,
+    locked: false,
+    dock: 'right' as 'left' | 'right',
+    tabY: null as number | null,
+  })
+  const viewport = useDiaTouchViewport()
   const [hydrated, setHydrated] = useState(false)
   const drag = useRef<{
     startX: number
@@ -27,6 +35,9 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
               : 370,
           open: stored.open !== false,
           locked: stored.locked === true,
+          dock: stored.dock === 'left' ? 'left' : 'right',
+          tabY:
+            typeof stored.tabY === 'number' && Number.isFinite(stored.tabY) ? stored.tabY : null,
         })
     } catch {}
     setHydrated(true)
@@ -68,25 +79,64 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
 
   return (
     <>
-      {!hidden && !layout.open && (
-        <button
-          type="button"
-          className="dia-restore-tab"
-          aria-label="展开 Dia 对话框"
-          onClick={() => setLayout((previous) => ({ ...previous, open: true }))}
-        >
-          <PanelRightOpen size={16} /> Dia
-        </button>
-      )}
+      {!hidden &&
+        !layout.open &&
+        (viewport ? (
+          <DiaEdgeTab
+            viewport={viewport}
+            savedY={layout.tabY}
+            onSave={(tabY) => setLayout((previous) => ({ ...previous, tabY }))}
+            onExpand={() => setLayout((previous) => ({ ...previous, open: true }))}
+          />
+        ) : (
+          <button
+            type="button"
+            className="dia-restore-tab"
+            aria-label="展开 Dia 对话框"
+            onClick={() => setLayout((previous) => ({ ...previous, open: true }))}
+          >
+            <PanelRightOpen size={16} /> Dia
+          </button>
+        ))}
       <aside
         className="dia-dock dia-resizable-dock"
         hidden={hidden || !layout.open}
         aria-label="Dia 对话工作区"
         data-locked={layout.locked}
-        style={{ '--dia-dock-width': `${layout.width}px` } as CSSProperties}
+        data-touch-dock={viewport ? layout.dock : undefined}
+        style={
+          {
+            '--dia-dock-width': `${layout.width}px`,
+            ...(viewport
+              ? {
+                  top: viewport.top,
+                  height: viewport.height,
+                  width: Math.min(layout.width, viewport.width),
+                  left: layout.dock === 'left' ? viewport.left : undefined,
+                  right:
+                    layout.dock === 'right'
+                      ? innerWidth - viewport.left - viewport.width
+                      : undefined,
+                }
+              : {}),
+          } as CSSProperties
+        }
       >
         <div className="dia-dock-controls">
+          {viewport &&
+            (['left', 'right'] as const).map((dock) => (
+              <button
+                key={dock}
+                type="button"
+                aria-label={dock === 'left' ? 'Dia 靠左' : 'Dia 靠右'}
+                aria-pressed={layout.dock === dock}
+                onClick={() => setLayout((previous) => ({ ...previous, dock }))}
+              >
+                {dock === 'left' ? '靠左' : '靠右'}
+              </button>
+            ))}
           <button
+            hidden={!!viewport}
             type="button"
             aria-label={`${layout.locked ? '解锁' : '锁定'} Dia 布局`}
             aria-pressed={layout.locked}
@@ -98,10 +148,11 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
           <button
             type="button"
             aria-label="收起 Dia 对话框"
-            title="收起到右上角"
-            disabled={layout.locked}
+            title={viewport ? '收起到右侧边缘' : '收起到右上角'}
+            disabled={!viewport && layout.locked}
             onClick={() => {
-              if (!layout.locked) setLayout((previous) => ({ ...previous, open: false }))
+              if (viewport || !layout.locked)
+                setLayout((previous) => ({ ...previous, open: false }))
             }}
           >
             <PanelRightClose size={17} />

@@ -188,6 +188,7 @@ export function useHandleDrag(args: UseHandleDragArgs) {
     }
 
     const onMove = (moveEvent: PointerEvent) => {
+      if (moveEvent.pointerId !== event.nativeEvent.pointerId) return
       const patch = session.move({
         event: moveEvent,
         modifiers: { altKey },
@@ -226,7 +227,8 @@ export function useHandleDrag(args: UseHandleDragArgs) {
       }
     }
 
-    const onUp = () => {
+    const onUp = (upEvent: PointerEvent) => {
+      if (upEvent.pointerId !== event.nativeEvent.pointerId) return
       swallowNextClick()
       sfxEmitter.emit('sfx:item-place')
       if (lastPatch) {
@@ -241,7 +243,8 @@ export function useHandleDrag(args: UseHandleDragArgs) {
       cleanup()
     }
 
-    const onCancel = () => {
+    const onCancel = (cancelEvent?: PointerEvent) => {
+      if (cancelEvent && cancelEvent.pointerId !== event.nativeEvent.pointerId) return
       clearOverride()
       cleanup()
     }

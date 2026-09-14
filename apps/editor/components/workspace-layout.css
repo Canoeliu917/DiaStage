@@ -16,6 +16,14 @@
 .editor-sidebar-split [data-layout-pane] > [hidden] { display: none; }
 .editor-sidebar-split [data-layout-pane=overview] .stage-overview-heading > div:first-child { float: right; margin-left: 6px; }
 .editor-sidebar-split [data-layout-pane=overview] .stage-overview-heading h2 { display: none; }
+.dia-dock.dia-resizable-dock[data-touch-dock] { position:fixed; z-index:110; display:flex; flex-direction:column; overflow:hidden; }
+.dia-dock.dia-resizable-dock[data-touch-dock][hidden] { display:none; }
+.dia-dock[data-touch-dock] .dia-dock-controls { position:static; flex:none; justify-content:flex-end; padding:4px; }
+.dia-dock[data-touch-dock] .dia-dock-controls button { min-width:44px; min-height:44px; }
+.dia-dock[data-touch-dock] .dia-dock-controls button[hidden], .dia-dock[data-touch-dock] .dia-dock-resizer { display:none; }
+.dia-stage-layout .dia-dock[data-touch-dock] .dia-panel { display:flex; flex-direction:column; flex:1; min-height:0; height:auto; overflow:auto; }
+.dia-stage-layout .dia-dock[data-touch-dock] .dia-panel .dia-panel-header { padding-right:14px; }
+.dia-restore-tab.dia-edge-tab { position:fixed; z-index:110; right:auto; width:48px; height:48px; min-width:48px; min-height:48px; padding:0; touch-action:none; user-select:none; }
 @media(max-width:999px) {
   .dia-dock.dia-resizable-dock { width: 100%; }
   .dia-dock-resizer { display: none; }
