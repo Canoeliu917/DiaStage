@@ -9,12 +9,12 @@ import {
 } from '@pascal-app/core/stage'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { useViewer } from '@pascal-app/viewer'
-import { Group } from 'three'
+import { Box3, Group } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { connectStageCommandExecutor } from './command-executor'
 import { exitStageFolding, setFoldAngle } from './folding'
-import { stageModelBottom, stageVisibleFootprints } from './model-contact'
+import { stageModelBottom, stageModelContact, stageVisibleFootprints } from './model-contact'
 import { snapStageObject } from './placement-snap'
 import { AVAILABLE_STAGE_SCENERY } from './prop-assets'
 
@@ -161,4 +161,68 @@ test('grounding uses transformed GLB bottom including tilt, with no saved epsilo
   item.transform.rotationDegrees = { x: 20, y: 35, z: -10 }
   const result = snapStageObject({ x: 2, y: 5, z: 1 }, item, context([]), options)
   expect(result.position.y).toBe(-stageModelBottom(item)!)
+})
+
+test('edge contact outranks the ordinary grid even when the target is off-grid', () => {
+  const target = add('SCN-FLAT-090'),
+    moving = add('SCN-FLAT-090')
+  target.transform.position.x = -0.17
+  const result = snapStageObject({ x: 0.79, y: 0, z: 0 }, moving, context([target]), {
+    grid: 0.5,
+    guides: true,
+  })
+  const placed = { ...moving, transform: { ...moving.transform, position: result.position } }
+  expect(result.labels).toContain(`贴合 ${target.name}`)
+  expect(gap(placed, target)).toBeLessThan(1e-10)
+  expect(result.position.x).toBeCloseTo(0.73, 6)
+  expect(
+    snapStageObject(result.position, moving, context([target]), { grid: 0.5, guides: true })
+      .position,
+  ).toEqual(result.position)
+})
+
+test('door and window GLBs also connect directly', () => {
+  connect(add('SCN-DOOR-130'), add('SCN-WIN-130'))
+})
+
+test('I: the same collision probe changes after folding, not just the dimension label', () => {
+  const item = add('SCN-FOLD-03'),
+    probe = add('SCN-FLAT-090')
+  probe.transform.position = { x: 1.6, y: 0, z: 0 }
+  expect(stageModelContact(item, probe)).toBe(false)
+  setFoldAngle(item.id, 0, 180)
+  setFoldAngle(item.id, 1, 180)
+  const after = useScene.getState().nodes[item.id as ItemNode['id']] as ItemNode
+  applyItemFoldControls(sceneRegistry.nodes.get(item.id)!, after.controls)
+  useViewer.getState().bumpGeometryRevision()
+  expect(stageModelContact(item, probe)).toBe(true)
+})
+
+test('O: a scene without articulation fields loads the authored default pose without migration', () => {
+  const item = add('SCN-FOLD-03')
+  const original = useScene.getState().nodes[item.id as ItemNode['id']] as ItemNode
+  expect(original.controls).toBeUndefined()
+  const restored = ItemNode.parse(JSON.parse(JSON.stringify(original)))
+  const root = sceneRegistry.nodes.get(item.id)!
+  const before = stageVisibleFootprints(item)
+  applyItemFoldControls(root, restored.controls)
+  useViewer.getState().bumpGeometryRevision()
+  expect(stageVisibleFootprints(item)).toEqual(before)
+  expect(restored).toEqual(original)
+  expect(useScene.getState().nodes[original.id]).toEqual(original)
+})
+
+test('H: folding invalidates actual world bounds with a rotated and translated whole object', () => {
+  const item = add('SCN-FOLD-03'),
+    root = sceneRegistry.nodes.get(item.id)!
+  root.position.set(1, 2, -3)
+  root.rotation.set(0.2, 0.4, -0.1)
+  const before = new Box3().setFromObject(root, true)
+  setFoldAngle(item.id, 0, 135)
+  const after = useScene.getState().nodes[item.id as ItemNode['id']] as ItemNode
+  applyItemFoldControls(root, after.controls)
+  const bounds = new Box3().setFromObject(root, true)
+  expect(bounds.equals(before)).toBe(false)
+  expect(root.position.toArray()).toEqual([1, 2, -3])
+  expect(root.rotation.toArray().slice(0, 3)).toEqual([0.2, 0.4, -0.1])
 })

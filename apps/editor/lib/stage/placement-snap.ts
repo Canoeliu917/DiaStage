@@ -40,9 +40,10 @@ export function snapStageObject(
   if (!options.guides) return result
   const moving = stageVisibleFootprints({
     ...item,
-    transform: { ...item.transform, position: result.position },
+    transform: { ...item.transform, position: { ...point, y: result.position.y } },
   })
   if (!moving) return result
+  let touching = false
   let nearest: { dx: number; dz: number; distance: number; name: string } | undefined
   for (const other of context.objects) {
     if (other.id === item.id || !/flat|door|window/.test(other.kind)) continue
@@ -50,7 +51,10 @@ export function snapStageObject(
     const target = stageVisibleFootprints(other)
     if (!target) continue
     const gaps = moving.flatMap((left) => target.map((right) => stageFootprintGap(left, right)))
-    if (gaps.some((gap) => gap.meters < 1e-8)) continue
+    if (gaps.some((gap) => gap.meters < 1e-8)) {
+      touching = true
+      continue
+    }
     for (const gap of gaps) {
       // Existing overlaps stay movable; a nearby separate edge catches without a clearance gap.
       if (gap.meters < 1e-8 || gap.meters > 0.12 || (nearest && gap.meters >= nearest.distance))
@@ -63,10 +67,11 @@ export function snapStageObject(
       }
     }
   }
-  if (nearest) {
-    result.position.x += nearest.dx
-    result.position.z += nearest.dz
-    result.labels.push(`贴合 ${nearest.name}`)
+  if (nearest || touching) {
+    // Test edges before grid quantization, and never quantize an existing contact away.
+    result.position.x = point.x + (nearest?.dx ?? 0)
+    result.position.z = point.z + (nearest?.dz ?? 0)
+    result.labels = nearest ? [`贴合 ${nearest.name}`] : []
   }
   return result
 }
