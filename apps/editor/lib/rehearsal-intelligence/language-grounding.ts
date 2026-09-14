@@ -7,6 +7,7 @@ import {
   type StagePlan,
 } from '@pascal-app/core/stage'
 import { betaCapabilityNotice } from '../beta-capabilities'
+import { VERTICAL_VIEW_QUESTION } from './camera-intents'
 import { parseViewCommand, type ViewCommand } from './view-commands'
 
 export type GroundedInput = {
@@ -50,6 +51,16 @@ export function groundLanguage(
       clarification: notice,
     }
   const view = parseViewCommand(text)
+  if (view?.type === 'CAMERA_INTENT')
+    return {
+      ...base,
+      intent: view.intents.join('+'),
+      capability: view.clarify ? 'clarify' : 'view',
+      view,
+      target: view.target ? [view.target] : [],
+      clarificationRequired: view.clarify,
+      clarification: view.clarify ? VERTICAL_VIEW_QUESTION : null,
+    }
   if (view)
     return {
       ...base,

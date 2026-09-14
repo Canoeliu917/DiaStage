@@ -1,8 +1,14 @@
 import type { CameraPose } from '@pascal-app/core'
 import { parseStageLength, parseStageNumber } from '@pascal-app/core/stage'
 import { z } from 'zod'
+import {
+  type CameraIntentCommand,
+  parseCameraIntent,
+  VERTICAL_VIEW_QUESTION,
+} from './camera-intents'
 
 export type ViewCommand =
+  | CameraIntentCommand
   | { type: 'ORBIT_VIEW'; direction: 'left' | 'right'; degrees: number }
   | { type: 'PAN_VIEW'; direction: 'left' | 'right' | 'up' | 'down'; meters: number | null }
   | { type: 'ZOOM_VIEW'; direction: 'in' | 'out'; factor: number }
@@ -74,14 +80,14 @@ export function parseViewCommand(input: string): ViewCommand | null {
       direction: /拉近|放大/.test(match[1]!) ? 'in' : 'out',
       factor: 0.85,
     }
-  return null
+  return parseCameraIntent(input)
 }
 
 export function changeViewPose(
   pose: CameraPose,
   command: Exclude<
     ViewCommand,
-    { type: 'FRAME_SELECTION' | 'RESET_VIEW' | 'SAVE_VIEW' | 'RECALL_CAMERA' }
+    { type: 'FRAME_SELECTION' | 'RESET_VIEW' | 'SAVE_VIEW' | 'RECALL_CAMERA' | 'CAMERA_INTENT' }
   >,
 ): CameraPose {
   const result = structuredClone(pose)
@@ -144,6 +150,30 @@ const SavedViewsSchema = z
   .array(z.object({ name: z.string().min(1).max(40), pose: PoseSchema }))
   .max(100)
 
+export function cameraIntentAction(
+  command: CameraIntentCommand,
+): Exclude<ViewCommand, CameraIntentCommand> | null {
+  if (command.clarify || command.intents.length !== 1) return null
+  const intent = command.intents[0]
+  if (intent === 'focus_selection' && command.target === 'selection')
+    return { type: 'FRAME_SELECTION' }
+  // A semantic target is not a scene id. Do not silently orbit or frame a different object.
+  if (command.target) return null
+  if (intent === 'top_orthographic') return { type: 'SET_VIEW', view: 'top' }
+  if (intent === 'front_view') return { type: 'SET_VIEW', view: 'front' }
+  if (intent === 'orbit_left' || intent === 'orbit_right')
+    return {
+      type: 'ORBIT_VIEW',
+      direction: intent === 'orbit_left' ? 'left' : 'right',
+      degrees: 15,
+    }
+  return null
+}
+
+export function cameraIntentNotice(command: CameraIntentCommand): string {
+  return command.clarify ? VERTICAL_VIEW_QUESTION : '当前还不支持这种观察操作；当前视图未改变。'
+}
+
 export function executeViewCommand(
   command: ViewCommand,
   ports: {
@@ -156,6 +186,10 @@ export function executeViewCommand(
     reset: () => void
   },
 ): string {
+  if (command.type === 'CAMERA_INTENT') {
+    const action = cameraIntentAction(command)
+    return action ? executeViewCommand(action, ports) : cameraIntentNotice(command)
+  }
   if (command.type === 'FRAME_SELECTION') {
     if (ports.selectedIds.length !== 1) return '请先选中一个要观察的物品。'
     ports.focus(ports.selectedIds[0]!)
