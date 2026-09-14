@@ -92,6 +92,29 @@ export function StageContactSystem({ enabled }: { enabled: boolean }) {
     )
     const touching = mates.length > 0 || floorContact
     const kind = penetrating ? 'penetration' : touching ? 'contact' : 'none'
+    let penetrationMessage = ''
+    if (penetrating) {
+      const below = objects.filter(
+        (object) =>
+          (stageModelBottom(object) ??
+            prepareStageCollision(object).bounds[1]![0] - object.transform.position.y) +
+            object.transform.position.y <
+          -1e-7,
+      )
+      const overlaps = scene.objects.filter((other) =>
+        objects.some(
+          (object) =>
+            object.id !== other.id &&
+            !below.includes(object) &&
+            stageContactIds([object, other], true).has(object.id),
+        ),
+      )
+      penetrationMessage = below.length
+        ? `${below.map((object) => object.name).join('、')}：物体底部低于舞台面。`
+        : overlaps.length
+          ? `与「${overlaps.map((object) => object.name).join('、')}」存在实际几何重叠。`
+          : '与当前预演方案存在几何重叠；可取消预演后检查。'
+    }
     const previous = useStageContactFeedback.getState()
     const contactKey = JSON.stringify([mates.map((object) => object.id).sort(), floorContact])
     const signature = JSON.stringify([
@@ -104,7 +127,7 @@ export function StageContactSystem({ enabled }: { enabled: boolean }) {
       signature,
       contactKey,
       message: penetrating
-        ? '存在穿模、地面穿透或预演重叠；确认布局不会消除此提示。'
+        ? `${penetrationMessage}确认布局不会消除此提示。`
         : touching
           ? `${mates.length ? mates.map((object) => object.name).join('、') : '舞台地面'}：已贴合 · 间距 0（数值容差内）`
           : objects.length
