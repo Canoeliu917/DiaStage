@@ -50,7 +50,10 @@ export function parseCameraIntent(input: string): CameraIntentCommand | null {
     )
     const targets = [...new Set(parts.flatMap((part) => (part.target ? [part.target] : [])))]
     if (targets.length > 1 || (noPlan && intents.includes('top_orthographic'))) return null
-    const projection = parts.map((part) => part.projection).filter(Boolean).at(-1)
+    const projection = parts
+      .map((part) => part.projection)
+      .filter(Boolean)
+      .at(-1)
     return {
       type: 'CAMERA_INTENT',
       intents,
