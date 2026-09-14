@@ -48,15 +48,15 @@ import { currentStageContext } from '@/lib/stage/context'
 import { cn } from '@/lib/utils'
 import {
   cancelStagePlacement,
+  setStageGrid,
   startStagePlacement,
   useStagePlacement,
 } from './stage-entry/manual-stage-panel'
 import {
   StageGridToolbar,
   StagePlanNavigationRuntime,
-  StageRotationRuntime,
-  useStageRotation,
 } from './stage-entry/stage-viewport-controls'
+import { useStageTransform } from './stage-entry/transform-mode'
 import { openStudioPanel } from './studio-navigation'
 import { Tooltip, TooltipContent, TooltipTrigger } from './toolbar-tooltip'
 
@@ -201,6 +201,7 @@ function openPropSettings(selector: string) {
 }
 
 function StageTransformToolbar() {
+  const viewMode = useEditor((state) => state.viewMode)
   const selected = useViewer((state) => state.selection.selectedIds)
   const node = useScene((state) =>
     selected.length === 1 ? state.nodes[selected[0] as AnyNodeId] : undefined,
@@ -212,30 +213,42 @@ function StageTransformToolbar() {
     (state) => state.isPreviewMode || state.isFirstPersonMode || state.isCaptureMode,
   )
   const draft = useStagePlacement((state) => state.draft)
-  const rotating = useStageRotation((state) => state.armed)
+  const transformMode = useStageTransform((state) => state.mode)
+  const rotating = transformMode === 'rotate'
   const editable = !exclusive && !locked && !!node && ['item', 'block', 'stair'].includes(node.type)
   const select = useCallback(() => {
     cancelStagePlacement()
-    useStageRotation.setState({ armed: false })
+    useStageTransform.setState({ mode: null })
     useEditor.getState().armToolMode({ mode: 'select' })
     useEditor.getState().setFloorplanSelectionTool('click')
   }, [])
   const move = useCallback(() => {
     if (!editable || !node) return
-    useStageRotation.setState({ armed: false })
-    const object = currentStageContext().objects.find((item) => item.id === node.id)
-    if (!object) return
-    startStagePlacement(
-      {
-        id: object.id,
-        name: object.name,
-        kind: object.kind,
-        dimensionsMeters: object.dimensionsMeters,
-        libraryAssetId: node.type === 'item' ? node.asset.id : null,
-      },
-      object,
-    )
-  }, [editable, node])
+    cancelStagePlacement()
+    if (viewMode === '2d') {
+      const object = currentStageContext().objects.find((item) => item.id === node.id)
+      if (object)
+        startStagePlacement(
+          {
+            id: object.id,
+            name: object.name,
+            kind: object.kind,
+            dimensionsMeters: object.dimensionsMeters,
+            libraryAssetId: node.type === 'item' ? node.asset.id : null,
+          },
+          object,
+        )
+      return
+    }
+    useStageTransform.setState({ mode: 'move' })
+  }, [editable, node, viewMode])
+  const rotate = useCallback(() => {
+    if (viewMode === '2d') openPropSettings('[data-stage-rotation]')
+    else
+      useStageTransform.setState({
+        mode: useStageTransform.getState().mode === 'rotate' ? null : 'rotate',
+      })
+  }, [viewMode])
   useEffect(() => {
     const previous = useCameraHintFocus.getState().actions
     useCameraHintFocus.getState().focus([])
@@ -273,12 +286,12 @@ function StageTransformToolbar() {
       event.stopImmediatePropagation()
       if (key === 'v') select()
       else if (key === 'g') move()
-      else if (key === 't') useStageRotation.setState({ armed: !useStageRotation.getState().armed })
+      else if (key === 't') rotate()
       else openPropSettings('[data-stage-dimensions]')
     }
     window.addEventListener('keydown', keydown, true)
     return () => window.removeEventListener('keydown', keydown, true)
-  }, [editable, exclusive, draft, select, move])
+  }, [editable, exclusive, draft, select, move, rotate])
   return (
     <div
       className={cn(TOOLBAR_CONTAINER, 'stage-transform-toolbar')}
@@ -302,7 +315,8 @@ function StageTransformToolbar() {
         className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
         disabled={!editable || !!draft}
         onClick={move}
-        title="G · 移动所选道具，点击落位；Esc 取消"
+        title="G · 拖动 X/Y/Z 操作杆移动；直接拖放道具自动落位；Esc 取消"
+        aria-pressed={transformMode === 'move'}
         aria-label="移动"
         aria-keyshortcuts="G"
       >
@@ -313,9 +327,9 @@ function StageTransformToolbar() {
         type="button"
         className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
         disabled={!editable || !!draft}
-        onClick={() => useStageRotation.setState({ armed: !rotating })}
+        onClick={rotate}
         aria-pressed={rotating}
-        title="T · 旋转：按住右键左右拖动，15°一格，松开确定；Esc取消"
+        title="T · 拖动 X/Y/Z 旋转环；按住 Shift 自由旋转；Esc 取消"
         aria-label="旋转"
         aria-keyshortcuts="T"
       >
@@ -335,7 +349,6 @@ function StageTransformToolbar() {
         缩放 <kbd>R</kbd>
       </button>
       <StageGridToolbar />
-      <StageRotationRuntime />
       <StagePlanNavigationRuntime />
     </div>
   )
@@ -579,16 +592,12 @@ function DisplayMenu() {
           onSelect={(e) =>
             keepOpen(e, () => {
               const guides = !snap.guides
-              useStagePlacement.setState({ snap: { ...snap, guides } })
-              const editor = useEditor.getState()
-              editor.setMagneticSnap(guides)
-              editor.setSnappingMode('item', snap.grid ? 'grid' : guides ? 'lines' : 'off')
-              editor.setSnappingMode('polygon', snap.grid ? 'grid' : guides ? 'lines' : 'off')
+              setStageGrid(guides ? 0 : useEditor.getState().gridSnapStep, guides)
             })
           }
         >
           <Magnet className="h-4 w-4" />
-          <span>道具边缘贴合</span>
+          <span>边缘与支撑面贴合</span>
           <span className="ml-auto text-muted-foreground text-xs">
             {snap.guides ? '开启' : '关闭'}
           </span>
@@ -739,7 +748,7 @@ export function EditorViewerToolbarLeft({ settings }: { settings?: ReactNode } =
             <summary>操作帮助</summary>
             <div>
               <p>V 选择 · G 移动 · T 旋转 · R 尺寸设置；先选中道具，再操作。</p>
-              <p>旋转时按住右键左右拖动，每格 15°，松开确定；Esc 取消。</p>
+              <p>移动拖三轴杆，旋转拖三轴环；松开确定，Esc 取消。移动时轻按 Shift 切换吸附；旋转时按住 Shift 自由调整角度。</p>
               <p>轻按 Ctrl 循环切换网格：50 → 25 → 10 → 5 cm。</p>
               <p>WASD 移动视角 · Q 下降 · E 上升 · F 聚焦所选道具。</p>
               <p>中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远。</p>

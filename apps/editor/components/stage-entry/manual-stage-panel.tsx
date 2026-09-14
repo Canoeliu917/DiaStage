@@ -4,6 +4,7 @@ import { type AnyNodeId, getNodeLock, useScene } from '@pascal-app/core'
 import {
   compileStagePlan,
   type SceneContextObject,
+  STAGE_OBJECT_CATEGORIES,
   STAGE_OBJECT_REGISTRY,
   type StageDimensions,
   type StageItemKind,
@@ -67,14 +68,18 @@ export const STAGE_LIBRARY = STAGE_PROP_MENU.assets.map((menu) => {
       : null
   return { spec, entry, menu }
 })
+STAGE_LIBRARY.sort(
+  (a, b) =>
+    STAGE_OBJECT_CATEGORIES.indexOf(a.spec.category) - STAGE_OBJECT_CATEGORIES.indexOf(b.spec.category),
+)
 export const STAGE_LIBRARY_CATEGORIES = [
   { label: '全部', source: null },
-  { label: '景片', source: '空间围合' },
+  { label: '空间围合/景片', source: '空间围合' },
+  { label: '台块与支撑', source: '台块与支撑' },
   { label: '门窗', source: '门窗' },
-  { label: '台块', source: '台块与支撑' },
+  { label: '沙发', source: '沙发' },
   { label: '桌', source: '桌' },
   { label: '椅凳', source: '椅凳' },
-  { label: '沙发', source: '沙发' },
 ] as const
 type PlacementDraft = { item: StageItemProposal; version: number; duplicateOf?: string }
 export const useStagePlacement = create<{
@@ -288,11 +293,16 @@ export function StagePlacementRuntime() {
         useStagePlacement.setState({
           snap: { ...useStagePlacement.getState().snap, grid: next.gridSnapStep },
         })
-      const snap = useStagePlacement.getState().snap
-      const expected = snap.grid ? 'grid' : snap.guides ? 'lines' : 'off'
-      for (const context of ['item', 'polygon'] as const)
-        if (next.snappingModeByContext[context] !== expected)
-          useEditor.getState().setSnappingMode(context, expected)
+      // Let the editor's existing Shift cycle reach angles / lines / off.
+      // Reflect native mode changes instead of immediately overwriting them.
+      if (next.snappingModeByContext.item !== previous.snappingModeByContext.item) {
+        const mode = next.snappingModeByContext.item
+        useStagePlacement.setState({
+          snap: { grid: mode === 'grid' ? next.gridSnapStep : 0, guides: mode === 'lines' },
+        })
+        if (next.magneticSnap !== (mode === 'lines'))
+          useEditor.getState().setMagneticSnap(mode === 'lines')
+      }
     })
     const placementPolicyCleanup = installNativeStagePlacement(
       () => {
@@ -463,9 +473,7 @@ export function StageLibraryPanel() {
                 type="checkbox"
                 checked={state.snap.guides}
                 onChange={(event) =>
-                  useStagePlacement.setState({
-                    snap: { ...state.snap, guides: event.target.checked },
-                  })
+                  setStageGrid(event.target.checked ? 0 : useEditor.getState().gridSnapStep, event.target.checked)
                 }
               />
               景片边缘贴合

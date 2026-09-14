@@ -213,12 +213,12 @@ export function StageGridToolbar() {
         <button
           type="button"
           aria-pressed={snap.guides}
-          onClick={() => setStageGrid(snap.grid, !snap.guides)}
-          title="靠近景片边缘时优先贴合；可能离开网格"
+          onClick={() => setStageGrid(snap.guides ? step : 0, !snap.guides)}
+          title="磁性贴合：景片边缘与 Y 轴支撑面；关闭后返回网格"
         >
-          景片边缘贴合：{snap.guides ? '开启' : '关闭'}
+          边缘与支撑面贴合：{snap.guides ? '开启' : '关闭'}
         </button>
-        <p>贴合开启后，靠近的景片边缘优先贴齐，可能离开网格线。</p>
+        <p>贴合模式下，景片边缘优先贴齐；拖动 Y 轴靠近支撑面时精确落齐。关闭后返回网格。</p>
         <button
           type="button"
           className="stage-free-placement"

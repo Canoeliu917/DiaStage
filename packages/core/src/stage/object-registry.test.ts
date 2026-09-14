@@ -12,7 +12,7 @@ test('guide catalog has 22 stable identities in the six source categories', () =
     STAGE_OBJECT_CATEGORIES.map(
       (category) => STAGE_OBJECT_REGISTRY.filter((entry) => entry.category === category).length,
     ),
-  ).toEqual([3, 4, 5, 2, 4, 4])
+  ).toEqual([3, 5, 4, 2, 4, 4])
 })
 
 test('approved dimensions remain meters at 1:1 and folded extents are not guessed', () => {

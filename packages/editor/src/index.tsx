@@ -50,6 +50,7 @@ export { FloatingActionMenu as FloatingMenu } from './components/editor/floating
 // flags. Tools place onto `useViewer.selection.levelId`, so the host must set a
 // building + level selection first.
 export { Grid } from './components/editor/grid'
+export { useHandleDrag } from './components/editor/handles/use-handle-drag'
 export {
   DimensionPill,
   type DimensionPillPart,

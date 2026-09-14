@@ -6,8 +6,8 @@ export const STAGE_OBJECT_MODEL_SOURCE =
   'DiaStage_Prop_Menu_Preview/prop-menu-manifest.json · 1.0 · bounds_m（实际米制）'
 export const STAGE_OBJECT_CATEGORIES = [
   '空间围合',
-  '门窗',
   '台块与支撑',
+  '门窗',
   '沙发',
   '桌',
   '椅凳',

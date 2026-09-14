@@ -1,5 +1,5 @@
 import type { SceneContextObject, SceneContextSummary, StagePoint } from '@pascal-app/core/stage'
-import { stageFootprintGap } from '@pascal-app/core/stage'
+import { stageFootprintGap, stageStackPosition } from '@pascal-app/core/stage'
 import { type PlacementSnap, snapStagePlacement } from '@/components/stage-entry/placement-math'
 import { stageVisibleFootprints } from './model-contact'
 
@@ -18,7 +18,18 @@ export function snapStageObject(
     { ...options, guides: options.guides && !scenery },
     item.id,
   )
-  if (!scenery || !options.guides) return result
+  if (!scenery) {
+    const support = stageStackPosition(
+      { ...item, transform: { ...item.transform, position: result.position } },
+      context.objects,
+    )
+    if (support) {
+      result.position.y = support.y
+      if (support.supportId) result.labels.push('支撑面贴合')
+    }
+    return result
+  }
+  if (!options.guides) return result
   const moving = stageVisibleFootprints({
     ...item,
     transform: { ...item.transform, position: result.position },

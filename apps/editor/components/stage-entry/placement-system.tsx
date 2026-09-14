@@ -42,6 +42,7 @@ import {
   updateStagePlacement,
   useStagePlacement,
 } from './manual-stage-panel'
+import { StageTransformGizmo } from './transform-gizmo'
 
 function usePlacementEnabled(enabled: boolean) {
   const readOnly = useScene((state) => state.readOnly)
@@ -161,7 +162,8 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
       canvas.removeEventListener('drop', drop)
     }
   }, [active, camera, gl, raycaster])
-  if (!active || !draft) return null
+  if (!draft) return <StageTransformGizmo enabled={active} />
+  if (!active) return null
   if (!state?.context.venue) return null
   const frame = stageFrame()
   const { height } = draft.item.dimensionsMeters

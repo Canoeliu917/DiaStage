@@ -19,33 +19,40 @@ afterEach(() => {
 
 test('the library exposes exactly the 22 supplied object definitions in their six categories', () => {
   expect(STAGE_LIBRARY.map(({ spec }) => spec.canonicalId)).toEqual(
-    STAGE_OBJECT_REGISTRY.map((spec) => spec.canonicalId),
+    [...STAGE_OBJECT_REGISTRY]
+      .sort(
+        (a, b) =>
+          STAGE_OBJECT_CATEGORIES.indexOf(a.category) - STAGE_OBJECT_CATEGORIES.indexOf(b.category),
+      )
+      .map((spec) => spec.canonicalId),
   )
   expect(new Set(STAGE_LIBRARY.map(({ spec }) => spec.canonicalId)).size).toBe(22)
   expect(
     STAGE_OBJECT_CATEGORIES.map(
       (category) => STAGE_LIBRARY.filter(({ spec }) => spec.category === category).length,
     ),
-  ).toEqual([3, 4, 5, 2, 4, 4])
+  ).toEqual([3, 5, 4, 2, 4, 4])
   expect(STAGE_LIBRARY_CATEGORIES.map(({ label }) => label)).toEqual([
     '全部',
-    '景片',
+    '空间围合/景片',
+    '台块与支撑',
     '门窗',
-    '台块',
+    '沙发',
     '桌',
     '椅凳',
-    '沙发',
   ])
   expect(
     STAGE_LIBRARY_CATEGORIES.filter(({ source }) => source !== null).map(
       ({ source }) => STAGE_LIBRARY.filter(({ menu }) => menu.category === source).length,
     ),
-  ).toEqual([3, 4, 5, 4, 4, 2])
+  ).toEqual([3, 5, 4, 2, 4, 4])
 })
 
 test('official models link by canonical ID while browsing loads only their supplied PNGs', () => {
   expect(STAGE_LIBRARY.every(({ entry, menu }) => entry?.libraryAssetId === menu.id)).toBe(true)
-  expect(STAGE_LIBRARY.map(({ menu }) => menu)).toEqual(STAGE_PROP_MENU.assets)
+  expect(
+    [...STAGE_LIBRARY.map(({ menu }) => menu)].sort((a, b) => a.id.localeCompare(b.id)),
+  ).toEqual([...STAGE_PROP_MENU.assets].sort((a, b) => a.id.localeCompare(b.id)))
   const graph = createTheatreSceneGraph()
   useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
   const before = useScene.getState().nodes
