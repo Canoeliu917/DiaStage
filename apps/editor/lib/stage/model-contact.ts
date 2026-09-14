@@ -227,6 +227,10 @@ export function stageModelBelowFloor(item: ContactObject): boolean | null {
   return projected ? projected.bottom + item.transform.position.y < -1e-7 : null
 }
 
+export function stageModelBottom(item: ContactObject): number | null {
+  return projectModel(item)?.bottom ?? null
+}
+
 function inside(part: Geometry, point: Vector3): boolean {
   if (!part.closed || !part.geometry.boundingBox!.containsPoint(point)) return false
   const hits = part.bvh.raycast(

@@ -7,7 +7,7 @@ import { Html } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { type PointerEvent, useCallback, useEffect, useRef } from 'react'
 import { type Group, type Matrix4, Plane, Raycaster, Vector2, Vector3 } from 'three'
-import { advanceFoldAngle, type FoldAngleDrag } from '@/lib/stage/fold-drag'
+import { advanceFoldAngle, FOLD_ANGLE_STEP, type FoldAngleDrag } from '@/lib/stage/fold-drag'
 import {
   beginFoldCornerDrag,
   exitStageFolding,
@@ -25,6 +25,17 @@ import { STAGE_PROP_MENU } from '@/lib/stage/prop-assets'
 
 function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
   const handle = useRef<Group>(null)
+  const freeAngleUsed = useRef(false)
+  useEffect(() => {
+    const releaseShift = (event: KeyboardEvent) => {
+      if (event.key !== 'Shift' || !freeAngleUsed.current) return
+      freeAngleUsed.current = false
+      // Shift was part of a fold, not a tap to cycle the placement mode.
+      event.stopImmediatePropagation()
+    }
+    window.addEventListener('keyup', releaseShift, true)
+    return () => window.removeEventListener('keyup', releaseShift, true)
+  }, [])
   const { camera, gl, controls } = useThree()
   const gesture = useRef<{
     plane: Plane
@@ -85,7 +96,7 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
           type="button"
           aria-label={`拖动${foldCornerLabel(corner)}`}
           data-fold-corner={corner}
-          title={`${foldCornerLabel(corner)} · 每格 15°`}
+          title={`${foldCornerLabel(corner)} · 每格 ${FOLD_ANGLE_STEP}° · Shift 自由角度`}
           onPointerDown={(event) => {
             if (event.button !== 0) return
             event.preventDefault()
@@ -131,7 +142,8 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
             if (!point) return
             const next = point.applyMatrix4(drag.inverseParent).sub(drag.pivot)
             const delta = Math.atan2(-next.z, next.x)
-            const advanced = advanceFoldAngle(drag.angle, delta, corner)
+            if (event.shiftKey) freeAngleUsed.current = true
+            const advanced = advanceFoldAngle(drag.angle, delta, event.shiftKey)
             drag.angle = advanced.drag
             previewFoldCornerAngle(advanced.angle)
           }}
@@ -150,7 +162,7 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
             restoreCamera()
           }}
         >
-          {corner === 0 ? '↶' : corner === 1 ? '↻' : corner - 1}
+          {corner - 1}
         </button>
       </Html>
     </group>
@@ -206,7 +218,7 @@ export function FoldingSystem({ enabled }: { enabled: boolean }) {
   if (!available || node?.type !== 'item' || !foldPositionCount(node)) return null
   return (
     <group name={`stage-fold-controls:${node.id}`}>
-      {[0, foldPositionCount(node) + 1].map((corner) => (
+      {Array.from({ length: foldPositionCount(node) }, (_, index) => index + 2).map((corner) => (
         <FoldPosition key={`${node.id}:${corner}`} node={node} corner={corner} />
       ))}
     </group>

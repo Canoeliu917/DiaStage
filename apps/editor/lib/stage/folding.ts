@@ -13,17 +13,23 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { useInteractionScope } from '@pascal-app/editor'
-import { computeItemFoldBounds, limitItemFoldControls } from '@pascal-app/nodes/item-fold'
+import { applyItemFoldControls, computeItemFoldBounds } from '@pascal-app/nodes/item-fold'
 import { useViewer } from '@pascal-app/viewer'
 import { Euler, Matrix4, type Object3D, Quaternion, Vector3 } from 'three'
 import { create } from 'zustand'
 import { useStageCommandNotice } from './command-executor'
+import { STAGE_PROP_MENU } from './prop-assets'
 
 export const foldKeys = ['fold_angle_1_deg', 'fold_angle_2_deg'] as const
 export const foldHandle = 'stage-fold'
 export function foldPositionCount(node: AnyNode | undefined): number {
   if (node?.type !== 'item') return 0
   return node.asset.id === 'SCN-FOLD-02' ? 1 : node.asset.id === 'SCN-FOLD-03' ? 2 : 0
+}
+export function foldAngleRange(node: ItemNode, position: number): readonly number[] {
+  return STAGE_PROP_MENU.assets.find((asset) => asset.id === node.asset.id)!.articulation!.joints[
+    position
+  ]!.included_angle_range_deg
 }
 export function foldControls(node: ItemNode): ItemFoldControls {
   return { fold_angle_1_deg: 90, fold_angle_2_deg: 90, ...node.controls }
@@ -41,9 +47,7 @@ type FoldSession = {
   root: Object3D
   position: number
   controls: ItemFoldControls
-  patch: Partial<Pick<ItemNode, 'controls' | 'asset' | 'position' | 'rotation'>> | null
-  corner?: number
-  pivot?: Vector3
+  patch: Partial<Pick<ItemNode, 'controls' | 'asset'>> | null
   inputDragging: boolean
 }
 let session: FoldSession | null = null
@@ -109,24 +113,20 @@ export function previewFoldAngle(angle: number) {
   }
   const key = foldKeys[active.position]!
   if (Math.abs(angle - active.controls[key]) < 1e-7) return
-  const result = limitItemFoldControls(active.root, active.controls, {
-    ...active.controls,
-    [key]: angle,
-  })
+  const [min, max] = foldAngleRange(active.node, active.position)
+  const controls = { ...active.controls, [key]: Math.max(min!, Math.min(max!, angle)) }
+  applyItemFoldControls(active.root, controls)
   const bounds = computeItemFoldBounds(active.root, active.node.scale)
   if (!bounds) return
-  active.controls = result.controls
-  active.patch = { controls: result.controls, asset: { ...active.node.asset, ...bounds } }
+  active.controls = controls
+  active.patch = { controls, asset: { ...active.node.asset, ...bounds } }
   useLiveNodeOverrides.getState().set(active.node.id, active.patch)
-  useStageFolding.setState({ notice: result.limited ? '景片已到可折叠位置。' : '' })
+  useStageFolding.setState({
+    notice: controls[key] !== angle ? `打开角度范围：${min}°–${max}°。` : '',
+  })
 }
 
-export const foldCornerLabel = (corner: number) =>
-  corner === 0
-    ? '起端：折叠首片'
-    : corner === 1
-      ? '首拐点：绕起端转向'
-      : `折叠位置${corner - 1}打开角度`
+export const foldCornerLabel = (corner: number) => `折叠位置${corner - 1}打开角度`
 
 export function foldCornerGeometry(node: ItemNode, corner: number, height = 0) {
   const root = sceneRegistry.nodes.get(node.id)
@@ -177,55 +177,18 @@ export function foldCornerGeometry(node: ItemNode, corner: number, height = 0) {
 }
 
 export function beginFoldCornerDrag(id: string, corner: number) {
-  if (!Number.isInteger(corner) || corner < 0 || !beginFoldDrag(id, Math.max(0, corner - 2)))
-    return false
-  const active = session!
-  const geometry = foldCornerGeometry(active.node, corner)
-  if (!geometry) {
-    finishFoldDrag(false)
-    return false
-  }
-  active.corner = corner
-  active.pivot = sceneRegistry.nodes.get(id)!.worldToLocal(geometry.pivot.clone())
-  return true
+  return Number.isInteger(corner) && corner >= 2 && beginFoldDrag(id, corner - 2)
 }
 
 export function previewFoldCornerAngle(angle: number) {
-  const active = session
-  if (!active || !Number.isFinite(angle)) return
-  if (editableNode(active.node.id) !== active.node) {
-    finishFoldDrag(false)
-    return
-  }
-  if (active.corner !== 1) previewFoldAngle(angle)
-  if (active.corner !== 0 && active.corner !== 1) return
-  const delta =
-    active.corner === 1
-      ? -angle
-      : active.controls.fold_angle_1_deg - foldControls(active.node).fold_angle_1_deg
-  const original = new Quaternion().setFromEuler(new Euler(...active.node.rotation))
-  const rotation = original
-    .clone()
-    .multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), (delta * Math.PI) / 180))
-  const pivot = active.pivot!
-  const position = new Vector3(...active.node.position)
-    .add(pivot.clone().applyQuaternion(original))
-    .sub(pivot.clone().applyQuaternion(rotation))
-  active.patch = {
-    ...active.patch,
-    position: position.toArray(),
-    rotation: new Euler().setFromQuaternion(rotation).toArray().slice(0, 3) as ItemNode['rotation'],
-  }
-  useLiveNodeOverrides.getState().set(active.node.id, active.patch)
+  previewFoldAngle(angle)
 }
 
 export function finishFoldDrag(commit: boolean) {
   const active = session
   if (!active) return
   session = null
-  useLiveNodeOverrides
-    .getState()
-    .clearFields(active.node.id, ['controls', 'asset', 'position', 'rotation'])
+  useLiveNodeOverrides.getState().clearFields(active.node.id, ['controls', 'asset'])
   useViewer.getState().setInputDragging(active.inputDragging)
   useInteractionScope
     .getState()
@@ -240,13 +203,7 @@ export function finishFoldDrag(commit: boolean) {
     !commit ||
     !active.patch ||
     editableNode(active.node.id) !== active.node ||
-    (foldKeys.every(
-      (key) => Math.abs(active.controls[key] - foldControls(active.node)[key]) < 1e-7,
-    ) &&
-      (!active.patch.rotation ||
-        active.patch.rotation.every(
-          (value, axis) => Math.abs(value - active.node.rotation[axis]!) < 1e-7,
-        )))
+    foldKeys.every((key) => Math.abs(active.controls[key] - foldControls(active.node)[key]) < 1e-7)
   )
     return
   runAsSingleSceneHistoryStep(useScene, () => {

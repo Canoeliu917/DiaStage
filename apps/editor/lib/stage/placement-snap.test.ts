@@ -4,6 +4,7 @@ import { ItemNode, sceneRegistry, useScene } from '@pascal-app/core'
 import type { SceneContextObject, SceneContextSummary } from '@pascal-app/core/stage'
 import { Group, Mesh } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
+import { stageModelBottom } from './model-contact'
 import { snapStageObject } from './placement-snap'
 import { AVAILABLE_STAGE_SCENERY } from './prop-assets'
 
@@ -80,7 +81,7 @@ test('overlapping real folding panels never snap into an internal frame member',
     expect(
       snapStageObject(point, moving, { ...context, objects: [target] }, { grid: 0, guides: true })
         .position,
-    ).toEqual(point)
+    ).toEqual({ ...point, y: -stageModelBottom(moving)! || 0 })
   } finally {
     useScene.setState({ nodes: before })
     for (const node of nodes) sceneRegistry.nodes.delete(node.id)

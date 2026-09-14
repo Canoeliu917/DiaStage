@@ -121,15 +121,14 @@ test('fixed/read-only props reject folding and a lock arriving mid-drag cancels 
   expect((useScene.getState().nodes[node.id] as ItemNode).controls).toBeUndefined()
 })
 
-test('every authored corner turns rigid panels, keeps its pivot and writes one undo step', () => {
+test('each hinge keeps the whole pose and pivot and writes one undo step', () => {
   const root = sceneRegistry.nodes.get(node.id)!
   const point = (name: string) => root.getObjectByName(name)!.getWorldPosition(new Vector3())
-  for (const corner of [0, 1, 2, 3]) {
+  for (const corner of [2, 3]) {
     const before = useScene.getState().nodes[node.id] as ItemNode
     const pivot = foldCornerGeometry(before, corner)!.pivot.clone()
-    const downstream = point('Hinge_03')
     expect(beginFoldCornerDrag(node.id, corner)).toBe(true)
-    previewFoldCornerAngle(corner === 1 ? 30 : 120)
+    previewFoldCornerAngle(120)
     const patch = useLiveNodeOverrides.getState().get(node.id)!
     expect(useScene.getState().nodes[node.id]).toEqual(before)
     const next = { ...before, ...patch } as ItemNode
@@ -142,7 +141,7 @@ test('every authored corner turns rigid panels, keeps its pivot and writes one u
     expect(point('Hinge_02').distanceTo(point('Hinge_03'))).toBeCloseTo(0.9, 6)
     expect(next.scale).toEqual(before.scale)
     expect(next.asset.dimensions[1]).toBeCloseTo(before.asset.dimensions[1], 6)
-    if (corner === 0) expect(point('Hinge_03').distanceTo(downstream)).toBeLessThan(1e-6)
+    expect([next.position, next.rotation]).toEqual([before.position, before.rotation])
     finishFoldDrag(true)
     expect(useScene.temporal.getState().pastStates).toHaveLength(1)
     useScene.temporal.getState().undo()
@@ -159,20 +158,18 @@ test('every authored corner turns rigid panels, keeps its pivot and writes one u
 test('cancel restores all corner positions even before the 3D renderer has reconciled its old pose', () => {
   const root = sceneRegistry.nodes.get(node.id)!
   const before = [0, 1, 2, 3].map((corner) => foldCornerGeometry(node, corner)!.point)
-  expect(beginFoldCornerDrag(node.id, 0)).toBe(true)
+  expect(beginFoldCornerDrag(node.id, 2)).toBe(true)
   previewFoldCornerAngle(135)
   const patch = useLiveNodeOverrides.getState().get(node.id) as Partial<ItemNode>
-  root.position.fromArray(patch.position!)
-  root.rotation.set(...patch.rotation!)
   applyItemFoldControls(root, patch.controls)
-  expect(foldCornerGeometry(node, 0)!.point.distanceTo(before[0]!)).toBeGreaterThan(0.1)
+  expect(foldCornerGeometry(node, 2)!.point.distanceTo(before[2]!)).toBeGreaterThan(0.1)
   finishFoldDrag(false)
   for (const corner of [0, 1, 2, 3])
     expect(foldCornerGeometry(node, corner)!.point.distanceTo(before[corner]!)).toBeLessThan(1e-6)
   expect(useScene.temporal.getState().pastStates).toHaveLength(0)
 })
 
-test('numeric presets retain the other relative angle and reject self-penetration along the path', () => {
+test('manifest closure is exact and retains the other relative angle', () => {
   setFoldAngle(node.id, 1, 180)
   setFoldAngle(node.id, 0, 180)
   const open = useScene.getState().nodes[node.id] as ItemNode
@@ -180,19 +177,19 @@ test('numeric presets retain the other relative angle and reject self-penetratio
   expect(open.asset.dimensions[0]).toBeCloseTo(2.7, 5)
   setFoldAngle(node.id, 0, 0)
   const closed = useScene.getState().nodes[node.id] as ItemNode
-  expect(closed.controls!.fold_angle_1_deg).toBeGreaterThan(0)
+  expect(closed.controls!.fold_angle_1_deg).toBe(0)
   expect(closed.controls!.fold_angle_2_deg).toBe(180)
   expect(useScene.temporal.getState().pastStates).toHaveLength(3)
 })
 
-test('270 degree folding preserves rigid panel size and commits as one undo step', () => {
+test('edited angles clamp to manifest maximum and commit as one undo step', () => {
   expect(beginFoldDrag(node.id, 0)).toBe(true)
   previewFoldAngle(180)
   previewFoldAngle(270)
   expect(useScene.getState().nodes[node.id]).toEqual(node)
   finishFoldDrag(true)
   const after = useScene.getState().nodes[node.id] as ItemNode
-  expect(after.controls).toEqual({ fold_angle_1_deg: 270, fold_angle_2_deg: 90 })
+  expect(after.controls).toEqual({ fold_angle_1_deg: 180, fold_angle_2_deg: 90 })
   expect(after.asset.dimensions[1]).toBeCloseTo(2.4, 6)
   expect([after.position, after.rotation, after.scale]).toEqual([
     node.position,

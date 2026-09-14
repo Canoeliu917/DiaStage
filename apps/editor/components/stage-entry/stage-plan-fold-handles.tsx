@@ -13,10 +13,16 @@ import { useViewer } from '@pascal-app/viewer'
 import { type PointerEvent, useCallback, useEffect, useRef } from 'react'
 import { type Matrix4, Vector3 } from 'three'
 import { stageFrame } from '@/lib/stage/context'
-import { advanceFoldAngle, type FoldAngleDrag, foldPointerRadians } from '@/lib/stage/fold-drag'
+import {
+  advanceFoldAngle,
+  FOLD_ANGLE_STEP,
+  type FoldAngleDrag,
+  foldPointerRadians,
+} from '@/lib/stage/fold-drag'
 import {
   beginFoldCornerDrag,
   finishFoldDrag,
+  foldAngleRange,
   foldControls,
   foldCornerGeometry,
   foldCornerLabel,
@@ -41,6 +47,17 @@ type Gesture = {
 
 function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPerPixel?: number }) {
   const root = useRef<SVGGElement>(null)
+  const freeAngleUsed = useRef(false)
+  useEffect(() => {
+    const releaseShift = (event: KeyboardEvent) => {
+      if (event.key !== 'Shift' || !freeAngleUsed.current) return
+      freeAngleUsed.current = false
+      // Shift was part of a fold, not a tap to cycle the placement mode.
+      event.stopImmediatePropagation()
+    }
+    window.addEventListener('keyup', releaseShift, true)
+    return () => window.removeEventListener('keyup', releaseShift, true)
+  }, [])
   const gesture = useRef<Gesture | null>(null)
   const releasedPointer = useRef<number | null>(null)
   const selected = useViewer((state) => state.selection.selectedIds)
@@ -127,14 +144,15 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
       data-geometry-revision={revision}
       pointerEvents="auto"
     >
-      {[0, foldPositionCount(node) + 1].map((corner) => {
+      {Array.from({ length: foldPositionCount(node) }, (_, index) => index + 2).map((corner) => {
         const geometry = foldCornerGeometry(node, corner)
         if (!geometry) return null
         const { pivot: pivotWorld, parentMatrix } = geometry
         const pivot = project(pivotWorld.toArray())
         const end = project(geometry.point.toArray())
         const position = Math.max(0, corner - 2)
-        const angle = corner === 1 ? 0 : controls[foldKeys[position]!]
+        const angle = controls[foldKeys[position]!]
+        const [min, max] = foldAngleRange(node, position)
         return (
           <g
             key={corner}
@@ -142,8 +160,8 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
             tabIndex={0}
             className="stage-fold-plan-handle"
             aria-label={`平面${foldCornerLabel(corner)}`}
-            aria-valuemin={corner === 1 ? undefined : 0}
-            aria-valuemax={corner === 1 ? undefined : 270}
+            aria-valuemin={min}
+            aria-valuemax={max}
             aria-valuenow={angle}
             data-fold-position={corner >= 2 ? position : undefined}
             data-fold-corner={corner}
@@ -194,7 +212,8 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
               const point = pointer(event)
               const radians = point && foldPointerRadians(point, drag.pivot, drag.x, drag.z)
               if (radians === null || radians === undefined) return
-              const next = advanceFoldAngle(drag.angle, radians, drag.corner)
+              if (event.shiftKey) freeAngleUsed.current = true
+              const next = advanceFoldAngle(drag.angle, radians, event.shiftKey)
               drag.angle = next.drag
               previewFoldCornerAngle(next.angle)
             }}
@@ -214,15 +233,17 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
               if (!beginFoldCornerDrag(node.id, corner)) return
               previewFoldCornerAngle(
                 event.key === 'Home'
-                  ? 0
+                  ? min!
                   : event.key === 'End'
-                    ? 270
-                    : angle + (event.key === 'ArrowLeft' ? -15 : 15),
+                    ? max!
+                    : angle + (event.key === 'ArrowLeft' ? -1 : 1) * FOLD_ANGLE_STEP,
               )
               finishFoldDrag(true)
             }}
           >
-            <title>{foldCornerLabel(corner)} · 每格 15°</title>
+            <title>
+              {foldCornerLabel(corner)} · 每格 {FOLD_ANGLE_STEP}° · Shift 自由角度
+            </title>
             <circle r={11 * unit} style={{ fill: 'transparent', stroke: 'none' }} />
             <circle r={8 * unit} />
             <text
@@ -231,7 +252,7 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
               fontSize={10 * unit}
               pointerEvents="none"
             >
-              {corner === 0 ? '↶' : corner === 1 ? '↻' : corner - 1}
+              {corner - 1}
             </text>
           </g>
         )

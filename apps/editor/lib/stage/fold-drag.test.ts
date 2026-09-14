@@ -14,10 +14,10 @@ test('fold pointer steps are 15 degrees and continue through the atan2 seam up t
     result = advanceFoldAngle(drag, radians(angle))
     drag = result.drag
   }
-  expect(result.angle).toBe(270)
+  expect(result.angle).toBe(300)
   expect(
     advanceFoldAngle({ startAngle: 15, pointerRadians: 0, turnRadians: 0 }, radians(60)).angle,
-  ).toBe(0)
+  ).toBe(-45)
 })
 
 test('projected fold plane removes nonuniform scale and tilt without changing pointer direction', () => {
@@ -38,4 +38,10 @@ test('projected fold plane removes nonuniform scale and tilt without changing po
   }
   expect(foldPointerRadians(pivot, pivot, x, z)).toBeNull()
   expect(foldPointerRadians([1, 1], [0, 0], [1, 1], [2, 2])).toBeNull()
+})
+
+test('Shift retains the unsnapped angle', () => {
+  const drag = { startAngle: 90, pointerRadians: 0, turnRadians: 0 }
+  expect(advanceFoldAngle(drag, radians(7), true).angle).toBeCloseTo(83, 10)
+  expect(advanceFoldAngle(drag, radians(7)).angle).toBeCloseTo(90, 10)
 })
