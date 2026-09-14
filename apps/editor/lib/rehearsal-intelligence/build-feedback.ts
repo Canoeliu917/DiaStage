@@ -4,6 +4,7 @@ import { localSceneSequence, readLocalDecisionReceipt, subscribeLocalScene } fro
 import { sceneContentVersion } from '../scene-signature'
 import { THEATRE_METADATA_KEY } from '../theatre/scene-adapter'
 import { StageSceneDocumentSchema } from '../theatre/simulation'
+import { createUUID } from '../uuid'
 import { buildDiaContext } from './context'
 import { type BuildFeedback, BuildFeedbackSchema, type DiaBuildProposal } from './dia-backbone'
 import { openRehearsalLog } from './feedback'
@@ -76,7 +77,7 @@ export function buildFeedbackEvent(
 ): BuildFeedback {
   if (!proposal.envelope) throw new Error('旧搭台建议缺少交互引用，请重新预演后确认')
   return BuildFeedbackSchema.parse({
-    eventId: kind === 'adopt' ? proposal.id : crypto.randomUUID(),
+    eventId: kind === 'adopt' ? proposal.id : createUUID(),
     sceneId,
     interactionId: proposal.id,
     createdAt: new Date().toISOString(),

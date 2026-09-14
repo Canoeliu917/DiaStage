@@ -1,5 +1,6 @@
 import type { SceneContextSummary } from '@pascal-app/core/stage'
 import { SPATIAL_RUNTIME_CONFIG } from '../stage/spatial-constraints'
+import { createUUID } from '../uuid'
 import type { DiaBuildProposal } from './dia-backbone'
 import { DiaStageProposalSchema } from './knowledge/stage-proposal'
 import {
@@ -77,7 +78,7 @@ export function reviseOpenProposal(
     )
     return DiaStageProposalSchema.parse({
       ...original,
-      proposalId: crypto.randomUUID(),
+      proposalId: createUUID(),
       userRequest: g.rawUtterance,
       constraints: [{ ...constraint, widthMeters }],
       rationale: `按产品步长加宽 ${OPEN_LANGUAGE_RUNTIME_CONFIG.widenStepMeters} m；最小净宽 ${widthMeters} m。重新检查全部空间约束。`,

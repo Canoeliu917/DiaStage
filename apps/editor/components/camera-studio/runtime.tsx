@@ -16,6 +16,7 @@ import type { CameraControlsImpl } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import { type Object3D, PerspectiveCamera, Vector3 } from 'three'
+import { createUUID } from '../../lib/uuid'
 import { cameraObservationShot } from './beta-observation'
 import { type CameraKeyframe, type Shot, sampleMotion, sampleShot, type Vec3 } from './model'
 import { useCameraStudio } from './store'
@@ -171,7 +172,7 @@ export function CameraStudioRuntime() {
     const capture = (time: number): CameraKeyframe | null => {
       if (!viewReady || !(camera instanceof PerspectiveCamera) || !controls?.getTarget) return null
       return {
-        id: crypto.randomUUID(),
+        id: createUUID(),
         time: Math.max(0, time),
         position: camera.position.toArray(),
         lookAt: controls.getTarget(new Vector3(), false).toArray(),

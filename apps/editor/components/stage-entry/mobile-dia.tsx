@@ -12,6 +12,7 @@ import {
   type RemoteDiaStatus,
   SentDiaResponseSchema,
 } from '@/lib/remote-voice/dia-protocol'
+import { createUUID } from '../../lib/uuid'
 import type { VoiceState } from './command-input'
 import './mobile-dia.css'
 
@@ -222,7 +223,7 @@ export function MobileDia({
         ? currentPending.current
         : RemoteDiaCommandInputSchema.parse({
             ...action,
-            requestId: crypto.randomUUID(),
+            requestId: createUUID(),
             sequence,
             sceneVersion,
           })

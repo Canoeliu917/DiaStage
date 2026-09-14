@@ -34,6 +34,7 @@ import {
 } from '@/lib/stage/prop-assets'
 import { resetStageObjectShape } from '@/lib/stage/reset-shape'
 import { SCENERY_LIBRARY } from '@/lib/stage/scenery'
+import { createUUID } from '../../lib/uuid'
 import { useCameraStudio } from '../camera-studio/store'
 import { useSimulationSelection } from '../theatre/simulation-panel'
 import { FoldingPanel } from './folding-panel'
@@ -132,7 +133,7 @@ export function startStagePlacement(
     return
   }
   const item: StageItemProposal = {
-    proposalId: crypto.randomUUID(),
+    proposalId: createUUID(),
     existingNodeId: existing && !duplicate ? existing.id : null,
     kind: entry.kind,
     displayName: duplicate ? `${entry.name} 副本` : entry.name,

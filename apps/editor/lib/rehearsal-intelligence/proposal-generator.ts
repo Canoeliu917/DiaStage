@@ -1,3 +1,4 @@
+import { createUUID } from '../uuid'
 import { sceneFactsVersion } from './conversation'
 import { ACTIVE_DIMENSIONS, ONTOLOGY_VERSION, PROMPT_VERSION } from './dimensions'
 import {
@@ -28,7 +29,7 @@ export function createInteraction(input: unknown, output: unknown, modelVersion:
   const parent = conversation?.previousInteraction?.proposals.find(
     (proposal) => proposal.proposalId === conversation.selectedProposalId,
   )
-  const interactionId = crypto.randomUUID()
+  const interactionId = createUUID()
   return InteractionSchema.parse({
     interactionId,
     sceneId: context.sceneId,
@@ -47,11 +48,11 @@ export function createInteraction(input: unknown, output: unknown, modelVersion:
     inputContext: context,
     dramaticState: result.dramaticState,
     proposals: result.proposals.map((content) => {
-      const proposalId = crypto.randomUUID()
+      const proposalId = createUUID()
       const revision = conversation
         ? {
             schemaVersion: 1 as const,
-            revisionId: crypto.randomUUID(),
+            revisionId: createUUID(),
             proposalId,
             rootProposalId: parent?.revision?.rootProposalId ?? parent?.proposalId ?? proposalId,
             parentProposalId: parent?.proposalId ?? null,

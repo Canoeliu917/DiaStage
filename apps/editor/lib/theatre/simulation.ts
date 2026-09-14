@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { ScriptImportSchema } from '../stage/import-metadata'
+import { createUUID } from '../uuid'
 import {
   createTheatreDocument,
   type TheatreDocument,
@@ -75,8 +76,8 @@ export function assertPerformerLocks(previous: StageSceneDocument, next: StageSc
 export function createStageSceneDocument(name = '未命名剧目'): StageSceneDocument {
   return {
     version: 2,
-    production: { id: crypto.randomUUID(), name },
-    venue: { ...VENUE_TEMPLATES[0]!, id: crypto.randomUUID(), origin: [0, 0, 0] },
+    production: { id: createUUID(), name },
+    venue: { ...VENUE_TEMPLATES[0]!, id: createUUID(), origin: [0, 0, 0] },
     rehearsalSimulation: { version: 1, performers: [], paths: [], durationSeconds: 20 },
   }
 }

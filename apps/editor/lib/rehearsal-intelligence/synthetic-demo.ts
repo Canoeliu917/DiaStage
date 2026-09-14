@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { THEATRE_METADATA_KEY } from '../theatre/scene-adapter'
 import { StageSceneDocumentSchema } from '../theatre/simulation'
+import { createUUID } from '../uuid'
 import { proposalActionSignature } from './conversation'
 import { ACTIVE_DIMENSIONS, ONTOLOGY_VERSION, PROMPT_VERSION } from './dimensions'
 import { compileProposal } from './proposal-compiler'
@@ -33,7 +34,7 @@ export function createSyntheticDemoScene(): SceneGraph {
   const document = StageSceneDocumentSchema.parse(site.metadata[THEATRE_METADATA_KEY])
   document.rehearsalSimulation.performers = [
     {
-      id: crypto.randomUUID(),
+      id: createUUID(),
       name: 'A',
       color: '#555555',
       position: [-0.6, 0, 0],
@@ -41,7 +42,7 @@ export function createSyntheticDemoScene(): SceneGraph {
       visible: true,
     },
     {
-      id: crypto.randomUUID(),
+      id: createUUID(),
       name: 'B',
       color: '#999999',
       position: [0.6, 0, 0],

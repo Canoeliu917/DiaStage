@@ -20,6 +20,7 @@ import { spatialCandidatePlan } from '../stage/spatial-solver'
 import { solveStageSpatialProposal } from '../stage/spatial-fold'
 import { assertTheatreWritable } from '../theatre/scene-adapter'
 import { readStageDocument } from '../theatre/simulation-store'
+import { createUUID } from '../uuid'
 import {
   applyHumanDecision,
   checkCurrentScene,
@@ -347,7 +348,7 @@ export class DiaConversation {
     const thread = this.store.getState().thread
     if (!thread) throw new Error('对话正在载入，请稍后发送。')
     const message: ThreadMessage = {
-      messageId: crypto.randomUUID(),
+      messageId: createUUID(),
       role,
       content,
       createdAt: new Date().toISOString(),
@@ -402,7 +403,7 @@ export class DiaConversation {
     const { thread, interaction } = this.store.getState()
     try {
       await saveProductEvent({
-        eventId: crypto.randomUUID(),
+        eventId: createUUID(),
         sceneId: this.sceneId,
         threadId: thread?.threadId ?? null,
         interactionId: this.buildProposal()?.id ?? interaction?.interactionId ?? null,
@@ -753,7 +754,7 @@ export class DiaConversation {
     if (this.store.getState().builds.length >= 200)
       throw new Error('本场已保留 200 次搭台建议，请先导出私有记录并开始新的场景。')
     const proposal: DiaBuildProposal = {
-      id: knowledgeProposal?.proposalId ?? crypto.randomUUID(),
+      id: knowledgeProposal?.proposalId ?? createUUID(),
       parentId: parent?.id ?? null,
       createdAt: new Date().toISOString(),
       input,
@@ -1344,7 +1345,7 @@ export class DiaConversation {
           signal.throwIfAborted()
           prepareVersionRemount(this.sceneId, selected.id, {
             schemaVersion: 1,
-            interactionId: crypto.randomUUID(),
+            interactionId: createUUID(),
             sceneId: this.sceneId,
             capability: 'remount',
             sceneVersion: context.sceneVersion!,

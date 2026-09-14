@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { createUUID } from '../../uuid'
 import type { StagePlacementProposal } from '../stage-placement-actions'
 import { explainConcept, lookupAlias, lookupCanonical } from './retrieval'
 import {
@@ -267,7 +268,7 @@ export function resolveKnowledgeForProposal(
   userRequest: string,
   placement: StagePlacementProposal,
   context: KnowledgeProposalContext,
-  proposalId = crypto.randomUUID(),
+  proposalId = createUUID(),
 ): DiaStageProposal {
   const ids = new Set<string>()
   const include = (...conceptIds: string[]) =>

@@ -10,6 +10,7 @@ import {
   ScanUploadSchema,
   validateScanGlb,
 } from '@/lib/remote-voice/scan-glb'
+import { createUUID } from '../../lib/uuid'
 
 const listSchema = z.strictObject({ uploads: z.array(ScanUploadSchema) })
 const uploadSchema = z.strictObject({ upload: ScanUploadSchema })
@@ -112,7 +113,7 @@ export function ScanTransfer({
     setMessage('正在检查扫描文件…')
     const controller = new AbortController()
     work.current = controller
-    const id = crypto.randomUUID()
+    const id = createUUID()
     uploadId.current = id
     try {
       if (!session.sceneId) throw new Error('请先在电脑端保存场景并重新配对。')

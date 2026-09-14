@@ -49,6 +49,7 @@ import { stageFloorUpdates, THEATRE_METADATA_KEY } from '../theatre/scene-adapte
 import { runtimeTheatreDocument, StageSceneDocumentSchema } from '../theatre/simulation'
 import { readStageDocument } from '../theatre/simulation-store'
 import { makeVersionSource, VERSION_SOURCE_KEY } from '../theatre/version-source'
+import { createUUID } from '../uuid'
 import {
   CAMERA_METADATA,
   cameraContextObject,
@@ -86,8 +87,8 @@ const remoteReceiptsSchema = z
   .max(128)
 export function commandMeta(source: InputSource = 'manual'): CommandMeta {
   return {
-    commandId: crypto.randomUUID(),
-    transactionId: crypto.randomUUID(),
+    commandId: createUUID(),
+    transactionId: createUUID(),
     source,
     issuedAt: new Date().toISOString(),
     expectedDocumentVersion: stageRevision(),
@@ -378,7 +379,7 @@ export function executeStageCommands(
         if (old?.stageLocked) throw new Error(`「${old.name}」已锁定，请先解锁`)
         if (command.type === 'AddCamera' && old) throw new Error('摄影机编号重复')
         const keyframe = {
-          id: old?.keyframes[0]?.id ?? crypto.randomUUID(),
+          id: old?.keyframes[0]?.id ?? createUUID(),
           time: 0,
           position: stageToWorldPosition(command.transform.position, frame),
           lookAt: stageToWorldPosition(command.target, frame),
@@ -529,8 +530,8 @@ export function executeStageCommands(
         if (node.children.length) throw new Error('请先将挂接物件拆分后复制')
         const made =
           node.type === 'item'
-            ? { ...node, id: `item_${crypto.randomUUID()}` as const }
-            : { ...node, id: `block_${crypto.randomUUID()}` as const }
+            ? { ...node, id: `item_${createUUID()}` as const }
+            : { ...node, id: `block_${createUUID()}` as const }
         update({
           ...made,
           name: command.name,

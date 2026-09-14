@@ -13,6 +13,7 @@ import {
   readStageDocument,
 } from '@/lib/theatre/simulation-store'
 import { deriveVenueModel } from '@/lib/theatre/venue-model'
+import { createUUID } from '../../lib/uuid'
 import { openStudioPanel } from '../studio-navigation'
 import { useRehearsalPlayback } from './state'
 import './theatre.css'
@@ -326,7 +327,7 @@ export function SimulationPanel(_props: { sceneId?: string }) {
           type="button"
           onClick={() =>
             change((d) => {
-              const id = crypto.randomUUID()
+              const id = createUUID()
               d.rehearsalSimulation.performers.push({
                 id,
                 name: `人物 ${d.rehearsalSimulation.performers.length + 1}`,
@@ -468,7 +469,7 @@ export function SimulationPanel(_props: { sceneId?: string }) {
                         (p) => p.performerId !== selected.id,
                       )
                       d.rehearsalSimulation.paths.push({
-                        id: crypto.randomUUID(),
+                        id: createUUID(),
                         performerId: selected.id,
                         points: ui.points,
                         durationSeconds: 6,

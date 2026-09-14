@@ -1,7 +1,8 @@
+import { createUUID } from '../../lib/uuid'
 import type { CameraProject, Shot, Vec3 } from './model'
 
 const key = (time: number, position: Vec3, lookAt: Vec3, fov = 40) => ({
-  id: crypto.randomUUID(),
+  id: createUUID(),
   time,
   position,
   lookAt,
@@ -10,7 +11,7 @@ const key = (time: number, position: Vec3, lookAt: Vec3, fov = 40) => ({
 
 export function newShot(): Shot {
   return {
-    id: crypto.randomUUID(),
+    id: createUUID(),
     name: '新机位',
     duration: 8,
     keyframes: [key(0, [4, 3, 6], [0, 1, 0]), key(8, [2, 2, 4], [0, 1, 0])],

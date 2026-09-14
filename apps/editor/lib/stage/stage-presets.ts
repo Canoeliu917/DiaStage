@@ -1,4 +1,5 @@
 import { type SceneContextSummary, type StagePlan, validateStagePlan } from '@pascal-app/core/stage'
+import { createUUID } from '../uuid'
 import { AVAILABLE_STAGE_SCENERY, stagePropCollisionGeometry } from './prop-assets'
 
 export const STAGE_PRESETS = [
@@ -43,7 +44,7 @@ export function createStagePreset(index: number, context: SceneContextSummary): 
     const [width, height, depth] = source.asset.dimensions!
     const dimensionsMeters = { width, height, depth }
     return {
-      proposalId: crypto.randomUUID(),
+      proposalId: createUUID(),
       existingNodeId: null,
       kind: source.kind,
       displayName: source.asset.name,

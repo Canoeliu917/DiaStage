@@ -11,6 +11,7 @@ import { assertTheatreWritable, THEATRE_METADATA_KEY } from '../theatre/scene-ad
 import { type RehearsalSimulation, StageSceneDocumentSchema } from '../theatre/simulation'
 import { readStageDocument } from '../theatre/simulation-store'
 import { makeVersionSource, VERSION_SOURCE_KEY } from '../theatre/version-source'
+import { createUUID } from '../uuid'
 import { observeBuildFeedback } from './build-feedback'
 import { buildDiaContext, buildRehearsalContext } from './context'
 import { sceneFactsVersion } from './conversation'
@@ -144,7 +145,7 @@ export function observeRehearsalFeedback(sceneId: string) {
         )
           return
         await saveProductEvent({
-          eventId: crypto.randomUUID(),
+          eventId: createUUID(),
           sceneId,
           threadId: null,
           interactionId: event.interactionId,
@@ -295,7 +296,7 @@ export function makeFeedback(
     ghost.sceneId === interaction.sceneId && ghost.proposalId === proposal.proposalId
   const previewedProposal = previewed ? ghost.proposal : null
   return {
-    eventId: crypto.randomUUID(),
+    eventId: createUUID(),
     interactionId: interaction.interactionId,
     sceneId: interaction.sceneId,
     envelope: rehearsalEnvelope(interaction, 'recorded'),

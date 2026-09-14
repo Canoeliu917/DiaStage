@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { createUUID } from '../uuid'
 
 const id = z.string().min(1)
 const finite = z.number().finite()
@@ -279,7 +280,7 @@ export const VENUE_TEMPLATES: ReadonlyArray<Omit<Venue, 'id'>> = [
 ]
 
 export function theatreId(prefix: string): string {
-  return `${prefix}_${crypto.randomUUID()}`
+  return `${prefix}_${createUUID()}`
 }
 
 export function createRehearsalScene(name = '第一场'): RehearsalScene {

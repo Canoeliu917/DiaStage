@@ -42,6 +42,7 @@ import {
   VERSION_SOURCE_KEY,
   VersionSourceLinkSchema,
 } from '@/lib/theatre/version-source'
+import { createUUID } from '../../lib/uuid'
 import { useCameraStudio } from '../camera-studio/store'
 import { useSimulationSelection } from './simulation-panel'
 
@@ -93,7 +94,7 @@ export function saveRehearsalVersion(name: string, note = '', sceneId?: string) 
       })
     : null
   const version = versionSchema.parse({
-    id: crypto.randomUUID(),
+    id: createUUID(),
     name,
     note,
     createdAt: new Date().toISOString(),
@@ -138,7 +139,7 @@ export function restoreRehearsalVersion(id: string, sceneId?: string) {
   const versions = z.array(versionSchema).parse(site.metadata[VERSIONS] ?? [])
   const restored = versionSchema.parse({
     ...version,
-    id: crypto.randomUUID(),
+    id: createUUID(),
     name: `恢复 · ${version.name}`.slice(0, 120),
     note: `从「${version.name}」恢复`,
     createdAt: new Date().toISOString(),

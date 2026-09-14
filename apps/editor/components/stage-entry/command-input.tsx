@@ -33,6 +33,7 @@ import {
 } from '@/lib/stage/creation-policy'
 import type { ScriptImport } from '@/lib/stage/import-metadata'
 import { createManualStageGraph } from '@/lib/stage/initial-stage'
+import { createUUID } from '../../lib/uuid'
 import { CreationModeControl, requestCreationPermission } from './creation-mode'
 import { PhoneVoiceLink, type RemoteVoiceReport } from './phone-voice-link'
 import { EMPTY_STAGE_CONTEXT, StagePlanReview, useStagePlanPreview } from './plan-review'
@@ -83,7 +84,7 @@ export async function applyReviewedPlan(
     return null
   }
   if (!plan.venue) throw new Error('请先填写舞台宽度与深度')
-  const id = crypto.randomUUID()
+  const id = createUUID()
   const key = PENDING_STAGE_PREFIX + id
   // Keep the confirmed proposal separate until the new scene's normal store and undo are ready.
   sessionStorage.setItem(key, JSON.stringify({ plan, transactionId, scriptImport }))
@@ -256,9 +257,7 @@ export function StageCommandInput({ sceneId }: { sceneId?: string }) {
             }),
           })
       const response = request?.response
-      const result = local
-        ? { plan: local, requestId: crypto.randomUUID() }
-        : await response!.json()
+      const result = local ? { plan: local, requestId: createUUID() } : await response!.json()
       if (response && !response.ok)
         throw new Error(result.error?.message || '方案生成失败，请稍后重试')
       const next = StagePlanSchema.parse(result.plan)

@@ -12,6 +12,7 @@ import {
   readRemoteVoiceResponse,
   SentRemoteVoiceResponseSchema,
 } from '@/lib/remote-voice/client'
+import { createUUID } from '../../lib/uuid'
 import type { VoiceState } from './command-input'
 import { MobileDia } from './mobile-dia'
 import './stage-entry.css'
@@ -195,7 +196,7 @@ export function RemoteVoiceController() {
   const send = async () => {
     if (!session || sending || isFinal(receipt)) return
     const command = pending ?? {
-      requestId: crypto.randomUUID(),
+      requestId: createUUID(),
       sequence: acknowledged + 1,
       transcript: draft.trim(),
     }

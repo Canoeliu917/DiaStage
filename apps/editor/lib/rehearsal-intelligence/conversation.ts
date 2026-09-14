@@ -1,3 +1,4 @@
+import { createUUID } from '../uuid'
 import { discussionDirection } from './dia-backbone'
 import {
   type ConversationContext,
@@ -75,7 +76,7 @@ export function createRehearsalThread(sceneId: string, sceneVersion: string): Re
   const now = new Date().toISOString()
   return RehearsalThreadSchema.parse({
     schemaVersion: 1,
-    threadId: crypto.randomUUID(),
+    threadId: createUUID(),
     sceneId,
     createdAt: now,
     updatedAt: now,

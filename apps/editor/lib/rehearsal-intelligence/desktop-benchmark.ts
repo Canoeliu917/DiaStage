@@ -3,6 +3,7 @@ import { SceneJournal } from '../scene-journal'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { THEATRE_METADATA_KEY } from '../theatre/scene-adapter'
 import { runtimeTheatreDocument, StageSceneDocumentSchema } from '../theatre/simulation'
+import { createUUID } from '../uuid'
 import { clearProposalGhost, makeFeedback, useProposalGhost } from './authority'
 import { buildRehearsalContext } from './context'
 import { EVAL_CASES } from './eval-cases'
@@ -18,7 +19,7 @@ export async function runDesktopBenchmark() {
     !location.pathname.startsWith('/__diastage_synthetic_benchmark__/')
   )
     throw new Error('Benchmark requires an isolated loopback page')
-  const sceneId = `synthetic-desktop-benchmark-${crypto.randomUUID()}`
+  const sceneId = `synthetic-desktop-benchmark-${createUUID()}`
   const graph = createTheatreSceneGraph('Synthetic desktop benchmark')
   const site = graph.nodes[graph.rootNodeIds[0]!]!
   const document = StageSceneDocumentSchema.parse({

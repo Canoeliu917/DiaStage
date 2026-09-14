@@ -4,6 +4,7 @@ import {
   type StagePlan,
   validateStagePlan,
 } from '@pascal-app/core/stage'
+import { createUUID } from '../uuid'
 
 export type CreationMode = 'suggest' | 'create' | 'draft'
 export interface CreationLease {
@@ -56,7 +57,7 @@ export function mergeDraftPlan(
   if (!previous) return validateStagePlan(next, original).plan
   const merged = structuredClone(previous)
   // Draft IDs remain proposal references until one final compilation creates real nodes.
-  const sequence = crypto.randomUUID()
+  const sequence = createUUID()
   const ids = new Map(
     next.items.map((item) => [
       item.proposalId,
