@@ -1,11 +1,12 @@
 import { expect, test } from 'bun:test'
-import { clampDiaTabY, DIA_EDGE_SIZE, DIA_TABLET_QUERY } from './dia-touch-layout'
+import { clampDiaTabY, DIA_EDGE_SIZE, DIA_EDGE_WIDTH, DIA_TABLET_QUERY } from './dia-touch-layout'
 
 test('tablet-only touch geometry keeps Desktop and phone outside the breakpoint', () => {
   expect(DIA_TABLET_QUERY).toBe(
     '(min-width: 600px) and (max-width: 1399px) and (any-pointer: coarse)',
   )
-  expect(DIA_EDGE_SIZE).toBe(48)
+  expect(DIA_EDGE_SIZE).toBe(40)
+  expect(DIA_EDGE_WIDTH).toBe(24)
 })
 for (const [width, height] of [
   [1180, 820],
@@ -17,9 +18,11 @@ for (const [width, height] of [
     const control = { left: width! - 200, top: 30, width: 192, height: 42 }
     expect(clampDiaTabY(30, viewport, [control])).toBe(82)
     expect(clampDiaTabY(300, viewport, [control])).toBe(
-      Math.min(300, viewport.top + viewport.height - 48),
+      Math.min(300, viewport.top + viewport.height - DIA_EDGE_SIZE),
     )
-    expect(clampDiaTabY(3000, viewport, [control])).toBe(viewport.top + viewport.height - 48)
+    expect(clampDiaTabY(3000, viewport, [control])).toBe(
+      viewport.top + viewport.height - DIA_EDGE_SIZE,
+    )
     expect(clampDiaTabY(-100, viewport, [control])).toBe(82)
     expect(clampDiaTabY(30, viewport, [{ ...control, left: 20 }])).toBe(30)
   })
@@ -30,7 +33,7 @@ test('multiple exclusion zones choose closest legal edge, not an arbitrary fixed
     { left: 940, top: 50, width: 60, height: 40 },
     { left: 940, top: 240, width: 60, height: 40 },
   ]
-  expect(clampDiaTabY(230, viewport, controls)).toBe(182)
+  expect(clampDiaTabY(230, viewport, controls)).toBe(190)
   expect(clampDiaTabY(270, viewport, controls)).toBe(290)
   expect(clampDiaTabY(0, viewport, [{ left: 940, top: 0, width: 60, height: 600 }])).toBeNull()
 })

@@ -1,10 +1,10 @@
 import {
   resolveStageObjectSpecs,
-  StageItemKindSchema,
   type SceneContextSummary,
+  StageItemKindSchema,
 } from '@pascal-app/core/stage'
 import { z } from 'zod'
-import { parseCameraIntent, type CameraIntentCommand } from './camera-intents'
+import { type CameraIntentCommand, parseCameraIntent } from './camera-intents'
 import { lookupCanonical } from './knowledge/retrieval'
 import { resolveKnowledgeForProposal } from './knowledge/stage-proposal'
 import { mapStagePlacementIntent, type StagePlacementProposal } from './stage-placement-actions'
@@ -271,16 +271,18 @@ export function parseOpenLanguage(rawUtterance: string): StructuredGrounding | n
         g.constraints = ['preserve-path']
         g.references = [ref('named', '门')]
       } else if (/围|三面墙|U[形型]空间/i.test(text)) {
-        if (/[四五六七八九十12456789几]+(?:块|片|面)|三联|三折/.test(text))
+        if (/[四五六七八九十1456789几]+(?:块|片|面)|三联|三折/.test(text))
           return clarify(g, '当前围合需要唯一的三块独立景片。')
         if (
-          !/^(?:(?:用|拿|把|让)?(?:三|3|仨)(?:块|片|面)?景片)?围(?:成|出)?(?:一个|个)?(?:空间|一下|一圈)?(?:[,，](?:中间|前面)?留(?:个|一个)?(?:\d+(?:\.\d+)?米宽)?入口)?$|^(?:弄|做)(?:个|一个)(?:三面墙|U[形型]空间)$/i.test(
+          !/^(?:(?:用|拿|把|让)?(?:两|二|2|三|3|仨)(?:块|片|个|面)?景片)?围(?:成|出)?(?:一个|个)?(?:空间|一下|一圈)?(?:[,，](?:中间|前面)?留(?:个|一个)?(?:\d+(?:\.\d+)?米宽)?入口)?$|^(?:弄|做)(?:个|一个)(?:三面墙|U[形型]空间)$/i.test(
             text,
           )
         )
           return clarify(g, '围合中的数量、修饰或附加要求不明确，请补充说明。')
         g.constraints = ['form-enclosure']
-        g.subjects = [ref('scenic_flats', null, 3)]
+        g.subjects = [
+          ref('scenic_flats', null, /(?:两|二|2)(?:块|片|个|面)?景片/.test(text) ? 2 : 3),
+        ]
         if (/入口|留个口|别封死/.test(text)) g.constraints.push('leave-opening')
       } else if (
         /^(?:前面别封死[,，]?)?(?:留(?:个|一个)?(?:口|入口)|这里要能进去|别把入口堵上|不要封住入口|前面别封死)$/.test(
@@ -490,7 +492,9 @@ export function validateOpenGrounding(
   )
     throw new Error('明确对象不能被替换成默认选中对象。')
   const requiredSubjects = g.constraints.includes('form-enclosure')
-    ? 3
+    ? /(?:两|二|2)(?:块|片|个|面)/.test(utterance.normalize('NFKC'))
+      ? 2
+      : 3
     : g.intents.some((id) => ['connect-edge', 'align-edges', 'corner-angle'].includes(id))
       ? 2
       : g.intents.some((id) => !OPEN_CAMERA_IDS.includes(id as never))
@@ -556,7 +560,7 @@ export function openGroundingPlacement(
     intent = {
       ...intent,
       kind: 'enclose_with_opening',
-      count: 3,
+      count: subjectIds.length,
       shape: 'enclosure',
       openingRequired: g.constraints.includes('leave-opening'),
     }

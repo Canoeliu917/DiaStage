@@ -283,17 +283,30 @@ function inside(part: Geometry, point: Vector3): boolean {
   )
 }
 
-export function stageModelContact(left: ContactObject, right: ContactObject): boolean | null {
+export function stageModelContact(
+  left: ContactObject,
+  right: ContactObject,
+  penetrationOnly = false,
+): boolean | null {
   const leftModel = modelParts(left),
     rightModel = modelParts(right)
   if (!leftModel && !rightModel) return null
   const leftPose = pose(left),
     rightPose = pose(right)
+  const interior = (part: Part, matrix: Matrix4) => {
+    if (!penetrationOnly) return matrix
+    // Micrometre-scale inset distinguishes shared surfaces from intersecting solids.
+    const center = part.geometry.boundingBox!.getCenter(new Vector3())
+    return matrix
+      .multiply(new Matrix4().makeTranslation(...center.toArray()))
+      .scale(new Vector3(0.99999, 0.99999, 0.99999))
+      .multiply(new Matrix4().makeTranslation(...center.negate().toArray()))
+  }
   for (const a of leftModel ?? proxyParts(left)) {
-    const aWorld = leftPose.clone().multiply(a.local)
+    const aWorld = interior(a, leftPose.clone().multiply(a.local))
     const aBox = a.geometry.boundingBox!.clone().applyMatrix4(aWorld)
     for (const b of rightModel ?? proxyParts(right)) {
-      const bWorld = rightPose.clone().multiply(b.local)
+      const bWorld = interior(b, rightPose.clone().multiply(b.local))
       if (!aBox.intersectsBox(new Box3().copy(b.geometry.boundingBox!).applyMatrix4(bWorld)))
         continue
       const bToA = aWorld.clone().invert().multiply(bWorld)

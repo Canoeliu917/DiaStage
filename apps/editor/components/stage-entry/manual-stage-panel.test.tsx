@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { STAGE_PROP_MENU, stagePropAssetUrl } from '@/lib/stage/prop-assets'
 import { createTheatreSceneGraph } from '@/lib/theatre/new-production'
 import {
+  cancelStagePlacement,
   STAGE_LIBRARY,
   STAGE_LIBRARY_CATEGORIES,
   StageLibraryPanel,
@@ -13,6 +14,7 @@ import {
 } from './manual-stage-panel'
 
 afterEach(() => {
+  cancelStagePlacement()
   useScene.getState().unloadScene()
   useScene.setState({ readOnly: false })
 })
@@ -81,4 +83,26 @@ test('read-only scenes reject a library placement request', () => {
   useScene.setState({ readOnly: true })
   startStagePlacement(STAGE_LIBRARY[0]!.entry!)
   expect(useStagePlacement.getState().draft).toBeNull()
+})
+
+test('new platforms and sleeper stand on their long edge; existing placements and thumbnails stay unchanged', () => {
+  const graph = createTheatreSceneGraph()
+  useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
+  const nodes = useScene.getState().nodes
+  for (const { entry } of STAGE_LIBRARY) {
+    if (!entry) continue
+    startStagePlacement(entry)
+    const standing = entry.kind === 'platform' || entry.name === '枕木'
+    expect(useStagePlacement.getState().draft!.item.transform.rotationDegrees.z).toBe(
+      standing ? 90 : 0,
+    )
+    const existing = {
+      ...entry,
+      id: 'existing',
+      transform: { position: { x: 0, y: 0, z: 3 }, rotationDegrees: { x: 0, y: 0, z: 0 } },
+    }
+    startStagePlacement(entry, existing)
+    expect(useStagePlacement.getState().draft!.item.transform).toEqual(existing.transform)
+  }
+  expect(useScene.getState().nodes).toBe(nodes)
 })

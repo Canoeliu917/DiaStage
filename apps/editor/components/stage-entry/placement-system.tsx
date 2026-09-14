@@ -42,6 +42,7 @@ import {
   updateStagePlacement,
   useStagePlacement,
 } from './manual-stage-panel'
+import { StageCameraGuard } from './stage-camera-guard'
 import { StageTransformGizmo } from './transform-gizmo'
 
 function usePlacementEnabled(enabled: boolean) {
@@ -64,7 +65,7 @@ export function stagePlacementPreview(
   if (!draft) return null
   const plan = placementPlan(draft)
   const result = validateStagePlan(plan, context)
-  const contacts = stageContactIds(stageLayoutObjects(context, plan))
+  const contacts = stageContactIds(stageLayoutObjects(context, plan), true)
   const contact = contacts.has(draft.item.existingNodeId ?? draft.item.proposalId)
   return {
     draft,
@@ -162,7 +163,13 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
       canvas.removeEventListener('drop', drop)
     }
   }, [active, camera, gl, raycaster])
-  if (!draft) return <StageTransformGizmo enabled={active} />
+  if (!draft)
+    return (
+      <>
+        <StageCameraGuard enabled={active} />
+        <StageTransformGizmo enabled={active} />
+      </>
+    )
   if (!active) return null
   if (!state?.context.venue) return null
   const frame = stageFrame()
@@ -173,6 +180,7 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
   const venue = state.context.venue
   return (
     <group userData={{ viewerLineStyle: 'colored' }}>
+      <StageCameraGuard enabled={active} />
       <mesh
         position={[frame.origin[0], frame.origin[1] + 0.015, frame.origin[2]]}
         rotation={[-Math.PI / 2, 0, 0]}

@@ -1,10 +1,11 @@
 export const DIA_TABLET_QUERY =
   '(min-width: 600px) and (max-width: 1399px) and (any-pointer: coarse)'
-export const DIA_EDGE_SIZE = 48
+export const DIA_EDGE_SIZE = 40
+export const DIA_EDGE_WIDTH = 24
 export type UiRect = { left: number; top: number; width: number; height: number }
 
 export function clampDiaTabY(preferred: number, viewport: UiRect, exclusions: UiRect[]) {
-  const x = viewport.left + viewport.width - DIA_EDGE_SIZE
+  const x = viewport.left + viewport.width - DIA_EDGE_WIDTH
   const min = viewport.top
   const max = viewport.top + viewport.height - DIA_EDGE_SIZE
   if (max < min) return null
@@ -13,7 +14,7 @@ export function clampDiaTabY(preferred: number, viewport: UiRect, exclusions: Ui
       rect.width > 0 &&
       rect.height > 0 &&
       x < rect.left + rect.width + 10 &&
-      x + DIA_EDGE_SIZE > rect.left - 10,
+      x + DIA_EDGE_WIDTH > rect.left - 10,
   )
   const legal = (y: number) =>
     y >= min &&

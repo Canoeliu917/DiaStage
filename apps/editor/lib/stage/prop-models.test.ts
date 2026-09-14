@@ -1,12 +1,6 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
-import {
-  type GeometryContext,
-  getItemBoundsCenter,
-  ItemNode,
-  sceneRegistry,
-  useScene,
-} from '@pascal-app/core'
+import { type GeometryContext, ItemNode, sceneRegistry, useScene } from '@pascal-app/core'
 import { worldToStagePosition, worldToStageRotation } from '@pascal-app/core/stage'
 import { useViewer } from '@pascal-app/viewer'
 import { Box3, Euler, Group, Quaternion, Vector3 } from 'three'
@@ -16,7 +10,7 @@ import { stageContactIds } from './contacts'
 import { stageModelBelowFloor, stageModelFootprints } from './model-contact'
 import { AVAILABLE_STAGE_SCENERY, STAGE_PROP_MENU } from './prop-assets'
 import { centeredPropFloorplan } from './rigid-floorplan'
-import { rigidRotation } from './rigid-rotation'
+import { rigidRotation, stageManipulationCenter } from './rigid-rotation'
 
 test('all approved GLBs load with their real dimensions, authored pivots, hierarchy and matte materials', async () => {
   let sourceParts = 0
@@ -62,12 +56,12 @@ test('all approved GLBs load with their real dimensions, authored pivots, hierar
   expect(sourceParts).toBe(222)
 })
 
-test('folds and open doors rotate as a whole around their geometry centre without rewriting the authored origin', () => {
+test('folds use the fixed manipulation reference and open doors use geometry centre without rewriting authored origins', () => {
   for (const id of ['SCN-FOLD-02', 'SCN-FOLD-03', 'SCN-DOOR-130', 'SCN-DOOR-160']) {
     const asset = AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === id)!.asset
     const before = ItemNode.parse({ asset, position: [1, 0, -1], scale: [1, 1, 1] })
     const centre = (node: ItemNode) =>
-      new Vector3(...getItemBoundsCenter(node))
+      new Vector3(...stageManipulationCenter(node))
         .applyQuaternion(new Quaternion().setFromEuler(new Euler(...node.rotation)))
         .add(new Vector3(...node.position))
     for (const axis of ['x', 'y', 'z'] as const) {

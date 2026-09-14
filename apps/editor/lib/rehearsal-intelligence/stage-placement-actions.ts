@@ -138,8 +138,8 @@ export function mapStagePlacementIntent(
         : [{ type: 'fold_hinge', subjectId: scenic[0]!.id }]
   } else if (intent.kind === 'enclose_with_opening') {
     const scenic = resolveScenicCount(intent.count ?? 3)
-    if (scenic.length !== 3) {
-      result.message = '请选中恰好三块要围合的景片；没有唯一组合时我不会猜。'
+    if (![2, 3].includes(scenic.length)) {
+      result.message = '请选中数量匹配的两块或三块景片；两块仅提供不完整围合。'
       return result
     }
     actions = [{ type: 'enclose_with_opening', subjectIds: scenic.map((object) => object.id) }]

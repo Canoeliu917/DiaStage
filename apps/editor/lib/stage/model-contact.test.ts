@@ -75,6 +75,30 @@ test('loaded model contacts preserve visible gaps and follow target poses includ
     )
     probe.transform.position.x = 0.801
     assert.equal(
+      stageModelContact(
+        model,
+        {
+          ...probe,
+          transform: { ...probe.transform, position: { ...probe.transform.position, x: 0.8 } },
+        },
+        true,
+      ),
+      false,
+      'exact mesh edge contact is not penetration',
+    )
+    assert.equal(
+      stageModelContact(
+        model,
+        {
+          ...probe,
+          transform: { ...probe.transform, position: { ...probe.transform.position, x: 0.79 } },
+        },
+        true,
+      ),
+      true,
+      'real mesh penetration remains visible',
+    )
+    assert.equal(
       stageModelContact(model, probe),
       false,
       'there is no minimum spacing beyond the mesh',

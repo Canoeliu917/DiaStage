@@ -8,8 +8,8 @@ import {
   subscribeSceneCommits,
   useScene,
 } from '@pascal-app/core'
-import { Group } from 'three'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
+import { Group } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { bindRehearsalScene } from '../rehearsal-intelligence/authority'
 import { DiaConversation } from '../rehearsal-intelligence/conversation-controller'
@@ -70,6 +70,7 @@ async function setup(assetIds: string[]) {
 for (const [name, assets, phrase] of [
   ['corner', ['SCN-FLAT-090', 'SCN-FLAT-090'], '两块景片拐90度'],
   ['multi-hinge', ['SCN-FOLD-03'], '三联景片折成U型'],
+  ['partial-enclosure', ['SCN-FLAT-090', 'SCN-FLAT-090'], '用两个景片围一个空间，中间留个入口。'],
 ] as const)
   test(`Runtime: ${name} candidate switch, Cancel, one Accept transaction, Undo/Redo`, async () => {
     const ids = await setup([...assets])
@@ -89,10 +90,10 @@ for (const [name, assets, phrase] of [
       await dia.load()
       const before = JSON.stringify(useScene.getState().nodes)
       await dia.send(phrase)
-      expect(
-        dia.buildProposal()?.spatialSolution?.candidates.length,
-        dia.store.getState().notice,
-      ).toBe(name === 'corner' ? 2 : 1)
+      const candidateCount = dia.buildProposal()?.spatialSolution?.candidates.length
+      if (name === 'partial-enclosure')
+        expect(candidateCount, dia.store.getState().notice).toBeGreaterThan(0)
+      else expect(candidateCount, dia.store.getState().notice).toBe(name === 'corner' ? 2 : 1)
       const a = dia.buildProposal()!.spatialSolution!.candidates[0]!
       const b = dia.buildProposal()!.spatialSolution!.candidates.at(-1)!
       await dia.chooseSpatialCandidate(a!.candidateId)

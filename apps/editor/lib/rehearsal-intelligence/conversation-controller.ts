@@ -15,9 +15,9 @@ import { draftContext, mergeDraftPlan } from '../stage/creation-policy'
 import { groundStageAssets } from '../stage/ground-assets'
 import { useStagePlanPreview } from '../stage/plan-preview'
 import { SCENERY_LIBRARY } from '../stage/scenery'
-import { spatialConstraintsForProposal, type SpatialSolution } from '../stage/spatial-constraints'
-import { spatialCandidatePlan } from '../stage/spatial-solver'
+import { type SpatialSolution, spatialConstraintsForProposal } from '../stage/spatial-constraints'
 import { solveStageSpatialProposal } from '../stage/spatial-fold'
+import { spatialCandidatePlan } from '../stage/spatial-solver'
 import { assertTheatreWritable } from '../theatre/scene-adapter'
 import { readStageDocument } from '../theatre/simulation-store'
 import { createUUID } from '../uuid'
@@ -58,15 +58,15 @@ import { readFeedbackLog, saveFeedback, saveInteraction } from './feedback'
 import { type InteractionEnvelope, InteractionEnvelopeSchema } from './interaction-envelope'
 import type { DiaStageProposal } from './knowledge/stage-proposal'
 import { groundLanguage, recordGroundingCorrection } from './language-grounding'
+import { LOCAL_REHEARSAL_MODEL_VERSION, localRehearsalOutput } from './local-rehearsal'
 import {
   openGroundingPlacement,
   parseOpenLanguage,
-  validateOpenGrounding,
   type StructuredGrounding,
+  validateOpenGrounding,
 } from './open-language'
 import { requestOpenGrounding } from './open-language-client'
 import { openLanguageContext, reviseOpenProposal } from './open-language-proposal'
-import { LOCAL_REHEARSAL_MODEL_VERSION, localRehearsalOutput } from './local-rehearsal'
 import { requestProposal } from './proposal-client'
 import { createInteraction } from './proposal-generator'
 import type { Interaction, RehearsalProposal, Suggestion } from './schema'
@@ -1098,6 +1098,9 @@ export class DiaConversation {
       grounded?.intent === 'SET_VENUE'
         ? null
         : parseOpenLanguage(text)
+    const explainOnly =
+      !!localOpen?.requiresClarification &&
+      /[？?]|你好|能.*[做帮]|是什么|什么意思|为什么|区别|介绍|解释/.test(text)
     // Legacy verified creation/view commands remain on their existing path. Unrecognized
     // utterances may use the semantic-only provider, never the old model StagePlan endpoint.
     const tryOpenProvider =
@@ -1105,7 +1108,7 @@ export class DiaConversation {
       !grounded?.placement &&
       !grounded?.view &&
       grounded?.capability !== 'build' &&
-      ['build', 'rehearse'].includes(intent) &&
+      !['version', 'remount'].includes(intent) &&
       !this.rehearsalEnabled
     if (localOpen || tryOpenProvider) {
       try {
@@ -1119,7 +1122,7 @@ export class DiaConversation {
           parent,
           !!useStagePlanPreview.getState().plan && parent?.status === 'previewed',
         )
-        let semantic = localOpen
+        let semantic = explainOnly ? null : localOpen
         let provider: DiaBuildProposal['groundingProvider'] = {
           provider: 'deterministic',
           model: null,
@@ -1128,6 +1131,17 @@ export class DiaConversation {
           const result = await requestOpenGrounding(text, openContext, signal)
           semantic = result.grounding
           provider = { provider: result.provider, model: result.model }
+          if (semantic.requiresClarification && result.reply) {
+            signal.throwIfAborted()
+            await reply(result.reply, true)
+            this.store.setState({ draft: '' })
+            this.status(
+              parent?.status === 'previewed' ? 'waiting-human' : 'idle',
+              '对话回复；舞台与现有提案均未改变。',
+            )
+            await this.persist()
+            return true
+          }
         }
         signal.throwIfAborted()
         if (

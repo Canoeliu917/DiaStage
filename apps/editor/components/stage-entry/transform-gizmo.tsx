@@ -2,7 +2,6 @@
 
 import {
   type AnyNodeId,
-  DEFAULT_ANGLE_STEP,
   getNodeLock,
   type ItemNode,
   sceneRegistry,
@@ -24,7 +23,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Euler, Group, Plane, Quaternion, Vector3 } from 'three'
 import { axisTransform, type TransformAxis } from '@/lib/stage/axis-transform'
 import { currentStageContext, stageContextObject, stageFrame } from '@/lib/stage/context'
-import { nearestRotationRing, rotationPointerMetrics } from '@/lib/stage/rotation-ring-hit'
+import { floorSafeItemPatch } from '@/lib/stage/floor-transform'
+import {
+  itemEulerRotation,
+  STAGE_ROTATION_STEP,
+  stageManipulationCenter,
+} from '@/lib/stage/rigid-rotation'
 import { useStageTransform } from './transform-mode'
 
 const vectors = [new Vector3(1, 0, 0), new Vector3(0, 1, 0), new Vector3(0, 0, 1)]
@@ -50,6 +54,7 @@ function AxisHandle({
   input,
   activeAxis,
   setActiveAxis,
+  contact,
 }: {
   node: ItemNode
   axis: TransformAxis
@@ -57,6 +62,7 @@ function AxisHandle({
   input: RotationInput
   activeAxis: TransformAxis | null
   setActiveAxis: (axis: TransformAxis | null) => void
+  contact: boolean
 }) {
   const group = useMemo(() => new Group(), [])
   const { camera, size, controls } = useThree()
@@ -67,7 +73,8 @@ function AxisHandle({
     const root = sceneRegistry.nodes.get(node.id)
     if (!root) return
     root.updateWorldMatrix(true, false)
-    root.getWorldPosition(group.position)
+    group.position.set(...stageManipulationCenter(node)).applyMatrix4(root.matrixWorld)
+    group.visible = mode !== 'rotate' || input.pointerType === 'mouse'
     const parentRotation = root.parent?.getWorldQuaternion(new Quaternion()) ?? new Quaternion()
     const direction = vectors[axis]!.clone()
     if (mode === 'rotate') {
@@ -89,14 +96,8 @@ function AxisHandle({
         : 'top' in camera && 'bottom' in camera
           ? (Number(camera.top) - Number(camera.bottom)) / camera.zoom
           : 10
-    const radius = mode === 'rotate' ? rotationPointerMetrics(input.pointerType).radius : 100
-    // Preserve the mouse scale exactly; contact input uses view depth for a CSS-pixel radius.
-    const contactSpan =
-      mode === 'rotate' && input.pointerType !== 'mouse' && 'isPerspectiveCamera' in camera
-        ? (span * Math.abs(group.position.clone().applyMatrix4(camera.matrixWorldInverse).z)) /
-          camera.position.distanceTo(group.position)
-        : span
-    group.scale.setScalar((contactSpan * radius) / size.height)
+    const radius = 100
+    group.scale.setScalar((span * radius) / size.height)
   }
   useFrame(refresh)
   const onPointerDown = useHandleDrag({
@@ -155,9 +156,10 @@ function AxisHandle({
         totalAngle = 0
       const cameraControls = controls as unknown as CameraControlsImpl | null
       const controlsEnabled = cameraControls?.enabled
+      const screenControl = mode === 'rotate' && input.pointerType !== 'mouse'
       return {
         onBegin: () => {
-          if (mode === 'rotate' && cameraControls) {
+          if (cameraControls) {
             if (input.pointerType === 'touch' || input.pointerType === 'pen') {
               // Freeze residual orbit/pan at its current pose; stop() jumps to its endpoint.
               const position = cameraControls.getPosition(new Vector3(), false)
@@ -168,7 +170,7 @@ function AxisHandle({
           }
         },
         onEnd: () => {
-          if (mode === 'rotate' && cameraControls && controlsEnabled !== undefined)
+          if (cameraControls && controlsEnabled !== undefined)
             cameraControls.enabled = controlsEnabled
         },
         move: ({ event: moveEvent, intersectPlane: intersect }) => {
@@ -199,10 +201,12 @@ function AxisHandle({
                   candidate.transform.position.y
             }
             setValue(`${position[axis].toFixed(3)} m`)
-            return { position }
+            return floorSafeItemPatch(initialNode, { position })
           }
           let angle: number
-          if (
+          if (screenControl) {
+            angle = ((moveEvent.clientX - event.clientX) / 60) * STAGE_ROTATION_STEP
+          } else if (
             start &&
             point &&
             Math.abs(direction.dot(camera.getWorldDirection(new Vector3()))) > 0.03
@@ -222,10 +226,10 @@ function AxisHandle({
             initialNode.rotation,
             axis,
             totalAngle,
-            moveEvent.shiftKey ? 0 : DEFAULT_ANGLE_STEP,
+            moveEvent.shiftKey ? 0 : STAGE_ROTATION_STEP,
           )
           setValue(`${((rotation[axis] * 180) / Math.PI).toFixed(1)}°`)
-          return { rotation }
+          return floorSafeItemPatch(initialNode, itemEulerRotation(initialNode, rotation))
         },
         commit: (patch) => {
           const state = useScene.getState()
@@ -263,7 +267,7 @@ function AxisHandle({
     >
       <group
         onPointerDown={(event) => {
-          // Contact input is arbitrated once in native capture, before camera controls.
+          // Touch and pen use physically separated screen-space controls.
           if (mode !== 'rotate' || !['touch', 'pen'].includes(event.nativeEvent.pointerType))
             onPointerDown(event)
         }}
@@ -316,6 +320,7 @@ function AxisHandle({
         center
         style={{
           pointerEvents: 'none',
+          display: mode === 'rotate' && contact ? 'none' : undefined,
           color: colors[axis],
           fontSize: 12,
           fontWeight: 700,
@@ -330,7 +335,8 @@ function AxisHandle({
 }
 
 export function StageTransformGizmo({ enabled }: { enabled: boolean }) {
-  const { camera, gl, invalidate } = useThree()
+  const { gl, invalidate } = useThree()
+  const [contact, setContact] = useState(false)
   const input = useMemo<RotationInput>(
     () => ({
       pointerType: 'mouse',
@@ -358,44 +364,21 @@ export function StageTransformGizmo({ enabled }: { enabled: boolean }) {
       const type = event.pointerType || 'mouse'
       if (input.pointerType === type) return
       input.pointerType = type
+      setContact(type !== 'mouse')
       for (const handle of input.handles.values()) handle.refresh()
       invalidate()
     }
     const down = (event: PointerEvent) => {
       pointerType(event)
-      if (
-        !enabled ||
-        mode !== 'rotate' ||
-        event.target !== gl.domElement ||
-        !['touch', 'pen'].includes(event.pointerType) ||
-        event.button !== 0
-      )
-        return
-      if (input.axis !== null) {
+      if (input.axis !== null && event.target === gl.domElement) {
         event.preventDefault()
         event.stopImmediatePropagation()
         return
       }
-      if (useInteractionScope.getState().scope.kind !== 'idle') return
-      const axis = nearestRotationRing(
-        { x: event.clientX, y: event.clientY },
-        input.handles,
-        camera,
-        gl.domElement.getBoundingClientRect(),
-        rotationPointerMetrics(event.pointerType).hitRadius,
-      )
-      if (axis === null) return
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      // Only these native fields are consumed by the existing handle-drag hook.
-      input.handles.get(axis)!.start({
-        button: event.button,
-        clientX: event.clientX,
-        clientY: event.clientY,
-        pointerId: event.pointerId,
-        nativeEvent: event,
-        stopPropagation: () => event.stopPropagation(),
-      } as ThreeEvent<PointerEvent>)
+    }
+    if (window.matchMedia?.('(any-pointer: coarse)').matches) {
+      input.pointerType = 'touch'
+      setContact(true)
     }
     window.addEventListener('pointerover', pointerType, true)
     window.addEventListener('pointermove', pointerType, true)
@@ -405,7 +388,7 @@ export function StageTransformGizmo({ enabled }: { enabled: boolean }) {
       window.removeEventListener('pointermove', pointerType, true)
       window.removeEventListener('pointerdown', down, true)
     }
-  }, [camera, enabled, gl, input, invalidate, mode])
+  }, [gl, input, invalidate])
   useEffect(() => {
     const cancel = (event: KeyboardEvent) => {
       if (event.key === 'Escape') useStageTransform.setState({ mode: null })
@@ -424,6 +407,43 @@ export function StageTransformGizmo({ enabled }: { enabled: boolean }) {
     return null
   return (
     <group name="stage-transform-gizmo">
+      {contact && mode === 'rotate' && (
+        <Html
+          fullscreen
+          calculatePosition={(_object, _camera, size) => [size.width / 2, size.height / 2]}
+          style={{ pointerEvents: 'none' }}
+        >
+          <div className="stage-touch-rotation" role="group" aria-label="固定单轴旋转，每格30度">
+            {([0, 1, 2] as const).map((axis) => (
+              <button
+                key={axis}
+                type="button"
+                data-rotation-axis={names[axis]}
+                aria-label={`拖动 ${names[axis]} 轴旋转`}
+                aria-pressed={activeAxis === axis}
+                disabled={activeAxis !== null && activeAxis !== axis}
+                style={{ color: colors[axis] }}
+                onPointerDown={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  if (input.axis !== null || event.button !== 0) return
+                  input.pointerType = event.pointerType || 'touch'
+                  input.handles.get(axis)?.start({
+                    button: event.button,
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    pointerId: event.pointerId,
+                    nativeEvent: event.nativeEvent,
+                    stopPropagation: () => event.stopPropagation(),
+                  } as ThreeEvent<PointerEvent>)
+                }}
+              >
+                {names[axis]} ↔ 30°
+              </button>
+            ))}
+          </div>
+        </Html>
+      )}
       {([0, 1, 2] as const).map((axis) => (
         <AxisHandle
           key={`${node.id}-${mode}-${axis}`}
@@ -433,6 +453,7 @@ export function StageTransformGizmo({ enabled }: { enabled: boolean }) {
           input={input}
           activeAxis={activeAxis}
           setActiveAxis={setActiveAxis}
+          contact={contact}
         />
       ))}
     </group>

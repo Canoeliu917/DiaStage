@@ -87,7 +87,7 @@ export function StagePlanPreviewFloorplan({ enabled }: { enabled: boolean }) {
   const props = stageLayoutObjects(scene, layoutPlan).filter(
     (item) => item.kind !== 'camera' && item.kind !== 'performer-marker',
   )
-  const contacts = stageContactIds(props)
+  const contacts = stageContactIds(props, true)
   const footprints = props.map(stageVisibleFootprints)
   const focusId =
     placement?.item.existingNodeId ??

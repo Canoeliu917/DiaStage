@@ -52,10 +52,7 @@ import {
   startStagePlacement,
   useStagePlacement,
 } from './stage-entry/manual-stage-panel'
-import {
-  StageGridToolbar,
-  StagePlanNavigationRuntime,
-} from './stage-entry/stage-viewport-controls'
+import { StageGridToolbar, StagePlanNavigationRuntime } from './stage-entry/stage-viewport-controls'
 import { useStageTransform } from './stage-entry/transform-mode'
 import { openStudioPanel } from './studio-navigation'
 import { Tooltip, TooltipContent, TooltipTrigger } from './toolbar-tooltip'
@@ -215,6 +212,7 @@ function StageTransformToolbar() {
   const draft = useStagePlacement((state) => state.draft)
   const transformMode = useStageTransform((state) => state.mode)
   const rotating = transformMode === 'rotate'
+  const cameraLocked = useStageTransform((state) => state.cameraLocked)
   const editable = !exclusive && !locked && !!node && ['item', 'block', 'stair'].includes(node.type)
   const select = useCallback(() => {
     cancelStagePlacement()
@@ -348,7 +346,15 @@ function StageTransformToolbar() {
         <Maximize2 size={14} />
         缩放 <kbd>R</kbd>
       </button>
-      <StageGridToolbar />
+      <button
+        type="button"
+        className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
+        aria-label="锁定舞台视角"
+        aria-pressed={cameraLocked}
+        onClick={() => useStageTransform.setState({ cameraLocked: !cameraLocked })}
+      >
+        {cameraLocked ? '视角已锁定' : '锁定视角'}
+      </button>
       <StagePlanNavigationRuntime />
     </div>
   )
@@ -736,19 +742,25 @@ export function EditorViewerToolbarLeft({ settings }: { settings?: ReactNode } =
   return (
     <>
       <CollapseSidebarButton />
+      <StageGridToolbar />
       <div className="stage-edit-toolbar">
         <StageTransformToolbar />
         <div className="stage-display-toolbar" role="group" aria-label="舞台显示与视图">
           <DisplayMenu />
           <WallModeToggle />
-          <button type="button" onClick={() => openStudioPanel('view')}>视图 / 归位</button>
+          <button type="button" onClick={() => openStudioPanel('view')}>
+            视图 / 归位
+          </button>
           {settings}
           <PreviewButton />
           <details className="stage-controls-help">
             <summary>操作帮助</summary>
             <div>
               <p>V 选择 · G 移动 · T 旋转 · R 尺寸设置；先选中道具，再操作。</p>
-              <p>移动拖三轴杆，旋转拖三轴环；松开确定，Esc 取消。移动时轻按 Shift 切换吸附；旋转时按住 Shift 自由调整角度。</p>
+              <p>
+                移动拖三轴杆，旋转拖三轴环；松开确定，Esc 取消。移动时轻按 Shift
+                切换吸附；旋转时按住 Shift 自由调整角度。
+              </p>
               <p>轻按 Ctrl 循环切换网格：50 → 25 → 10 → 5 cm。</p>
               <p>WASD 移动视角 · Q 下降 · E 上升 · F 聚焦所选道具。</p>
               <p>中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远。</p>

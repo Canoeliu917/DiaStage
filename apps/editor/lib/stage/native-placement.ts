@@ -70,7 +70,7 @@ export function nativeStagePlacementFeedback(node: AnyNode, preview: StagePlan |
     },
     layout,
   )
-  return { valid, contact: stageContactIds(objects).has(candidate.id) }
+  return { valid, contact: stageContactIds(objects, true).has(candidate.id) }
 }
 
 export function installNativeStagePlacement(
@@ -89,7 +89,14 @@ export function installNativeStagePlacement(
         source.blockFaceId
       )
         return null
-      const node = { ...source, position }
+      // A lateral drag must not inherit the height of the surface under its ray.
+      // Elevation / stacking is chosen explicitly with Y or a stack proposal.
+      const lateralPosition: [number, number, number] = [
+        position[0],
+        source.position[1],
+        position[2],
+      ]
+      const node = { ...source, position: lateralPosition }
       const nodes = useScene.getState().nodes
       const frame = stageFrame()
       const candidate = stageContextObject(node, { ...nodes, [node.id]: node }, frame)
@@ -109,7 +116,7 @@ export function installNativeStagePlacement(
         ),
         worldPose(node.parentId, nodes).rotation,
       )
-      return position.map((value, axis) => value + delta[axis]!) as [number, number, number]
+      return lateralPosition.map((value, axis) => value + delta[axis]!) as [number, number, number]
     },
   })
 }

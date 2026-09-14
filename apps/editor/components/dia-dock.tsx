@@ -1,6 +1,6 @@
 'use client'
 
-import { LockKeyhole, LockKeyholeOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LockKeyhole, LockKeyholeOpen } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { DiaEdgeTab, useDiaTouchViewport } from './dia-edge-tab'
 import './workspace-layout.css'
@@ -35,7 +35,7 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
               : 370,
           open: stored.open !== false,
           locked: stored.locked === true,
-          dock: stored.dock === 'left' ? 'left' : 'right',
+          dock: 'right',
           tabY:
             typeof stored.tabY === 'number' && Number.isFinite(stored.tabY) ? stored.tabY : null,
         })
@@ -95,7 +95,7 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
             aria-label="展开 Dia 对话框"
             onClick={() => setLayout((previous) => ({ ...previous, open: true }))}
           >
-            <PanelRightOpen size={16} /> Dia
+            <ChevronLeft size={16} />
           </button>
         ))}
       <aside
@@ -103,7 +103,7 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
         hidden={hidden || !layout.open}
         aria-label="Dia 对话工作区"
         data-locked={layout.locked}
-        data-touch-dock={viewport ? layout.dock : undefined}
+        data-touch-dock={viewport ? 'right' : undefined}
         style={
           {
             '--dia-dock-width': `${layout.width}px`,
@@ -111,30 +111,14 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
               ? {
                   top: viewport.top,
                   height: viewport.height,
-                  width: Math.min(layout.width, viewport.width),
-                  left: layout.dock === 'left' ? viewport.left : undefined,
-                  right:
-                    layout.dock === 'right'
-                      ? innerWidth - viewport.left - viewport.width
-                      : undefined,
+                  width: Math.min(Math.max(layout.width, 440), viewport.width),
+                  right: innerWidth - viewport.left - viewport.width,
                 }
               : {}),
           } as CSSProperties
         }
       >
         <div className="dia-dock-controls">
-          {viewport &&
-            (['left', 'right'] as const).map((dock) => (
-              <button
-                key={dock}
-                type="button"
-                aria-label={dock === 'left' ? 'Dia 靠左' : 'Dia 靠右'}
-                aria-pressed={layout.dock === dock}
-                onClick={() => setLayout((previous) => ({ ...previous, dock }))}
-              >
-                {dock === 'left' ? '靠左' : '靠右'}
-              </button>
-            ))}
           <button
             hidden={!!viewport}
             type="button"
@@ -155,7 +139,7 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
                 setLayout((previous) => ({ ...previous, open: false }))
             }}
           >
-            <PanelRightClose size={17} />
+            <ChevronRight size={17} />
           </button>
         </div>
         <div

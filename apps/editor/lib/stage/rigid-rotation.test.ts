@@ -4,7 +4,6 @@ import {
   BlockNode,
   clearSceneHistory,
   createBoxBlockTopology,
-  getItemBoundsCenter,
   ItemNode,
   subscribeSceneCommits,
   useScene,
@@ -12,7 +11,7 @@ import {
 import { Box3, Euler, Quaternion, Vector3 } from 'three'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { commandMeta, connectStageCommandExecutor, executeStageCommands } from './command-executor'
-import { rigidRotation } from './rigid-rotation'
+import { rigidRotation, stageManipulationCenter } from './rigid-rotation'
 import { SCENERY_LIBRARY } from './scenery'
 
 globalThis.requestAnimationFrame ??= () => 0
@@ -51,7 +50,7 @@ test('native floor-level fold tilts pass the executor guard, save one edit and u
   const before = useScene.getState().nodes[id]!
   if (before.type !== 'item') throw new Error('expected real fold model')
   const center = (node: typeof before) =>
-    new Vector3(...getItemBoundsCenter(node))
+    new Vector3(...stageManipulationCenter(node))
       .applyEuler(new Euler(...node.rotation))
       .add(new Vector3(...node.position))
   for (const angle of [15, 30]) {

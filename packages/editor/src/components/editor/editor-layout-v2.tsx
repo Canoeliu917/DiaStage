@@ -34,12 +34,24 @@ function LeftColumn({
   const width = useSidebarStore((s) => s.width)
   const isCollapsed = useSidebarStore((s) => s.isCollapsed)
   const setIsCollapsed = useSidebarStore((s) => s.setIsCollapsed)
-  const setWidth = useSidebarStore((s) => s.setWidth)
+  const storeSetWidth = useSidebarStore((s) => s.setWidth)
   const isDragging = useSidebarStore((s) => s.isDragging)
   const setIsDragging = useSidebarStore((s) => s.setIsDragging)
   const activePanel = useEditor((s) => s.activeSidebarPanel)
   const setActivePanel = useEditor((s) => s.setActiveSidebarPanel)
   const hasSlot = sidebarTopSlot != null
+  const minimumWidth = hasSlot ? 120 : SIDEBAR_MIN_WIDTH
+  const setWidth = useCallback(
+    (value: number) => {
+      if (hasSlot)
+        useSidebarStore.setState({
+          width: Math.max(120, Math.min(value, SIDEBAR_MAX_WIDTH)),
+          isCollapsed: false,
+        })
+      else storeSetWidth(value)
+    },
+    [hasSlot, storeSetWidth],
+  )
 
   const isResizing = useRef<{ startX: number; startWidth: number } | null>(null)
   const [layout, setLayout] = useState({
@@ -172,7 +184,7 @@ function LeftColumn({
       }
       if (isCollapsed) {
         setIsCollapsed(false)
-        if (width < SIDEBAR_MIN_WIDTH) setWidth(SIDEBAR_MIN_WIDTH)
+        if (width < minimumWidth) setWidth(minimumWidth)
         setActivePanel(id)
         return
       }
@@ -193,6 +205,7 @@ function LeftColumn({
       setIsCollapsed,
       setWidth,
       setActivePanel,
+      minimumWidth,
     ],
   )
 
@@ -205,7 +218,7 @@ function LeftColumn({
         setIsCollapsed(true)
       } else {
         setIsCollapsed(false)
-        setWidth(Math.max(SIDEBAR_MIN_WIDTH, Math.min(newWidth, SIDEBAR_MAX_WIDTH)))
+        setWidth(Math.max(minimumWidth, Math.min(newWidth, SIDEBAR_MAX_WIDTH)))
       }
     }
     const handlePointerUp = () => {
@@ -223,7 +236,7 @@ function LeftColumn({
       window.removeEventListener('pointercancel', handlePointerUp)
       if (isResizing.current) handlePointerUp()
     }
-  }, [setWidth, setIsCollapsed, setIsDragging, widthLocked, hasSlot])
+  }, [setWidth, setIsCollapsed, setIsDragging, widthLocked, hasSlot, minimumWidth])
 
   const tools = (
     <div
@@ -443,7 +456,7 @@ function LeftColumn({
         aria-label="调整左侧栏宽度"
         aria-orientation="vertical"
         aria-disabled={widthLocked}
-        aria-valuemin={SIDEBAR_MIN_WIDTH}
+        aria-valuemin={minimumWidth}
         aria-valuemax={SIDEBAR_MAX_WIDTH}
         aria-valuenow={Math.round(width)}
         role="separator"
@@ -460,11 +473,11 @@ function LeftColumn({
           event.stopPropagation()
           setWidth(
             event.key === 'Home'
-              ? SIDEBAR_MIN_WIDTH
+              ? minimumWidth
               : event.key === 'End'
                 ? SIDEBAR_MAX_WIDTH
                 : Math.max(
-                    SIDEBAR_MIN_WIDTH,
+                    minimumWidth,
                     Math.min(SIDEBAR_MAX_WIDTH, width + (event.key === 'ArrowLeft' ? -20 : 20)),
                   ),
           )

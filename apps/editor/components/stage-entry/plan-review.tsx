@@ -143,7 +143,7 @@ export function PlanDrawing({
   useEffect(() => () => cancelAnimationFrame(moveFrame.current), [])
   // biome-ignore lint/correctness/useExhaustiveDependencies: Loaded model meshes change without changing the proposal.
   const contacts = useMemo(
-    () => stageContactIds(stageLayoutObjects(context, plan)),
+    () => stageContactIds(stageLayoutObjects(context, plan), true),
     [context, plan, geometryRevision],
   )
   const venue = plan.venue ?? context.venue
@@ -310,7 +310,7 @@ export function PlanDrawing({
               transform={`translate(${-p.x},${d - p.z})`}
               role="button"
               tabIndex={itemDisabled || !onMove ? -1 : 0}
-              aria-label={`${item.displayName}，${invalid ? '接触或重叠' : '无碰撞'}；拖动或方向键调整`}
+              aria-label={`${item.displayName}，${invalid ? '穿模或违反舞台边界' : '无穿模（允许贴合）'}；拖动或方向键调整`}
               aria-disabled={itemDisabled || !onMove}
               data-proposal-id={item.proposalId}
               data-existing={!!item.existingNodeId}
@@ -423,8 +423,8 @@ export function PlanDrawing({
       </svg>
       <figcaption>
         {live
-          ? '点选布景，拖动整件；圆点调角度，每格 15°。红色表示接触或重叠。'
-          : '拖动布景调整提案；红色表示接触或重叠，采用后才落位。'}
+          ? '点选布景，拖动整件；圆点调整折叠。红色表示穿模或边界问题，合法贴合不标红。'
+          : '拖动布景调整提案；红色表示穿模或边界问题，采用后才落位。'}
       </figcaption>
     </figure>
   )

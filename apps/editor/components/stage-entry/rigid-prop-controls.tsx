@@ -7,7 +7,9 @@ import {
   executeStageCommands,
   useStageCommandNotice,
 } from '@/lib/stage/command-executor'
+import { useStageContactFeedback } from '@/lib/stage/contact-feedback'
 import { currentStageContext } from '@/lib/stage/context'
+import { floorSafeItemPatch } from '@/lib/stage/floor-transform'
 import { type RotationAxis, rigidRotation } from '@/lib/stage/rigid-rotation'
 import { useStagePlacement } from './manual-stage-panel'
 import './manual-stage.css'
@@ -16,12 +18,19 @@ export function PropRotationControls({ nodeId }: { nodeId: string }) {
   const node = useScene((s) => s.nodes[nodeId as AnyNodeId])
   const readOnly = useScene((s) => s.readOnly)
   const locked = useScene((s) => !!getNodeLock(s.nodes, nodeId, true))
-  const [step, setStep] = useState(15)
+  const [step, setStep] = useState(30)
+  const feedback = useStageContactFeedback()
   if (!node || !['block', 'item', 'stair'].includes(node.type)) return null
   const rotate = (axis: RotationAxis, angle: number) => {
     try {
       if (node.type === 'block' || node.type === 'item') {
-        useScene.getState().updateNode(node.id, rigidRotation(node, axis, angle))
+        const patch = rigidRotation(node, axis, angle)
+        useScene
+          .getState()
+          .updateNode(
+            node.id,
+            node.type === 'item' ? floorSafeItemPatch(node, patch as Partial<typeof node>) : patch,
+          )
         if (useScene.getState().nodes[node.id] === node)
           throw new Error(useStageCommandNotice.getState().error || '台位需要调整，未旋转。')
       } else if (node.type === 'stair') {
@@ -60,7 +69,7 @@ export function PropRotationControls({ nodeId }: { nodeId: string }) {
           value={step}
           onChange={(e) => setStep(Number(e.target.value))}
         >
-          <option value={15}>微调 15°</option>
+          <option value={30}>每次 30°</option>
           <option value={90}>转面 90°</option>
         </select>
       </label>
@@ -86,6 +95,15 @@ export function PropRotationControls({ nodeId }: { nodeId: string }) {
         </div>
       ))}
       {node.type === 'stair' && <small>台阶保持踏面水平。</small>}
+      <p role="status">{feedback.message}</p>
+      <button
+        type="button"
+        onClick={() => useStageContactFeedback.setState({ acknowledged: feedback.signature })}
+      >
+        {feedback.acknowledged === feedback.signature
+          ? '已确认当前布局（几何校验仍有效）'
+          : '确认当前摆放'}
+      </button>
     </fieldset>
   )
 }

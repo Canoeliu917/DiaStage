@@ -1,13 +1,15 @@
 'use client'
 
 import { getNodeLock, sceneRegistry, useScene } from '@pascal-app/core'
-import { stageLayoutObjects } from '@pascal-app/core/stage'
+import { prepareStageCollision, stageLayoutObjects } from '@pascal-app/core/stage'
 import { useEditor } from '@pascal-app/editor'
 import { useIsolatedFrame as useFrame, useViewer } from '@pascal-app/viewer'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
+import { useStageContactFeedback } from '@/lib/stage/contact-feedback'
 import { stageContactIds } from '@/lib/stage/contacts'
 import { useLiveStageContext } from '@/lib/stage/live-context'
+import { stageModelBottom } from '@/lib/stage/model-contact'
 import { useStagePlanPreview } from '@/lib/stage/plan-preview'
 import { useSimulationSelection } from '../theatre/simulation-panel'
 import { createStageContactOverlay } from './contact-overlay'
@@ -68,8 +70,58 @@ export function StageContactSystem({ enabled }: { enabled: boolean }) {
           ],
         }
       : visiblePlan
-    return stageContactIds(stageLayoutObjects(scene, layout))
+    return stageContactIds(stageLayoutObjects(scene, layout), true)
   }, [enabled, exporting, scene, plan, placement, showGhost])
+  useEffect(() => {
+    const objects = scene.objects.filter((object) => selected.has(object.id))
+    const penetrating = objects.some((object) => contacts.has(object.id))
+    const mates = penetrating
+      ? []
+      : scene.objects.filter(
+          (other) =>
+            !selected.has(other.id) &&
+            objects.some((object) => stageContactIds([object, other]).has(object.id)),
+        )
+    const floorContact = objects.some(
+      (object) =>
+        Math.abs(
+          (stageModelBottom(object) ??
+            prepareStageCollision(object).bounds[1]![0] - object.transform.position.y) +
+            object.transform.position.y,
+        ) < 1e-6,
+    )
+    const touching = mates.length > 0 || floorContact
+    const kind = penetrating ? 'penetration' : touching ? 'contact' : 'none'
+    const previous = useStageContactFeedback.getState()
+    const contactKey = JSON.stringify([mates.map((object) => object.id).sort(), floorContact])
+    const signature = JSON.stringify([
+      scene.documentVersion,
+      objects.map((object) => [object.id, object.transform, object.dimensionsMeters]),
+      kind,
+    ])
+    useStageContactFeedback.setState({
+      kind,
+      signature,
+      contactKey,
+      message: penetrating
+        ? '存在穿模、地面穿透或预演重叠；确认布局不会消除此提示。'
+        : touching
+          ? `${mates.length ? mates.map((object) => object.name).join('、') : '舞台地面'}：已贴合 · 间距 0（数值容差内）`
+          : objects.length
+            ? '未贴合 · 可继续调整'
+            : '',
+    })
+    if (
+      kind === 'contact' &&
+      (previous.kind !== 'contact' || previous.contactKey !== contactKey) &&
+      useViewer.getState().inputDragging &&
+      useStagePlacement.getState().snap.guides &&
+      typeof navigator !== 'undefined' &&
+      typeof navigator.vibrate === 'function'
+    ) {
+      navigator.vibrate(12)
+    }
+  }, [scene, selected, contacts])
   useFrame(() => {
     overlay.sync(contacts, sceneRegistry.nodes, useViewer.getState().geometryRevision, contacts)
     selectionOverlay.sync(

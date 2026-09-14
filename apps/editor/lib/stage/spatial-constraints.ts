@@ -1,8 +1,8 @@
 import { StagePlanSchema, StageTransformSchema } from '@pascal-app/core/stage'
 import { z } from 'zod'
 import {
-  DiaStageProposalSchema,
   type DiaStageProposal,
+  DiaStageProposalSchema,
 } from '../rehearsal-intelligence/knowledge/stage-proposal'
 
 export const SPATIAL_RUNTIME_CONFIG = Object.freeze({
@@ -26,7 +26,7 @@ export const StageSpatialConstraintSchema = z
     subjects: z.array(id).min(1).max(3),
     target: id.optional(),
     parameters: z.strictObject({
-      shape: z.literal('u').optional(),
+      shape: z.enum(['u', 'partial']).optional(),
       angleDegrees: z.literal(90).optional(),
       minimumWidthMeters: z.number().finite().positive().max(1000).optional(),
       widthSource: z.enum(['user', 'runtime_default']).optional(),
@@ -42,7 +42,8 @@ export const StageSpatialConstraintSchema = z
     if (
       new Set(constraint.subjects).size !== count ||
       (constraint.type === 'form_enclosure' &&
-        (![1, 3].includes(count) || constraint.parameters.shape !== 'u')) ||
+        (![1, 2, 3].includes(count) ||
+          constraint.parameters.shape !== (count === 2 ? 'partial' : 'u'))) ||
       (['align_edges', 'corner_angle'].includes(constraint.type) && count !== 2) ||
       (constraint.type === 'corner_angle' && constraint.parameters.angleDegrees !== 90) ||
       (['leave_opening', 'preserve_path'].includes(constraint.type) &&
@@ -115,7 +116,9 @@ export function spatialConstraintsForProposal(input: DiaStageProposal): StageSpa
       }),
     )
   }
-  const enclosure = proposal.actions.filter((action) => action.parameters?.layout === 'enclosure')
+  const enclosure = proposal.actions.filter((action) =>
+    ['enclosure', 'partial'].includes(action.parameters?.layout ?? ''),
+  )
   const folds = proposal.actions.filter(
     (action) => action.type === 'fold_hinge' && action.parameters?.layout === 'u',
   )
@@ -136,7 +139,7 @@ export function spatialConstraintsForProposal(input: DiaStageProposal): StageSpa
       enclosureSubjects,
       [...new Set(enclosure.flatMap((action) => action.knowledgeConceptIds))],
       enclosure[0]!.sourceIntent,
-      { shape: 'u' },
+      { shape: enclosureSubjects.length === 2 ? 'partial' : 'u' },
     )
   for (const action of proposal.actions) {
     if (action.type !== 'connect_edge' || enclosure.includes(action)) continue

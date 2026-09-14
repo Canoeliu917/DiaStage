@@ -112,7 +112,7 @@ test('native item drag uses visible mesh contact, permits every contact drop, an
     for (const [x, z, contact] of [
       [0, 0, false],
       [0.801, 0.5, false],
-      [0.8, 0.5, true],
+      [0.8, 0.5, false], // exact contact is legal; red feedback is penetration only
       [0.7, 0.5, true],
     ] as const) {
       const gridPosition = new Vector3(x, 0.3, z)

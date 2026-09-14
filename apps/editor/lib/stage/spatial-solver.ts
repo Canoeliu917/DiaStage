@@ -6,8 +6,8 @@ import {
   validateStagePlan,
 } from '@pascal-app/core/stage'
 import {
-  DiaStageProposalSchema,
   type DiaStageProposal,
+  DiaStageProposalSchema,
 } from '../rehearsal-intelligence/knowledge/stage-proposal'
 import {
   stageClearanceFootprints,
@@ -17,12 +17,12 @@ import {
 import { scenicConnectionTransforms } from './scenic-proposal'
 import {
   SPATIAL_RUNTIME_CONFIG,
-  SpatialSolutionSchema,
-  StageSpatialConstraintSchema,
-  spatialConstraintsForProposal,
   type SpatialCandidate,
   type SpatialSolution,
+  SpatialSolutionSchema,
   type StageSpatialConstraint,
+  StageSpatialConstraintSchema,
+  spatialConstraintsForProposal,
 } from './spatial-constraints'
 
 type Point = [number, number]
@@ -251,7 +251,48 @@ export function solveSpatialConstraints(input: {
   const enclosure = constraints.find((constraint) => constraint.type === 'form_enclosure')
   const opening = constraints.find((constraint) => constraint.type === 'leave_opening')
   const path = constraints.find((constraint) => constraint.type === 'preserve_path')
-  if (enclosure && items.every(flat)) {
+  if (enclosure?.parameters.shape === 'partial' && items.length === 2 && items.every(flat)) {
+    const width =
+      opening?.parameters.minimumWidthMeters ?? SPATIAL_RUNTIME_CONFIG.minimumOpeningMeters
+    warnings.push(`两片分开放置：围合不完整，不是三面 U 型。入口净宽 ${width} 米。`)
+    for (const base of items) {
+      const moving = items.find((item) => item.id !== base.id)!
+      const u = axis(base.transform.rotationDegrees.y),
+        v: Point = [-u[1], u[0]]
+      for (const sign of [-1, 1]) {
+        const turned = {
+          ...moving,
+          transform: {
+            ...moving.transform,
+            rotationDegrees: { ...base.transform.rotationDegrees },
+          },
+        }
+        const baseU = extent(base, u),
+          movingU = extent(turned, u)
+        const distanceU = sign > 0 ? baseU[1] + width - movingU[0] : baseU[0] - width - movingU[1]
+        const distanceV = dot(delta(base, turned), v)
+        const shifted = {
+          ...turned,
+          transform: {
+            ...turned.transform,
+            position: {
+              ...turned.transform.position,
+              x: turned.transform.position.x + u[0] * distanceU + v[0] * distanceV,
+              z: turned.transform.position.z + u[1] * distanceU + v[1] * distanceV,
+            },
+          },
+        }
+        const start = sign > 0 ? baseU[1] : baseU[0] - width
+        const level = dot([base.transform.position.x, base.transform.position.z], v)
+        const entrance = rectangle(u, v, start, start + width, level - 0.2, level + 0.2)
+        const rest = context.objects.filter(
+          (item) => !items.some((chosen) => chosen.id === item.id),
+        )
+        if (inStage(entrance, context) && clearRegion(entrance, [base, shifted, ...rest]))
+          add([base, shifted], [{ type: 'opening', widthMeters: width, polygon: entrance }])
+      }
+    }
+  } else if (enclosure && items.every(flat)) {
     // ponytail: three flats only; enumerate each unchanged anchor and both open sides, no general packing search.
     for (const base of items) {
       const [left, right] = items.filter((item) => item.id !== base.id)

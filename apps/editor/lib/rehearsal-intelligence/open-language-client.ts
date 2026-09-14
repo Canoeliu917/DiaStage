@@ -1,16 +1,17 @@
 import { z } from 'zod'
 import { fetchAiWithBudgetConsent } from '../ai/budget-client'
 import {
+  type OpenLanguageContext,
   OpenLanguageRequestSchema,
   StructuredGroundingSchema,
   validateOpenGrounding,
-  type OpenLanguageContext,
 } from './open-language'
 
 export const OpenGroundingResponseSchema = z.strictObject({
   grounding: StructuredGroundingSchema,
   provider: z.literal('openai'),
   model: z.string().min(1),
+  reply: z.string().max(2000).default(''),
 })
 export async function requestOpenGrounding(
   rawUtterance: string,

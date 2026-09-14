@@ -71,7 +71,8 @@ export const STAGE_LIBRARY = STAGE_PROP_MENU.assets.map((menu) => {
 })
 STAGE_LIBRARY.sort(
   (a, b) =>
-    STAGE_OBJECT_CATEGORIES.indexOf(a.spec.category) - STAGE_OBJECT_CATEGORIES.indexOf(b.spec.category),
+    STAGE_OBJECT_CATEGORIES.indexOf(a.spec.category) -
+    STAGE_OBJECT_CATEGORIES.indexOf(b.spec.category),
 )
 export const STAGE_LIBRARY_CATEGORIES = [
   { label: '全部', source: null },
@@ -145,7 +146,11 @@ export function startStagePlacement(
     stepCount: existing?.stepCount,
     transform: existing?.transform ?? {
       position: { x: 0, y: entry.kind === 'camera' ? 1.4 : 0, z: context.venue.depthMeters / 2 },
-      rotationDegrees: { x: 0, y: 0, z: 0 },
+      rotationDegrees: {
+        x: 0,
+        y: 0,
+        z: entry.kind === 'platform' || entry.name === '枕木' ? 90 : 0,
+      },
     },
     certainty: 'stated',
     assumptionIds: [],
@@ -385,11 +390,15 @@ export function StageLibraryPanel() {
               const source = STAGE_LIBRARY_CATEGORIES[index]?.source
               setCategory(index)
               setQuery('')
-              setSelectedId(STAGE_LIBRARY.find(({ menu }) => !source || menu.category === source)!.menu.id)
+              setSelectedId(
+                STAGE_LIBRARY.find(({ menu }) => !source || menu.category === source)!.menu.id,
+              )
             }}
           >
             {STAGE_LIBRARY_CATEGORIES.map(({ label }, index) => (
-              <option key={label} value={index}>{label}</option>
+              <option key={label} value={index}>
+                {label}
+              </option>
             ))}
           </select>
         </label>
@@ -474,7 +483,10 @@ export function StageLibraryPanel() {
                 type="checkbox"
                 checked={state.snap.guides}
                 onChange={(event) =>
-                  setStageGrid(event.target.checked ? 0 : useEditor.getState().gridSnapStep, event.target.checked)
+                  setStageGrid(
+                    event.target.checked ? 0 : useEditor.getState().gridSnapStep,
+                    event.target.checked,
+                  )
                 }
               />
               景片边缘贴合

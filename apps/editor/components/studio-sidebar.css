@@ -34,8 +34,8 @@
 .studio-workspace .stage-object > label:first-of-type { display:grid; grid-template-columns:auto minmax(0,1fr); }
 .studio-workspace .stage-library-grid button[aria-pressed=true] { border-color:var(--dia-muted); background:var(--dia-hover); color:var(--dia-text); }
 .studio-workspace .stage-library-grid button[aria-pressed=true] small { color:var(--dia-muted); }
-.studio-workspace .stage-library-preview { position:static; grid-template-columns:88px minmax(0,1fr); padding:10px; margin-top:auto; }
-.studio-workspace .stage-library-preview > .stage-library-use { grid-column:1/-1; width:100%; min-height:44px; padding:8px 12px; font-size:16px; font-weight:700; }
+.studio-workspace .stage-library-preview { position:static; grid-template-columns:40px minmax(0,1fr) auto; padding:6px; margin-top:auto; }
+.studio-workspace .stage-library-preview > .stage-library-use { grid-column:auto; min-height:44px; padding:8px; font-size:16px; font-weight:700; }
 .studio-workspace .stage-library-preview > div > strong { font-size:16px; }
 .studio-workspace .stage-library-preview small { font-size:13px; }
 .studio-workspace .stage-library-category { display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; align-items:center; }
@@ -61,10 +61,12 @@
 .stage-controls-help > div { position:absolute; right:0; top:100%; width:290px; padding:12px; border:1px solid var(--dia-border); border-radius:6px; background:var(--dia-panel); color:var(--dia-text); font-size:12px; line-height:1.7; }
 .stage-controls-help p + p { margin-top:8px; }
 .stage-edit-toolbar kbd { border:1px solid var(--dia-border); border-radius:3px; padding:0 3px; }
-.stage-grid-controls { position:relative; color:var(--dia-text); font-size:12px; border-left:1px solid var(--dia-border); margin-left:6px; }
+.stage-grid-controls { position:absolute; bottom:12px; left:54px; z-index:40; pointer-events:auto; color:var(--dia-text); background:var(--dia-panel); font-size:12px; border:1px solid var(--dia-border); border-radius:4px; }
+.stage-contact-feedback { position:absolute; bottom:54px; left:54px; z-index:40; max-width:min(420px,65%); padding:6px 9px; color:var(--dia-text); background:var(--dia-panel); border:1px solid var(--dia-border); border-radius:4px; font-size:12px; pointer-events:none; }
+.stage-contact-feedback[data-contact-kind="contact"] { outline:1px solid var(--dia-text); }
 .stage-grid-controls > summary { cursor:pointer; padding:7px 9px; list-style:none; white-space:nowrap; }
 .stage-grid-controls[open] > summary { color:var(--dia-text); }
-.stage-grid-popover { position:absolute; top:calc(100% + 8px); left:0; width:280px; display:grid; gap:8px; padding:12px; border:1px solid var(--dia-border); border-radius:6px; background:var(--dia-panel); }
+.stage-grid-popover { position:absolute; bottom:calc(100% + 8px); left:0; width:280px; max-height:65dvh; overflow:auto; display:grid; gap:8px; padding:12px; border:1px solid var(--dia-border); border-radius:6px; background:var(--dia-panel); }
 .stage-grid-popover > button { text-align:left; padding:6px; }
 .stage-grid-popover p { color:var(--dia-muted); line-height:1.6; }
 .stage-grid-popover .stage-grid-size { display:grid; grid-template-columns:auto minmax(0,1fr); }

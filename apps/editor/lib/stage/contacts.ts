@@ -46,7 +46,7 @@ function contactKey(item: ContactObject) {
   ]
 }
 
-export function stageContactIds(objects: ContactObject[]): Set<string> {
+export function stageContactIds(objects: ContactObject[], penetrationOnly = false): Set<string> {
   const physical = objects
     .filter((item) => item.kind !== 'camera' && item.kind !== 'performer-marker')
     .sort((a, b) => a.id.localeCompare(b.id))
@@ -63,7 +63,7 @@ export function stageContactIds(objects: ContactObject[]): Set<string> {
     loadFailures = viewer.itemLoadFailures
   }
   // Each view parses its own immutable geometry objects, so equal contents must share a key.
-  const key = JSON.stringify(physical.map(contactKey))
+  const key = JSON.stringify([penetrationOnly, physical.map(contactKey)])
   const roots = physical.map((item) => sceneRegistry.nodes.get(item.id))
   const settled = roots.map((root) => root?.userData.itemModelSettled)
   const failed = physical.map((item) => Boolean(viewer.itemLoadFailures[item.id]))
@@ -83,6 +83,24 @@ export function stageContactIds(objects: ContactObject[]): Set<string> {
     return new Set(cached.ids)
   }
   const prepared = physical.map(prepareStageCollision)
+  const interior = (collision: ReturnType<typeof prepareStageCollision>) => ({
+    ...collision,
+    parts: collision.parts.map((part) => {
+      const center = part.bounds.map(([min, max]) => (min + max) / 2)
+      return {
+        ...part,
+        vertices: part.vertices.map(
+          (vertex) =>
+            vertex.map((value, axis) => center[axis]! + (value - center[axis]!) * 0.99999) as [
+              number,
+              number,
+              number,
+            ],
+        ),
+      }
+    }),
+  })
+  const strict = penetrationOnly ? prepared.map(interior) : prepared
   const ids = new Set<string>()
   for (let i = 0; i < physical.length; i++) {
     if (stageModelBelowFloor(physical[i]!) ?? prepared[i]!.bounds[1]![0] < -1e-7)
@@ -90,8 +108,8 @@ export function stageContactIds(objects: ContactObject[]): Set<string> {
     for (let j = i + 1; j < physical.length; j++) {
       const a = physical[i]!,
         b = physical[j]!
-      const modelContact = stageModelContact(a, b)
-      if (!(modelContact ?? stageCollisionsTouch(prepared[i]!, prepared[j]!))) continue
+      const modelContact = stageModelContact(a, b, penetrationOnly)
+      if (!(modelContact ?? stageCollisionsTouch(strict[i]!, strict[j]!))) continue
       ids.add(physical[i]!.id)
       ids.add(physical[j]!.id)
     }

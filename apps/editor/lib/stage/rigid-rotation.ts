@@ -1,7 +1,35 @@
 import { type BlockNode, getItemBoundsCenter, type ItemNode } from '@pascal-app/core'
 import { Euler, Quaternion, Vector3 } from 'three'
+import { STAGE_PROP_MENU } from './prop-assets'
 
 export type RotationAxis = 'x' | 'y' | 'z'
+export const STAGE_ROTATION_STEP = Math.PI / 6
+export function stageManipulationCenter(node: ItemNode): [number, number, number] {
+  const source = STAGE_PROP_MENU.assets.find((entry) => entry.id === node.asset.id)
+  if (source?.articulation) {
+    const width = source.dimensions_m.panel_width!
+    return [
+      width * node.scale[0],
+      (source.dimensions_m.height! / 2) * node.scale[1],
+      (source.articulation.panel_count === 3 ? -width / 2 : 0) * node.scale[2],
+    ]
+  }
+  return getItemBoundsCenter(node)
+}
+
+export function itemEulerRotation(node: ItemNode, rotation: [number, number, number]) {
+  const center = new Vector3(...stageManipulationCenter(node))
+  const before = center.clone().applyEuler(new Euler(...node.rotation))
+  const after = center.clone().applyEuler(new Euler(...rotation))
+  return {
+    position: new Vector3(...node.position).add(before).sub(after).toArray() as [
+      number,
+      number,
+      number,
+    ],
+    rotation,
+  }
+}
 
 // The guide requires a fixed rotation centre; floor contact is a separate placement action.
 export function rigidRotation(node: BlockNode | ItemNode, axis: RotationAxis, degrees: number) {
@@ -38,15 +66,7 @@ export function rigidRotation(node: BlockNode | ItemNode, axis: RotationAxis, de
       },
     }
   }
-  const center = new Vector3(...getItemBoundsCenter(node))
-  const before = new Quaternion().setFromEuler(new Euler(...node.rotation))
-  const after = axis === 'y' ? before.clone().premultiply(turn) : before.clone().multiply(turn)
-  const centerBefore = center.clone().applyQuaternion(before)
-  const centerAfter = center.clone().applyQuaternion(after)
-  const position = new Vector3(...node.position).add(centerBefore).sub(centerAfter)
-  const euler = new Euler().setFromQuaternion(after)
-  return {
-    position: position.toArray() as [number, number, number],
-    rotation: [euler.x, euler.y, euler.z] as [number, number, number],
-  }
+  const rotation: [number, number, number] = [...node.rotation]
+  rotation[axis === 'x' ? 0 : axis === 'y' ? 1 : 2] += (degrees * Math.PI) / 180
+  return itemEulerRotation(node, rotation)
 }

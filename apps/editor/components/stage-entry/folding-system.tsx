@@ -26,6 +26,15 @@ import { STAGE_PROP_MENU } from '@/lib/stage/prop-assets'
 function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
   const handle = useRef<Group>(null)
   const freeAngleUsed = useRef(false)
+  const pendingAngle = useRef<number | null>(null)
+  const previewFrame = useRef(0)
+  const flushPreview = () => {
+    cancelAnimationFrame(previewFrame.current)
+    previewFrame.current = 0
+    const angle = pendingAngle.current
+    pendingAngle.current = null
+    if (angle !== null) previewFoldCornerAngle(angle)
+  }
   useEffect(() => {
     const releaseShift = (event: KeyboardEvent) => {
       if (event.key !== 'Shift' || !freeAngleUsed.current) return
@@ -55,6 +64,9 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
   const restoreCamera = useCallback(() => {
     const drag = gesture.current
     if (!drag) return
+    cancelAnimationFrame(previewFrame.current)
+    previewFrame.current = 0
+    pendingAngle.current = null
     gesture.current = null
     if (cameraControls && drag.enabled !== undefined) cameraControls.enabled = drag.enabled
     if (drag.button.hasPointerCapture(drag.pointerId))
@@ -107,6 +119,7 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
             const normal = new Vector3(0, 1, 0).transformDirection(parentMatrix)
             const plane = new Plane().setFromNormalAndCoplanarPoint(normal, pivot)
             const point = planePoint(event, plane)
+            const cameraWasEnabled = cameraControls?.enabled
             if (
               !point ||
               point.distanceToSquared(pivot) < 1e-8 ||
@@ -128,7 +141,7 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
               },
               button: event.currentTarget,
               pointerId: event.pointerId,
-              enabled: cameraControls?.enabled,
+              enabled: cameraWasEnabled,
             }
             if (cameraControls) cameraControls.enabled = false
             event.currentTarget.setPointerCapture(event.pointerId)
@@ -145,11 +158,18 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
             if (event.shiftKey) freeAngleUsed.current = true
             const advanced = advanceFoldAngle(drag.angle, delta, event.shiftKey)
             drag.angle = advanced.drag
-            previewFoldCornerAngle(advanced.angle)
+            pendingAngle.current = advanced.angle
+            if (!previewFrame.current) previewFrame.current = requestAnimationFrame(flushPreview)
           }}
           onPointerUp={(event) => {
-            if (!gesture.current || event.button !== 0) return
+            if (
+              !gesture.current ||
+              gesture.current.pointerId !== event.pointerId ||
+              event.button !== 0
+            )
+              return
             event.stopPropagation()
+            flushPreview()
             finishFoldDrag(true)
             restoreCamera()
           }}

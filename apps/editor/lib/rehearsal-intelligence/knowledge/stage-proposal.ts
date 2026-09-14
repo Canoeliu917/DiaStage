@@ -42,7 +42,7 @@ const StageProposalActionParametersSchema = z.strictObject({
   axis: z.enum(['x', 'z']).optional(),
   angleDegrees: z.number().finite().min(0).max(360).optional(),
   hingeIndex: z.number().int().min(0).max(12).optional(),
-  layout: z.enum(['straight', 'corner', 'u', 'enclosure']).optional(),
+  layout: z.enum(['straight', 'corner', 'u', 'enclosure', 'partial']).optional(),
 })
 
 export const StageProposalActionSchema = z.strictObject({
@@ -395,7 +395,7 @@ export function resolveKnowledgeForProposal(
             type: 'connect_edge',
             subject: action.subjectIds[index]!,
             target: action.subjectIds[index - 1]!,
-            parameters: { layout: 'enclosure' },
+            parameters: { layout: action.subjectIds.length === 2 ? 'partial' : 'enclosure' },
             sourceIntent: intent.kind,
             knowledgeConceptIds: safe('scenic-flat', 'splice', 'enclosure'),
           })
@@ -471,7 +471,10 @@ export function resolveKnowledgeForProposal(
     ambiguities.push({
       term: '围合与入口几何',
       candidates: ['入口朝台前', '入口朝台左', '入口朝台右'],
-      clarification: '几何引擎将检验三面围合与入口净宽；请在候选 Ghost 中选择开口朝向。',
+      clarification:
+        intent.count === 2
+          ? '两块景片只提供不完整围合替代；请在候选 Ghost 中选择，入口净宽仍须验证。'
+          : '几何引擎将检验三面围合与入口净宽；请在候选 Ghost 中选择开口朝向。',
     })
 
   const rationale = (() => {
@@ -484,7 +487,9 @@ export function resolveKnowledgeForProposal(
     if (intent.kind === 'fold_hinge')
       return '景片折叠与整件旋转保持不同操作；多铰链几何未明确，因此不会直接执行。'
     if (intent.kind === 'enclose_with_opening')
-      return '围合被保留为多个连接动作和入口约束，不会退化成单个坐标移动。'
+      return intent.count === 2
+        ? '两块景片不能形成完整三面围合。本次提供两片分开留入口的可行替代，入口净宽由几何引擎验证；不会擅自增加第三块。'
+        : '围合被保留为多个连接动作和入口约束，不会退化成单个坐标移动。'
     if (intent.kind === 'preserve_path')
       return '通道净空由几何引擎验证；必要的布景避让仅作为候选，采用前正式舞台不变。'
     if (intent.kind === 'ambiguous') return placement.message

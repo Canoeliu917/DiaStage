@@ -1,9 +1,5 @@
 import type { SceneContextObject, SceneContextSummary, StagePoint } from '@pascal-app/core/stage'
-import {
-  prepareStageCollision,
-  stageFootprintGap,
-  stageStackPosition,
-} from '@pascal-app/core/stage'
+import { prepareStageCollision, stageFootprintGap } from '@pascal-app/core/stage'
 import { type PlacementSnap, snapStagePlacement } from '@/components/stage-entry/placement-math'
 import { stageModelBottom, stageVisibleFootprints } from './model-contact'
 
@@ -13,30 +9,18 @@ export function snapStageObject(
   context: SceneContextSummary,
   options: PlacementSnap,
 ) {
-  const scenery = /flat|door|window/.test(item.kind)
   const result = snapStagePlacement(
     point,
     item.dimensionsMeters,
     item.transform.rotationDegrees.y,
     context,
-    { ...options, guides: options.guides && !scenery },
+    { ...options, guides: false },
     item.id,
   )
-  if (!scenery) {
-    const support = stageStackPosition(
-      { ...item, transform: { ...item.transform, position: result.position } },
-      context.objects,
-    )
-    if (support) {
-      result.position.y = support.y
-      if (support.supportId) result.labels.push('支撑面贴合')
-    }
-    return result
-  }
-  // Ordinary floor dragging grounds the transformed model; the XYZ gizmo remains independent.
+  // Plane dragging preserves height; only an explicit elevation gesture elects a new support.
   const bottom =
     stageModelBottom(item) ?? prepareStageCollision(item).bounds[1]![0] - item.transform.position.y
-  result.position.y = -bottom || 0
+  result.position.y = Math.max(item.transform.position.y, -bottom) || 0
   if (!options.guides) return result
   const moving = stageVisibleFootprints({
     ...item,
@@ -46,8 +30,14 @@ export function snapStageObject(
   let touching = false
   let nearest: { dx: number; dz: number; distance: number; name: string } | undefined
   for (const other of context.objects) {
-    if (other.id === item.id || !/flat|door|window/.test(other.kind)) continue
-    if (Math.abs(other.transform.position.y - result.position.y) > 0.1) continue
+    if (other.id === item.id || ['camera', 'performer-marker'].includes(other.kind)) continue
+    const movingBounds = prepareStageCollision({
+      ...item,
+      transform: { ...item.transform, position: result.position },
+    }).bounds
+    const targetBounds = prepareStageCollision(other).bounds
+    if (movingBounds[1]![1] < targetBounds[1]![0] || targetBounds[1]![1] < movingBounds[1]![0])
+      continue
     const target = stageVisibleFootprints(other)
     if (!target) continue
     const gaps = moving.flatMap((left) => target.map((right) => stageFootprintGap(left, right)))

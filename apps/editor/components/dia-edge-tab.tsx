@@ -1,7 +1,13 @@
 'use client'
 
+import { ChevronLeft } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { clampDiaTabY, DIA_EDGE_SIZE, DIA_TABLET_QUERY, type UiRect } from '../lib/dia-touch-layout'
+import {
+  clampDiaTabY,
+  DIA_EDGE_WIDTH,
+  DIA_TABLET_QUERY,
+  type UiRect,
+} from '../lib/dia-touch-layout'
 
 export function useDiaTouchViewport() {
   const [viewport, setViewport] = useState<UiRect | null>(null)
@@ -115,7 +121,7 @@ export function DiaEdgeTab({
       className="dia-restore-tab dia-edge-tab"
       aria-label="展开 Dia 对话框"
       style={{
-        left: viewport.left + viewport.width - DIA_EDGE_SIZE,
+        left: viewport.left + viewport.width - DIA_EDGE_WIDTH,
         top: y ?? viewport.top,
         visibility: y === null ? 'hidden' : undefined,
       }}
@@ -164,7 +170,7 @@ export function DiaEdgeTab({
         suppressClick.current = false
       }}
     >
-      Dia
+      <ChevronLeft size={18} aria-hidden="true" />
     </button>
   )
 }

@@ -20,12 +20,13 @@ if (!process.env.TOUCH_GIZMO_TEST) {
   const effects: Array<() => undefined | (() => void)> = []
   const cleanups: Array<() => void> = []
   const frames: Array<() => void> = []
+  let stateIndex = 0
   const hooks = {
     ...React,
     useMemo: <T,>(fn: () => T) => fn(),
     useCallback: <T,>(fn: T) => fn,
     useRef: <T,>(current: T) => ({ current }),
-    useState: <T,>(initial: T) => [initial, () => {}],
+    useState: <T,>(initial: T) => [stateIndex++ === 0 ? true : initial, () => {}],
     useEffect: (effect: () => undefined | (() => void)) => effects.push(effect),
     useLayoutEffect: (effect: () => undefined | (() => void)) => effects.push(effect),
     useSyncExternalStore: (_: unknown, get: () => unknown) => get(),
@@ -121,9 +122,7 @@ if (!process.env.TOUCH_GIZMO_TEST) {
     stageContextObject: () => null,
     stageFrame: () => null,
   }))
-  const { nearestRotationRing, rotationPointerMetrics } = await import(
-    '../../lib/stage/rotation-ring-hit'
-  )
+  const { nearestRotationRing } = await import('../../lib/stage/rotation-ring-hit')
   const { StageTransformGizmo } = await import('./transform-gizmo')
   const { useStageTransform } = await import('./transform-mode')
   useStageTransform.setState({ mode: 'rotate' })
@@ -144,7 +143,13 @@ if (!process.env.TOUCH_GIZMO_TEST) {
   const object = new Group()
   core.sceneRegistry.nodes.set(node.id, object)
   const root = StageTransformGizmo({ enabled: true })!
-  const elements = React.Children.toArray(root.props.children) as React.ReactElement<any>[]
+  const children = React.Children.toArray(root.props.children) as React.ReactElement<any>[]
+  const buttons = children[0]!.props.children.props.children as React.ReactElement<any>[]
+  assert.deepEqual(
+    buttons.map((button) => button.props['data-rotation-axis']),
+    ['X', 'Y', 'Z'],
+  )
+  const elements = children.filter((element) => element.props.axis !== undefined)
   const axes = elements.map((element) => (element.type as Function)(element.props))
   runEffects()
   for (const frame of frames) frame()
@@ -188,10 +193,11 @@ if (!process.env.TOUCH_GIZMO_TEST) {
     const expectedScale =
       (2 *
         Math.tan((50 * Math.PI) / 360) *
-        camera.position.length() *
-        rotationPointerMetrics(type).radius) /
+        camera.position.distanceTo(input.handles.get(0).group.position) *
+        100) /
       800
     assert(Math.abs(input.handles.get(0).group.scale.x - expectedScale) < 1e-9)
+    assert.equal(input.handles.get(0).group.visible, type === 'mouse')
     for (const axis of [0, 1, 2])
       for (let attempt = 0; attempt < 3; attempt++) {
         realScene.setState({ nodes: { [node.id]: node } })
@@ -209,7 +215,7 @@ if (!process.env.TOUCH_GIZMO_TEST) {
         )!
         assert.notEqual(angle, undefined)
         const start = project(axis, angle),
-          end = project(axis, angle + 0.5)
+          end = type === 'mouse' ? project(axis, angle + 0.5) : { x: start.x + 65, y: start.y }
         const down = pointer('pointerdown', type, start)
         const previousFreezes = freezes
         if (type === 'mouse') {
@@ -223,7 +229,18 @@ if (!process.env.TOUCH_GIZMO_TEST) {
             nativeEvent: down,
             stopPropagation() {},
           })
-        } else window.dispatchEvent(down)
+        } else
+          buttons[axis]!.props.onPointerDown({
+            ...Object.fromEntries(
+              ['button', 'clientX', 'clientY', 'pointerId', 'pointerType'].map((key) => [
+                key,
+                (down as any)[key],
+              ]),
+            ),
+            nativeEvent: down,
+            preventDefault() {},
+            stopPropagation() {},
+          })
         assert.equal(input.axis, axis)
         assert.equal(freezes - previousFreezes, type === 'mouse' ? 0 : 1)
         assert.equal(controls.enabled, false)
@@ -262,8 +279,18 @@ if (!process.env.TOUCH_GIZMO_TEST) {
     commits = 0
     window.dispatchEvent(pointer('pointerover', 'touch', { x: 0, y: 0 }))
     const start = project(0, 0.4),
-      end = project(0, 0.9)
-    window.dispatchEvent(pointer('pointerdown', 'touch', start))
+      end = { x: start.x + 65, y: start.y }
+    const down = pointer('pointerdown', 'touch', start)
+    buttons[0]!.props.onPointerDown({
+      button: 0,
+      clientX: start.x,
+      clientY: start.y,
+      pointerId: 1,
+      pointerType: 'touch',
+      nativeEvent: down,
+      preventDefault() {},
+      stopPropagation() {},
+    })
     window.dispatchEvent(pointer('pointermove', 'touch', end))
     if (cancel === 'Escape') {
       const event = new Event('keydown', { cancelable: true })

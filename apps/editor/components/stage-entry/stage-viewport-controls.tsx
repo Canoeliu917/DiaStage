@@ -12,11 +12,15 @@ import { stageToWorldPosition } from '@pascal-app/core/stage'
 import { useEditor, useInteractionScope } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { Compass, Grid2X2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { create } from 'zustand'
+import { useStageContactFeedback } from '@/lib/stage/contact-feedback'
 import { currentStageContext, stageFrame } from '@/lib/stage/context'
+import { floorSafeItemPatch } from '@/lib/stage/floor-transform'
 import { rigidRotation } from '@/lib/stage/rigid-rotation'
 import { setStageGrid, useStagePlacement } from './manual-stage-panel'
+import { useStageTransform } from './transform-mode'
 
 export const useStageRotation = create<{ armed: boolean }>(() => ({ armed: false }))
 const isPlanSurface = (target: EventTarget | null) =>
@@ -34,7 +38,12 @@ export function StagePlanNavigationRuntime() {
       const pose = editor.navigationSyncPose
       const dt = Math.min(0.05, Math.max(0, (now - previous) / 1000))
       previous = now
-      if (pose && (keys.size || turn) && useInteractionScope.getState().scope.kind === 'idle') {
+      if (
+        pose &&
+        (keys.size || turn) &&
+        !useStageTransform.getState().cameraLocked &&
+        useInteractionScope.getState().scope.kind === 'idle'
+      ) {
         const horizontal = Number(keys.has('KeyD')) - Number(keys.has('KeyA'))
         const forward = Number(keys.has('KeyW')) - Number(keys.has('KeyS'))
         const up = Number(keys.has('KeyE')) - Number(keys.has('KeyQ'))
@@ -156,81 +165,102 @@ export function StagePlanNavigationRuntime() {
 }
 
 export function StageGridToolbar() {
+  const [container, setContainer] = useState<Element | null>(null)
+  useEffect(() => {
+    setContainer(document.querySelector('.diastage-viewer-column'))
+  }, [])
   const snap = useStagePlacement((state) => state.snap)
   const step = useEditor((state) => state.gridSnapStep)
   const view = useEditor((state) => state.viewMode)
   const showGrid = useViewer((state) => state.showGrid)
-  return (
-    <details className="stage-grid-controls">
-      <summary title="点击调整网格大小与道具放置方式">
-        每格 {Math.round(step * 100)} cm · {snap.grid ? '按网格放置' : snap.guides ? '边缘贴合' : '自由放置'} ▾
-      </summary>
-      <div className="stage-grid-popover">
-        <strong>网格与道具放置</strong>
-        <p>格距对应地面上的网格线。按网格放置时，道具移动或落位会对齐到网格。</p>
-        {view !== '3d' && (
+  const feedback = useStageContactFeedback()
+  if (!container) return null
+  return createPortal(
+    <>
+      {feedback.message && (
+        <div className="stage-contact-feedback" role="status" data-contact-kind={feedback.kind}>
+          {feedback.message}
+        </div>
+      )}
+      <details className="stage-grid-controls">
+        <summary title="点击调整网格大小与道具放置方式">
+          每格 {Math.round(step * 100)} cm ·{' '}
+          {snap.grid ? '按网格放置' : snap.guides ? '边缘贴合' : '自由放置'} ▾
+        </summary>
+        <div className="stage-grid-popover">
+          <strong>网格与道具放置</strong>
+          <p>格距对应地面上的网格线。按网格放置时，道具移动或落位会对齐到网格。</p>
+          {view !== '3d' && (
+            <button
+              type="button"
+              aria-label="指南针：居中归正平面"
+              onClick={() => {
+                const venue = currentStageContext().venue
+                if (!venue) return
+                useEditor.getState().publishNavigationSyncPose({
+                  source: '2d',
+                  target: stageToWorldPosition(
+                    { x: 0, y: 0, z: venue.depthMeters / 2 },
+                    stageFrame(),
+                  ),
+                  azimuth: 0,
+                  viewWidth: Math.max(venue.widthMeters, venue.depthMeters) * 1.3,
+                })
+              }}
+            >
+              <Compass size={16} />
+              归正
+            </button>
+          )}
+          <label className="stage-grid-size">
+            <span>
+              <Grid2X2 size={16} />
+              每格尺寸
+            </span>
+            <select
+              aria-label="网格格距"
+              value={step}
+              onChange={(event) => setStageGrid(Number(event.target.value) as typeof step)}
+            >
+              {[0.05, 0.1, 0.25, 0.5].map((value) => (
+                <option key={value} value={value}>
+                  每格 {value * 100} cm
+                </option>
+              ))}
+            </select>
+          </label>
+          <p>轻按一次 Ctrl 按 50 → 25 → 10 → 5 cm 循环切换；输入文字时不生效。</p>
           <button
             type="button"
-            aria-label="指南针：居中归正平面"
-            onClick={() => {
-              const venue = currentStageContext().venue
-              if (!venue) return
-              useEditor.getState().publishNavigationSyncPose({
-                source: '2d',
-                target: stageToWorldPosition({ x: 0, y: 0, z: venue.depthMeters / 2 }, stageFrame()),
-                azimuth: 0,
-                viewWidth: Math.max(venue.widthMeters, venue.depthMeters) * 1.3,
-              })
-            }}
+            aria-pressed={showGrid}
+            onClick={() => useViewer.getState().setShowGrid(!showGrid)}
+            title="切换网格线与纯地面显示，落位步长不变"
           >
-            <Compass size={16} />
-            归正
+            网格线：{showGrid ? '显示' : '隐藏（纯地面）'}
           </button>
-        )}
-        <label className="stage-grid-size">
-          <span><Grid2X2 size={16} />每格尺寸</span>
-          <select
-            aria-label="网格格距"
-            value={step}
-            onChange={(event) => setStageGrid(Number(event.target.value) as typeof step)}
+          <button
+            type="button"
+            aria-pressed={snap.guides}
+            onClick={() => setStageGrid(snap.guides ? step : 0, !snap.guides)}
+            title="磁性贴合：景片边缘与 Y 轴支撑面；关闭后返回网格"
           >
-            {[0.05, 0.1, 0.25, 0.5].map((value) => (
-              <option key={value} value={value}>
-                每格 {value * 100} cm
-              </option>
-            ))}
-          </select>
-        </label>
-        <p>轻按一次 Ctrl 按 50 → 25 → 10 → 5 cm 循环切换；输入文字时不生效。</p>
-        <button
-          type="button"
-          aria-pressed={showGrid}
-          onClick={() => useViewer.getState().setShowGrid(!showGrid)}
-          title="切换网格线与纯地面显示，落位步长不变"
-        >
-          网格线：{showGrid ? '显示' : '隐藏（纯地面）'}
-        </button>
-        <button
-          type="button"
-          aria-pressed={snap.guides}
-          onClick={() => setStageGrid(snap.guides ? step : 0, !snap.guides)}
-          title="磁性贴合：景片边缘与 Y 轴支撑面；关闭后返回网格"
-        >
-          边缘与支撑面贴合：{snap.guides ? '开启' : '关闭'}
-        </button>
-        <p>贴合模式下，景片边缘优先贴齐；拖动 Y 轴靠近支撑面时精确落齐。关闭后返回网格。</p>
-        <button
-          type="button"
-          className="stage-free-placement"
-          aria-pressed={!snap.grid && !snap.guides}
-          onClick={() => setStageGrid(snap.grid || snap.guides ? 0 : step)}
-          title="特殊选项：允许任意落点；再次点击回到网格"
-        >
-          特殊：自由放置
-        </button>
-        <p>自由放置允许任意落点；再次点击返回网格。隐藏网格线不改变放置方式。</p>
-      </div>
-    </details>
+            边缘与支撑面贴合：{snap.guides ? '开启' : '关闭'}
+          </button>
+          <p>贴合模式下，景片边缘优先贴齐；拖动 Y 轴靠近支撑面时精确落齐。关闭后返回网格。</p>
+          <button
+            type="button"
+            className="stage-free-placement"
+            aria-pressed={!snap.grid && !snap.guides}
+            onClick={() => setStageGrid(snap.grid || snap.guides ? 0 : step)}
+            title="特殊选项：允许任意落点；再次点击回到网格"
+          >
+            特殊：自由放置
+          </button>
+          <p>自由放置允许任意落点；再次点击返回网格。隐藏网格线不改变放置方式。</p>
+        </div>
+      </details>
+    </>,
+    container,
   )
 }
 
@@ -290,14 +320,17 @@ export function StageRotationRuntime() {
       if (!drag) return
       event.preventDefault()
       event.stopImmediatePropagation()
-      const degrees = Math.round((event.clientX - drag.x) / 2 / 15) * 15
+      const raw = (event.clientX - drag.x) / 2
+      const degrees = event.shiftKey ? raw : Math.round(raw / 30) * 30
       const node = drag.node
       drag.patch =
-        node.type === 'item' || node.type === 'block'
-          ? rigidRotation(node, 'y', degrees)
-          : node.type === 'stair'
-            ? { rotation: node.rotation + (degrees * Math.PI) / 180 }
-            : null
+        node.type === 'item'
+          ? floorSafeItemPatch(node, rigidRotation(node, 'y', degrees) as Partial<typeof node>)
+          : node.type === 'block'
+            ? rigidRotation(node, 'y', degrees)
+            : node.type === 'stair'
+              ? { rotation: node.rotation + (degrees * Math.PI) / 180 }
+              : null
       if (drag.patch) useLiveNodeOverrides.getState().set(node.id, drag.patch)
     }
     const up = (event: PointerEvent) => {

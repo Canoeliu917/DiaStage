@@ -5,8 +5,8 @@ import {
   type AnyNodeId,
   getNodeLock,
   type LiveTransform,
-  useLiveTransforms,
   useLiveNodeOverrides,
+  useLiveTransforms,
   useScene,
 } from '@pascal-app/core'
 import { inverseRotatePoint, rotatePoint, subtract } from '@pascal-app/core/remount'
@@ -23,8 +23,8 @@ import { stageContactIds } from '@/lib/stage/contacts'
 import { stageFrame } from '@/lib/stage/context'
 import { useStageContext } from '@/lib/stage/live-context'
 import { useStagePlanPreview } from '@/lib/stage/plan-preview'
-import { prepareSpatialFold } from '@/lib/stage/spatial-fold'
 import { SCENERY_ROUND_SEGMENTS, sceneryProxyParts } from '@/lib/stage/scenery'
+import { prepareSpatialFold } from '@/lib/stage/spatial-fold'
 import { DIA_COLORS } from '@/lib/visual-system'
 import { useSimulationSelection } from '../theatre/simulation-panel'
 import { placementPlan, useStagePlacement } from './manual-stage-panel'
@@ -82,7 +82,7 @@ export function StagePlanPreviewSystem({ enabled }: { enabled: boolean }) {
     }
   }, [buildPlan, placement, context.venue])
   const contacts = useMemo(
-    () => stageContactIds(stageLayoutObjects(context, plan)),
+    () => stageContactIds(stageLayoutObjects(context, plan), true),
     [context, plan],
   )
   const editing = useEditor(
