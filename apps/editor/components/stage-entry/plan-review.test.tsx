@@ -86,4 +86,20 @@ test('the live stage remains neutral while a pending proposal uses Dia blue', ()
   expect(review).toContain('在舞台上试试')
   expect(review).not.toMatch(/<button[^>]*>采用<\/button>/u)
   expect(review).toContain('放弃')
+
+  const knowledgeReview = renderToStaticMarkup(
+    <StagePlanReview
+      plan={plan}
+      context={context}
+      compact
+      editable={false}
+      busy={false}
+      onChange={() => {}}
+      onBack={() => {}}
+      onConfirm={() => {}}
+      onPreview={() => {}}
+    />,
+  )
+  expect(knowledgeReview).toContain('aria-disabled="true"')
+  expect(knowledgeReview).toMatch(/<fieldset[^>]*disabled=""/u)
 })

@@ -8,6 +8,7 @@ import {
 } from '@pascal-app/core/stage'
 import { betaCapabilityNotice } from '../beta-capabilities'
 import { VERTICAL_VIEW_QUESTION } from './camera-intents'
+import { resolveKnowledgeForProposal } from './knowledge/stage-proposal'
 import { mapStagePlacementIntent, type StagePlacementProposal } from './stage-placement-actions'
 import { parseStagePlacementIntent } from './stage-placement-intents'
 import { parseViewCommand, type ViewCommand } from './view-commands'
@@ -96,7 +97,18 @@ export function groundLanguage(
     }
   const placementIntent = parseStagePlacementIntent(text)
   if (placementIntent) {
-    const placement = mapStagePlacementIntent(placementIntent, context)
+    const placementDraft = mapStagePlacementIntent(placementIntent, context)
+    const knowledgeProposal = resolveKnowledgeForProposal(text, placementDraft, context)
+    const placement = {
+      ...placementDraft,
+      knowledgeProposal,
+      message:
+        placementDraft.status === 'clarify'
+          ? placementDraft.message
+          : knowledgeProposal.ambiguities.length
+            ? `${knowledgeProposal.rationale} ${knowledgeProposal.ambiguities.map((item) => item.clarification).join('；')}`
+            : `${knowledgeProposal.rationale} 当前只是 preview-only 方案，正式舞台没有改变。`,
+    }
     return {
       ...base,
       intent: placementIntent.kind,

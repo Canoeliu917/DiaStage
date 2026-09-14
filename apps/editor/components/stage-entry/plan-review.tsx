@@ -472,6 +472,8 @@ export function StagePlanReview({
   onPreview,
   compact = false,
   drawingContainer,
+  backLabel,
+  editable = true,
 }: {
   plan: StagePlan
   context: SceneContextSummary
@@ -484,6 +486,8 @@ export function StagePlanReview({
   onPreview?: (plan: StagePlan) => void | Promise<void>
   compact?: boolean
   drawingContainer?: HTMLElement | null
+  backLabel?: string
+  editable?: boolean
 }) {
   const [excluded, setExcluded] = useState<string[]>([])
   const [dragPlan, setDragPlan] = useState<StagePlan | null>(null)
@@ -605,7 +609,7 @@ export function StagePlanReview({
         context={context}
         onMove={moveItem}
         onCancel={() => setDragPlan(null)}
-        disabled={busy}
+        disabled={busy || !editable}
       />
     </>
   )
@@ -694,7 +698,11 @@ export function StagePlanReview({
                   (candidate) => candidate.proposalId === original.proposalId,
                 ) ?? original
               return (
-                <fieldset className="stage-plan-item" key={item.proposalId} disabled={busy}>
+                <fieldset
+                  className="stage-plan-item"
+                  key={item.proposalId}
+                  disabled={busy || !editable}
+                >
                   <label>
                     <input
                       type="checkbox"
@@ -887,13 +895,13 @@ export function StagePlanReview({
                 : '确认搭台'}
           </button>
         )}
-        {compact && previewMatches && onPreview && (
+        {editable && compact && previewMatches && onPreview && (
           <button type="button" disabled={busy} onClick={() => update(result.plan)}>
             修改
           </button>
         )}
         <button type="button" onClick={onBack} disabled={busy}>
-          {compact ? '放弃' : '返回修改'}
+          {backLabel ?? (compact ? '放弃' : '返回修改')}
         </button>
       </div>
     </section>

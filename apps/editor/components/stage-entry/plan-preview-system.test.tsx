@@ -206,12 +206,20 @@ if (!process.env.BUILD_GHOST_RUNTIME_TEST) {
   assert(all(render()).some((entry) => entry.props.color === DIA_COLORS.blue))
   assert.equal(scene.updates, 0)
   scene.nodes = {
+    level_test: {
+      id: 'level_test',
+      type: 'level',
+      parentId: null,
+    },
     block_existing: {
       id: 'block_existing',
-      type: 'block',
+      type: 'item',
       position: [0, 0, 0],
-      rotation: 0,
-      parentId: null,
+      rotation: [0, 0, 0],
+      parentId: 'level_test',
+      asset: {},
+      wallId: null,
+      blockFaceId: null,
     },
   }
   plan.items[0]!.existingNodeId = 'block_existing'
@@ -220,14 +228,20 @@ if (!process.env.BUILD_GHOST_RUNTIME_TEST) {
     'existing props use their real model instead of an extra proxy',
   )
   assert(transforms.has('block_existing'), 'existing prop has a live transform')
-  assert.deepEqual(live.get('block_existing'), { position: [-1, 0, 1], rotation: 0 })
+  assert.deepEqual(live.get('block_existing'), {
+    position: [-1, 0, 1],
+    rotation: Math.PI,
+  })
   assert.equal(scene.updates, 0)
   writes.length = 0
   for (let x = 2; x <= 20; x++) {
     store.draft = structuredClone(plan)
     store.draft.items[0]!.transform.position.x = x
     render()
-    assert.deepEqual(live.get('block_existing'), { position: [-x, 0, 1], rotation: 0 })
+    assert.deepEqual(live.get('block_existing'), {
+      position: [-x, 0, 1],
+      rotation: Math.PI,
+    })
   }
   assert.equal(writes.length, 19, 'one live transform notification per moving frame')
   assert(
@@ -250,6 +264,10 @@ if (!process.env.BUILD_GHOST_RUNTIME_TEST) {
   }
   render()
   assert.equal(transforms.has('block_existing'), false, 'locking removes the live preview')
+  assert(
+    all(render()).some((entry) => entry.props.name === 'stage-plan-item:table-test'),
+    'a locked prop keeps a proxy Ghost instead of disappearing from preview',
+  )
   scene.nodes = unlockedNodes
   render()
   assert(transforms.has('block_existing'), 'unlocking restores the live preview')
@@ -268,10 +286,22 @@ if (!process.env.BUILD_GHOST_RUNTIME_TEST) {
   render()
   assert.deepEqual(
     live.get('block_existing'),
-    { position: [-1.25, 0, 1], rotation: 0 },
+    { position: [-1.25, 0, 1], rotation: Math.PI },
     'main movement uses the same real prop transform as Dia',
   )
   placement.draft = null
+  render()
+  const freeStanding = scene.nodes.block_existing
+  scene.nodes = {
+    ...scene.nodes,
+    block_existing: { ...freeStanding, blockFaceId: 'host-face' },
+  }
+  assert(
+    all(render()).some((entry) => entry.props.name === 'stage-plan-item:table-test'),
+    'a hosted prop keeps a proxy Ghost when its renderer cannot consume a live transform',
+  )
+  assert.equal(transforms.has('block_existing'), false)
+  scene.nodes = { ...scene.nodes, block_existing: freeStanding }
   render()
   const otherMove = { position: [4, 0, 3], rotation: 0 }
   live.set('block_external', otherMove)

@@ -1,4 +1,5 @@
 import { resolveStageObjectSpecs, type SceneContextSummary } from '@pascal-app/core/stage'
+import type { DiaStageProposal } from './knowledge/stage-proposal'
 import type { PlacementFrame, StagePlacementIntent } from './stage-placement-intents'
 
 type Frame = Exclude<PlacementFrame, 'unspecified'>
@@ -31,6 +32,19 @@ export type StageAction =
   | { type: 'align'; subjectIds: string[]; axis: 'x' | 'z' }
   | { type: 'preserve_clearance'; region: 'center'; amountMeters?: number }
   | { type: 'preserve_path'; targetId: string; amountMeters?: number }
+  | {
+      type: 'connect_edge'
+      subjectId: string
+      targetId: string
+      angleDegrees: 0 | 90
+    }
+  | {
+      type: 'fold_hinge'
+      subjectId: string
+      hingeIndex?: number
+      angleDegrees?: number
+    }
+  | { type: 'enclose_with_opening'; subjectIds: string[] }
 export type StagePlacementProposal = {
   intent: StagePlacementIntent
   documentVersion: number
@@ -38,6 +52,7 @@ export type StagePlacementProposal = {
   requiresHumanConfirm: true
   actions: StageAction[]
   message: string
+  knowledgeProposal?: DiaStageProposal
 }
 
 export function mapStagePlacementIntent(
@@ -68,6 +83,12 @@ export function mapStagePlacementIntent(
     const picked = matches.filter((object) => context.selectedObjectIds.includes(object.id))
     return picked.length ? picked : matches
   }
+  const resolveScenicCount = (count: number) => {
+    const scenic = context.objects.filter((object) => /flat|door|window/.test(object.kind))
+    const selected = scenic.filter((object) => context.selectedObjectIds.includes(object.id))
+    if (selected.length > 0) return selected.length === count ? selected : []
+    return scenic.length === count ? scenic : []
+  }
   const amount = intent.amountMeters === undefined ? {} : { amountMeters: intent.amountMeters }
   if (
     intent.amountMeters !== undefined &&
@@ -76,9 +97,53 @@ export function mapStagePlacementIntent(
     result.message = '请说明有效的正数距离。'
     return result
   }
-  let action: StageAction
+  let actions: StageAction[]
   if (intent.kind === 'preserve_clearance')
-    action = { type: 'preserve_clearance', region: 'center', ...amount }
+    actions = [{ type: 'preserve_clearance', region: 'center', ...amount }]
+  else if (intent.kind === 'connect_flats') {
+    const scenic = resolveScenicCount(intent.count ?? 2)
+    if (scenic.length !== 2) {
+      result.message = '请选中恰好两块要连接的景片；没有唯一对象时我不会猜。'
+      return result
+    }
+    actions = [
+      {
+        type: 'connect_edge',
+        subjectId: scenic[1]!.id,
+        targetId: scenic[0]!.id,
+        angleDegrees: intent.angleDegrees === 90 ? 90 : 0,
+      },
+    ]
+  } else if (intent.kind === 'fold_hinge') {
+    const selected = context.objects.filter(
+      (object) =>
+        context.selectedObjectIds.includes(object.id) && /flat|door|window/.test(object.kind),
+    )
+    const named = context.objects.filter(
+      (object) => /flat|door|window/.test(object.kind) && /三联|三折/.test(object.name),
+    )
+    const scenic = selected.length === 1 ? selected : named.length === 1 ? named : []
+    if (scenic.length !== 1) {
+      result.message = '请选中唯一的三联景片；没有唯一对象时我不会猜。'
+      return result
+    }
+    actions =
+      intent.shape === 'u'
+        ? [0, 1].map((hingeIndex) => ({
+            type: 'fold_hinge' as const,
+            subjectId: scenic[0]!.id,
+            hingeIndex,
+            angleDegrees: intent.angleDegrees,
+          }))
+        : [{ type: 'fold_hinge', subjectId: scenic[0]!.id }]
+  } else if (intent.kind === 'enclose_with_opening') {
+    const scenic = resolveScenicCount(intent.count ?? 3)
+    if (scenic.length !== 3) {
+      result.message = '请选中恰好三块要围合的景片；没有唯一组合时我不会猜。'
+      return result
+    }
+    actions = [{ type: 'enclose_with_opening', subjectIds: scenic.map((object) => object.id) }]
+  } else if (intent.kind === 'knowledge_question') actions = []
   else {
     const subjects = intent.subject === '$stage' ? [] : resolve(intent.subject)
     if (
@@ -104,6 +169,7 @@ export function mapStagePlacementIntent(
         '这里的左右按演员面向观众，还是观众面向舞台？请在完整口令前加“按舞台方向”或“按观众方向”。'
       return result
     }
+    let action: StageAction
     switch (intent.kind) {
       case 'stage_left':
       case 'stage_right':
@@ -177,11 +243,12 @@ export function mapStagePlacementIntent(
       default:
         return result
     }
+    actions = [action]
   }
   return {
     ...result,
     status: 'proposal',
-    actions: [action],
+    actions,
     message:
       '已理解这个摆放要求。当前仅形成动作草案，尚未计算落点或生成空间预演，正式舞台没有改变；落位仍需先预演、再由你确认。',
   }

@@ -19,6 +19,10 @@ export type PlacementKind =
   | 'align'
   | 'preserve_clearance'
   | 'preserve_path'
+  | 'connect_flats'
+  | 'fold_hinge'
+  | 'enclose_with_opening'
+  | 'knowledge_question'
   | 'ambiguous'
 export type PlacementFrame = 'stage' | 'audience' | 'unspecified'
 export type StagePlacementIntent = {
@@ -30,6 +34,9 @@ export type StagePlacementIntent = {
   amountMeters?: number
   axis?: 'x' | 'z'
   region?: 'center'
+  count?: number
+  angleDegrees?: number
+  shape?: 'straight' | 'corner' | 'u' | 'enclosure' | 'unspecified'
   clarify: boolean
   message?: string
 }
@@ -60,8 +67,60 @@ export function parseStagePlacementIntent(input: string): StagePlacementIntent |
   if (perspective) text = text.slice(perspective[0].length).replace(/^(?:把|将)/, '')
   if (!text || text.length > 2000 || /^(?:给我|我要|添加|增加|放入|新建|创建)/.test(text))
     return null
+  if (/^两块景片(?:拼成|拼作|拼为)(?:一面)?直墙$/.test(text))
+    return {
+      kind: 'connect_flats',
+      subject: '$scenic-flats',
+      count: 2,
+      angleDegrees: 0,
+      shape: 'straight',
+      clarify: false,
+    }
+  if (/^(?:让)?两块景片(?:拐成|拼成|摆成)(?:一个)?(?:90度|九十度|直角)$/.test(text))
+    return {
+      kind: 'connect_flats',
+      subject: '$scenic-flats',
+      count: 2,
+      angleDegrees: 90,
+      shape: 'corner',
+      clarify: false,
+    }
+  if (/^三联景片(?:折成|折为)(?:一个)?U形$/i.test(text))
+    return {
+      kind: 'fold_hinge',
+      subject: '三联景片',
+      count: 1,
+      angleDegrees: 90,
+      shape: 'u',
+      clarify: false,
+    }
+  if (/^三联景片(?:收|折)(?:一点|少许)$/.test(text))
+    return {
+      kind: 'fold_hinge',
+      subject: '三联景片',
+      count: 1,
+      shape: 'unspecified',
+      clarify: false,
+    }
+  if (/^(?:用)?三块景片围(?:成)?(?:一个)?空间[，,]?中间留(?:一个)?入口$/.test(text))
+    return {
+      kind: 'enclose_with_opening',
+      subject: '$scenic-flats',
+      count: 3,
+      shape: 'enclosure',
+      clarify: false,
+    }
+  if (/^舞台右后(?:一定)?是最弱的位置吗[？?]?$/.test(text))
+    return {
+      kind: 'knowledge_question',
+      subject: '$stage',
+      shape: 'unspecified',
+      clarify: false,
+    }
+  if (/^景片(?:拼起来|拼在一起)$/.test(text))
+    return ambiguous('请明确是哪两块景片，以及要拼成直墙还是直角。')
   const related =
-    /台左|台右|台前|台后|观众[的左右]|舞台|靠近|附近|紧贴|贴着|放[到在]|摆[到在]|叠|对齐|排齐|留空|留白|通道|往[左右]|向[左右]|层次/.test(
+    /台左|台右|台前|台后|观众[的左右]|舞台|景片|靠近|附近|紧贴|贴着|放[到在]|摆[到在]|叠|拼|折|围|对齐|排齐|留空|留白|通道|往[左右]|向[左右]|层次/.test(
       text,
     )
   if (related && /不要|不能|别|不必|还是|或者|然后|再|[，,；;]/.test(text))
@@ -83,7 +142,7 @@ export function parseStagePlacementIntent(input: string): StagePlacementIntent |
       ...(amount !== undefined ? { amountMeters: amount } : {}),
     })
   }
-  match = text.match(/^(?:在)?(.+?)(?:口|前)(?:留通道|保留通道|留出(.+?)通道)$/)
+  match = text.match(/^(?:在)?(.+?)(?:口|前)(?:留(?:一条)?通道|保留通道|留出(.+?)通道)$/)
   if (match) {
     const amount = match[2] ? parseStageLength(match[2]) : undefined
     if (amount === null || (amount !== undefined && amount <= 0))

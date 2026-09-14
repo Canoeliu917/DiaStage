@@ -2,6 +2,7 @@ import { useScene } from '@pascal-app/core'
 import {
   compileStagePlan,
   parseStageText,
+  type SceneContextSummary,
   type StagePlan,
   validateStagePlan,
 } from '@pascal-app/core/stage'
@@ -51,12 +52,14 @@ import {
 import { type DiaBuildProposal, diaIntent, discussStage } from './dia-backbone'
 import { readFeedbackLog, saveFeedback, saveInteraction } from './feedback'
 import { type InteractionEnvelope, InteractionEnvelopeSchema } from './interaction-envelope'
+import type { DiaStageProposal } from './knowledge/stage-proposal'
 import { groundLanguage, recordGroundingCorrection } from './language-grounding'
 import { LOCAL_REHEARSAL_MODEL_VERSION, localRehearsalOutput } from './local-rehearsal'
 import { requestProposal } from './proposal-client'
 import { createInteraction } from './proposal-generator'
 import type { Interaction, RehearsalProposal, Suggestion } from './schema'
 import type { StagePlacementProposal } from './stage-placement-actions'
+import { compileStageProposalPreview } from './stage-proposal-runtime'
 import {
   isSyntheticDemoScene,
   readSyntheticDemoIntention,
@@ -722,6 +725,75 @@ export class DiaConversation {
     )
   }
 
+  private async proposeBuildPlan(
+    input: string,
+    plan: StagePlan,
+    formal: SceneContextSummary,
+    sceneVersion: string,
+    parent: DiaBuildProposal | null,
+    signal: AbortSignal,
+    knowledgeProposal?: DiaStageProposal,
+  ) {
+    this.navigate?.('items')
+    if (this.store.getState().builds.length >= 200)
+      throw new Error('本场已保留 200 次搭台建议，请先导出私有记录并开始新的场景。')
+    const proposal: DiaBuildProposal = {
+      id: knowledgeProposal?.proposalId ?? crypto.randomUUID(),
+      parentId: parent?.id ?? null,
+      createdAt: new Date().toISOString(),
+      input,
+      sceneVersion,
+      sourceContentVersion: sceneContentVersion(useScene.getState()),
+      context: formal,
+      plan,
+      originalPlan: structuredClone(plan),
+      previewedPlan: null,
+      ...(knowledgeProposal ? { knowledgeProposal } : {}),
+      status: 'proposed',
+      finalSceneVersion: null,
+      privateProjectData: true,
+      trainingAuthorized: false,
+    }
+    proposal.sceneId = this.sceneId
+    proposal.envelope = this.buildEnvelope(proposal, 'proposed')
+    await saveBuildFeedback(
+      buildFeedbackEvent(this.sceneId, proposal, parent ? 'revision' : 'proposal'),
+    )
+    signal.throwIfAborted()
+    this.store.setState((state) => ({
+      builds: [...state.builds, proposal],
+      activeBuildId: proposal.id,
+      placementProposal: knowledgeProposal ? state.placementProposal : null,
+      interaction: null,
+      draft: '',
+      thread: {
+        ...state.thread!,
+        selectedProposalId: proposal.id,
+        activeInteractionId: proposal.id,
+      },
+    }))
+    const proposalMessage = this.message(
+      'dia',
+      knowledgeProposal
+        ? `Stage Proposal：${knowledgeProposal.rationale} 先看 Ghost，再由你采用或取消。`
+        : `${parent ? '搭台修订' : '搭台建议'}：${plan.items.map((item) => item.displayName).join('、') || '场地调整'}。先在舞台上试试，再由你决定。${plan.questions.map((question) => question.message).join('；')}`,
+      sceneVersion,
+    )
+    this.store.setState((state) => ({
+      thread: {
+        ...state.thread!,
+        messages: state.thread!.messages.map((message) =>
+          message.messageId === proposalMessage.messageId
+            ? { ...message, interactionId: proposal.id, proposalIds: [proposal.id] }
+            : message,
+        ),
+      },
+    }))
+    this.status('proposal-ready', '搭台方案已准备好，正式舞台未改变。')
+    await this.persist()
+    await this.event('proposal_generated')
+  }
+
   private replaceBuild(proposal: DiaBuildProposal) {
     if (proposal.envelope)
       proposal = { ...proposal, envelope: { ...proposal.envelope, status: proposal.status } }
@@ -735,6 +807,7 @@ export class DiaConversation {
     const proposal = this.buildProposal()
     if (
       !proposal ||
+      proposal.knowledgeProposal ||
       this.store.getState().busy ||
       ['applied', 'rejected'].includes(proposal.status)
     )
@@ -767,6 +840,8 @@ export class DiaConversation {
       const proposal = this.buildProposal()
       if (!proposal || ['applied', 'rejected'].includes(proposal.status))
         throw new Error('请先生成新的搭台方案。')
+      if (proposal.knowledgeProposal && JSON.stringify(plan) !== JSON.stringify(proposal.plan))
+        throw new Error('Knowledge Stage Proposal 不允许脱离来源修改；请重新生成方案。')
       await checkCurrentScene(this.sceneId)
       signal.throwIfAborted()
       const current = this.assertBuildCurrent(proposal)
@@ -796,6 +871,8 @@ export class DiaConversation {
     if (!this.buildInScope(plan)) return Promise.resolve()
     return this.act('applying', async (signal) => {
       const proposal = this.buildProposal()
+      if (proposal?.knowledgeProposal && JSON.stringify(plan) !== JSON.stringify(proposal.plan))
+        throw new Error('Knowledge Stage Proposal 不允许脱离来源修改；请重新生成方案。')
       const committed = proposal && (await committedBuild(this.sceneId, proposal.id))
       signal.throwIfAborted()
       if (proposal && committed) {
@@ -896,14 +973,14 @@ export class DiaConversation {
     const previous = this.buildProposal()
     const context = this.currentContext()
     const formalContext = currentStageContext()
-    const grounded = groundLanguage(
-      text,
+    const parent =
       previous &&
-        ['proposed', 'previewed'].includes(previous.status) &&
-        previous.sceneVersion === context.sceneVersion
-        ? draftContext(formalContext, previous.plan)
-        : formalContext,
-    )
+      ['proposed', 'previewed'].includes(previous.status) &&
+      previous.sceneVersion === context.sceneVersion
+        ? previous
+        : null
+    const groundingContext = parent ? draftContext(formalContext, parent.plan) : formalContext
+    const grounded = groundLanguage(text, groundingContext)
     const intent =
       grounded?.capability === 'build'
         ? 'build'
@@ -953,9 +1030,30 @@ export class DiaConversation {
         })
     }
     if (grounded?.placement) {
-      // Language-only drafts must not fall through into the legacy XYZ planner.
       this.store.setState({ placementProposal: grounded.placement })
-      await reply(grounded.placement.message)
+      if (grounded.placement.status === 'clarify') {
+        await reply(grounded.placement.message)
+        return true
+      }
+      const runtime = compileStageProposalPreview(grounded.placement, groundingContext)
+      if (runtime.kind === 'no_preview') {
+        await reply(
+          `${grounded.placement.message} ${runtime.reason} 尚未计算落点，也没有修改正式舞台。`,
+        )
+        return true
+      }
+      const plan = parent
+        ? mergeDraftPlan(parent.plan, runtime.plan, formalContext)
+        : validateStagePlan(runtime.plan, formalContext).plan
+      await this.proposeBuildPlan(
+        text,
+        plan,
+        formalContext,
+        context.sceneVersion!,
+        parent,
+        signal,
+        grounded.placement.knowledgeProposal,
+      )
       return true
     }
     if (grounded?.clarificationRequired && grounded.capability !== 'build') {
@@ -1036,16 +1134,7 @@ export class DiaConversation {
       )
       return true
     }
-    this.navigate?.('items')
-    if (this.store.getState().builds.length >= 200)
-      throw new Error('本场已保留 200 次搭台建议，请先导出私有记录并开始新的场景。')
     const formal = currentStageContext()
-    const parent =
-      previous &&
-      ['proposed', 'previewed'].includes(previous.status) &&
-      previous.sceneVersion === context.sceneVersion
-        ? previous
-        : null
     const inputContext = parent ? draftContext(formal, parent.plan) : formal
     const parsed = parseStageText(grounded?.normalizedInput ?? text, inputContext)
     if (!parsed) {
@@ -1069,57 +1158,7 @@ export class DiaConversation {
     const plan = parent
       ? mergeDraftPlan(parent.plan, groundedPlan, formal)
       : validateStagePlan(groundedPlan, formal).plan
-    const proposal: DiaBuildProposal = {
-      id: crypto.randomUUID(),
-      parentId: parent?.id ?? null,
-      createdAt: new Date().toISOString(),
-      input: text,
-      sceneVersion: context.sceneVersion!,
-      sourceContentVersion: sceneContentVersion(useScene.getState()),
-      context: formal,
-      plan,
-      originalPlan: structuredClone(plan),
-      previewedPlan: null,
-      status: 'proposed',
-      finalSceneVersion: null,
-      privateProjectData: true,
-      trainingAuthorized: false,
-    }
-    proposal.sceneId = this.sceneId
-    proposal.envelope = this.buildEnvelope(proposal, 'proposed')
-    await saveBuildFeedback(
-      buildFeedbackEvent(this.sceneId, proposal, parent ? 'revision' : 'proposal'),
-    )
-    signal.throwIfAborted()
-    this.store.setState((state) => ({
-      builds: [...state.builds, proposal],
-      activeBuildId: proposal.id,
-      interaction: null,
-      draft: '',
-      thread: {
-        ...state.thread!,
-        selectedProposalId: proposal.id,
-        activeInteractionId: proposal.id,
-      },
-    }))
-    const proposalMessage = this.message(
-      'dia',
-      `${parent ? '搭台修订' : '搭台建议'}：${plan.items.map((p) => p.displayName).join('、') || '场地调整'}。先在舞台上试试，再由你决定。${plan.questions.map((q) => q.message).join('；')}`,
-      context.sceneVersion!,
-    )
-    this.store.setState((state) => ({
-      thread: {
-        ...state.thread!,
-        messages: state.thread!.messages.map((message) =>
-          message.messageId === proposalMessage.messageId
-            ? { ...message, interactionId: proposal.id, proposalIds: [proposal.id] }
-            : message,
-        ),
-      },
-    }))
-    this.status('proposal-ready', '搭台方案已准备好，正式舞台未改变。')
-    await this.persist()
-    await this.event('proposal_generated')
+    await this.proposeBuildPlan(text, plan, formal, context.sceneVersion!, parent, signal)
     return true
   }
 

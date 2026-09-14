@@ -252,6 +252,43 @@ export function RehearsalPartner({
             <p className="dia-section-label">
               <span className="dia-notation">PROPOSAL</span> 当前提案
             </p>
+            {build.knowledgeProposal && (
+              <article className="dia-proposal" aria-label="Knowledge Stage Proposal">
+                <p>{build.knowledgeProposal.rationale}</p>
+                <p>
+                  Concepts：
+                  {build.knowledgeProposal.resolvedConcepts
+                    .map((concept) => concept.canonicalLabel)
+                    .join(' · ')}
+                </p>
+                <p>
+                  Actions：
+                  {build.knowledgeProposal.actions.map((action) => action.type).join(' · ')}
+                </p>
+                {build.knowledgeProposal.constraints.length > 0 && (
+                  <p>
+                    Constraints：
+                    {build.knowledgeProposal.constraints
+                      .map((constraint) => constraint.type)
+                      .join(' · ')}
+                  </p>
+                )}
+                {build.knowledgeProposal.ambiguities.map((ambiguity) => (
+                  <p role="note" key={ambiguity.term}>
+                    待确认：{ambiguity.clarification} 候选：{ambiguity.candidates.join(' / ')}
+                  </p>
+                ))}
+                <details className="dia-secondary">
+                  <summary>Knowledge 来源</summary>
+                  <p>
+                    {build.knowledgeProposal.knowledgeRefs
+                      .map((reference) => `${reference.conceptId} · ${reference.sourceId}`)
+                      .filter((value, index, values) => values.indexOf(value) === index)
+                      .join('；')}
+                  </p>
+                </details>
+              </article>
+            )}
             {settled || stale ? (
               <p>
                 {stale
@@ -278,6 +315,8 @@ export function RehearsalPartner({
                 }}
                 onBack={() => void controller.reject()}
                 busy={state.busy || stale || readOnly}
+                backLabel={build.knowledgeProposal ? '取消' : undefined}
+                editable={!build.knowledgeProposal}
               />
             )}
           </section>

@@ -1,13 +1,14 @@
 'use client'
 
 import {
+  type AnyNode,
   type AnyNodeId,
   getNodeLock,
   type LiveTransform,
   useLiveTransforms,
   useScene,
 } from '@pascal-app/core'
-import { inverseRotatePoint, subtract } from '@pascal-app/core/remount'
+import { inverseRotatePoint, rotatePoint, subtract } from '@pascal-app/core/remount'
 import {
   stageLayoutObjects,
   stageToWorldPosition,
@@ -25,6 +26,19 @@ import { SCENERY_ROUND_SEGMENTS, sceneryProxyParts } from '@/lib/stage/scenery'
 import { DIA_COLORS } from '@/lib/visual-system'
 import { useSimulationSelection } from '../theatre/simulation-panel'
 import { placementPlan, useStagePlacement } from './manual-stage-panel'
+
+type SceneNodes = ReturnType<typeof useScene.getState>['nodes']
+
+function usesLivePlanTransform(node: AnyNode | undefined, nodes: SceneNodes) {
+  return (
+    node?.type === 'item' &&
+    !node.asset.attachTo &&
+    !node.wallId &&
+    !node.blockFaceId &&
+    !!node.parentId &&
+    nodes[node.parentId as AnyNodeId]?.type === 'level'
+  )
+}
 
 export function StagePlanPreviewSystem({ enabled }: { enabled: boolean }) {
   const storedPlan = useStagePlanPreview((state) => state.plan)
@@ -110,20 +124,25 @@ export function StagePlanPreviewSystem({ enabled }: { enabled: boolean }) {
         !node ||
         getNodeLock(nodes, node.id, true) ||
         !original ||
-        !['block', 'item', 'stair'].includes(node.type) ||
+        !usesLivePlanTransform(node, nodes) ||
         !('position' in node)
       )
         continue
+      const parentPose = worldPose(node.parentId, nodes)
       const delta = inverseRotatePoint(
         subtract(
           stageToWorldPosition(item.transform.position, frame),
           stageToWorldPosition(original.transform.position, stageFrame()),
         ),
-        worldPose(node.parentId, nodes).rotation,
+        parentPose.rotation,
+      )
+      const localForward = inverseRotatePoint(
+        rotatePoint([0, 0, 1], stageToWorldRotation(item.transform.rotationDegrees)),
+        parentPose.rotation,
       )
       const value = {
         position: node.position.map((v, axis) => v + delta[axis]!) as [number, number, number],
-        rotation: typeof node.rotation === 'number' ? node.rotation : node.rotation[1],
+        rotation: Math.atan2(localForward[0], localForward[2]),
       }
       active.add(node.id)
       const previous = transforms.get(node.id)
@@ -179,9 +198,11 @@ export function StagePlanPreviewSystem({ enabled }: { enabled: boolean }) {
       )}
       {plan.items.map((item) => {
         if (placement?.item.proposalId === item.proposalId) return null
+        const existingNode = item.existingNodeId && nodes[item.existingNodeId as AnyNodeId]
         if (
-          item.existingNodeId &&
-          ['block', 'item', 'stair'].includes(nodes[item.existingNodeId as AnyNodeId]?.type ?? '')
+          existingNode &&
+          usesLivePlanTransform(existingNode, nodes) &&
+          !getNodeLock(nodes, existingNode.id, true)
         )
           return null
         const d = item.dimensionsMeters
