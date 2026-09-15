@@ -36,6 +36,7 @@ import {
   reconcileBuildFeedback,
   saveBuildFeedback,
 } from './build-feedback'
+import { createCompoundStagePlan, isCompoundStageRequest } from './compound-stage'
 import { buildDiaContext } from './context'
 import {
   conversationContext,
@@ -1100,6 +1101,21 @@ export class DiaConversation {
       this.message('dia', content, context.sceneVersion ?? '')
       if (!viewOnly) this.status('idle', '舞台没有改变，可以继续讨论或手动操作。')
       await this.persist()
+    }
+    if (isCompoundStageRequest(text)) {
+      if (parent && parent.status !== 'applied') {
+        await reply('请先采用或取消当前提案，再生成这套完整布景。', true)
+        return true
+      }
+      try {
+        const plan = createCompoundStagePlan(formalContext)
+        await this.proposeBuildPlan(text, plan, formalContext, context.sceneVersion!, null, signal)
+      } catch (error) {
+        await reply(
+          `这套布景暂时没有安全落点：${error instanceof Error ? error.message : '请检查舞台尺寸。'} 正式舞台未改变。`,
+        )
+      }
+      return true
     }
     const localOpen =
       this.rehearsalEnabled ||

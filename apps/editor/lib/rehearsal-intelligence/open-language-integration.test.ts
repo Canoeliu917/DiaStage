@@ -232,3 +232,68 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
       clearSceneHistory()
     }
   }, 120000)
+
+test('Integration: compound stage stays Ghost-only until one Accept transaction', async () => {
+  await setup([])
+  const sceneId = crypto.randomUUID()
+  const journal = new SceneJournal(sceneId)
+  await journal.recover(useScene.getState(), 1)
+  const unbind = bindRehearsalScene(sceneId, () => journal.assertCurrent())
+  let commits = 0
+  let queue = Promise.resolve()
+  const stop = subscribeSceneCommits(() => {
+    commits++
+    const snapshot = useScene.getState()
+    queue = queue.then(() => journal.append(snapshot))
+  })
+  const dia = new DiaConversation(sceneId, () => null, undefined, false)
+  const originalFetch = globalThis.fetch
+  let providerCalls = 0
+  globalThis.fetch = (async () => {
+    providerCalls++
+    throw new Error('compound stage must stay deterministic')
+  }) as typeof fetch
+  const phrase = '生成一个有三帘景片和二帘景片联合搭成的舞台，舞台中有桌子椅子沙发'
+  try {
+    await dia.load()
+    const before = JSON.stringify(useScene.getState().nodes)
+    await dia.send(phrase)
+    expect(dia.buildProposal()!.plan.items.map((item) => item.libraryAssetId)).toEqual([
+      'SCN-FOLD-03',
+      'SCN-FOLD-02',
+      'SCN-TABLE-090',
+      'SCN-CHAIR-045',
+      'SCN-SOFA-175',
+    ])
+    expect(providerCalls).toBe(0)
+    expect(commits).toBe(0)
+    expect(JSON.stringify(useScene.getState().nodes)).toBe(before)
+    await dia.previewBuild(dia.buildProposal()!.plan)
+    expect(dia.buildProposal()!.status).toBe('previewed')
+    expect(commits).toBe(0)
+    await dia.send('不要了。')
+    expect(useStagePlanPreview.getState().plan).toBeNull()
+    expect(commits).toBe(0)
+    expect(JSON.stringify(useScene.getState().nodes)).toBe(before)
+
+    await dia.send(phrase)
+    await dia.previewBuild(dia.buildProposal()!.plan)
+    await dia.adopt()
+    await queue
+    expect(commits).toBe(1)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+    const accepted = JSON.stringify(useScene.getState().nodes)
+    useScene.temporal.getState().undo()
+    expect(JSON.stringify(useScene.getState().nodes)).toBe(before)
+    useScene.temporal.getState().redo()
+    expect(JSON.stringify(useScene.getState().nodes)).toBe(accepted)
+    expect(providerCalls).toBe(0)
+  } finally {
+    globalThis.fetch = originalFetch
+    dia.dispose()
+    stop()
+    unbind()
+    useScene.getState().unloadScene()
+    clearSceneHistory()
+  }
+}, 120000)
