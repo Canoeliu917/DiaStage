@@ -41,6 +41,12 @@ import useInteractionScope, {
 } from '../../store/use-interaction-scope'
 import { createCameraDraggingLifecycle } from './camera-dragging-lifecycle'
 import { registerKeyboardInputLoss } from './keyboard-input-loss'
+import {
+  clearKeyboardPanState,
+  createKeyboardPanState,
+  hasKeyboardPanInput,
+  setKeyboardPanKey,
+} from './keyboard-pan-state'
 
 const currentTarget = new Vector3()
 const tempBox = new Box3()
@@ -124,45 +130,6 @@ function isEditableKeyboardTarget(target: EventTarget | null) {
   )
 }
 
-type KeyboardPanState = {
-  forward: boolean
-  backward: boolean
-  left: boolean
-  right: boolean
-  up: boolean
-  down: boolean
-}
-
-function setKeyboardPanKey(state: KeyboardPanState, code: string, pressed: boolean): boolean {
-  if (code === 'KeyQ' || code === 'KeyE') {
-    const key = code === 'KeyQ' ? 'down' : 'up'
-    const changed = state[key] !== pressed
-    state[key] = pressed
-    return changed
-  }
-  if (code === 'KeyW') {
-    const changed = state.forward !== pressed
-    state.forward = pressed
-    return changed
-  }
-  if (code === 'KeyS') {
-    const changed = state.backward !== pressed
-    state.backward = pressed
-    return changed
-  }
-  if (code === 'KeyA') {
-    const changed = state.left !== pressed
-    state.left = pressed
-    return changed
-  }
-  if (code === 'KeyD') {
-    const changed = state.right !== pressed
-    state.right = pressed
-    return changed
-  }
-  return false
-}
-
 function isKeyboardPanKey(code: string): boolean {
   return (
     code === 'KeyW' ||
@@ -171,10 +138,6 @@ function isKeyboardPanKey(code: string): boolean {
     code === 'KeyD' ||
     (hasPlacementPolicy() && (code === 'KeyQ' || code === 'KeyE'))
   )
-}
-
-function hasKeyboardPanInput(state: KeyboardPanState): boolean {
-  return state.forward || state.backward || state.left || state.right || state.up || state.down
 }
 
 type CameraViewportSize = {
@@ -371,14 +334,7 @@ export const CustomCameraControls = () => {
     plan: CameraPoseApplicationPlan
   } | null>(null)
   const suppressPoseEvents = useRef(false)
-  const keyboardPanKeys = useRef<KeyboardPanState>({
-    forward: false,
-    backward: false,
-    left: false,
-    right: false,
-    up: false,
-    down: false,
-  })
+  const keyboardPanKeys = useRef(createKeyboardPanState())
   const isPreviewMode = useEditor((s) => s.isPreviewMode)
   const isFirstPersonMode = useEditor((s) => s.isFirstPersonMode)
   const allowUndergroundCamera = useEditor((s) => s.allowUndergroundCamera)
@@ -791,12 +747,7 @@ export const CustomCameraControls = () => {
     let panPointerButton: number | null = null
 
     const clearKeyboardPanKeys = () => {
-      keyboardPanKeys.current.forward = false
-      keyboardPanKeys.current.backward = false
-      keyboardPanKeys.current.left = false
-      keyboardPanKeys.current.right = false
-      keyboardPanKeys.current.up = false
-      keyboardPanKeys.current.down = false
+      clearKeyboardPanState(keyboardPanKeys.current)
     }
 
     const setNavigationCursor = (cursor: 'grab' | 'grabbing') => {
@@ -943,6 +894,8 @@ export const CustomCameraControls = () => {
 
     const onPointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Node) || !gl.domElement.contains(event.target)) return
+      if (!gl.domElement.hasAttribute('tabindex')) gl.domElement.tabIndex = -1
+      gl.domElement.focus({ preventScroll: true })
       // Read the actual pointer modifiers, including keys held before entering the window.
       keyState.shiftLeft = event.shiftKey
       keyState.shiftRight = false

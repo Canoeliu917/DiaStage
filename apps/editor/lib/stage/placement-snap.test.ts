@@ -1,7 +1,12 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { ItemNode, sceneRegistry, useScene } from '@pascal-app/core'
-import type { SceneContextObject, SceneContextSummary } from '@pascal-app/core/stage'
+import {
+  type SceneContextObject,
+  type SceneContextSummary,
+  stageFootprintGap,
+} from '@pascal-app/core/stage'
+import { applyItemFoldControls } from '@pascal-app/nodes'
 import { Group, Mesh } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { stageContextObject } from './context'
@@ -291,7 +296,13 @@ test('single, double and triple scenic flats share magnetic outer-edge alignment
     }),
   )
   const nodes = assets.map((asset) =>
-    ItemNode.parse({ asset, metadata: { stageKind: 'scenic-flat' } }),
+    ItemNode.parse({
+      asset,
+      metadata: { stageKind: 'scenic-flat' },
+      ...(asset.id.startsWith('SCN-FOLD')
+        ? { controls: { fold_angle_1_deg: 180, fold_angle_2_deg: 180 } }
+        : {}),
+    }),
   )
   const saved = useScene.getState().nodes
   const nodeMap = { ...saved, ...Object.fromEntries(nodes.map((node) => [node.id, node])) }
@@ -300,6 +311,7 @@ test('single, double and triple scenic flats share magnetic outer-edge alignment
     const root = new Group()
     root.userData.itemModelSettled = true
     root.add(models[index]!)
+    applyItemFoldControls(root, node.controls)
     sceneRegistry.nodes.set(node.id, root)
   })
   try {
@@ -365,6 +377,83 @@ test('single, double and triple scenic flats share magnetic outer-edge alignment
       sceneRegistry.nodes.delete(node.id)
     })
     models.forEach((model) => {
+      model.traverse((object) => {
+        if (!(object instanceof Mesh)) return
+        object.geometry.dispose()
+        for (const material of Array.isArray(object.material) ? object.material : [object.material])
+          material.dispose()
+      })
+    })
+  }
+})
+
+test('the reported folded three-panel and two-panel pose is recognized as exact visible contact', async () => {
+  const specs = [
+    {
+      assetId: 'SCN-FOLD-03',
+      position: [-2.7, 4.7683716642944515e-8, -2.2],
+      controls: { fold_angle_1_deg: 90, fold_angle_2_deg: 180 },
+    },
+    {
+      assetId: 'SCN-FOLD-02',
+      position: [-0.900000024, 4.7683716532726305e-8, -2.1915888814230686],
+      controls: { fold_angle_1_deg: 180, fold_angle_2_deg: 90 },
+    },
+  ] as const
+  const entries = await Promise.all(
+    specs.map(async ({ assetId, position, controls }) => {
+      const asset = AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === assetId)!.asset
+      const bytes = readFileSync(new URL(`../../public${asset.src}`, import.meta.url))
+      const model = (
+        await new ItemGLTFLoader().parseAsync(
+          bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+          '',
+        )
+      ).scene
+      const node = ItemNode.parse({
+        asset,
+        controls,
+        metadata: { stageKind: 'scenic-flat' },
+        position,
+        rotation: [-Math.PI, 1.2246467991473532e-16, -Math.PI],
+      })
+      const root = new Group()
+      root.userData.itemModelSettled = true
+      root.add(model)
+      applyItemFoldControls(root, controls)
+      return { model, node, root }
+    }),
+  )
+  const saved = useScene.getState().nodes
+  const nodes = { ...saved, ...Object.fromEntries(entries.map(({ node }) => [node.id, node])) }
+  useScene.setState({ nodes })
+  entries.forEach(({ node, root }) => {
+    sceneRegistry.nodes.set(node.id, root)
+  })
+  try {
+    const frame = { origin: [0, 0, 0] as [number, number, number], depthMeters: 6 }
+    const [target, moving] = entries.map(({ node }) => stageContextObject(node, nodes, frame)!)
+    const result = snapStageObject(
+      moving.transform.position,
+      moving,
+      { ...context, objects: [target] },
+      { grid: 0, guides: true },
+    )
+    const placed = { ...moving, transform: { ...moving.transform, position: result.position } }
+    const gap = Math.min(
+      ...stageVisibleFootprints(placed).flatMap((left) =>
+        stageVisibleFootprints(target).map((right) => stageFootprintGap(left, right).meters),
+      ),
+    )
+    expect(result.labels).toContain('景片边缘对齐')
+    expect(result.position).toEqual(moving.transform.position)
+    expect(gap).toBeLessThan(1e-8)
+    expect(stageModelContact(placed, target, true)).toBe(false)
+    expect(useScene.getState().nodes).toBe(nodes)
+  } finally {
+    useScene.setState({ nodes: saved })
+    entries.forEach(({ node, model }) => {
+      sceneRegistry.nodes.delete(node.id)
       model.traverse((object) => {
         if (!(object instanceof Mesh)) return
         object.geometry.dispose()

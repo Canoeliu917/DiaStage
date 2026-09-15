@@ -67,6 +67,7 @@ import {
   type FirstPersonSpawn,
 } from './first-person/build-collider-world'
 import { registerKeyboardInputLoss } from './keyboard-input-loss'
+import { getMovementInputForKey, inactiveMovementInput } from './walkthrough-keyboard-input'
 
 const CAMERA_EYE_OFFSET = 0.45
 const LOOK_SENSITIVITY = 0.002
@@ -80,34 +81,6 @@ const DOOR_INTERACTION_DISTANCE = 2.5
 const DOOR_LEAF_INTERACTION_DEPTH = 0.08
 const VOID_FALL_RESPAWN_DEPTH = 12
 const HUD_LABEL_SAMPLE_FRAMES = 10
-
-type MovementKeyName = Exclude<keyof MovementInput, 'joystick'>
-
-const movementKeyboardBindings: Array<{ name: MovementKeyName; keys: string[] }> = [
-  { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
-  { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
-  { name: 'leftward', keys: ['ArrowLeft', 'KeyA'] },
-  { name: 'rightward', keys: ['ArrowRight', 'KeyD'] },
-  { name: 'jump', keys: ['Space'] },
-  { name: 'run', keys: ['ShiftLeft', 'ShiftRight'] },
-]
-const movementKeyToName = new Map<string, MovementKeyName>(
-  movementKeyboardBindings.flatMap(({ name, keys }) => keys.map((key) => [key, name] as const)),
-)
-
-const inactiveMovementInput: MovementInput = {
-  backward: false,
-  forward: false,
-  jump: false,
-  leftward: false,
-  rightward: false,
-  run: false,
-}
-
-function getMovementInputForKey(code: string, active: boolean): MovementInput | null {
-  const name = movementKeyToName.get(code)
-  return name ? ({ [name]: active } as MovementInput) : null
-}
 
 function focusFirstPersonCanvas(canvas: HTMLCanvasElement) {
   const activeElement = document.activeElement
@@ -717,6 +690,8 @@ export const FirstPersonControls = () => {
     const handlePointerLockChange = () => {
       const isLocked = document.pointerLockElement === canvas
       if (isLocked) {
+        focusFirstPersonCanvas(canvas)
+        clearMovementInput()
         hadPointerLockRef.current = true
         suspendRef.current = false
         useViewer.getState().setWalkthroughSuspended(false)

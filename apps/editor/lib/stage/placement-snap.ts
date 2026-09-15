@@ -20,6 +20,7 @@ export function snapMatchingStageObject(
     cost: number
     key: string
     alignment: string
+    target: SceneContextObject
   }[] = []
   const vertical = (object: SceneContextObject) => {
     const bounds = prepareStageCollision(object).bounds[1]!
@@ -85,6 +86,7 @@ export function snapMatchingStageObject(
         cost: Math.hypot(dx, dy, dz),
         key: `${other.id}:${key}`,
         alignment: scenicFlatFamily ? '景片边缘对齐' : '同款对齐',
+        target: other,
       })
     }
     const centers = to.map((extent, i) => extent.center - from[i]!.center)
@@ -102,14 +104,32 @@ export function snapMatchingStageObject(
   }
   candidates.sort((a, b) => a.cost - b.cost || a.key.localeCompare(b.key))
   for (const candidate of candidates) {
-    const placed = { ...item, transform: { ...item.transform, position: candidate.position } }
+    let position = candidate.position
+    let placed = { ...item, transform: { ...item.transform, position } }
+    if (item.kind === 'scenic-flat') {
+      const gaps = stageVisibleFootprints(placed).flatMap((left) =>
+        stageVisibleFootprints(candidate.target).map((right) => stageFootprintGap(left, right)),
+      )
+      if (!gaps.some((gap) => gap.meters < 1e-8)) {
+        const nearest = gaps
+          .filter((gap) => gap.meters <= 0.12)
+          .sort((a, b) => a.meters - b.meters)[0]
+        if (!nearest) continue
+        position = {
+          ...position,
+          x: position.x + nearest.end[0] - nearest.start[0],
+          z: position.z + nearest.end[1] - nearest.start[1],
+        }
+        placed = { ...item, transform: { ...item.transform, position } }
+      }
+    }
     if (
       !objects.some(
         (other) => other.id !== item.id && stageContactIds([placed, other], true).has(item.id),
       )
     )
       return {
-        position: candidate.position,
+        position,
         labels: [`贴合 ${candidate.name}`, candidate.alignment],
       }
   }
@@ -145,8 +165,10 @@ export function snapStageObject(
     transform: { ...item.transform, position: { ...point, y: result.position.y } },
   })
   if (!moving) return result
-  let touching = false
-  let nearest: { dx: number; dz: number; distance: number; name: string } | undefined
+  let touching: { name: string; scenicFlat: boolean } | undefined
+  let nearest:
+    | { dx: number; dz: number; distance: number; name: string; scenicFlat: boolean }
+    | undefined
   for (const other of context.objects) {
     if (other.id === item.id || ['camera', 'performer-marker'].includes(other.kind)) continue
     const movingBounds = prepareStageCollision({
@@ -160,7 +182,10 @@ export function snapStageObject(
     if (!target) continue
     const gaps = moving.flatMap((left) => target.map((right) => stageFootprintGap(left, right)))
     if (gaps.some((gap) => gap.meters < 1e-8)) {
-      touching = true
+      touching ??= {
+        name: other.name,
+        scenicFlat: item.kind === 'scenic-flat' && other.kind === 'scenic-flat',
+      }
       continue
     }
     for (const gap of gaps) {
@@ -172,6 +197,7 @@ export function snapStageObject(
         dz: gap.end[1] - gap.start[1],
         distance: gap.meters,
         name: other.name,
+        scenicFlat: item.kind === 'scenic-flat' && other.kind === 'scenic-flat',
       }
     }
   }
@@ -179,7 +205,8 @@ export function snapStageObject(
     // Test edges before grid quantization, and never quantize an existing contact away.
     result.position.x = point.x + (nearest?.dx ?? 0)
     result.position.z = point.z + (nearest?.dz ?? 0)
-    result.labels = nearest ? [`贴合 ${nearest.name}`] : []
+    const contact = nearest ?? touching!
+    result.labels = [`贴合 ${contact.name}`, ...(contact.scenicFlat ? ['景片边缘对齐'] : [])]
   }
   return result
 }
