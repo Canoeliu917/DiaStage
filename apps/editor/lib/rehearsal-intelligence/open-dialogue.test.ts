@@ -30,6 +30,7 @@ test('OpenAI dialogue explains limits and theory without Scene writes, actions o
     const request = JSON.parse(String(init?.body))
     expect(JSON.stringify(request.context)).not.toContain('transform')
     return Response.json({
+      requestId: crypto.randomUUID(),
       grounding: { ...emptyGrounding(request.rawUtterance), requiresClarification: true },
       reply: '可以交流并解释舞台限制；修改先预演，再由你采用。',
       provider: 'openai',

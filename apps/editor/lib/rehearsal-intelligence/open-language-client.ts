@@ -8,6 +8,7 @@ import {
 } from './open-language'
 
 export const OpenGroundingResponseSchema = z.strictObject({
+  requestId: z.string().uuid(),
   grounding: StructuredGroundingSchema,
   provider: z.literal('openai'),
   model: z.string().min(1),
