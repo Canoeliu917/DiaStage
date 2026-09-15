@@ -53,6 +53,7 @@ import {
   saveConversation,
   saveProductEvent,
 } from './conversation-storage'
+import { currentDiaAppContext } from './dia-app-context'
 import { type DiaBuildProposal, diaIntent, discussStage } from './dia-backbone'
 import { readFeedbackLog, saveFeedback, saveInteraction } from './feedback'
 import { type InteractionEnvelope, InteractionEnvelopeSchema } from './interaction-envelope'
@@ -1138,6 +1139,7 @@ export class DiaConversation {
             : [],
           parent,
           !!useStagePlanPreview.getState().plan && parent?.status === 'previewed',
+          currentDiaAppContext(),
         )
         let semantic = explainOnly || groundActionWithProvider ? null : localOpen
         let provider: DiaBuildProposal['groundingProvider'] = {

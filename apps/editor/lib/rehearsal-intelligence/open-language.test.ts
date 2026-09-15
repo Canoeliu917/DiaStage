@@ -45,6 +45,30 @@ export function languageContext(kind = 'selection'): OpenLanguageContext {
             minimumWidthMeters: 0.8,
           }
         : null,
+    app: {
+      page: 'stage-editor',
+      route: '/scene/test?workspace=set',
+      capabilities: [
+        { id: 'dia-dialogue', label: '依据结构化舞台与界面状态进行对话和解释', authority: 'read' },
+        { id: 'dia-proposal', label: '生成受支持的舞台 Proposal 与 Ghost', authority: 'proposal_only' },
+      ],
+      settings: {
+        viewMode: '3d',
+        activePanel: 'items',
+        workspaceMode: 'edit',
+        transformMode: 'select',
+        rotationAxis: 'y',
+        cameraLocked: false,
+        placementMode: 'grid',
+        gridStepCentimeters: 10,
+        gridVisible: true,
+        guidesVisible: true,
+        displayMode: 'white_model',
+        stableMode: true,
+        immersiveMode: 'none',
+        readOnly: false,
+      },
+    },
   }
 }
 const legacyIds: Record<string, string> = {

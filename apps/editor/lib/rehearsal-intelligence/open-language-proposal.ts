@@ -20,6 +20,7 @@ export function openLanguageContext(
   lastReferencedIds: string[],
   proposal: DiaBuildProposal | null,
   ghostVisible: boolean,
+  app: OpenLanguageContext['app'],
 ): OpenLanguageContext {
   const solution = proposal?.spatialSolution
   const constraints = solution?.constraints ?? []
@@ -54,6 +55,7 @@ export function openLanguageContext(
               ?.parameters.minimumWidthMeters ?? null,
         }
       : null,
+    app,
   }
 }
 

@@ -79,6 +79,36 @@ export const StructuredGroundingSchema = z.strictObject({
 })
 export type StructuredGrounding = z.infer<typeof StructuredGroundingSchema>
 export type OpenReference = z.infer<typeof OpenReferenceSchema>
+export const DiaAppContextSchema = z.strictObject({
+  page: z.literal('stage-editor'),
+  route: z.string().max(300),
+  capabilities: z
+    .array(
+      z.strictObject({
+        id: z.string().min(1).max(80),
+        label: z.string().min(1).max(160),
+        authority: z.enum(['read', 'manual_only', 'proposal_only']),
+      }),
+    )
+    .max(24),
+  settings: z.strictObject({
+    viewMode: z.enum(['3d', '2d', 'split']),
+    activePanel: z.string().max(80),
+    workspaceMode: z.enum(['edit', 'studio']),
+    transformMode: z.enum(['select', 'move', 'rotate']),
+    rotationAxis: z.enum(['x', 'y', 'z']),
+    cameraLocked: z.boolean(),
+    placementMode: z.enum(['grid', 'edge_and_support', 'free']),
+    gridStepCentimeters: z.number().positive().max(1000),
+    gridVisible: z.boolean(),
+    guidesVisible: z.boolean(),
+    displayMode: z.enum(['white_model', 'black_box', 'material_preview']),
+    stableMode: z.boolean(),
+    immersiveMode: z.enum(['none', 'preview', 'capture', 'walkthrough']),
+    readOnly: z.boolean(),
+  }),
+})
+export type DiaAppContext = z.infer<typeof DiaAppContextSchema>
 export const OpenLanguageContextSchema = z.strictObject({
   sceneVersion: z.string().min(1),
   objects: z
@@ -103,6 +133,7 @@ export const OpenLanguageContextSchema = z.strictObject({
       minimumWidthMeters: z.number().nullable(),
     })
     .nullable(),
+  app: DiaAppContextSchema,
 })
 export type OpenLanguageContext = z.infer<typeof OpenLanguageContextSchema>
 export const OpenLanguageRequestSchema = z.strictObject({
