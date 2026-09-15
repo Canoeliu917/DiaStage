@@ -4,12 +4,43 @@ import { Box3, Matrix4, type Mesh, type Object3D, Quaternion, Vector3 } from 'th
 type Vec3 = [number, number, number]
 export type ItemFoldBounds = { dimensions: Vec3; boundsCenter: Vec3 }
 
+// These authored flats use centred 40 mm frames. A double-acting hinge folds
+// around the contacting surface edge, never through the thickness centre.
+export function itemFoldJointFrame(joint: Object3D, angle: number) {
+  const authored = joint.children.some((child) =>
+    (child.userData.source_parts as string[] | undefined)?.some((name) =>
+      name.startsWith('Stile_'),
+    ),
+  )
+  const origin = new Vector3(...(joint.userData.foldAuthoredOrigin ?? joint.position.toArray()))
+  let halfDepth = 0
+  if (authored) {
+    joint.userData.foldAuthoredOrigin ??= origin.toArray()
+    for (const child of joint.children) {
+      const mesh = child as Mesh
+      if (!mesh.isMesh) continue
+      if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox()
+      const box = mesh.geometry.boundingBox!.clone().applyMatrix4(mesh.matrix)
+      halfDepth = Math.max(halfDepth, Math.abs(box.min.z), Math.abs(box.max.z))
+    }
+  }
+  const offset = new Vector3(0, 0, -Math.sign(180 - angle) * halfDepth)
+  const quaternion = new Quaternion().setFromAxisAngle(
+    new Vector3(0, 1, 0),
+    ((180 - angle) * Math.PI) / 180,
+  )
+  return {
+    pivot: origin.clone().add(offset),
+    position: origin.clone().add(offset).sub(offset.clone().applyQuaternion(quaternion)),
+    quaternion,
+  }
+}
+
 export function applyItemFoldControls(
   root: Object3D,
   controls?: Partial<ItemFoldControls>,
 ): boolean {
   const values = ItemFoldControlsSchema.parse(controls ?? {})
-  const axis = new Vector3(0, 1, 0)
   let changed = false
   for (const [name, key] of [
     ['Hinge_02', 'fold_angle_1_deg'],
@@ -17,9 +48,11 @@ export function applyItemFoldControls(
   ] as const) {
     const joint = root.getObjectByName(name)
     if (!joint) continue
-    const target = new Quaternion().setFromAxisAngle(axis, ((180 - values[key]) * Math.PI) / 180)
-    if (joint.quaternion.equals(target)) continue
-    joint.quaternion.copy(target)
+    const target = itemFoldJointFrame(joint, values[key])
+    if (joint.quaternion.equals(target.quaternion) && joint.position.equals(target.position))
+      continue
+    joint.quaternion.copy(target.quaternion)
+    joint.position.copy(target.position)
     joint.updateMatrix()
     changed = true
   }

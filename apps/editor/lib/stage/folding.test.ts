@@ -11,7 +11,7 @@ import {
 import { useInteractionScope } from '@pascal-app/editor'
 import { applyItemFoldControls } from '@pascal-app/nodes'
 import { useViewer } from '@pascal-app/viewer'
-import { Group, Vector3 } from 'three'
+import { BoxGeometry, Group, Mesh, MeshBasicMaterial } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { connectStageCommandExecutor } from './command-executor'
@@ -21,7 +21,9 @@ import {
   enterStageFolding,
   exitStageFolding,
   finishFoldDrag,
+  foldControls,
   foldCornerGeometry,
+  foldCorners,
   previewFoldAngle,
   previewFoldCornerAngle,
   setFoldAngle,
@@ -34,6 +36,8 @@ globalThis.cancelAnimationFrame ??= () => {}
 let model: Group
 let node: ItemNode
 let disconnect: () => void
+let floor: Mesh
+let floorId: string
 beforeAll(async () => {
   const bytes = readFileSync(
     resolve(import.meta.dir, '../../public/stage-library/models/SCN-FOLD-03.glb'),
@@ -44,6 +48,42 @@ beforeAll(async () => {
       '',
     )
   ).scene
+})
+
+test('left side of either hinge folds the connected assembly while the right panel stays fixed', () => {
+  const root = sceneRegistry.nodes.get(node.id)!
+  expect(foldCorners(node)).toEqual([0, 2, 1, 3])
+  for (const corner of [0, 1]) {
+    const fixed = root.getObjectByName(`Hinge_0${corner + 2}`)!
+    root.updateWorldMatrix(true, true)
+    const fixedMatrix = fixed.matrixWorld.clone()
+    expect(beginFoldCornerDrag(node.id, corner)).toBe(true)
+    previewFoldCornerAngle(60) // left gesture increases included angle to 120
+    const patch = useLiveNodeOverrides.getState().get(node.id) as Partial<ItemNode>
+    expect(patch.controls![corner === 0 ? 'fold_angle_1_deg' : 'fold_angle_2_deg']).toBe(120)
+    const next = { ...node, ...patch }
+    root.position.fromArray(next.position)
+    root.rotation.set(...next.rotation)
+    applyItemFoldControls(root, next.controls)
+    root.updateWorldMatrix(true, true)
+    fixed.matrixWorld.elements.forEach((value, i) => {
+      expect(value).toBeCloseTo(fixedMatrix.elements[i]!, 8)
+    })
+    expect(fixed.parent?.name).toBe(`Hinge_0${corner + 1}`)
+    finishFoldDrag(true)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+    const committed = useScene.getState().nodes[node.id]
+    expect((committed as ItemNode).controls).toEqual(next.controls)
+    useScene.temporal.getState().undo()
+    expect(useScene.getState().nodes[node.id]).toEqual(node)
+    useScene.temporal.getState().redo()
+    expect(useScene.getState().nodes[node.id]).toEqual(committed)
+    useScene.temporal.getState().undo()
+    clearSceneHistory()
+    root.position.fromArray(node.position)
+    root.rotation.set(...node.rotation)
+    applyItemFoldControls(root, foldControls(node))
+  }
 })
 beforeEach(() => {
   const graph = createTheatreSceneGraph()
@@ -60,13 +100,20 @@ beforeEach(() => {
   clearSceneHistory()
   const root = new Group()
   root.add(model.clone(true))
+  applyItemFoldControls(root)
   sceneRegistry.nodes.set(node.id, root)
+  floorId = Object.values(graph.nodes).find((entry) => entry.type === 'slab')!.id
+  floor = new Mesh(new BoxGeometry(8, 0.05, 6).translate(0, -0.025, 0), new MeshBasicMaterial())
+  sceneRegistry.nodes.set(floorId, floor)
   disconnect = connectStageCommandExecutor()
 })
 afterEach(() => {
   exitStageFolding()
   disconnect()
   sceneRegistry.nodes.delete(node.id)
+  sceneRegistry.nodes.delete(floorId)
+  floor.geometry.dispose()
+  ;(floor.material as MeshBasicMaterial).dispose()
   useLiveNodeOverrides.getState().clearAll()
   useScene.getState().unloadScene()
   clearSceneHistory()
@@ -123,7 +170,6 @@ test('fixed/read-only props reject folding and a lock arriving mid-drag cancels 
 
 test('each hinge keeps the whole pose and pivot and writes one undo step', () => {
   const root = sceneRegistry.nodes.get(node.id)!
-  const point = (name: string) => root.getObjectByName(name)!.getWorldPosition(new Vector3())
   for (const corner of [2, 3]) {
     const before = useScene.getState().nodes[node.id] as ItemNode
     const pivot = foldCornerGeometry(before, corner)!.pivot.clone()
@@ -137,8 +183,10 @@ test('each hinge keeps the whole pose and pivot and writes one undo step', () =>
     applyItemFoldControls(root, next.controls)
     root.updateWorldMatrix(true, true)
     expect(foldCornerGeometry(next, corner)!.pivot.distanceTo(pivot)).toBeLessThan(1e-6)
-    expect(point('Hinge_01').distanceTo(point('Hinge_02'))).toBeCloseTo(0.9, 6)
-    expect(point('Hinge_02').distanceTo(point('Hinge_03'))).toBeCloseTo(0.9, 6)
+    for (const name of ['Hinge_02', 'Hinge_03']) {
+      expect(root.getObjectByName(name)!.userData.foldAuthoredOrigin).toEqual([0.9, 0, 0])
+      expect(root.getObjectByName(name)!.scale.toArray()).toEqual([1, 1, 1])
+    }
     expect(next.scale).toEqual(before.scale)
     expect(next.asset.dimensions[1]).toBeCloseTo(before.asset.dimensions[1], 6)
     expect([next.position, next.rotation]).toEqual([before.position, before.rotation])
@@ -182,14 +230,14 @@ test('manifest closure is exact and retains the other relative angle', () => {
   expect(useScene.temporal.getState().pastStates).toHaveLength(3)
 })
 
-test('edited angles clamp to manifest maximum and commit as one undo step', () => {
+test('reverse angles up to 270 are allowed and commit as one undo step', () => {
   expect(beginFoldDrag(node.id, 0)).toBe(true)
   previewFoldAngle(180)
   previewFoldAngle(270)
   expect(useScene.getState().nodes[node.id]).toEqual(node)
   finishFoldDrag(true)
   const after = useScene.getState().nodes[node.id] as ItemNode
-  expect(after.controls).toEqual({ fold_angle_1_deg: 180, fold_angle_2_deg: 90 })
+  expect(after.controls).toEqual({ fold_angle_1_deg: 270, fold_angle_2_deg: 90 })
   expect(after.asset.dimensions[1]).toBeCloseTo(2.4, 6)
   expect([after.position, after.rotation, after.scale]).toEqual([
     node.position,

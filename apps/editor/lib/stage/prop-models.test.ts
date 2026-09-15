@@ -208,6 +208,7 @@ test('combined XYZ tilt projects identically in both coordinate frames and foldi
     }
     root.rotation.set((-17 * Math.PI) / 180, (41 * Math.PI) / 180, (23 * Math.PI) / 180)
     root.position.set(0.5, 0.05, -1.4)
+    applyItemFoldControls(root, {})
     const check = () => {
       const actual = new Box3().setFromObject(root, true)
       const outlines = stageModelFootprints(item)!

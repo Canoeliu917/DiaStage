@@ -1,11 +1,52 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { type AnyNodeId, type ItemNode, sceneRegistry, useScene } from '@pascal-app/core'
+import { applyItemFoldControls, limitItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { useViewer } from '@pascal-app/viewer'
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { stageContactIds } from './contacts'
-import { stageModelContact } from './model-contact'
+import { prepareFoldObstacleCheck, stageModelContact } from './model-contact'
+
+test('fold sweep cannot cross an external obstacle even when the end pose is clear', () => {
+  const root = new Group(),
+    first = new Group(),
+    second = new Group()
+  first.name = 'Hinge_01'
+  second.name = 'Hinge_02'
+  root.add(first)
+  first.add(second)
+  const geometry = new BoxGeometry(1, 1, 0.04).translate(0.5, 0.5, 0)
+  const material = new MeshBasicMaterial()
+  second.add(new Mesh(geometry, material))
+  const obstacleGeometry = new BoxGeometry(0.1, 1, 0.1)
+  const obstacle = new Mesh(obstacleGeometry, material)
+  obstacle.position.set(0, 0.5, -0.8)
+  const invisible = new Mesh(new BoxGeometry(10, 10, 10), new MeshBasicMaterial({ visible: false }))
+  const accepts = prepareFoldObstacleCheck(root, [obstacle, invisible])
+  try {
+    applyItemFoldControls(root, { fold_angle_1_deg: 180 })
+    assert.equal(accepts(), true)
+    applyItemFoldControls(root, { fold_angle_1_deg: 0 })
+    assert.equal(accepts(), true)
+    const result = limitItemFoldControls(
+      root,
+      { fold_angle_1_deg: 180 },
+      { fold_angle_1_deg: 0 },
+      accepts,
+    )
+    assert.equal(result.limited, true)
+    assert(result.controls.fold_angle_1_deg > 90 && result.controls.fold_angle_1_deg < 100)
+    assert.equal(accepts(), true)
+    assert.deepEqual(root.position.toArray(), [0, 0, 0])
+  } finally {
+    geometry.dispose()
+    obstacleGeometry.dispose()
+    invisible.geometry.dispose()
+    invisible.material.dispose()
+    material.dispose()
+  }
+})
 
 test('loaded model contacts preserve visible gaps and follow target poses including containment', () => {
   const previous = useScene.getState().nodes

@@ -6,7 +6,6 @@ type Point = [number, number]
 type Part = {
   mesh: Mesh
   panel: number
-  name: string
   vertices: Vector3[]
   minY: number
   maxY: number
@@ -43,7 +42,7 @@ function partsFor(root: Object3D): Part[] {
     // These two authored assets concatenate equal-tessellation rounded boxes in source_parts order.
     // Split their real board and frame vertices; a whole frame/combination box fills visible gaps.
     const perPart = count / sources.length
-    sources.forEach((name, index) => {
+    sources.forEach((_, index) => {
       const vertices = new Map<string, Vector3>()
       for (let i = index * perPart; i < (index + 1) * perPart; i++) {
         const point = new Vector3().fromBufferAttribute(positions, geometry.index?.getX(i) ?? i)
@@ -53,7 +52,6 @@ function partsFor(root: Object3D): Part[] {
       parts.push({
         mesh,
         panel,
-        name,
         vertices: hull(points.map((point) => [point.x, point.z])).map(
           ([x, z]) => new Vector3(x, 0, z),
         ),
@@ -109,17 +107,6 @@ function penetrates(a: Footprint, b: Footprint): boolean {
   return true
 }
 
-function jointContact(a: Part, b: Part): boolean {
-  const [left, right] = a.panel < b.panel ? [a, b] : [b, a]
-  // The authored connecting uprights intersect locally even at the valid default 90° pose.
-  // Only that adjacent upright pair is a joint; their boards, rails and other panels still collide.
-  return (
-    right.panel === left.panel + 1 &&
-    /^Stile_.*R$/.test(left.name) &&
-    /^Stile_.*L$/.test(right.name)
-  )
-}
-
 export function itemFoldSelfIntersects(root: Object3D): boolean {
   root.updateWorldMatrix(true, true)
   const inverse = root.matrixWorld.clone().invert()
@@ -140,7 +127,7 @@ export function itemFoldSelfIntersects(root: Object3D): boolean {
   })
   for (let i = 0; i < parts.length; i++) {
     for (let j = i + 1; j < parts.length; j++) {
-      if (parts[i]!.panel === parts[j]!.panel || jointContact(parts[i]!, parts[j]!)) continue
+      if (parts[i]!.panel === parts[j]!.panel) continue
       if (penetrates(footprints[i]!, footprints[j]!)) return true
     }
   }
@@ -151,8 +138,9 @@ export function limitItemFoldControls(
   root: Object3D,
   from: Partial<ItemFoldControls>,
   requested: Partial<ItemFoldControls>,
+  acceptsPose: (controls: ItemFoldControls) => boolean = () => true,
 ): { controls: ItemFoldControls; limited: boolean } {
-  const clamp = (value: number) => Math.min(270, Math.max(0, value))
+  const clamp = (value: number) => Math.min(360, Math.max(0, value))
   const start = Object.fromEntries(
     keys.map((key) => [key, clamp(from[key] ?? 90)]),
   ) as ItemFoldControls
@@ -166,19 +154,18 @@ export function limitItemFoldControls(
     ) as ItemFoldControls
   const valid = (controls: ItemFoldControls) => {
     applyItemFoldControls(root, controls)
-    return !itemFoldSelfIntersects(root)
+    return !itemFoldSelfIntersects(root) && acceptsPose(controls)
   }
   let safe = 0
-  let hasSafe = valid(start)
+  const hasSafe = valid(start)
+  if (!hasSafe) return { controls: start, limited: true }
   const steps = Math.max(1, Math.ceil(distance / 0.25))
   for (let step = 1; step <= steps; step++) {
     const progress = step / steps
     if (valid(at(progress))) {
       safe = progress
-      hasSafe = true
       continue
     }
-    if (!hasSafe) continue // Permit opening a legacy already-intersecting state out of contact.
     let blocked = progress
     for (let iteration = 0; iteration < 12; iteration++) {
       const midpoint = (safe + blocked) / 2

@@ -13,8 +13,11 @@ import {
   exitStageFolding,
   finishFoldDrag,
   foldControls,
+  foldCornerCode,
   foldCornerGeometry,
   foldCornerLabel,
+  foldCornerPosition,
+  foldCorners,
   foldHandle,
   foldKeys,
   foldPositionCount,
@@ -134,8 +137,7 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
               pivot: localPivot,
               inverseParent,
               angle: {
-                startAngle:
-                  corner === 1 ? 0 : foldControls(node)[foldKeys[Math.max(0, corner - 2)]!],
+                startAngle: foldControls(node)[foldKeys[foldCornerPosition(corner)]!],
                 pointerRadians: Math.atan2(-start.z, start.x),
                 turnRadians: 0,
               },
@@ -182,7 +184,7 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
             restoreCamera()
           }}
         >
-          {corner - 1}
+          {foldCornerCode(corner)}
         </button>
       </Html>
     </group>
@@ -238,7 +240,7 @@ export function FoldingSystem({ enabled }: { enabled: boolean }) {
   if (!available || node?.type !== 'item' || !foldPositionCount(node)) return null
   return (
     <group name={`stage-fold-controls:${node.id}`}>
-      {Array.from({ length: foldPositionCount(node) }, (_, index) => index + 2).map((corner) => (
+      {foldCorners(node).map((corner) => (
         <FoldPosition key={`${node.id}:${corner}`} node={node} corner={corner} />
       ))}
     </group>

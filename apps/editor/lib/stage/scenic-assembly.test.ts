@@ -9,7 +9,7 @@ import {
 } from '@pascal-app/core/stage'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { useViewer } from '@pascal-app/viewer'
-import { Box3, Group } from 'three'
+import { Box3, BoxGeometry, Group, Mesh, MeshBasicMaterial } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { connectStageCommandExecutor } from './command-executor'
@@ -23,6 +23,8 @@ globalThis.cancelAnimationFrame ??= () => {}
 const models = new Map<string, Group>()
 let nodes: ItemNode[] = []
 let disconnect: () => void
+let floorId: string
+let floor: Mesh
 const options = { grid: 0 as const, guides: true }
 const context = (objects: SceneContextObject[]): SceneContextSummary => ({
   documentVersion: 1,
@@ -52,12 +54,18 @@ beforeEach(() => {
   useScene.setState({ readOnly: false })
   clearSceneHistory()
   disconnect = connectStageCommandExecutor()
+  floorId = Object.values(graph.nodes).find((node) => node.type === 'slab')!.id
+  floor = new Mesh(new BoxGeometry(8, 0.05, 6).translate(0, -0.025, 0), new MeshBasicMaterial())
+  sceneRegistry.nodes.set(floorId, floor)
 })
 afterEach(() => {
   exitStageFolding()
   disconnect()
   for (const node of nodes) sceneRegistry.nodes.delete(node.id)
   nodes = []
+  sceneRegistry.nodes.delete(floorId)
+  floor.geometry.dispose()
+  ;(floor.material as MeshBasicMaterial).dispose()
   useScene.getState().unloadScene()
   clearSceneHistory()
 })
@@ -70,6 +78,7 @@ function add(assetId: string): SceneContextObject {
   const root = new Group()
   root.userData.itemModelSettled = true
   root.add(models.get(assetId)!.clone(true))
+  applyItemFoldControls(root)
   sceneRegistry.nodes.set(node.id, root)
   return {
     id: node.id,
@@ -139,8 +148,7 @@ test('D: bi-flat accepts exact manifest angles 0/45/90/135/180 without changing 
 })
 
 test('E/F/G: independent tri-flat joints invalidate bounds and real snap geometry after articulation', () => {
-  const item = add('SCN-FOLD-03'),
-    target = add('SCN-FLAT-090')
+  const item = add('SCN-FOLD-03')
   const before = stageVisibleFootprints(item)
   const original = useScene.getState().nodes[item.id as ItemNode['id']] as ItemNode
   setFoldAngle(item.id, 0, 135)
@@ -153,7 +161,7 @@ test('E/F/G: independent tri-flat joints invalidate bounds and real snap geometr
   applyItemFoldControls(sceneRegistry.nodes.get(item.id)!, after.controls)
   useViewer.getState().bumpGeometryRevision()
   expect(stageVisibleFootprints(item)).not.toEqual(before)
-  connect(item, target)
+  connect(item, add('SCN-FLAT-090'))
 })
 
 test('grounding uses transformed GLB bottom including tilt, with no saved epsilon', () => {
@@ -189,6 +197,8 @@ test('I: the same collision probe changes after folding, not just the dimension 
   const item = add('SCN-FOLD-03'),
     probe = add('SCN-FLAT-090')
   probe.transform.position = { x: 1.6, y: 0, z: 0 }
+  // The query probe is hypothetical; keep its rendered obstacle out of the fold sweep.
+  sceneRegistry.nodes.get(probe.id)!.position.x = -10
   expect(stageModelContact(item, probe)).toBe(false)
   setFoldAngle(item.id, 0, 180)
   setFoldAngle(item.id, 1, 180)

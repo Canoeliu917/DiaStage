@@ -17,24 +17,20 @@ async function model(id: string) {
 }
 
 for (const id of ['SCN-FOLD-02', 'SCN-FOLD-03']) {
-  test(`${id} uses its real boards/frames, permits 90/180 and limits thick-panel closure`, async () => {
+  test(`${id} closes thick panels surface-to-surface without penetration`, async () => {
     const root = await model(id)
     const before = root.clone(true)
+    applyItemFoldControls(root)
     expect(itemFoldSelfIntersects(root)).toBe(false)
     const opened = limitItemFoldControls(root, {}, { fold_angle_1_deg: 180, fold_angle_2_deg: 180 })
     expect(opened.limited).toBe(false)
     expect(opened.controls).toEqual({ fold_angle_1_deg: 180, fold_angle_2_deg: 180 })
     expect(itemFoldSelfIntersects(root)).toBe(false)
     const closed = limitItemFoldControls(root, opened.controls, { fold_angle_1_deg: 0 })
-    expect(closed.limited).toBe(true)
-    expect(closed.controls.fold_angle_1_deg).toBeGreaterThan(0)
-    expect(closed.controls.fold_angle_1_deg).toBeLessThan(90)
+    expect(closed.limited).toBe(false)
+    expect(closed.controls.fold_angle_1_deg).toBe(0)
     expect(itemFoldSelfIntersects(root)).toBe(false)
-    applyItemFoldControls(root, {
-      ...closed.controls,
-      fold_angle_1_deg: closed.controls.fold_angle_1_deg - 0.01,
-    })
-    expect(itemFoldSelfIntersects(root)).toBe(true)
+    expect(root.getObjectByName('Hinge_02')!.position.z).toBeCloseTo(-0.04, 6)
     expect(before.getObjectByName('Hinge_02')!.quaternion.y).toBeCloseTo(Math.SQRT1_2)
     expect(root.position.toArray()).toEqual([0, 0, 0])
     expect(root.rotation.toArray().slice(0, 3)).toEqual([0, 0, 0])
@@ -55,6 +51,20 @@ test('three panels check non-adjacent faces and both controls while allowing the
   expect(opened.controls).toEqual({ fold_angle_1_deg: 270, fold_angle_2_deg: 270 })
   expect(opened.limited).toBe(false)
   expect(itemFoldSelfIntersects(root)).toBe(false)
+})
+
+test('full reverse closure and alternating accordion closure are safe; blocked starts never teleport', async () => {
+  const root = await model('SCN-FOLD-03')
+  const open = { fold_angle_1_deg: 180, fold_angle_2_deg: 180 }
+  const reverse = limitItemFoldControls(root, open, { fold_angle_1_deg: 360 })
+  expect(reverse.limited).toBe(false)
+  expect(reverse.controls.fold_angle_1_deg).toBe(360)
+  expect(root.getObjectByName('Hinge_02')!.position.z).toBeCloseTo(0.04, 6)
+  const accordion = limitItemFoldControls(root, reverse.controls, { fold_angle_2_deg: 0 })
+  expect(accordion.limited).toBe(false)
+  expect(itemFoldSelfIntersects(root)).toBe(false)
+  const invalid = { fold_angle_1_deg: 0, fold_angle_2_deg: 0 }
+  expect(limitItemFoldControls(root, invalid, open)).toEqual({ controls: invalid, limited: true })
 })
 
 test('a large angle input cannot jump through a panel even when its target angle is clear', () => {

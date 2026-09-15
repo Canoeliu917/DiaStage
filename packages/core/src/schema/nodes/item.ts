@@ -110,8 +110,8 @@ export type AssetInput = z.input<typeof assetSchema>
 export type Asset = z.infer<typeof assetSchema>
 
 export const ItemFoldControlsSchema = z.object({
-  fold_angle_1_deg: z.number().finite().min(0).max(270).default(90),
-  fold_angle_2_deg: z.number().finite().min(0).max(270).default(90),
+  fold_angle_1_deg: z.number().finite().min(0).max(360).default(90),
+  fold_angle_2_deg: z.number().finite().min(0).max(360).default(90),
 })
 export type ItemFoldControls = z.infer<typeof ItemFoldControlsSchema>
 

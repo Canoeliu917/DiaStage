@@ -24,10 +24,14 @@ import {
   finishFoldDrag,
   foldAngleRange,
   foldControls,
+  foldCornerCode,
   foldCornerGeometry,
   foldCornerLabel,
+  foldCornerPosition,
+  foldCorners,
   foldKeys,
   foldPositionCount,
+  previewFoldAngle,
   previewFoldCornerAngle,
   useStageFolding,
 } from '@/lib/stage/folding'
@@ -144,13 +148,13 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
       data-geometry-revision={revision}
       pointerEvents="auto"
     >
-      {Array.from({ length: foldPositionCount(node) }, (_, index) => index + 2).map((corner) => {
+      {foldCorners(node).map((corner) => {
         const geometry = foldCornerGeometry(node, corner)
         if (!geometry) return null
         const { pivot: pivotWorld, parentMatrix } = geometry
         const pivot = project(pivotWorld.toArray())
         const end = project(geometry.point.toArray())
-        const position = Math.max(0, corner - 2)
+        const position = foldCornerPosition(corner)
         const angle = controls[foldKeys[position]!]
         const [min, max] = foldAngleRange(node, position)
         return (
@@ -163,7 +167,7 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
             aria-valuemin={min}
             aria-valuemax={max}
             aria-valuenow={angle}
-            data-fold-position={corner >= 2 ? position : undefined}
+            data-fold-position={position}
             data-fold-corner={corner}
             transform={`translate(${end[0]} ${end[1]})`}
             onPointerDown={(event) => {
@@ -231,7 +235,7 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
               event.preventDefault()
               event.stopPropagation()
               if (!beginFoldCornerDrag(node.id, corner)) return
-              previewFoldCornerAngle(
+              previewFoldAngle(
                 event.key === 'Home'
                   ? min!
                   : event.key === 'End'
@@ -252,7 +256,7 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
               fontSize={10 * unit}
               pointerEvents="none"
             >
-              {corner - 1}
+              {foldCornerCode(corner)}
             </text>
           </g>
         )

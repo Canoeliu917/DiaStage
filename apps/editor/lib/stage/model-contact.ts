@@ -45,7 +45,7 @@ const models = new WeakMap<
 const proxies = new WeakMap<object, Part[]>()
 const projections = new WeakMap<
   Part[],
-  Map<string, { polygons: [number, number][][]; bottom: number }>
+  Map<string, { polygons: [number, number][][]; bottom: number; top: number }>
 >()
 
 function prepareGeometry(geometry: BufferGeometry): Geometry {
@@ -184,11 +184,13 @@ function projectModel(item: ContactObject) {
   const { x, y, z } = item.transform.rotationDegrees
   const rotation = [x, y, z].join(',')
   const cache =
-    projections.get(parts) ?? new Map<string, { polygons: [number, number][][]; bottom: number }>()
+    projections.get(parts) ??
+    new Map<string, { polygons: [number, number][][]; bottom: number; top: number }>()
   const cached = cache.get(rotation)
   if (cached) return cached
   const orientation = pose(item).setPosition(0, 0, 0)
-  let bottom = Infinity
+  let bottom = Infinity,
+    top = -Infinity
   const polygons = parts.flatMap((part) => {
     const matrix = orientation.clone().multiply(part.local)
     return part.components
@@ -197,13 +199,14 @@ function projectModel(item: ContactObject) {
           component.map((vertex): [number, number] => {
             const point = vertex.clone().applyMatrix4(matrix)
             bottom = Math.min(bottom, point.y)
+            top = Math.max(top, point.y)
             return [point.x, point.z]
           }),
         ),
       )
       .filter((polygon) => polygon.length >= 3)
   })
-  const result = { polygons, bottom }
+  const result = { polygons, bottom, top }
   // Mini and native plans use different coordinate frames; retain both projections.
   if (cache.size >= 2) cache.delete(cache.keys().next().value!)
   cache.set(rotation, result)
@@ -270,6 +273,10 @@ export function stageModelBottom(item: ContactObject): number | null {
   return projectModel(item)?.bottom ?? null
 }
 
+export function stageModelTop(item: ContactObject): number | null {
+  return projectModel(item)?.top ?? null
+}
+
 function inside(part: Geometry, point: Vector3): boolean {
   if (!part.closed || !part.geometry.boundingBox!.containsPoint(point)) return false
   const hits = part.bvh.raycast(
@@ -293,6 +300,22 @@ export function stageModelContact(
   if (!leftModel && !rightModel) return null
   const leftPose = pose(left),
     rightPose = pose(right)
+  return partsContact(
+    leftModel ?? proxyParts(left),
+    rightModel ?? proxyParts(right),
+    leftPose,
+    rightPose,
+    penetrationOnly,
+  )
+}
+
+function partsContact(
+  left: Part[],
+  right: Part[],
+  leftPose: Matrix4,
+  rightPose: Matrix4,
+  penetrationOnly: boolean,
+) {
   const interior = (part: Part, matrix: Matrix4) => {
     if (!penetrationOnly) return matrix
     // Micrometre-scale inset distinguishes shared surfaces from intersecting solids.
@@ -302,10 +325,10 @@ export function stageModelContact(
       .scale(new Vector3(0.99999, 0.99999, 0.99999))
       .multiply(new Matrix4().makeTranslation(...center.negate().toArray()))
   }
-  for (const a of leftModel ?? proxyParts(left)) {
+  for (const a of left) {
     const aWorld = interior(a, leftPose.clone().multiply(a.local))
     const aBox = a.geometry.boundingBox!.clone().applyMatrix4(aWorld)
-    for (const b of rightModel ?? proxyParts(right)) {
+    for (const b of right) {
       const bWorld = interior(b, rightPose.clone().multiply(b.local))
       if (!aBox.intersectsBox(new Box3().copy(b.geometry.boundingBox!).applyMatrix4(bWorld)))
         continue
@@ -322,4 +345,38 @@ export function stageModelContact(
     }
   }
   return false
+}
+
+export function prepareFoldObstacleCheck(root: Object3D, obstacles: Object3D[]): () => boolean {
+  const meshes = (object: Object3D) => {
+    const result: { mesh: Mesh; geometry: Geometry }[] = []
+    object.updateWorldMatrix(true, true)
+    object.traverseVisible((child) => {
+      const mesh = child as Mesh
+      if (
+        mesh.isMesh &&
+        mesh.name !== 'cutout' &&
+        mesh.geometry.getAttribute('position')?.count >= 3 &&
+        (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).some(
+          (material) => material.visible,
+        )
+      )
+        result.push({ mesh, geometry: prepareGeometry(mesh.geometry) })
+    })
+    return result
+  }
+  const moving = meshes(root)
+  const fixed = obstacles
+    .flatMap(meshes)
+    .map(({ mesh, geometry }) => ({ ...geometry, local: mesh.matrixWorld.clone() }))
+  return () => {
+    root.updateWorldMatrix(true, true)
+    return !partsContact(
+      moving.map(({ mesh, geometry }) => ({ ...geometry, local: mesh.matrixWorld.clone() })),
+      fixed,
+      new Matrix4(),
+      new Matrix4(),
+      true,
+    )
+  }
 }

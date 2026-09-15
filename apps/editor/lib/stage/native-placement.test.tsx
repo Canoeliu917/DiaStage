@@ -9,7 +9,7 @@ import {
   sceneRegistry,
   useScene,
 } from '@pascal-app/core'
-import { useDraftNode } from '@pascal-app/editor'
+import { snapPlacementPosition, useDraftNode } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { renderToString } from 'react-dom/server'
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
@@ -25,6 +25,7 @@ import { createTheatreSceneGraph } from '../theatre/new-production'
 import { connectStageCommandExecutor } from './command-executor'
 import { currentStageContext } from './context'
 import { installNativeStagePlacement, nativeStagePlacementFeedback } from './native-placement'
+import { AVAILABLE_STAGE_SCENERY } from './prop-assets'
 
 globalThis.requestAnimationFrame ??= () => 0
 globalThis.cancelAnimationFrame ??= () => {}
@@ -40,6 +41,38 @@ beforeEach(() => {
   cleanup = () => {
     policy()
     executor()
+  }
+})
+
+test('native same-type snap previews write nothing and release saves one undoable placement', () => {
+  const levelId = useViewer.getState().selection.levelId!
+  const asset = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === 'SCN-CUBE-045')!.asset
+  const fixed = ItemNode.parse({ asset, parentId: levelId, position: [0, 0, 0] })
+  const moving = ItemNode.parse({ asset, parentId: levelId, position: [1, 0, 0.06] })
+  useScene.getState().createNode(fixed, levelId)
+  useScene.getState().createNode(moving, levelId)
+  clearSceneHistory()
+  const policy = installNativeStagePlacement(
+    () => null,
+    () => ({ grid: 0.1, guides: true }),
+  )
+  const before = useScene.getState().nodes
+  try {
+    const position = snapPlacementPosition(moving, [0.51, 5, 0.08])!
+    expect(position[0]).toBeCloseTo(0.45, 8)
+    expect(position[1]).toBe(0)
+    expect(position[2]).toBeCloseTo(0, 8)
+    expect(useScene.getState().nodes).toBe(before)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(0)
+    useScene.getState().updateNode(moving.id, { position })
+    expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+    const after = useScene.getState().nodes[moving.id]
+    useScene.temporal.getState().undo()
+    expect(useScene.getState().nodes[moving.id]).toEqual(moving)
+    useScene.temporal.getState().redo()
+    expect(useScene.getState().nodes[moving.id]).toEqual(after)
+  } finally {
+    policy()
   }
 })
 afterEach(() => {

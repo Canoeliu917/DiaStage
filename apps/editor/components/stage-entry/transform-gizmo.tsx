@@ -7,7 +7,12 @@ import {
   sceneRegistry,
   useScene,
 } from '@pascal-app/core'
-import { STAGE_OBJECT_REGISTRY, stageMagneticHeight } from '@pascal-app/core/stage'
+import { inverseRotatePoint, subtract } from '@pascal-app/core/remount'
+import {
+  STAGE_OBJECT_REGISTRY,
+  stageMagneticHeight,
+  stageToWorldPosition,
+} from '@pascal-app/core/stage'
 import {
   ELEVATION_ALIGNMENT_THRESHOLD_M,
   isGridSnapActive,
@@ -21,9 +26,11 @@ import { type CameraControlsImpl, Html } from '@react-three/drei'
 import { type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useState } from 'react'
 import { Euler, Group, Plane, Quaternion, Vector3 } from 'three'
+import { worldPose } from '@/lib/remount-scene'
 import { axisTransform, type TransformAxis } from '@/lib/stage/axis-transform'
 import { currentStageContext, stageContextObject, stageFrame } from '@/lib/stage/context'
 import { floorSafeItemPatch } from '@/lib/stage/floor-transform'
+import { snapMatchingStageObject, snapStageObject } from '@/lib/stage/placement-snap'
 import {
   itemEulerRotation,
   STAGE_ROTATION_STEP,
@@ -188,17 +195,38 @@ function AxisHandle({
               delta,
               isGridSnapActive() ? useEditor.getState().gridSnapStep : 0,
             )
-            if (axis === 1 && isMagneticSnapActive()) {
+            if (isMagneticSnapActive()) {
               const candidateNode = { ...initialNode, position }
               const candidate = stageContextObject(
                 candidateNode,
                 { ...useScene.getState().nodes, [node.id]: candidateNode },
                 stageFrame(),
               )
-              if (candidate)
-                position[1] +=
-                  stageMagneticHeight(candidate, objects, ELEVATION_ALIGNMENT_THRESHOLD_M) -
-                  candidate.transform.position.y
+              if (candidate) {
+                const snapped =
+                  axis === 1
+                    ? (snapMatchingStageObject(candidate, objects, true)?.position ?? {
+                        ...candidate.transform.position,
+                        y: stageMagneticHeight(candidate, objects, ELEVATION_ALIGNMENT_THRESHOLD_M),
+                      })
+                    : snapStageObject(
+                        candidate.transform.position,
+                        candidate,
+                        { ...currentStageContext(), objects },
+                        { grid: 0, guides: true },
+                      ).position
+                const frame = stageFrame()
+                const delta = inverseRotatePoint(
+                  subtract(
+                    stageToWorldPosition(snapped, frame),
+                    stageToWorldPosition(candidate.transform.position, frame),
+                  ),
+                  worldPose(initialNode.parentId, useScene.getState().nodes).rotation,
+                )
+                position = position.map(
+                  (value, index) => value + delta[index]!,
+                ) as ItemNode['position']
+              }
             }
             setValue(`${position[axis].toFixed(3)} m`)
             return floorSafeItemPatch(initialNode, { position })

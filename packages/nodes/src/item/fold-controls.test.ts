@@ -22,7 +22,11 @@ beforeAll(async () => {
   }
 })
 
-const fresh = (count: number) => originals.get(count)!.clone(true)
+const fresh = (count: number) => {
+  const root = originals.get(count)!.clone(true)
+  applyItemFoldControls(root)
+  return root
+}
 const joint = (root: Object3D, index: number) => root.getObjectByName(`Hinge_0${index}`)!
 const meshMatrix = (root: Object3D, index: number) => {
   root.updateWorldMatrix(true, true)
@@ -37,13 +41,12 @@ test('two panels unfold from 90 to 180 using an absolute local Y rotation while 
   const whole = [root.position.toArray(), root.quaternion.toArray(), root.scale.toArray()]
   const first = meshMatrix(root, 1)
   const second = meshMatrix(root, 2)
-  const localPosition = joint(root, 2).position.toArray()
   const localScale = joint(root, 2).scale.toArray()
   expect(applyItemFoldControls(root, { fold_angle_1_deg: 180 })).toBe(true)
   expect(joint(root, 2).rotation.y).toBeCloseTo(0, 12)
   expect(meshMatrix(root, 1)).toEqual(first)
   expect(meshMatrix(root, 2)).not.toEqual(second)
-  expect(joint(root, 2).position.toArray()).toEqual(localPosition)
+  expect(joint(root, 2).position.toArray()).toEqual(joint(root, 2).userData.foldAuthoredOrigin)
   expect(joint(root, 2).scale.toArray()).toEqual(localScale)
   expect(joint(root, 2).parent).toBe(joint(root, 1))
   expect([root.position.toArray(), root.quaternion.toArray(), root.scale.toArray()]).toEqual(whole)
@@ -94,9 +97,9 @@ test('the second fold changes only the last panel; two instances and the loader 
 test('live bounds follow the actual folded meshes and remain separate from the first-panel pivot', () => {
   const root = fresh(3)
   const folded = computeItemFoldBounds(root)!
-  expect(folded.dimensions[0]).toBeCloseTo(0.92, 5)
+  expect(folded.dimensions[0]).toBeCloseTo(0.94, 5)
   expect(folded.dimensions[1]).toBeCloseTo(2.4, 5)
-  expect(folded.dimensions[2]).toBeCloseTo(0.94, 5)
+  expect(folded.dimensions[2]).toBeCloseTo(0.98, 5)
   applyItemFoldControls(root, { fold_angle_1_deg: 180, fold_angle_2_deg: 180 })
   const open = computeItemFoldBounds(root)!
   expect(open.dimensions[0]).toBeCloseTo(2.7, 5)
@@ -128,7 +131,7 @@ test('registry-root bounds remove instance scale once and ignore whole-item move
 
 test('invalid controls are rejected and the mathematical zero endpoint remains distinct from a validated physical limit', () => {
   const root = fresh(2)
-  for (const value of [-1, 271, NaN, Infinity])
+  for (const value of [-1, 361, NaN, Infinity])
     expect(() => applyItemFoldControls(root, { fold_angle_1_deg: value })).toThrow()
   applyItemFoldControls(root, { fold_angle_1_deg: 0 })
   expect(joint(root, 2).quaternion.y).toBeCloseTo(1, 12)
@@ -136,16 +139,19 @@ test('invalid controls are rejected and the mathematical zero endpoint remains d
   expect(computeItemFoldBounds(new Group())).toBeNull()
 })
 
-test('270 degree reverse fold preserves each panel dimensions, translations and independent instance pose', () => {
+test('270 degree reverse fold preserves panel dimensions and uses the opposite surface edge', () => {
   const root = fresh(3)
   const first = meshMatrix(root, 1)
-  const origins = [2, 3].map((index) => joint(root, index).position.toArray())
   const scales = [1, 2, 3].map((index) => joint(root, index).scale.toArray())
   applyItemFoldControls(root, { fold_angle_1_deg: 270, fold_angle_2_deg: 270 })
   expect(meshMatrix(root, 1)).toEqual(first)
   expect(joint(root, 2).rotation.y).toBeCloseTo(-Math.PI / 2, 10)
   expect(joint(root, 3).rotation.y).toBeCloseTo(-Math.PI / 2, 10)
-  expect([2, 3].map((index) => joint(root, index).position.toArray())).toEqual(origins)
+  for (const index of [2, 3]) {
+    expect(joint(root, index).position.x).toBeCloseTo(0.92, 6)
+    expect(joint(root, index).position.z).toBeCloseTo(0.02, 6)
+    expect(joint(root, index).userData.foldAuthoredOrigin).toEqual([0.9, 0, 0])
+  }
   expect([1, 2, 3].map((index) => joint(root, index).scale.toArray())).toEqual(scales)
   expect(computeItemFoldBounds(root)!.dimensions[1]).toBeCloseTo(2.4, 5)
 })

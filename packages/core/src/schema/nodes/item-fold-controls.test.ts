@@ -32,9 +32,13 @@ test('serialized instance controls retain both angles and all whole-item transfo
   expect(item.position).toEqual(legacy.position)
   expect(item.rotation).toEqual(legacy.rotation)
   expect(item.scale).toEqual(legacy.scale)
-  for (const invalid of [NaN, Infinity, -Infinity, -1, 270.01, '90', null])
+  for (const invalid of [NaN, Infinity, -Infinity, -1, 360.01, '90', null])
     expect(ItemNode.safeParse({ ...legacy, controls: { fold_angle_1_deg: invalid } }).success).toBe(
       false,
     )
   expect(ItemFoldControlsSchema.parse({ fold_angle_1_deg: 0 }).fold_angle_1_deg).toBe(0)
+  for (const angle of [270.01, 315, 360]) {
+    const next = ItemNode.parse({ ...legacy, controls: { fold_angle_1_deg: angle } })
+    expect(ItemNode.parse(JSON.parse(JSON.stringify(next))).controls!.fold_angle_1_deg).toBe(angle)
+  }
 })

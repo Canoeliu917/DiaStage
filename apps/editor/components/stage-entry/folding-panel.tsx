@@ -25,11 +25,13 @@ function FoldAngleInput({
   position,
   nodeId,
   range,
+  side,
 }: {
   value: number
   position: number
   nodeId: string
   range: readonly number[]
+  side: 'left' | 'right'
 }) {
   const [text, setText] = useState(String(Math.round(value * 100) / 100))
   useEffect(() => setText(String(Math.round(value * 100) / 100)), [value])
@@ -46,7 +48,7 @@ function FoldAngleInput({
         const next = Number(text)
         setText(String(Math.round(value * 100) / 100))
         if (text.trim() && Number.isFinite(next) && next !== value)
-          setFoldAngle(nodeId, position, next)
+          setFoldAngle(nodeId, position, next, side)
       }}
       onKeyDown={(event) => {
         event.stopPropagation()
@@ -83,9 +85,22 @@ export function FoldingPanel({ nodeId }: { nodeId: string }) {
       {active && (
         <>
           <small>
-            拖动编号圆点调整对应关节，每格 {FOLD_ANGLE_STEP}°；按住 Shift
-            可自由调整。整件位置和旋转保持不变。
+            拖动编号圆点调整对应关节，每格 {FOLD_ANGLE_STEP}°；按住 Shift 可自由调整。L
+            移动铰链左侧、R 移动右侧，其余一侧保持固定。允许合拢贴合，遇到穿模即停止。
           </small>
+          <div className="stage-fold-presets" role="group" aria-label="折叠活动侧">
+            {(['left', 'right'] as const).map((side) => (
+              <button
+                key={side}
+                type="button"
+                disabled={folding.dragging}
+                aria-pressed={folding.side === side}
+                onClick={() => useStageFolding.setState({ side })}
+              >
+                {side === 'left' ? '移动左侧 L' : '移动右侧 R'}
+              </button>
+            ))}
+          </div>
           {Array.from({ length: count }, (_, position) => (
             <div className="stage-fold-position" key={position}>
               <button
@@ -102,12 +117,13 @@ export function FoldingPanel({ nodeId }: { nodeId: string }) {
                   nodeId={nodeId}
                   range={foldAngleRange(node, position)}
                   position={position}
+                  side={folding.side}
                   value={controls[foldKeys[position]!]}
                 />{' '}
                 °
               </label>
               <div className="stage-fold-presets">
-                {[0, 45, 90, 135, 180]
+                {[0, 90, 180, 270, 360]
                   .filter(
                     (angle) =>
                       angle >= foldAngleRange(node, position)[0]! &&
@@ -119,7 +135,7 @@ export function FoldingPanel({ nodeId }: { nodeId: string }) {
                       key={angle}
                       disabled={folding.dragging}
                       aria-label={`折叠位置${position + 1}打开${angle}度`}
-                      onClick={() => setFoldAngle(nodeId, position, angle)}
+                      onClick={() => setFoldAngle(nodeId, position, angle, folding.side)}
                     >
                       {angle}°
                     </button>

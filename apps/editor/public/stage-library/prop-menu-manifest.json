@@ -149,7 +149,7 @@
             "default_included_angle_deg": 90,
             "included_angle_range_deg": [
               0,
-              180
+              360
             ],
             "rotation_axis_local_gltf": [
               0,
@@ -169,9 +169,9 @@
             "axis_basis": "original_gltf_node_local_space"
           }
         ],
-        "fold_direction": "single_direction_as_authored",
-        "thickness_collision_limits_implemented": false,
-        "zero_degrees_note": "Ideal closure only; not validated as collision-free.",
+        "fold_direction": "double_acting_surface_edge",
+        "thickness_collision_limits_implemented": true,
+        "zero_degrees_note": "Surface-edge closure; swept collision validation remains required.",
         "bounds_policy": "recompute_per_instance_after_articulation",
         "runtime_interaction_status": "requires_application_implementation"
       }
@@ -238,7 +238,7 @@
             "default_included_angle_deg": 90,
             "included_angle_range_deg": [
               0,
-              180
+              360
             ],
             "rotation_axis_local_gltf": [
               0,
@@ -264,7 +264,7 @@
             "default_included_angle_deg": 90,
             "included_angle_range_deg": [
               0,
-              180
+              360
             ],
             "rotation_axis_local_gltf": [
               0,
@@ -284,9 +284,9 @@
             "axis_basis": "original_gltf_node_local_space"
           }
         ],
-        "fold_direction": "single_direction_as_authored",
-        "thickness_collision_limits_implemented": false,
-        "zero_degrees_note": "Ideal closure only; not validated as collision-free.",
+        "fold_direction": "double_acting_surface_edge",
+        "thickness_collision_limits_implemented": true,
+        "zero_degrees_note": "Surface-edge closure; swept collision validation remains required.",
         "bounds_policy": "recompute_per_instance_after_articulation",
         "runtime_interaction_status": "requires_application_implementation"
       }
