@@ -31,7 +31,13 @@ type Geometry = {
   samples: Vector3[]
   components: Vector3[][]
 }
-type Part = Geometry & { local: Matrix4 }
+type Part = Geometry & { local: Matrix4; panelFrame?: boolean }
+type Projection = {
+  polygons: [number, number][][]
+  panels: [number, number][][]
+  bottom: number
+  top: number
+}
 const geometries = new WeakMap<BufferGeometry, Geometry>()
 const models = new WeakMap<
   Object3D,
@@ -43,10 +49,7 @@ const models = new WeakMap<
   }
 >()
 const proxies = new WeakMap<object, Part[]>()
-const projections = new WeakMap<
-  Part[],
-  Map<string, { polygons: [number, number][][]; bottom: number; top: number }>
->()
+const projections = new WeakMap<Part[], Map<string, Projection>>()
 
 function prepareGeometry(geometry: BufferGeometry): Geometry {
   const cached = geometries.get(geometry)
@@ -140,6 +143,9 @@ function modelParts(item: ContactObject): Part[] | null {
         parts.push({
           ...prepareGeometry(mesh.geometry),
           local: new Matrix4().multiplyMatrices(inverse, mesh.matrixWorld),
+          panelFrame: (mesh.userData.source_parts as string[] | undefined)?.some((name) =>
+            name.startsWith('Stile_'),
+          ),
         })
     }
     for (const child of object.children) visit(child)
@@ -183,17 +189,16 @@ function projectModel(item: ContactObject) {
   if (!parts) return null
   const { x, y, z } = item.transform.rotationDegrees
   const rotation = [x, y, z].join(',')
-  const cache =
-    projections.get(parts) ??
-    new Map<string, { polygons: [number, number][][]; bottom: number; top: number }>()
+  const cache = projections.get(parts) ?? new Map<string, Projection>()
   const cached = cache.get(rotation)
   if (cached) return cached
   const orientation = pose(item).setPosition(0, 0, 0)
   let bottom = Infinity,
     top = -Infinity
+  const panels: [number, number][][] = []
   const polygons = parts.flatMap((part) => {
     const matrix = orientation.clone().multiply(part.local)
-    return part.components
+    const projected = part.components
       .map((component) =>
         footprintHull(
           component.map((vertex): [number, number] => {
@@ -205,8 +210,11 @@ function projectModel(item: ContactObject) {
         ),
       )
       .filter((polygon) => polygon.length >= 3)
+    // Frame members form one leaf; hinge pins and nested leaves are separate geometry.
+    if (part.panelFrame) panels.push(footprintHull(projected.flat()))
+    return projected
   })
-  const result = { polygons, bottom, top }
+  const result = { polygons, panels, bottom, top }
   // Mini and native plans use different coordinate frames; retain both projections.
   if (cache.size >= 2) cache.delete(cache.keys().next().value!)
   cache.set(rotation, result)
@@ -223,6 +231,13 @@ export function stageModelFootprints(item: ContactObject): [number, number][][] 
 
 export function stageVisibleFootprints(item: ContactObject): [number, number][][] {
   return stageModelFootprints(item) ?? stageObjectFootprints(item)
+}
+
+export function stagePanelFootprints(item: ContactObject): [number, number][][] {
+  const { x, z } = item.transform.position
+  return (projectModel(item)?.panels ?? []).map((polygon) =>
+    polygon.map(([px, pz]) => [px + x, pz + z]),
+  )
 }
 
 export function stageClearanceFootprints(

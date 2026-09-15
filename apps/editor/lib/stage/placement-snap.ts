@@ -3,7 +3,12 @@ import type { SceneContextObject, SceneContextSummary, StagePoint } from '@pasca
 import { canStageStack, prepareStageCollision, stageFootprintGap } from '@pascal-app/core/stage'
 import { type PlacementSnap, snapStagePlacement } from '@/components/stage-entry/placement-math'
 import { stageContactIds } from './contacts'
-import { stageModelBottom, stageModelTop, stageVisibleFootprints } from './model-contact'
+import {
+  stageModelBottom,
+  stageModelTop,
+  stagePanelFootprints,
+  stageVisibleFootprints,
+} from './model-contact'
 
 // Matching props, or any pair of scenic flats: catch a whole row/column, not an arbitrary frame edge.
 export function snapMatchingStageObject(
@@ -20,7 +25,6 @@ export function snapMatchingStageObject(
     cost: number
     key: string
     alignment: string
-    target: SceneContextObject
   }[] = []
   const vertical = (object: SceneContextObject) => {
     const bounds = prepareStageCollision(object).bounds[1]!
@@ -39,6 +43,54 @@ export function snapMatchingStageObject(
     if (other.id === item.id || target?.type !== 'item') continue
     const scenicFlatFamily = item.kind === 'scenic-flat' && other.kind === 'scenic-flat'
     if (!scenicFlatFamily && target.asset.id !== source.asset.id) continue
+    const targetBounds = vertical(other)
+    if (scenicFlatFamily) {
+      if (elevationOnly || Math.abs(movingBounds[0] - targetBounds[0]) >= 0.02) continue
+      const edges = (object: SceneContextObject) =>
+        stagePanelFootprints(object).flatMap((polygon) =>
+          polygon.map((a, index) => {
+            const b = polygon[(index + 1) % polygon.length]!
+            const dx = b[0] - a[0],
+              dz = b[1] - a[1]
+            const length = Math.hypot(dx, dz)
+            return {
+              x: (a[0] + b[0]) / 2,
+              z: (a[1] + b[1]) / 2,
+              dx: dx / length,
+              dz: dz / length,
+              length,
+            }
+          }),
+        )
+      const from = edges(item),
+        to = edges(other)
+      for (const [i, left] of from.entries())
+        for (const [j, right] of to.entries()) {
+          // Opposing parallel faces align at their centres, including across folded leaves.
+          if (
+            left.length < 0.02 ||
+            right.length < 0.02 ||
+            left.dx * right.dx + left.dz * right.dz > -0.999999
+          )
+            continue
+          const dx = right.x - left.x,
+            dz = right.z - left.z
+          const cost = Math.hypot(dx, dz)
+          if (cost > 0.18) continue
+          candidates.push({
+            position: {
+              ...item.transform.position,
+              x: item.transform.position.x + dx,
+              z: item.transform.position.z + dz,
+            },
+            name: other.name,
+            cost,
+            key: `${other.id}:panel:${i}:${j}`,
+            alignment: '景片边缘对齐',
+          })
+        }
+      continue
+    }
     if (
       (['x', 'y', 'z'] as const).some(
         (axis) =>
@@ -48,7 +100,6 @@ export function snapMatchingStageObject(
     )
       continue
     if (
-      !scenicFlatFamily &&
       (['width', 'height', 'depth'] as const).some(
         (key) => Math.abs(item.dimensionsMeters[key] - other.dimensionsMeters[key]) > 1e-6,
       )
@@ -71,7 +122,6 @@ export function snapMatchingStageObject(
       })
     const from = extents(points),
       to = extents(targetPoints)
-    const targetBounds = vertical(other)
     const add = (offsets: number[], dy: number, key: string) => {
       const dx = axes[0][0] * offsets[0]! + axes[1][0] * offsets[1]!
       const dz = axes[0][1] * offsets[0]! + axes[1][1] * offsets[1]!
@@ -85,8 +135,7 @@ export function snapMatchingStageObject(
         name: other.name,
         cost: Math.hypot(dx, dy, dz),
         key: `${other.id}:${key}`,
-        alignment: scenicFlatFamily ? '景片边缘对齐' : '同款对齐',
-        target: other,
+        alignment: '同款对齐',
       })
     }
     const centers = to.map((extent, i) => extent.center - from[i]!.center)
@@ -104,25 +153,8 @@ export function snapMatchingStageObject(
   }
   candidates.sort((a, b) => a.cost - b.cost || a.key.localeCompare(b.key))
   for (const candidate of candidates) {
-    let position = candidate.position
-    let placed = { ...item, transform: { ...item.transform, position } }
-    if (item.kind === 'scenic-flat') {
-      const gaps = stageVisibleFootprints(placed).flatMap((left) =>
-        stageVisibleFootprints(candidate.target).map((right) => stageFootprintGap(left, right)),
-      )
-      if (!gaps.some((gap) => gap.meters < 1e-8)) {
-        const nearest = gaps
-          .filter((gap) => gap.meters <= 0.12)
-          .sort((a, b) => a.meters - b.meters)[0]
-        if (!nearest) continue
-        position = {
-          ...position,
-          x: position.x + nearest.end[0] - nearest.start[0],
-          z: position.z + nearest.end[1] - nearest.start[1],
-        }
-        placed = { ...item, transform: { ...item.transform, position } }
-      }
-    }
+    const position = candidate.position
+    const placed = { ...item, transform: { ...item.transform, position } }
     if (
       !objects.some(
         (other) => other.id !== item.id && stageContactIds([placed, other], true).has(item.id),
@@ -165,10 +197,8 @@ export function snapStageObject(
     transform: { ...item.transform, position: { ...point, y: result.position.y } },
   })
   if (!moving) return result
-  let touching: { name: string; scenicFlat: boolean } | undefined
-  let nearest:
-    | { dx: number; dz: number; distance: number; name: string; scenicFlat: boolean }
-    | undefined
+  let touching: { name: string } | undefined
+  let nearest: { dx: number; dz: number; distance: number; name: string } | undefined
   for (const other of context.objects) {
     if (other.id === item.id || ['camera', 'performer-marker'].includes(other.kind)) continue
     const movingBounds = prepareStageCollision({
@@ -184,7 +214,6 @@ export function snapStageObject(
     if (gaps.some((gap) => gap.meters < 1e-8)) {
       touching ??= {
         name: other.name,
-        scenicFlat: item.kind === 'scenic-flat' && other.kind === 'scenic-flat',
       }
       continue
     }
@@ -197,7 +226,6 @@ export function snapStageObject(
         dz: gap.end[1] - gap.start[1],
         distance: gap.meters,
         name: other.name,
-        scenicFlat: item.kind === 'scenic-flat' && other.kind === 'scenic-flat',
       }
     }
   }
@@ -206,7 +234,7 @@ export function snapStageObject(
     result.position.x = point.x + (nearest?.dx ?? 0)
     result.position.z = point.z + (nearest?.dz ?? 0)
     const contact = nearest ?? touching!
-    result.labels = [`贴合 ${contact.name}`, ...(contact.scenicFlat ? ['景片边缘对齐'] : [])]
+    result.labels = [`贴合 ${contact.name}`]
   }
   return result
 }

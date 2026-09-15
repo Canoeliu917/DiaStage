@@ -229,7 +229,7 @@ test('same-type props align rows and columns without lifting a lateral drag or w
   }
 })
 
-test('same-type real folding panels align outer boundaries, never internal frame members', async () => {
+test('folding panels may touch outer boundaries without falsely reporting full face alignment', async () => {
   const asset = AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === 'SCN-FOLD-02')!.asset
   const bytes = readFileSync(new URL(`../../public${asset.src}`, import.meta.url))
   const model = (
@@ -244,6 +244,7 @@ test('same-type real folding panels align outer boundaries, never internal frame
     const root = new Group()
     root.userData.itemModelSettled = true
     root.add(model.clone(true))
+    applyItemFoldControls(root)
     sceneRegistry.nodes.set(node.id, root)
   }
   useScene.setState({
@@ -252,14 +253,17 @@ test('same-type real folding panels align outer boundaries, never internal frame
   try {
     const moving = { ...item, id: nodes[0]!.id }
     const target = { ...item, id: nodes[1]!.id }
-    const point = { x: -0.92, y: 0, z: 3.04 }
+    const point = { x: -0.98, y: 0, z: 3.04 }
     const result = snapStageObject(
       point,
       moving,
       { ...context, objects: [target] },
       { grid: 0, guides: true },
     )
-    expect(result.position).toEqual({ ...point, z: 3, y: -stageModelBottom(moving)! || 0 })
+    expect(result.labels).toContain('贴合 景片')
+    expect(result.labels).not.toContain('景片边缘对齐')
+    expect(result.position.x).toBeCloseTo(-0.94, 7)
+    expect(result.position.z).toBeCloseTo(3.04, 7)
     expect(
       stageModelContact(
         { ...moving, transform: { ...moving.transform, position: result.position } },
@@ -387,7 +391,7 @@ test('single, double and triple scenic flats share magnetic outer-edge alignment
   }
 })
 
-test('the reported folded three-panel and two-panel pose is recognized as exact visible contact', async () => {
+test('folded three-panel and two-panel end faces align flush, not merely at one touching point', async () => {
   const specs = [
     {
       assetId: 'SCN-FOLD-03',
@@ -446,10 +450,61 @@ test('the reported folded three-panel and two-panel pose is recognized as exact 
       ),
     )
     expect(result.labels).toContain('景片边缘对齐')
-    expect(result.position).toEqual(moving.transform.position)
+    expect(result.position.x).toBeCloseTo(moving.transform.position.x, 7)
+    expect(result.position.z).toBeCloseTo(target.transform.position.z, 7)
     expect(gap).toBeLessThan(1e-8)
     expect(stageModelContact(placed, target, true)).toBe(false)
     expect(useScene.getState().nodes).toBe(nodes)
+    for (const yaw of [0, 30, 90]) {
+      const angle = (yaw * Math.PI) / 180
+      const turn = (point: typeof result.position) => ({
+        x: point.x * Math.cos(angle) + point.z * Math.sin(angle),
+        y: point.y,
+        z: -point.x * Math.sin(angle) + point.z * Math.cos(angle),
+      })
+      const fixed = {
+        ...target,
+        transform: {
+          position: turn(target.transform.position),
+          rotationDegrees: { x: 0, y: yaw, z: 0 },
+        },
+      }
+      const expected = turn(result.position)
+      for (const offset of [-0.06, 0, 0.06]) {
+        const point = turn({
+          ...moving.transform.position,
+          x: result.position.x - 0.05,
+          z: target.transform.position.z + offset,
+        })
+        const source = {
+          ...moving,
+          transform: { position: point, rotationDegrees: { x: 0, y: yaw, z: 0 } },
+        }
+        const snapped = snapStageObject(
+          point,
+          source,
+          { ...context, objects: [fixed] },
+          { grid: 0.1, guides: true },
+        )
+        expect(snapped.position.x).toBeCloseTo(expected.x, 6)
+        expect(snapped.position.z).toBeCloseTo(expected.z, 6)
+        expect(
+          stageModelContact(
+            { ...source, transform: { ...source.transform, position: snapped.position } },
+            fixed,
+            true,
+          ),
+        ).toBe(false)
+        expect(
+          snapStageObject(
+            point,
+            source,
+            { ...context, objects: [fixed] },
+            { grid: 0, guides: false },
+          ).position,
+        ).toEqual(point)
+      }
+    }
   } finally {
     useScene.setState({ nodes: saved })
     entries.forEach(({ node, model }) => {

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 import {
   clearSceneHistory,
   type GridEvent,
@@ -10,6 +11,7 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { snapPlacementPosition, useDraftNode } from '@pascal-app/editor'
+import { applyItemFoldControls } from '@pascal-app/nodes'
 import { useViewer } from '@pascal-app/viewer'
 import { renderToString } from 'react-dom/server'
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
@@ -21,6 +23,7 @@ import {
   itemSurfaceStrategy,
   shelfSurfaceStrategy,
 } from '../../../../packages/editor/src/components/tools/item/placement-strategies'
+import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { connectStageCommandExecutor } from './command-executor'
 import { currentStageContext } from './context'
@@ -80,6 +83,74 @@ afterEach(() => {
   useScene.temporal.getState().resume()
   useScene.getState().unloadScene()
   clearSceneHistory()
+})
+
+test('native 3D drag aligns folded leaf faces in world space with one undo transaction', async () => {
+  const levelId = useViewer.getState().selection.levelId!
+  const entries = await Promise.all(
+    [
+      { id: 'SCN-FOLD-03', position: [-2.7, 0, -2.2], angles: [90, 180] },
+      { id: 'SCN-FOLD-02', position: [-0.900000024, 0, -2.1915888814230686], angles: [180, 90] },
+    ].map(async (spec) => {
+      const asset = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === spec.id)!.asset
+      const node = ItemNode.parse({
+        asset,
+        parentId: levelId,
+        metadata: { stageKind: 'scenic-flat' },
+        position: spec.position,
+        rotation: [-Math.PI, 0, -Math.PI],
+        controls: { fold_angle_1_deg: spec.angles[0], fold_angle_2_deg: spec.angles[1] },
+      })
+      const bytes = readFileSync(new URL(`../../public${asset.src}`, import.meta.url))
+      const model = (
+        await new ItemGLTFLoader().parseAsync(
+          bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+          '',
+        )
+      ).scene
+      const root = new Group()
+      root.userData.itemModelSettled = true
+      root.add(model)
+      applyItemFoldControls(root, node.controls)
+      useScene.getState().createNode(node, levelId)
+      sceneRegistry.nodes.set(node.id, root)
+      return { node, model }
+    }),
+  )
+  const fixed = entries[0]!.node,
+    moving = entries[1]!.node
+  const policy = installNativeStagePlacement(
+    () => null,
+    () => ({ grid: 0.1, guides: true }),
+  )
+  clearSceneHistory()
+  const before = useScene.getState().nodes
+  try {
+    const position = snapPlacementPosition(moving, [-1.01, 0, -2.12])!
+    expect(position[0]).toBeCloseTo(-0.900000024, 6)
+    expect(position[2]).toBeCloseTo(-2.2, 6)
+    expect(useScene.getState().nodes).toBe(before)
+    expect(useScene.temporal.getState().pastStates).toHaveLength(0)
+    useScene.getState().updateNode(moving.id, { position })
+    expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+    expect(useScene.getState().nodes[fixed.id]).toEqual(fixed)
+    const after = useScene.getState().nodes[moving.id]
+    useScene.temporal.getState().undo()
+    expect(useScene.getState().nodes[moving.id]).toEqual(moving)
+    useScene.temporal.getState().redo()
+    expect(useScene.getState().nodes[moving.id]).toEqual(after)
+  } finally {
+    policy()
+    entries.forEach(({ node, model }) => {
+      sceneRegistry.nodes.delete(node.id)
+      model.traverse((object) => {
+        if (!(object instanceof Mesh)) return
+        object.geometry.dispose()
+        for (const material of Array.isArray(object.material) ? object.material : [object.material])
+          material.dispose()
+      })
+    })
+  }
 })
 
 test('native item drag uses visible mesh contact, permits every contact drop, and commits one undo', () => {
