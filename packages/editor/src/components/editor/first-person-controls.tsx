@@ -66,6 +66,7 @@ import {
   type FirstPersonColliderWorld,
   type FirstPersonSpawn,
 } from './first-person/build-collider-world'
+import { registerKeyboardInputLoss } from './keyboard-input-loss'
 
 const CAMERA_EYE_OFFSET = 0.45
 const LOOK_SENSITIVITY = 0.002
@@ -855,20 +856,21 @@ export const FirstPersonControls = () => {
     }
 
     const handleBlur = () => {
-      if (!suspendRef.current) {
-        crouchKeyRef.current = false
-        droneAscendKeyRef.current = false
-        droneDescendKeyRef.current = false
-      }
+      Object.assign(movementInputRef.current, inactiveMovementInput)
+      controllerRef.current?.setMovement(inactiveMovementInput)
+      crouchKeyRef.current = false
+      droneAscendKeyRef.current = false
+      droneDescendKeyRef.current = false
     }
 
     document.addEventListener('keydown', handleKeyDown, true)
     document.addEventListener('keyup', handleKeyUp, true)
-    window.addEventListener('blur', handleBlur)
+    const removeInputLoss = registerKeyboardInputLoss(handleBlur)
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true)
       document.removeEventListener('keyup', handleKeyUp, true)
-      window.removeEventListener('blur', handleBlur)
+      removeInputLoss()
+      handleBlur()
     }
   }, [closeInteractableTarget, gl, isDroneMode, toggleInteractableTarget])
 

@@ -5,7 +5,7 @@ import { type PlacementSnap, snapStagePlacement } from '@/components/stage-entry
 import { stageContactIds } from './contacts'
 import { stageModelBottom, stageModelTop, stageVisibleFootprints } from './model-contact'
 
-// Same asset, dimensions and orientation: catch a whole row/column, not an arbitrary frame edge.
+// Matching props, or any pair of scenic flats: catch a whole row/column, not an arbitrary frame edge.
 export function snapMatchingStageObject(
   item: SceneContextObject,
   objects: readonly SceneContextObject[],
@@ -14,7 +14,13 @@ export function snapMatchingStageObject(
   const nodes = useScene.getState().nodes
   const source = nodes[item.id as AnyNodeId]
   if (source?.type !== 'item') return null
-  const candidates: { position: StagePoint; name: string; cost: number; key: string }[] = []
+  const candidates: {
+    position: StagePoint
+    name: string
+    cost: number
+    key: string
+    alignment: string
+  }[] = []
   const vertical = (object: SceneContextObject) => {
     const bounds = prepareStageCollision(object).bounds[1]!
     const bottom = stageModelBottom(object),
@@ -29,8 +35,9 @@ export function snapMatchingStageObject(
   if (!points.length) return null
   for (const other of objects) {
     const target = nodes[other.id as AnyNodeId]
-    if (other.id === item.id || target?.type !== 'item' || target.asset.id !== source.asset.id)
-      continue
+    if (other.id === item.id || target?.type !== 'item') continue
+    const scenicFlatFamily = item.kind === 'scenic-flat' && other.kind === 'scenic-flat'
+    if (!scenicFlatFamily && target.asset.id !== source.asset.id) continue
     if (
       (['x', 'y', 'z'] as const).some(
         (axis) =>
@@ -40,6 +47,7 @@ export function snapMatchingStageObject(
     )
       continue
     if (
+      !scenicFlatFamily &&
       (['width', 'height', 'depth'] as const).some(
         (key) => Math.abs(item.dimensionsMeters[key] - other.dimensionsMeters[key]) > 1e-6,
       )
@@ -76,6 +84,7 @@ export function snapMatchingStageObject(
         name: other.name,
         cost: Math.hypot(dx, dy, dz),
         key: `${other.id}:${key}`,
+        alignment: scenicFlatFamily ? '景片边缘对齐' : '同款对齐',
       })
     }
     const centers = to.map((extent, i) => extent.center - from[i]!.center)
@@ -99,7 +108,10 @@ export function snapMatchingStageObject(
         (other) => other.id !== item.id && stageContactIds([placed, other], true).has(item.id),
       )
     )
-      return { position: candidate.position, labels: [`贴合 ${candidate.name}`, '同款对齐'] }
+      return {
+        position: candidate.position,
+        labels: [`贴合 ${candidate.name}`, candidate.alignment],
+      }
   }
   return null
 }

@@ -273,3 +273,104 @@ test('same-type real folding panels align outer boundaries, never internal frame
     })
   }
 })
+
+test('single, double and triple scenic flats share magnetic outer-edge alignment', async () => {
+  const assetIds = ['SCN-FLAT-090', 'SCN-FOLD-02', 'SCN-FOLD-03'] as const
+  const assets = assetIds.map(
+    (assetId) => AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === assetId)!.asset,
+  )
+  const models = await Promise.all(
+    assets.map(async (asset) => {
+      const bytes = readFileSync(new URL(`../../public${asset.src}`, import.meta.url))
+      return (
+        await new ItemGLTFLoader().parseAsync(
+          bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
+          '',
+        )
+      ).scene
+    }),
+  )
+  const nodes = assets.map((asset) =>
+    ItemNode.parse({ asset, metadata: { stageKind: 'scenic-flat' } }),
+  )
+  const saved = useScene.getState().nodes
+  const nodeMap = { ...saved, ...Object.fromEntries(nodes.map((node) => [node.id, node])) }
+  useScene.setState({ nodes: nodeMap })
+  nodes.forEach((node, index) => {
+    const root = new Group()
+    root.userData.itemModelSettled = true
+    root.add(models[index]!)
+    sceneRegistry.nodes.set(node.id, root)
+  })
+  try {
+    const frame = { origin: [0, 0, 0] as [number, number, number], depthMeters: 6 }
+    const objects = nodes.map((node) => stageContextObject(node, nodeMap, frame)!)
+    for (const [movingIndex, targetIndex] of [
+      [0, 1],
+      [1, 2],
+      [2, 0],
+    ] as const) {
+      const baseMoving = objects[movingIndex]!
+      const baseTarget = objects[targetIndex]!
+      const movingFloorY = -stageModelBottom(baseMoving)! || 0
+      const targetFloorY = -stageModelBottom(baseTarget)! || 0
+      const target = {
+        ...baseTarget,
+        transform: { ...baseTarget.transform, position: { x: 0, y: targetFloorY, z: 3 } },
+      }
+      const movingAtOrigin = {
+        ...baseMoving,
+        transform: { ...baseMoving.transform, position: { x: 0, y: movingFloorY, z: 3 } },
+      }
+      const targetPoints = stageVisibleFootprints(target).flat()
+      const movingPoints = stageVisibleFootprints(movingAtOrigin).flat()
+      const targetMaxX = Math.max(...targetPoints.map(([x]) => x))
+      const movingMinX = Math.min(...movingPoints.map(([x]) => x))
+      const targetCenterZ =
+        (Math.max(...targetPoints.map(([, z]) => z)) +
+          Math.min(...targetPoints.map(([, z]) => z))) /
+        2
+      const movingCenterZ =
+        (Math.max(...movingPoints.map(([, z]) => z)) +
+          Math.min(...movingPoints.map(([, z]) => z))) /
+        2
+      const aligned = {
+        x: targetMaxX - movingMinX,
+        y: movingFloorY,
+        z: 3 + targetCenterZ - movingCenterZ,
+      }
+      const point = { x: aligned.x + 0.06, y: movingFloorY, z: aligned.z + 0.04 }
+      const moving = {
+        ...movingAtOrigin,
+        transform: { ...movingAtOrigin.transform, position: point },
+      }
+      const result = snapStageObject(
+        point,
+        moving,
+        { ...context, objects: [target] },
+        { grid: 0, guides: true },
+      )
+      const placed = { ...moving, transform: { ...moving.transform, position: result.position } }
+      expect(result.labels, `${assetIds[movingIndex]} -> ${assetIds[targetIndex]}`).toContain(
+        '景片边缘对齐',
+      )
+      expect(result.position.x).toBeCloseTo(aligned.x, 7)
+      expect(result.position.z).toBeCloseTo(aligned.z, 7)
+      expect(stageModelContact(placed, target, true)).toBe(false)
+    }
+    expect(useScene.getState().nodes).toBe(nodeMap)
+  } finally {
+    useScene.setState({ nodes: saved })
+    nodes.forEach((node) => {
+      sceneRegistry.nodes.delete(node.id)
+    })
+    models.forEach((model) => {
+      model.traverse((object) => {
+        if (!(object instanceof Mesh)) return
+        object.geometry.dispose()
+        for (const material of Array.isArray(object.material) ? object.material : [object.material])
+          material.dispose()
+      })
+    })
+  }
+})

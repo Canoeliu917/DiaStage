@@ -40,6 +40,7 @@ import useInteractionScope, {
   useMovingNode,
 } from '../../store/use-interaction-scope'
 import { createCameraDraggingLifecycle } from './camera-dragging-lifecycle'
+import { registerKeyboardInputLoss } from './keyboard-input-loss'
 
 const currentTarget = new Vector3()
 const tempBox = new Box3()
@@ -1002,7 +1003,7 @@ export const CustomCameraControls = () => {
     window.addEventListener('pointerdown', onPointerDown, true)
     window.addEventListener('pointerup', onPointerUp, true)
     window.addEventListener('pointercancel', onPointerUp, true)
-    window.addEventListener('blur', onBlur)
+    const removeInputLoss = registerKeyboardInputLoss(onBlur)
     gl.domElement.addEventListener('wheel', onWheel, { capture: true, passive: true })
     updateConfig()
 
@@ -1013,7 +1014,7 @@ export const CustomCameraControls = () => {
       window.removeEventListener('pointerdown', onPointerDown, true)
       window.removeEventListener('pointerup', onPointerUp, true)
       window.removeEventListener('pointercancel', onPointerUp, true)
-      window.removeEventListener('blur', onBlur)
+      removeInputLoss()
       gl.domElement.removeEventListener('wheel', onWheel, true)
       clearKeyboardPanKeys()
       clearNavigationCursor()

@@ -137,6 +137,9 @@ export function StagePlanNavigationRuntime() {
       )
         clear()
     }
+    const visibility = () => {
+      if (document.visibilityState === 'hidden') clear()
+    }
     const unsubscribe = useEditor.subscribe((next, before) => {
       if (next.viewMode !== before.viewMode || next.isCaptureMode || next.isFirstPersonMode) clear()
     })
@@ -147,7 +150,9 @@ export function StagePlanNavigationRuntime() {
     window.addEventListener('pointerup', pointerUp, true)
     window.addEventListener('pointercancel', clear)
     window.addEventListener('blur', clear)
+    window.addEventListener('pagehide', clear)
     window.addEventListener('focusin', focus)
+    document.addEventListener('visibilitychange', visibility)
     return () => {
       clear()
       unsubscribe()
@@ -158,7 +163,9 @@ export function StagePlanNavigationRuntime() {
       window.removeEventListener('pointerup', pointerUp, true)
       window.removeEventListener('pointercancel', clear)
       window.removeEventListener('blur', clear)
+      window.removeEventListener('pagehide', clear)
       window.removeEventListener('focusin', focus)
+      document.removeEventListener('visibilitychange', visibility)
     }
   }, [])
   return null
