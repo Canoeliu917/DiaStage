@@ -8,6 +8,7 @@ import { trackAiCall } from '../ai/usage'
 import {
   OPEN_CONCEPTS,
   OpenLanguageRequestSchema,
+  parseOpenLanguage,
   StructuredGroundingSchema,
   validateOpenGrounding,
 } from './open-language'
@@ -27,12 +28,17 @@ form-enclosure 支持三块独立景片的三面围合，或明确两块景片�
 否定不生成肯定动作。修正以明确的新语义为准。“开放一点”要澄清，不猜入口。“角度小一点”要澄清，不猜角度。
 当前 Proposal / Ghost 的再宽一点、换另一边、不要这个方案、看第二个，只引用当前上下文，不操作正式舞台。不自动采用任何方案。
 “入口再宽一点，但左边景片不要动”是当前两片方案的窄修订：输出 wider + keep_stage_left_fixed；左片由本地当前候选按 stage-left (+X) 判定，模型不得猜 ID 或 transform。
+如果输入数据含 deterministicCandidate，它是本地解析器已确定且仍会再次校验的候选；确认请求与上下文一致时逐字段原样返回，不得改写、补充或省略。reply 仍由你用中文解释方案与限制。
 不合并独立搭建动作，不忽略不支持的附加子句。所有字段必需；无信息用 null 或空数组。rawUtterance 保持原样。`
 
 export async function groundOpenLanguageWithModel(raw: unknown, signal: AbortSignal) {
   const request = OpenLanguageRequestSchema.parse(raw)
   const client = createOpenAIClient()
-  const payload = JSON.stringify({ ...request, canonicalKnowledge: OPEN_CONCEPTS })
+  const payload = JSON.stringify({
+    ...request,
+    canonicalKnowledge: OPEN_CONCEPTS,
+    deterministicCandidate: parseOpenLanguage(request.rawUtterance),
+  })
   const format = zodTextFormat(
     z.strictObject({
       grounding: StructuredGroundingSchema,
