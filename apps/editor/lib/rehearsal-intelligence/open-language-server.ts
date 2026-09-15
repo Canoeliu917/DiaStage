@@ -26,6 +26,7 @@ form-enclosure 支持三块独立景片的三面围合，或明确两块景片�
 不唯一的左右、数量、指代、多义表达、未知对象、未知能力、理论概念都 requiresClarification=true，操作数组为空，ambiguities 给出问题。confidence 不能授予执行权。
 否定不生成肯定动作。修正以明确的新语义为准。“开放一点”要澄清，不猜入口。“角度小一点”要澄清，不猜角度。
 当前 Proposal / Ghost 的再宽一点、换另一边、不要这个方案、看第二个，只引用当前上下文，不操作正式舞台。不自动采用任何方案。
+“入口再宽一点，但左边景片不要动”是当前两片方案的窄修订：输出 wider + keep_stage_left_fixed；左片由本地当前候选按 stage-left (+X) 判定，模型不得猜 ID 或 transform。
 不合并独立搭建动作，不忽略不支持的附加子句。所有字段必需；无信息用 null 或空数组。rawUtterance 保持原样。`
 
 export async function groundOpenLanguageWithModel(raw: unknown, signal: AbortSignal) {

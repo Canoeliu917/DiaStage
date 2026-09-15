@@ -1,16 +1,16 @@
 import { expect, test } from 'bun:test'
 import type { SceneContextSummary } from '@pascal-app/core/stage'
+import { zodTextFormat } from 'openai/helpers/zod'
 import { groundLanguage } from './language-grounding'
-import { OPEN_LANGUAGE_BOUNDARIES, OPEN_LANGUAGE_CASES } from './open-language-cases'
 import {
   emptyGrounding,
-  parseOpenLanguage,
-  validateOpenGrounding,
   type OpenLanguageContext,
+  parseOpenLanguage,
+  StructuredGroundingSchema,
+  validateOpenGrounding,
 } from './open-language'
+import { OPEN_LANGUAGE_BOUNDARIES, OPEN_LANGUAGE_CASES } from './open-language-cases'
 import { requestOpenGrounding } from './open-language-client'
-import { StructuredGroundingSchema } from './open-language'
-import { zodTextFormat } from 'openai/helpers/zod'
 
 export function languageContext(kind = 'selection'): OpenLanguageContext {
   const objects: OpenLanguageContext['objects'] = [
@@ -246,6 +246,19 @@ test('Validation: distinct audience/stage; fold/corner; followup refs; immutable
   ).toThrow()
   expect(() => validateOpenGrounding(emptyGrounding('未知'), '未知', context)).toThrow()
 })
+test('Validation: widening may keep the current stage-left flat fixed as one bounded revision', () => {
+  const text = '入口再宽一点，但左边景片不要动'
+  const context = {
+    ...languageContext('proposal'),
+    proposal: {
+      ...languageContext('proposal').proposal!,
+      subjectIds: ['a', 'b'],
+    },
+  }
+  expect(validateOpenGrounding(parseOpenLanguage(text), text, context).grounding.modifiers).toEqual(
+    ['wider', 'keep_stage_left_fixed'],
+  )
+})
 test('Validation: Structured Outputs format is strict, required, and has no transform tools', () => {
   const format = zodTextFormat(StructuredGroundingSchema, 'dia_structured_grounding')
   expect(format.strict).toBe(true)
@@ -259,7 +272,7 @@ for (const text of [
   '两块景片拐90度并加一个灯',
   '三联景片折成U型再加点压迫感',
   '门口留条路还要建一个桥',
-  ])
+])
   test(`Validation: no partial adoption of unsupported tail: ${text}`, () => {
     expect(() =>
       validateOpenGrounding(parseOpenLanguage(text), text, languageContext('proposal')),
@@ -285,7 +298,12 @@ for (const mode of ['valid', 'invented-intent', 'wrong-source', 'unavailable', '
         g.ambiguities = ['请说明对象']
       }
       return Response.json(
-        { grounding: g, provider: 'openai', model: 'mock-provider-not-live' },
+        {
+          requestId: crypto.randomUUID(),
+          grounding: g,
+          provider: 'openai',
+          model: 'mock-provider-not-live',
+        },
         { status: mode === 'unavailable' ? 503 : 200 },
       )
     }) as typeof fetch

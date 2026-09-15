@@ -6,6 +6,7 @@ import {
   parseOpenLanguage,
   validateOpenGrounding,
 } from '../rehearsal-intelligence/open-language'
+import { keepCurrentStageLeftFixed } from '../rehearsal-intelligence/open-language-proposal'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { useStageContactFeedback } from './contact-feedback'
 import { stageContactIds } from './contacts'
@@ -150,4 +151,61 @@ test('all 22 library assets: single Euler component, 30 degree default and stage
   } finally {
     useScene.setState(previous)
   }
+})
+
+test('wider partial enclosure keeps the current stage-left flat fixed', () => {
+  const scene = snapshot()
+  const grounding = parseOpenLanguage('两块景片围空间，留一个入口')!
+  const resolved = validateOpenGrounding(grounding, grounding.rawUtterance, {
+    objects: scene.objects.map(({ id, name, kind }) => ({ id, name, kind })),
+    selectedObjectIds: scene.selectedObjectIds,
+    sceneVersion: 'v1',
+    proposal: null,
+    lastReferencedIds: [],
+  })
+  const mapped = openGroundingPlacement(resolved, scene)
+  if ('type' in mapped) throw new Error('expected placement')
+  const proposal = mapped.knowledgeProposal!
+  const initial = solveSpatialConstraints({
+    snapshot: scene,
+    assets: scene.objects,
+    proposal,
+    constraints: spatialConstraintsForProposal(proposal),
+  })
+  const selected = initial.candidates.find(
+    (candidate) => candidate.candidateId === initial.selectedCandidateId,
+  )!
+  const accepted = {
+    ...scene,
+    objects: scene.objects.map((item) => ({
+      ...item,
+      transform:
+        selected.resolvedTransforms.find((resolved) => resolved.subject === item.id)?.transform ??
+        item.transform,
+    })),
+  }
+  const wider = {
+    ...proposal,
+    proposalId: crypto.randomUUID(),
+    constraints: proposal.constraints.map((constraint) => ({ ...constraint, widthMeters: 0.9 })),
+  }
+  const next = solveSpatialConstraints({
+    snapshot: accepted,
+    assets: accepted.objects,
+    proposal: wider,
+    constraints: spatialConstraintsForProposal(wider),
+  })
+  const fixed = [...selected.resolvedTransforms].sort(
+    (a, b) => b.transform.position.x - a.transform.position.x,
+  )[0]!
+  const filtered = keepCurrentStageLeftFixed(
+    next,
+    { status: 'applied', spatialSolution: initial } as never,
+    accepted,
+  )
+  expect(filtered.candidates.length).toBeGreaterThan(0)
+  for (const candidate of filtered.candidates)
+    expect(
+      candidate.resolvedTransforms.find((item) => item.subject === fixed.subject)?.transform,
+    ).toEqual(accepted.objects.find((item) => item.id === fixed.subject)?.transform)
 })

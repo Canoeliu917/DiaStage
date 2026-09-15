@@ -60,13 +60,18 @@ import type { DiaStageProposal } from './knowledge/stage-proposal'
 import { groundLanguage, recordGroundingCorrection } from './language-grounding'
 import { LOCAL_REHEARSAL_MODEL_VERSION, localRehearsalOutput } from './local-rehearsal'
 import {
+  OPEN_CAMERA_IDS,
   openGroundingPlacement,
   parseOpenLanguage,
   type StructuredGrounding,
   validateOpenGrounding,
 } from './open-language'
 import { requestOpenGrounding } from './open-language-client'
-import { openLanguageContext, reviseOpenProposal } from './open-language-proposal'
+import {
+  keepCurrentStageLeftFixed,
+  openLanguageContext,
+  reviseOpenProposal,
+} from './open-language-proposal'
 import { requestProposal } from './proposal-client'
 import { createInteraction } from './proposal-generator'
 import type { Interaction, RehearsalProposal, Suggestion } from './schema'
@@ -1058,11 +1063,15 @@ export class DiaConversation {
     const formalContext = currentStageContext()
     const parent =
       previous &&
-      ['proposed', 'previewed'].includes(previous.status) &&
-      previous.sceneVersion === context.sceneVersion
+      ((['proposed', 'previewed'].includes(previous.status) &&
+        previous.sceneVersion === context.sceneVersion) ||
+        (previous.status === 'applied' && previous.finalSceneVersion === context.sceneVersion))
         ? previous
         : null
-    const groundingContext = parent ? draftContext(formalContext, parent.plan) : formalContext
+    const groundingContext =
+      parent && parent.status !== 'applied'
+        ? draftContext(formalContext, parent.plan)
+        : formalContext
     const grounded = groundLanguage(text, groundingContext)
     const intent =
       grounded?.capability === 'build'
@@ -1110,9 +1119,17 @@ export class DiaConversation {
       grounded?.capability !== 'build' &&
       !['version', 'remount'].includes(intent) &&
       !this.rehearsalEnabled
+    const groundActionWithProvider =
+      !!localOpen &&
+      !localOpen.requiresClarification &&
+      (localOpen.constraints.length > 0 ||
+        localOpen.intents.some((id) => !OPEN_CAMERA_IDS.includes(id as never)) ||
+        localOpen.modifiers.includes('wider'))
     if (localOpen || tryOpenProvider) {
       try {
-        if (parent) this.assertBuildCurrent(parent)
+        if (localOpen?.modifiers.includes('wider') && !parent)
+          throw new Error('没有可继续加宽的当前方案，或舞台版本已经变化。')
+        if (parent && parent.status !== 'applied') this.assertBuildCurrent(parent)
         const openContext = openLanguageContext(
           formalContext,
           context.sceneVersion!,
@@ -1122,7 +1139,7 @@ export class DiaConversation {
           parent,
           !!useStagePlanPreview.getState().plan && parent?.status === 'previewed',
         )
-        let semantic = explainOnly ? null : localOpen
+        let semantic = explainOnly || groundActionWithProvider ? null : localOpen
         let provider: DiaBuildProposal['groundingProvider'] = {
           provider: 'deterministic',
           model: null,
@@ -1188,7 +1205,11 @@ export class DiaConversation {
         }
         if (!knowledge) throw new Error('没有通过 Knowledge 来源校验。')
         if (spatialConstraintsForProposal(knowledge).length) {
-          const solution = solveStageSpatialProposal(knowledge, formalContext)
+          let solution = solveStageSpatialProposal(knowledge, formalContext)
+          if (semantic.modifiers.includes('keep_stage_left_fixed')) {
+            if (!parent) throw new Error('没有当前两片方案可保持台左景片不动。')
+            solution = keepCurrentStageLeftFixed(solution, parent, formalContext)
+          }
           await this.proposeBuildPlan(
             text,
             solution.candidates[0]?.plan ?? spatialCandidatePlan([]),

@@ -8,13 +8,13 @@ import {
   subscribeSceneCommits,
   useScene,
 } from '@pascal-app/core'
-import { Group } from 'three'
 import { validateStagePlan } from '@pascal-app/core/stage'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
+import { Group } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { SceneJournal } from '../scene-journal'
-import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { useStagePlanPreview } from '../stage/plan-preview'
+import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { bindRehearsalScene } from './authority'
 import { DiaConversation } from './conversation-controller'
@@ -64,7 +64,7 @@ async function setup(assets: string[]) {
   clearSceneHistory()
   return ids
 }
-for (const scenario of ['enclosure', 'corner', 'fold', 'direction', 'provider'] as const)
+for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', 'provider'] as const)
   test(`Integration: ${scenario} grounded proposal, followups, no writes until one Accept transaction`, async () => {
     const ids = await setup(
       scenario === 'fold'
@@ -87,18 +87,21 @@ for (const scenario of ['enclosure', 'corner', 'fold', 'direction', 'provider'] 
     const dia = new DiaConversation(sceneId, () => null, undefined, false)
     const originalFetch = globalThis.fetch
     let providerCalls = 0
-    if (scenario === 'provider')
-      globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-        expect(url).toBe('/api/dia/ground')
-        providerCalls++
-        const request = JSON.parse(String(init?.body))
-        expect(request.context.objects.some((o: object) => 'transform' in o)).toBe(false)
-        return Response.json({
-          grounding: { ...parseOpenLanguage('两块景片拐90度'), rawUtterance: request.rawUtterance },
-          provider: 'openai',
-          model: 'mock-provider-not-live',
-        })
-      }) as typeof fetch
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      expect(url).toBe('/api/dia/ground')
+      providerCalls++
+      const request = JSON.parse(String(init?.body))
+      expect(request.context.objects.some((o: object) => 'transform' in o)).toBe(false)
+      return Response.json({
+        requestId: crypto.randomUUID(),
+        grounding: {
+          ...(parseOpenLanguage(request.rawUtterance) ?? parseOpenLanguage('两块景片拐90度')),
+          rawUtterance: request.rawUtterance,
+        },
+        provider: 'openai',
+        model: 'mock-provider-not-live',
+      })
+    }) as typeof fetch
     const send = async (text: string) => {
       await dia.send(text)
       return dia.store.getState().thread!.messages.at(-1)?.content
@@ -106,23 +109,24 @@ for (const scenario of ['enclosure', 'corner', 'fold', 'direction', 'provider'] 
     const phrase =
       scenario === 'enclosure'
         ? '拿三块景片给我围一下。'
-        : scenario === 'corner'
-          ? '两块景片接成直角'
-          : scenario === 'fold'
-            ? '三联景片收成U型'
-            : scenario === 'provider'
-              ? '把两个平片搭成直角弯'
-              : '景片0放到台左'
+        : scenario === 'partial'
+          ? '两块景片围空间，中间留入口'
+          : scenario === 'corner'
+            ? '两块景片接成直角'
+            : scenario === 'fold'
+              ? '三联景片收成U型'
+              : scenario === 'provider'
+                ? '把两个平片搭成直角弯'
+                : '景片0放到台左'
     try {
       await dia.load()
       const before = JSON.stringify(useScene.getState().nodes)
       const message = await send(phrase)
       expect(dia.buildProposal()?.structuredGrounding, message).toBeDefined()
-      if (scenario === 'provider')
-        expect(dia.buildProposal()!.groundingProvider).toEqual({
-          provider: 'openai',
-          model: 'mock-provider-not-live',
-        })
+      expect(dia.buildProposal()!.groundingProvider).toEqual({
+        provider: 'openai',
+        model: 'mock-provider-not-live',
+      })
       if (scenario === 'enclosure') {
         const first = dia.buildProposal()!.id
         expect(await send('前面别封死，留个入口。')).toContain('Stage Proposal')
@@ -147,7 +151,7 @@ for (const scenario of ['enclosure', 'corner', 'fold', 'direction', 'provider'] 
         validateStagePlan(dia.buildProposal()!.plan, dia.buildProposal()!.context).plan,
       )
       expect(dia.buildProposal()!.status, dia.store.getState().notice).toBe('previewed')
-      if (['enclosure', 'corner', 'provider'].includes(scenario)) {
+      if (['enclosure', 'partial', 'corner', 'provider'].includes(scenario)) {
         await send('看第二个')
         const second = dia.buildProposal()!.spatialSolution!.selectedCandidateId
         await send('换另一个方案。')
@@ -174,11 +178,50 @@ for (const scenario of ['enclosure', 'corner', 'fold', 'direction', 'provider'] 
       expect(commits, dia.store.getState().notice).toBe(1)
       expect(useScene.temporal.getState().pastStates).toHaveLength(1)
       const accepted = JSON.stringify(useScene.getState().nodes)
+      const acceptedLeft =
+        scenario === 'partial'
+          ? [...dia.buildProposal()!.spatialSolution!.candidates]
+              .find(
+                (candidate) =>
+                  candidate.candidateId ===
+                  dia.buildProposal()!.spatialSolution!.selectedCandidateId,
+              )!
+              .resolvedTransforms.toSorted(
+                (a, b) => b.transform.position.x - a.transform.position.x,
+              )[0]!.subject
+          : null
+      const acceptedLeftTransform = acceptedLeft
+        ? JSON.stringify({
+            position: (useScene.getState().nodes[acceptedLeft] as ItemNode).position,
+            rotation: (useScene.getState().nodes[acceptedLeft] as ItemNode).rotation,
+          })
+        : null
       useScene.temporal.getState().undo()
       expect(JSON.stringify(useScene.getState().nodes)).toBe(before)
       useScene.temporal.getState().redo()
       expect(JSON.stringify(useScene.getState().nodes)).toBe(accepted)
-      if (scenario === 'provider') expect(providerCalls).toBe(2)
+      if (scenario === 'partial') {
+        const parent = dia.buildProposal()!.id
+        expect(await send('入口再宽一点，但左边景片不要动')).toContain('Stage Proposal')
+        expect(dia.buildProposal()!.parentId).toBe(parent)
+        expect(commits).toBe(1)
+        await dia.previewBuild(
+          validateStagePlan(dia.buildProposal()!.plan, dia.buildProposal()!.context).plan,
+        )
+        expect(commits).toBe(1)
+        await dia.adopt()
+        await queue
+        expect(commits).toBe(2)
+        expect(
+          JSON.stringify({
+            position: (useScene.getState().nodes[acceptedLeft!] as ItemNode).position,
+            rotation: (useScene.getState().nodes[acceptedLeft!] as ItemNode).rotation,
+          }),
+        ).toBe(acceptedLeftTransform)
+      }
+      expect(providerCalls).toBe(
+        scenario === 'enclosure' ? 4 : ['partial', 'direction'].includes(scenario) ? 3 : 2,
+      )
     } finally {
       globalThis.fetch = originalFetch
       dia.dispose()

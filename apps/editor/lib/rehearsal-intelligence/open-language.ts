@@ -58,7 +58,16 @@ export const StructuredGroundingSchema = z.strictObject({
   intents: z.array(z.enum(OPEN_INTENT_IDS)).max(2),
   constraints: z.array(z.enum(OPEN_CONSTRAINT_IDS)).max(2),
   modifiers: z
-    .array(z.enum(['wider', 'other_candidate', 'reject', 'smaller_angle', 'correction']))
+    .array(
+      z.enum([
+        'wider',
+        'keep_stage_left_fixed',
+        'other_candidate',
+        'reject',
+        'smaller_angle',
+        'correction',
+      ]),
+    )
     .max(2),
   ambiguities: z.array(z.string().min(1).max(300)).max(6),
   confidence: z.number().min(0).max(1),
@@ -157,8 +166,11 @@ const normalize = (s: string) =>
     .replace(/\s|[。！!？?]/g, '')
     .replace(/^(?:请|麻烦|劳驾|帮我)/, '')
     .replace(/给我/g, '')
+const isFixedLeftRevision = (text: string) =>
+  /^入口再宽一点[,，]但(?:台左|左边)景片不要动$/.test(text)
 export function openLanguageSafetyIssue(raw: string): string | null {
   const text = normalize(raw)
+  const fixedLeftRevision = isFixedLeftRevision(text)
   if (
     /开放一点|几块|几片|若干|随便|任意|或者|还是|然后|同时|压力|更美|压迫|灯光|开门扇|开一下门|飞起来|删除|部署|system|prompt|XYZ|坐标|忽略.*规则/i.test(
       text,
@@ -171,11 +183,15 @@ export function openLanguageSafetyIssue(raw: string): string | null {
     )
   )
     return '这是理论或暂未开放的能力，不能转换成搭建动作。'
-  if (/(?:左边|右边|左侧|右侧)那(?:块|个)|^(?:往|向)?[左右](?:边|侧)?$/.test(text))
+  if (
+    !fixedLeftRevision &&
+    /(?:左边|右边|左侧|右侧)那(?:块|个)|^(?:往|向)?[左右](?:边|侧)?$/.test(text)
+  )
     return '这里的左右按舞台、观众还是当前画面？请选中唯一对象并说明参考方向。'
   const corrected = text.replace(/^不是.+?[,，](?:我说的|我指的|而)?是/, '')
   const unframed = corrected.replace(/(?:舞台|观众(?:的)?|演员)[左右](?:边|侧|手边)?|台[左右]/g, '')
   if (
+    !fixedLeftRevision &&
     !parseCameraIntent(corrected) &&
     !/按(?:舞台|观众)方向/.test(corrected) &&
     /[左右](?:边|侧|一点)|(?:往|向)[左右]/.test(unframed)
@@ -183,6 +199,7 @@ export function openLanguageSafetyIssue(raw: string): string | null {
     return '左右缺少明确参考方向；请说明台左台右或观众左观众右。'
   if (
     /[,，;；]/.test(corrected) &&
+    !fixedLeftRevision &&
     !parseCameraIntent(corrected) &&
     !/^前面别封死[,，]留(?:个|一个)入口$/.test(corrected) &&
     !/^.+围.+[,，](?:中间|前面)?留(?:个|一个)?(?:\d+(?:\.\d+)?米宽)?入口$/.test(corrected)
@@ -190,6 +207,7 @@ export function openLanguageSafetyIssue(raw: string): string | null {
     return '这句话含有多个要求；请一次明确一个支持的搭建操作，不忽略附加子句。'
   if (
     /不要|别|不能|不许|不必/.test(corrected) &&
+    !fixedLeftRevision &&
     !/^(?:前面别封死[,，]?)?(?:留(?:个|一个)?入口)?$/.test(corrected) &&
     !/^(?:别把入口堵上|不要封住入口|前面别封死|不要这个方案|不要了|别要这个方案)$/.test(
       corrected,
@@ -214,13 +232,17 @@ function nounReference(noun: string): OpenReference {
 export function parseOpenLanguage(rawUtterance: string): StructuredGrounding | null {
   let g = emptyGrounding(rawUtterance),
     text = normalize(rawUtterance)
+  const fixedLeftRevision = isFixedLeftRevision(text)
   const issue = openLanguageSafetyIssue(rawUtterance)
   if (issue) return clarify(g, issue)
   if (/^(?:不是.+?[,，](?:我说的|我指的|而)?是)/.test(text)) {
     text = text.replace(/^不是.+?[,，](?:我说的|我指的|而)?是/, '')
     g.modifiers.push('correction')
   }
-  if (/^(?:(?:再|稍微)?宽(?:一点|些)|入口加宽一点)$/.test(text)) {
+  if (fixedLeftRevision) {
+    g.modifiers.push('wider', 'keep_stage_left_fixed')
+    g.references = [ref('current_proposal')]
+  } else if (/^(?:(?:再|稍微)?宽(?:一点|些)|入口加宽一点)$/.test(text)) {
     g.modifiers.push('wider')
     g.references = [ref('current_proposal')]
   } else if (/^(?:换|看)(?:另一个|另外一个|另一边)(?:方案)?$/.test(text)) {

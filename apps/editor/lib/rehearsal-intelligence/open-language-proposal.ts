@@ -1,12 +1,13 @@
 import type { SceneContextSummary } from '@pascal-app/core/stage'
+import type { SpatialSolution } from '../stage/spatial-constraints'
 import { SPATIAL_RUNTIME_CONFIG } from '../stage/spatial-constraints'
 import { createUUID } from '../uuid'
 import type { DiaBuildProposal } from './dia-backbone'
 import { DiaStageProposalSchema } from './knowledge/stage-proposal'
 import {
   OPEN_CONCEPTS,
-  openGroundingPlacement,
   type OpenLanguageContext,
+  openGroundingPlacement,
   type ValidatedOpenGrounding,
 } from './open-language'
 
@@ -109,4 +110,36 @@ export function reviseOpenProposal(
     return placement.knowledgeProposal
   }
   throw new Error('这条口令不是已支持的空间修订。')
+}
+
+/** "左边" in this explicit revision means stage-left (+X) in the current candidate. */
+export function keepCurrentStageLeftFixed(
+  solution: SpatialSolution,
+  parent: DiaBuildProposal,
+  snapshot: SceneContextSummary,
+): SpatialSolution {
+  const previous = parent.spatialSolution?.candidates.find(
+    (candidate) => candidate.candidateId === parent.spatialSolution?.selectedCandidateId,
+  )
+  if (previous?.resolvedTransforms.length !== 2) throw new Error('当前方案没有唯一的左右两块景片。')
+  const ordered = [...previous.resolvedTransforms].sort(
+    (a, b) => b.transform.position.x - a.transform.position.x,
+  )
+  if (Math.abs(ordered[0]!.transform.position.x - ordered[1]!.transform.position.x) < 1e-6)
+    throw new Error('当前两块景片无法确定台左一片，请先选择候选方案。')
+  const fixed = ordered[0]!
+  const source = snapshot.objects.find((item) => item.id === fixed.subject)
+  if (!source) throw new Error('要保持不动的景片已不存在。')
+  const expected = parent.status === 'applied' ? source.transform : fixed.transform
+  const candidates = solution.candidates.filter((candidate) => {
+    const transform = candidate.resolvedTransforms.find((item) => item.subject === fixed.subject)
+    return transform && JSON.stringify(transform.transform) === JSON.stringify(expected)
+  })
+  if (!candidates.length) throw new Error('入口加宽后没有能保持台左景片不动的合法候选。')
+  return {
+    ...solution,
+    candidates,
+    selectedCandidateId: candidates[0]!.candidateId,
+    warnings: [...solution.warnings, '入口加宽时保持当前台左景片不动。'],
+  }
 }
