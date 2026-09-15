@@ -91,7 +91,6 @@ const movementKeyboardBindings: Array<{ name: MovementKeyName; keys: string[] }>
   { name: 'jump', keys: ['Space'] },
   { name: 'run', keys: ['ShiftLeft', 'ShiftRight'] },
 ]
-const keyboardMap = movementKeyboardBindings
 const movementKeyToName = new Map<string, MovementKeyName>(
   movementKeyboardBindings.flatMap(({ name, keys }) => keys.map((key) => [key, name] as const)),
 )
@@ -313,6 +312,13 @@ export const FirstPersonControls = () => {
     position: [number, number, number]
     yaw: number
   } | null>(null)
+  const clearMovementInput = useCallback(() => {
+    Object.assign(movementInputRef.current, inactiveMovementInput)
+    controllerRef.current?.setMovement(inactiveMovementInput)
+    crouchKeyRef.current = false
+    droneAscendKeyRef.current = false
+    droneDescendKeyRef.current = false
+  }, [])
 
   useEffect(() => {
     const previousCameraMode = useViewer.getState().cameraMode
@@ -716,6 +722,7 @@ export const FirstPersonControls = () => {
         useViewer.getState().setWalkthroughSuspended(false)
         return
       }
+      clearMovementInput()
 
       // Deliberately released (screenshot pause) — stay in first person;
       // clicking the canvas re-locks.
@@ -757,7 +764,7 @@ export const FirstPersonControls = () => {
         document.exitPointerLock()
       }
     }
-  }, [gl])
+  }, [clearMovementInput, gl])
 
   useEffect(() => {
     const canvas = gl.domElement
@@ -855,24 +862,16 @@ export const FirstPersonControls = () => {
       applyMovementKey(event, false)
     }
 
-    const handleBlur = () => {
-      Object.assign(movementInputRef.current, inactiveMovementInput)
-      controllerRef.current?.setMovement(inactiveMovementInput)
-      crouchKeyRef.current = false
-      droneAscendKeyRef.current = false
-      droneDescendKeyRef.current = false
-    }
-
     document.addEventListener('keydown', handleKeyDown, true)
     document.addEventListener('keyup', handleKeyUp, true)
-    const removeInputLoss = registerKeyboardInputLoss(handleBlur)
+    const removeInputLoss = registerKeyboardInputLoss(clearMovementInput)
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true)
       document.removeEventListener('keyup', handleKeyUp, true)
       removeInputLoss()
-      handleBlur()
+      clearMovementInput()
     }
-  }, [closeInteractableTarget, gl, isDroneMode, toggleInteractableTarget])
+  }, [clearMovementInput, closeInteractableTarget, gl, isDroneMode, toggleInteractableTarget])
 
   const hasStandingClearance = useCallback((position: Vector3) => {
     standClearanceRaycaster.set(position, standClearanceUp)
@@ -999,7 +998,7 @@ export const FirstPersonControls = () => {
   return (
     <>
       {controllerStart && (
-        <KeyboardControls map={keyboardMap}>
+        <KeyboardControls map={[]}>
           <BVHEcctrl
             acceleration={26}
             airDragFactor={0.3}
