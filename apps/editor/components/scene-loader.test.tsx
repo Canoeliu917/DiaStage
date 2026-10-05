@@ -18,6 +18,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const React = await import('react')
   const { BlockNode, SiteNode } = await import('@pascal-app/core/schema')
   const { createTheatreDocument } = await import('../lib/theatre/schema')
+  const { sceneGraphSignature } = await import('../lib/scene-signature')
   let displayedDocument: ReturnType<typeof createTheatreDocument> | null = null
   const site = SiteNode.parse({ id: 'site_save', name: '排演', metadata: { existing: 'retain' } })
   const prop = BlockNode.parse({ id: 'block_letter', name: '信', position: [1, 0, 3] })
@@ -80,6 +81,16 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     },
   }))
   const requests: { url: string; init: RequestInit }[] = []
+  const coverRequests: { version: number; signature: string }[] = []
+  const onThumbnailCapture = () => {}
+  const scheduleCover = (request: { version: number; signature: string }) =>
+    coverRequests.push(request)
+  mock.module('./use-audience-cover', () => ({
+    useAudienceCover: () => ({
+      onThumbnailCapture,
+      scheduleCover,
+    }),
+  }))
   let respond: () => Promise<Response> = async () => new Response(null, { status: 500 })
   const Editor = () => null
   const empty = () => null
@@ -142,10 +153,11 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     StableRenderMode: { Provider: empty },
     ViewerErrorBoundary: empty,
   }))
+  let recoveryPending = false
   mock.module('../lib/scene-journal', () => ({
     SceneJournal: class {
       async recover(graph: SceneGraph) {
-        return { graph, pending: false, conflict: false }
+        return { graph, pending: recoveryPending, conflict: false }
       }
       async append() {}
       async acknowledge() {}
@@ -202,6 +214,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   type Element = { type?: unknown; props?: Record<string, unknown> }
   type EditorProps = {
     onLoad: () => Promise<SceneGraph>
+    onLoaderChange: (visible: boolean) => void
     onSave: (graph: SceneGraph, options?: { keepalive?: boolean }) => Promise<void>
     onSaveStatusChange: (status: SaveStatus) => void
     onDirty: () => void
@@ -234,7 +247,11 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     const nodes = elements(tree)
     for (const effect of effects) effect()
     const props = nodes.find((node) => node.type === Editor)?.props as unknown as EditorProps
-    assert.equal(props.onThumbnailCapture, undefined, 'the missing thumbnail endpoint is not wired')
+    assert.equal(
+      props.onThumbnailCapture,
+      onThumbnailCapture,
+      'editor captures reach the cover hook',
+    )
     onApplyDirty = props.onDirty
     const navigation = nodes.find((node) => node.props?.actions)?.props
     return { nodes, props, navigation }
@@ -247,9 +264,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     ;(action as () => void)()
   }
   function status() {
-    return elements(render().navigation?.actions).find(
-      (node) => node.props?.role === 'status',
-    )?.props?.children
+    return elements(render().navigation?.actions).find((node) => node.props?.role === 'status')
+      ?.props?.children
   }
   async function saveAsEditor(graph: SceneGraph, keepalive = false) {
     const { props } = render()
@@ -266,10 +282,40 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   }
   const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0))
   const sentGraph = (index: number) =>
-    JSON.parse(String(requests[index]?.init.body)) as { name: string; graph: SceneGraph }
+    JSON.parse(String(requests[index]?.init.body)) as {
+      name: string
+      graph: SceneGraph
+      thumbnailUrl?: string | null
+    }
   const matchVersion = (index: number) => new Headers(requests[index]?.init.headers).get('If-Match')
 
+  await render().props.onLoad()
+  liveGraph.nodes[prop.id] = { ...prop, slots: { body: 'library:metal-steel' } }
+  render().props.onLoaderChange(false)
+  assert.deepEqual(
+    coverRequests.at(-1),
+    {
+      version: 7,
+      signature: sceneGraphSignature(liveGraph),
+    },
+    'initial covers use the hydrated material slots without rewriting the server graph',
+  )
+  const initialCovers = coverRequests.length
+  render().props.onDirty()
+  render().props.onLoaderChange(false)
+  assert.equal(coverRequests.length, initialCovers, 'loading cannot capture unsaved edits')
+  hooks = []
+  recoveryPending = true
+  await render().props.onLoad()
+  render().props.onLoaderChange(false)
+  assert.equal(coverRequests.length, initialCovers, 'recovered work waits for a successful save')
+  hooks = []
+  recoveryPending = false
+  coverRequests.length = 0
+  liveGraph = structuredClone(initialScene)
+
   await assert.rejects(saveAsEditor(initialScene, true), /500/)
+  assert.equal(coverRequests.length, 0, 'a failed save cannot replace the cover')
   assert.deepEqual(statuses, ['error'], 'autosave cannot interpret a failed callback as saved')
   assert.equal(status(), '保存失败')
   assert.equal(requests[0]?.init.keepalive, undefined)
@@ -296,7 +342,13 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   await saveAsEditor(liveGraph)
   await flush()
   assert.equal(status(), '本机已保存 · 已同步')
+  assert.equal(coverRequests.at(-1)?.version, 8, 'successful saves schedule a version-bound cover')
   assert.deepEqual(sentGraph(2).graph, liveGraph, 'retry reads the current persisted store')
+  assert.equal(
+    sentGraph(2).thumbnailUrl,
+    null,
+    'a saved graph clears its previous cover atomically',
+  )
   assert.notDeepEqual(
     (sentGraph(2).graph.nodes[prop.id] as typeof prop).position,
     transientPosition,
@@ -311,6 +363,18 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   assert.equal(
     requests.every((request) => request.url === '/api/scenes/save-test'),
     true,
+  )
+
+  let acknowledgementRequests = 0
+  respond = async () =>
+    ++acknowledgementRequests === 1
+      ? Response.json({ error: 'version_conflict' }, { status: 409 })
+      : Response.json({ version: 9, nodeCount: 2, graph: liveGraph })
+  await render().props.onSave(liveGraph)
+  assert.equal(
+    coverRequests.at(-1)?.version,
+    9,
+    'an identical acknowledged save also refreshes the cover',
   )
 
   hooks = []
@@ -414,6 +478,14 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   sources.at(-1)!.scene(13, remoteGraph)
   assert.deepEqual(applied, [remoteGraph], 'a clean editor still receives remote updates')
   assert.deepEqual(liveGraph, remoteGraph)
+  assert.deepEqual(
+    coverRequests.at(-1),
+    {
+      version: 13,
+      signature: sceneGraphSignature(liveGraph),
+    },
+    'clean remote updates also refresh the cover from the loaded graph',
+  )
   sources.at(-1)!.scene(14, initialScene)
   assert.deepEqual(
     applied,

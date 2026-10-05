@@ -4,6 +4,7 @@ import { DIASTAGE_BRAND } from '@/lib/brand'
 import { DIA_CSS_VARIABLES } from '@/lib/visual-system'
 import { DevDiagnostics } from './dev-diagnostics'
 import './globals.css'
+import './brand-paper.css'
 
 export const metadata = {
   title: '咫台 DiaStage: Stage Build & Remount Preview',
@@ -21,6 +22,22 @@ const sourceHanSans = localFont({
   adjustFontFallback: false,
 })
 
+const huiwenMincho = localFont({
+  src: './fonts/huiwen-mincho/HuiwenMinchoGBK-Regular.woff2',
+  variable: '--font-huiwen-mincho',
+  weight: '500',
+  display: 'swap',
+  adjustFontFallback: false,
+})
+
+const diaLatin = localFont({
+  src: './fonts/GeistMonoVF.woff',
+  variable: '--font-dia-latin',
+  weight: '100 900',
+  display: 'swap',
+  adjustFontFallback: false,
+})
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,7 +48,7 @@ export default function RootLayout({
 
   return (
     <html
-      className={sourceHanSans.variable}
+      className={`${sourceHanSans.variable} ${huiwenMincho.variable} ${diaLatin.variable}`}
       lang="zh-CN"
       style={DIA_CSS_VARIABLES as CSSProperties}
     >

@@ -127,6 +127,11 @@ export interface SceneStore {
   list(opts?: SceneListOptions): Promise<SceneMeta[]>
   delete(id: SceneId, opts?: SceneMutateOptions): Promise<boolean>
   rename(id: SceneId, newName: string, opts?: SceneMutateOptions): Promise<SceneMeta>
+  updateThumbnail?(
+    id: SceneId,
+    thumbnailUrl: string,
+    opts: { expectedVersion: number },
+  ): Promise<SceneMeta>
   appendSceneEvent?(opts: SceneEventAppendOptions): Promise<SceneEvent>
   listSceneEvents?(sceneId: SceneId, opts?: SceneEventListOptions): Promise<SceneEvent[]>
 }

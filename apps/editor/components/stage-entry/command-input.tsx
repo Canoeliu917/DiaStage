@@ -104,9 +104,18 @@ export async function applyReviewedPlan(
   }
 }
 
-export function StageCommandInput({ sceneId }: { sceneId?: string }) {
+export function StageCommandInput({
+  sceneId,
+  initialText = '',
+  onTextChange,
+}: {
+  sceneId?: string
+  initialText?: string
+  onTextChange?: (text: string) => void
+}) {
   const router = useRouter()
-  const [text, setText] = useState('')
+  const [text, setText] = useState(initialText)
+  useEffect(() => onTextChange?.(text), [text, onTextChange])
   const [source, setSource] = useState<'voice' | 'typed-command'>('typed-command')
   const [state, setState] = useState<VoiceState>('idle')
   const [error, setError] = useState('')

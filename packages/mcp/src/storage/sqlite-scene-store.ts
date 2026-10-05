@@ -377,7 +377,9 @@ export class SqliteSceneStore implements SceneStore {
       const projectId = opts.projectId ?? existing?.project_id ?? (placeholder ? id : null)
       const ownerId = opts.ownerId ?? existing?.owner_id ?? placeholder?.ownerId ?? null
       const thumbnailUrl =
-        opts.thumbnailUrl ?? existing?.thumbnail_url ?? placeholder?.thumbnailUrl ?? null
+        opts.thumbnailUrl === undefined
+          ? (existing?.thumbnail_url ?? placeholder?.thumbnailUrl ?? null)
+          : opts.thumbnailUrl
 
       if (existing) {
         db.query(
@@ -545,6 +547,28 @@ export class SqliteSceneStore implements SceneStore {
         version: nextVersion,
         updatedAt: now,
       }
+    })
+  }
+
+  async updateThumbnail(
+    id: string,
+    thumbnailUrl: string,
+    opts: { expectedVersion: number },
+  ): Promise<SceneMeta> {
+    if (!Number.isSafeInteger(opts.expectedVersion) || opts.expectedVersion < 1)
+      throw new SceneInvalidError('expectedVersion must be a positive safe integer')
+    return this.withWriteTransaction((db) => {
+      const safeId = sanitizeSlug(id)
+      const existing = this.getRow(db, safeId)
+      if (!existing) throw new SceneNotFoundError(`Scene "${safeId}" not found`)
+      if (existing.version !== opts.expectedVersion)
+        throw new SceneVersionConflictError('The scene changed before its cover was captured')
+      db.query('UPDATE scenes SET thumbnail_url = ? WHERE id = ? AND version = ?').run(
+        thumbnailUrl,
+        safeId,
+        opts.expectedVersion,
+      )
+      return { ...rowToMeta(existing), thumbnailUrl }
     })
   }
 

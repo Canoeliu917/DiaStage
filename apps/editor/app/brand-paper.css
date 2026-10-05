@@ -1,0 +1,35 @@
+:root { --dia-brand-paper: #f5f4f0; }
+body { font-family: var(--dia-font-ui); font-synthesis: style; }
+button, input, select, textarea { font-family: var(--dia-font-ui) !important; }
+svg text, [style*="font-family"]:not(.studio-brand-en) { font-family: var(--dia-font-ui) !important; }
+[data-pascal-perf-panel], [data-pascal-perf-panel] button { font-family: var(--dia-font-ui) !important; }
+.studio-wordmark { display: inline-flex; align-items: center; gap: 3px; }
+.studio-wordmark :is(.studio-brand-cn,.studio-brand-en) { padding-inline: 0; }
+.studio-brand-en { font-weight: 500; letter-spacing: 0; }
+.studio-slogan { font-weight: 600; letter-spacing: 0; }
+.ds-library, .ds-document { background-color: var(--dia-brand-paper); background-image: url('/brand/paper-grain.svg'); }
+.ds-library .ds-library-header, .ds-document header, .studio-workspace .studio-navigation {
+  background-color: var(--dia-brand-paper); background-image: url('/brand/paper-grain.svg'); color: var(--dia-ink); border-bottom: 1px solid #242424;
+}
+.ds-library-header .studio-identity, .studio-navigation .studio-identity { color: inherit; }
+.ds-library-header :is(.studio-brand-cn,.studio-brand-en), .studio-navigation :is(.studio-brand-cn,.studio-brand-en) { background: transparent; color: inherit; }
+.ds-library-header :is(.studio-slogan,.ds-library-actions a), .studio-navigation .studio-slogan, .studio-navigation .studio-project-name { color: #555; }
+.studio-navigation .studio-navigation-actions > :is(a,button) { color: var(--dia-ink); border-color: #b6b6b2; }
+.studio-navigation .studio-workspaces button { color: #555; }
+.studio-navigation .studio-workspaces button[aria-pressed=true] { background: var(--dia-ink); color: var(--dia-brand-paper); }
+.studio-navigation .studio-workspaces button:hover:not(:disabled):not([aria-pressed=true]), .studio-navigation .studio-navigation-actions > :is(a,button):hover { background: #e3e2dc; color: var(--dia-ink); }
+.studio-navigation :focus-visible { outline-color: var(--dia-ink); }
+.ds-library .ds-scene-image { background: transparent; border: 1px solid #b6b6b2; }
+.ds-empty-stage { width: min(100%, 310px); }
+.ds-scene-placeholder { width: 100%; padding: 10px; }
+.ds-scene-placeholder .dia-stage-drawing-labels { display: none; }
+.dia-stage-drawing { display: block; width: 100%; height: auto; color: var(--dia-ink); }
+.dia-stage-drawing-labels { font-size: 12px; font-weight: 700; letter-spacing: 0; }
+.studio-workspace .dia-dialogue { background-image: url('/brand/paper-grain.svg'); }
+.studio-workspace .dia-panel-header h2 { font-weight: 700; letter-spacing: 0; }
+.ds-library .ds-library-heading h1 { font-weight: 700; letter-spacing: -.03em; }
+.remote-voice-page { background-color: var(--dia-brand-paper); background-image: url('/brand/paper-grain.svg'); color: var(--dia-ink); }
+.remote-voice-page .studio-wordmark { color: var(--dia-ink); }
+.remote-voice-page .studio-brand-en, .remote-voice-page .studio-brand-cn { background: transparent; color: inherit; }
+.remote-voice-page .remote-voice-page__privacy { color: #555; }
+@media (max-width: 700px) { .dia-home .dia-stage-drawing-labels { font-size: 18px; } }

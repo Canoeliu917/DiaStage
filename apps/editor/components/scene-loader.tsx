@@ -28,6 +28,7 @@ import { validateCameraProject } from './camera-studio/model'
 import { CameraPersistence } from './camera-studio/persistence'
 import { DiaDock } from './dia-dock'
 import { StageCommandRuntime } from './stage-entry/runtime'
+import { useAudienceCover } from './use-audience-cover'
 
 const StagePlacementRuntime = dynamic(
   () => import('./stage-entry/manual-stage-panel').then((m) => m.StagePlacementRuntime),
@@ -202,7 +203,22 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [stageReady, setStageReady] = useState(false)
-  const handleLoaderChange = useCallback((visible: boolean) => setStageReady(!visible), [])
+  const { onThumbnailCapture, scheduleCover } = useAudienceCover({
+    sceneId: meta.id,
+    ready: stageReady && !conflict,
+  })
+  const handleLoaderChange = useCallback(
+    (visible: boolean) => {
+      setStageReady(!visible)
+      if (!visible && !localDirtyRef.current && !needsRecoverySync.current && !syncConflict.current)
+        // Hydration migrates legacy materials, so capture against the actual loaded graph.
+        scheduleCover({
+          version: versionRef.current,
+          signature: sceneGraphSignature(useScene.getState()),
+        })
+    },
+    [scheduleCover],
+  )
   const exportBackup = useCallback(() => {
     const url = URL.createObjectURL(
       new Blob([sceneGraphSignature(useScene.getState())], { type: 'application/json' }),
@@ -335,7 +351,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
             'Content-Type': 'application/json',
             'If-Match': String(versionRef.current),
           },
-          body: JSON.stringify({ name, graph }),
+          body: JSON.stringify({ name, graph, thumbnailUrl: null }),
           signal: AbortSignal.timeout(20_000),
         })
 
@@ -359,6 +375,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
               if (sceneGraphSignature(useScene.getState()) === liveGraphJson)
                 localDirtyRef.current = false
               setSaveError(null)
+              scheduleCover({ version: stored.version, signature: liveGraphJson })
               return
             }
           }
@@ -388,6 +405,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
         if (sceneGraphSignature(useScene.getState()) === liveGraphJson)
           localDirtyRef.current = false
         setSaveError(null)
+        scheduleCover({ version: next.version, signature: liveGraphJson })
       } catch (error) {
         setSaveError(
           error instanceof Error ? `保存失败：${error.message}` : '保存失败，请稍后重试。',
@@ -395,7 +413,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
         throw error
       }
     },
-    [meta.id, meta.name, journal],
+    [meta.id, meta.name, journal, scheduleCover],
   )
 
   useEffect(() => {
@@ -435,6 +453,10 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
       }
       setConflict(false)
       setSaveError(null)
+      scheduleCover({
+        version: payload.version,
+        signature: sceneGraphSignature(useScene.getState()),
+      })
     })
 
     source.addEventListener('error', () => {
@@ -444,7 +466,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
     })
 
     return () => source.close()
-  }, [meta.id])
+  }, [meta.id, scheduleCover])
 
   return (
     <NeutralRenderEnvironment.Provider value={true}>
@@ -529,7 +551,6 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                     }[saveStatus]
                   }
                 </span>
-
               </>
             }
           />
@@ -548,6 +569,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                   if (!applyingRemoteRef.current) localDirtyRef.current = true
                 }}
                 onSaveStatusChange={setSaveStatus}
+                onThumbnailCapture={onThumbnailCapture}
                 projectId={meta.projectId ?? 'default'}
                 viewerRuntimeSlot={
                   <>
@@ -602,25 +624,25 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 viewerToolbarLeft={
                   <EditorViewerToolbarLeft
                     settings={
-                        <button
-                          aria-pressed={stableMode}
-                          className={cn(
-                            'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
-                            lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
-                          )}
-                          onClick={() => {
-                            setStableMode(!stableMode)
-                            try {
-                              localStorage.setItem('diastage:stable-mode', String(!stableMode))
-                            } catch {
-                              /* Session choice still applies. */
-                            }
-                          }}
-                          title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据与复台计算"
-                          type="button"
-                        >
-                          稳定模式
-                        </button>
+                      <button
+                        aria-pressed={stableMode}
+                        className={cn(
+                          'rounded-md border border-border px-3 py-1.5 font-medium text-xs',
+                          lightPreview ? 'bg-accent' : 'bg-background/90 hover:bg-accent/40',
+                        )}
+                        onClick={() => {
+                          setStableMode(!stableMode)
+                          try {
+                            localStorage.setItem('diastage:stable-mode', String(!stableMode))
+                          } catch {
+                            /* Session choice still applies. */
+                          }
+                        }}
+                        title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据与复台计算"
+                        type="button"
+                      >
+                        稳定模式
+                      </button>
                     }
                   />
                 }

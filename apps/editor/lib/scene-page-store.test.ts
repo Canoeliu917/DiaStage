@@ -84,6 +84,36 @@ test('page reads the API runtime store after create and update, regardless of th
   }
 })
 
+test('PUT preserves omitted covers, clears explicit null on save and retains covers on conflict', async () => {
+  const site = SiteNode.parse({ name: 'Original stage' })
+  const graph = { nodes: { [site.id]: site }, rootNodeIds: [site.id] }
+  const thumbnailUrl = 'https://example.com/original-stage.png'
+  await store.save({ id: 'cover-save', name: 'Original', graph, thumbnailUrl })
+  const put = (body: unknown, version: number) =>
+    PUT(
+      new NextRequest('http://127.0.0.1:4319/api/scenes/cover-save', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'If-Match': String(version) },
+        body: JSON.stringify(body),
+      }),
+      { params: Promise.resolve({ id: 'cover-save' }) },
+    )
+  expect((await put({ graph }, 1)).status).toBe(200)
+  expect((await store.load('cover-save'))?.thumbnailUrl).toBe(thumbnailUrl)
+  const nextGraph = { ...graph, nodes: { [site.id]: { ...site, name: 'Changed stage' } } }
+  const beforeConflict = await store.load('cover-save')
+  expect((await put({ graph: nextGraph, thumbnailUrl: null }, 1)).status).toBe(409)
+  expect(await store.load('cover-save')).toEqual(beforeConflict)
+  const saved = await put({ graph: nextGraph, thumbnailUrl: null }, 2)
+  expect(saved.status).toBe(200)
+  expect(await saved.json()).toMatchObject({ version: 3, thumbnailUrl: null })
+  expect(await store.load('cover-save')).toMatchObject({
+    version: 3,
+    graph: nextGraph,
+    thumbnailUrl: null,
+  })
+})
+
 test('page store access retains configured token authentication even on loopback', async () => {
   process.env.PASCAL_SCENE_API_TOKEN = 'page-test-secret'
   await expect(getScenePageOperations(new Headers({ host: '127.0.0.1:4319' }))).rejects.toThrow(

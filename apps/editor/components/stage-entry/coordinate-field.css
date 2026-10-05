@@ -1,0 +1,347 @@
+.dia-coordinate-field {
+  --coordinate-ink: #e8e5da;
+  --coordinate-muted: #aaa99e;
+  --coordinate-grid: #989e8e38;
+  --coordinate-grid-minor: #989e8e1c;
+  --coordinate-axis: #a5a79e;
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-width: 0;
+  overflow: clip;
+  isolation: isolate;
+  background: #191b18;
+  color: var(--coordinate-ink);
+  transition: background-color 550ms ease, color 550ms ease;
+}
+
+.dia-coordinate-field[data-illuminated=true] {
+  --coordinate-ink: #252820;
+  --coordinate-muted: #676b5f;
+  --coordinate-grid: #7478673b;
+  --coordinate-grid-minor: #7478671c;
+  --coordinate-axis: #777b70;
+  background-color: #edeadd;
+}
+
+.dia-coordinate-welcome {
+  position: absolute;
+  z-index: 2;
+  top: 86px;
+  left: max(36px, 6vw);
+}
+
+.dia-home .dia-coordinate-welcome h1 {
+  margin: 0;
+  outline: none;
+  font-size: clamp(25px, 2.6vw, 36px);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -.025em;
+}
+
+.dia-coordinate-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: var(--coordinate-muted);
+  font-size: 12px;
+}
+
+.dia-home .dia-coordinate-breadcrumb button,
+.dia-home .dia-coordinate-breadcrumb button:hover {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.dia-coordinate-space {
+  position: absolute;
+  inset: 160px 0 70px;
+  perspective: 950px;
+  perspective-origin: 50% 42%;
+  transform-style: preserve-3d;
+}
+
+.dia-coordinate-world {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: translate3d(calc(var(--coordinate-x, 0px) * .5), calc(var(--coordinate-y, 0px) * .5), -180px) rotateX(64deg) rotateZ(-24deg);
+  transition: transform 900ms cubic-bezier(.22, 1, .36, 1);
+  pointer-events: none;
+}
+
+.dia-coordinate-floor,
+.dia-coordinate-wall {
+  position: absolute;
+  background-image: linear-gradient(var(--coordinate-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--coordinate-grid) 1px, transparent 1px),
+    linear-gradient(var(--coordinate-grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--coordinate-grid-minor) 1px, transparent 1px);
+  background-size: 200px 200px, 200px 200px, 40px 40px, 40px 40px;
+}
+
+.dia-coordinate-floor {
+  left: -800px;
+  top: -800px;
+  width: 1600px;
+  height: 1600px;
+}
+
+.dia-coordinate-wall {
+  top: -2000px;
+  width: 1600px;
+  height: 1200px;
+  transform-origin: left bottom;
+  opacity: .6;
+}
+
+.dia-coordinate-wall-back {
+  left: -800px;
+  transform: rotateX(-90deg);
+}
+
+.dia-coordinate-wall-side {
+  left: 800px;
+  transform: rotateZ(90deg) rotateX(-90deg);
+}
+
+.dia-coordinate-axis {
+  position: absolute;
+  opacity: .7;
+}
+
+.dia-coordinate-axis-x {
+  left: -800px;
+  top: 0;
+  width: 1600px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--coordinate-axis) 30%, var(--coordinate-axis) 70%, transparent);
+}
+
+.dia-coordinate-axis-y {
+  left: 0;
+  top: -800px;
+  width: 1px;
+  height: 1600px;
+  background: linear-gradient(transparent, var(--coordinate-axis) 30%, var(--coordinate-axis) 70%, transparent);
+}
+
+.dia-coordinate-axis-z {
+  left: 0;
+  top: -1600px;
+  width: 1px;
+  height: 1600px;
+  background: var(--coordinate-axis);
+  transform-origin: center bottom;
+  transform: rotateX(-90deg);
+}
+
+.dia-coordinate-axis-label {
+  position: absolute;
+  display: block;
+  font-size: 11px;
+  line-height: 1;
+  transform: rotateZ(24deg) rotateX(-64deg);
+}
+
+.dia-coordinate-axis-label-x { left: 410px; top: -8px; color: var(--coordinate-axis); }
+.dia-coordinate-axis-label-y { left: 8px; top: 350px; color: var(--coordinate-axis); }
+.dia-coordinate-axis-label-z {
+  left: 7px;
+  top: -5px;
+  color: var(--coordinate-axis);
+  transform: translateZ(260px) rotateZ(24deg) rotateX(-64deg);
+}
+
+.dia-coordinate-origin {
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--coordinate-muted);
+  border-radius: 50%;
+  background: var(--coordinate-ink);
+  transform: rotateZ(24deg) rotateX(-64deg);
+}
+
+.dia-home .dia-coordinate-field .dia-coordinate-node,
+.dia-home .dia-coordinate-field .dia-coordinate-node:hover {
+  position: absolute;
+  left: calc(var(--node-x) + var(--node-offset-x));
+  top: calc(var(--node-y) + var(--node-offset-y));
+  display: block;
+  width: max-content;
+  max-width: 230px;
+  min-height: 0;
+  margin: 0;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font-family: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transform: translate(-50%, -50%) translate3d(calc(var(--coordinate-x, 0px) * var(--node-depth)), calc(var(--coordinate-y, 0px) * var(--node-depth)), var(--node-z));
+  transition: left 850ms cubic-bezier(.22, 1, .36, 1), top 850ms cubic-bezier(.22, 1, .36, 1), transform 850ms cubic-bezier(.22, 1, .36, 1), color 550ms ease;
+  animation: dia-coordinate-enter 450ms ease both;
+}
+
+.dia-coordinate-node-content {
+  display: block;
+  animation: dia-coordinate-float 8s ease-in-out var(--node-delay) infinite;
+}
+
+.dia-coordinate-node-title {
+  display: block;
+  font-size: clamp(20px, 2.2vw, 29px);
+  line-height: 1.25;
+  letter-spacing: -.025em;
+}
+
+.dia-coordinate-node[data-primary=true] .dia-coordinate-node-title {
+  font-size: clamp(25px, 3vw, 40px);
+}
+
+.dia-coordinate-node[data-light=true] .dia-coordinate-node-title {
+  font-size: calc(clamp(20px, 2.2vw, 29px) + 2px);
+}
+
+.dia-coordinate-node[data-light=true][aria-pressed=true] .dia-coordinate-node-title {
+  text-decoration: underline;
+  text-underline-offset: 7px;
+  text-decoration-thickness: 1px;
+}
+
+.dia-coordinate-node-label {
+  display: block;
+  margin-top: 9px;
+  color: var(--coordinate-muted);
+  font-size: 12px;
+  line-height: 1.4;
+  transition: color 550ms ease;
+}
+
+.dia-home .dia-coordinate-field .dia-coordinate-node[data-dragging=true] {
+  z-index: 4;
+  cursor: grabbing;
+  transition: color 550ms ease;
+}
+
+.dia-coordinate-node:is(:hover, :focus-visible) .dia-coordinate-node-content,
+.dia-coordinate-field[data-gathered=true] .dia-coordinate-node-content,
+.dia-coordinate-field[data-dragging=true] .dia-coordinate-node-content {
+  animation-play-state: paused;
+}
+
+.dia-coordinate-field .dia-coordinate-node:focus-visible,
+.dia-coordinate-field .dia-coordinate-toggle button:focus-visible,
+.dia-coordinate-breadcrumb button:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 4px;
+}
+
+.dia-coordinate-hint {
+  position: absolute;
+  bottom: 29px;
+  left: max(36px, 6vw);
+  margin: 0;
+  color: var(--coordinate-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  pointer-events: none;
+  transition: color 550ms ease;
+}
+
+.dia-coordinate-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.dia-coordinate-toggle {
+  position: absolute;
+  z-index: 5;
+  right: max(28px, 6vw);
+  bottom: 19px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.dia-home .dia-coordinate-field .dia-coordinate-toggle button,
+.dia-home .dia-coordinate-field .dia-coordinate-toggle button:hover {
+  min-height: 36px;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dia-coordinate-toggle button[aria-pressed=false] { opacity: .4; }
+.dia-coordinate-toggle button[aria-pressed=true] { text-decoration: underline; text-underline-offset: 5px; }
+
+@keyframes dia-coordinate-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+
+@keyframes dia-coordinate-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-height: 620px) {
+  .dia-coordinate-welcome { top: 75px; }
+  .dia-coordinate-space { inset-block: 146px 66px; }
+  .dia-coordinate-node-label { margin-top: 4px; }
+  .dia-coordinate-node[data-primary=true] .dia-coordinate-node-title { font-size: 26px; }
+}
+
+@media (max-width: 640px) {
+  .dia-coordinate-welcome { left: 20px; }
+  .dia-home .dia-coordinate-field .dia-coordinate-node { padding: 10px 6px; }
+  .dia-coordinate-node-title { font-size: 16px; }
+  .dia-coordinate-node[data-primary=true] .dia-coordinate-node-title { font-size: 21px; }
+  .dia-coordinate-node-label { font-size: 10px; }
+  .dia-coordinate-hint { left: 20px; }
+  .dia-home .dia-coordinate-field .dia-coordinate-toggle { right: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dia-coordinate-field,
+  .dia-coordinate-field *,
+  .dia-home .dia-coordinate-field .dia-coordinate-node,
+  .dia-home .dia-coordinate-field .dia-coordinate-node:hover { transition: none; animation: none; }
+  .dia-coordinate-node-content { animation: none; }
+  .dia-home .dia-coordinate-field .dia-coordinate-node { transform: translate(-50%, -50%) translateZ(var(--node-z)); }
+  .dia-coordinate-world { transform: translateZ(-180px) rotateX(64deg) rotateZ(-24deg); }
+}

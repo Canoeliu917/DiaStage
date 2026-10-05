@@ -9,7 +9,12 @@ import {
   SqliteSceneStore,
   type SqliteSceneStoreOptions,
 } from './sqlite-scene-store'
-import { SceneInvalidError, SceneTooLargeError, SceneVersionConflictError } from './types'
+import {
+  SceneInvalidError,
+  SceneNotFoundError,
+  SceneTooLargeError,
+  SceneVersionConflictError,
+} from './types'
 
 function makeGraph(overrides: Partial<SceneGraph> = {}): SceneGraph {
   return {
@@ -172,6 +177,74 @@ describe('SqliteSceneStore', () => {
     await expect(store.save({ id: 'kitchen', name: 'K2', graph: makeGraph() })).rejects.toThrow(
       SceneInvalidError,
     )
+  })
+
+  test('save preserves an omitted cover and atomically clears an explicit null cover', async () => {
+    const thumbnailUrl = 'https://example.com/previous-stage.png'
+    await store.save({ id: 'cover-save', name: 'Cover', graph: makeGraph(), thumbnailUrl })
+    const preserved = await store.save({
+      id: 'cover-save',
+      name: 'Cover',
+      graph: makeGraph(),
+      expectedVersion: 1,
+    })
+    expect(preserved.thumbnailUrl).toBe(thumbnailUrl)
+    const beforeConflict = await store.load('cover-save')
+    const nextGraph = makeGraph({ installedPlugins: ['new-stage-plugin'] })
+    await expect(
+      store.save({
+        id: 'cover-save',
+        name: 'Changed',
+        graph: nextGraph,
+        thumbnailUrl: null,
+        expectedVersion: 1,
+      }),
+    ).rejects.toThrow(SceneVersionConflictError)
+    expect(await store.load('cover-save')).toEqual(beforeConflict)
+    const saved = await store.save({
+      id: 'cover-save',
+      name: 'Changed',
+      graph: nextGraph,
+      thumbnailUrl: null,
+      expectedVersion: 2,
+    })
+    expect(saved.version).toBe(3)
+    expect(saved.thumbnailUrl).toBeNull()
+    expect(await store.load('cover-save')).toMatchObject({ graph: nextGraph, thumbnailUrl: null })
+    await expect(
+      store.updateThumbnail('cover-save', thumbnailUrl, { expectedVersion: 2 }),
+    ).rejects.toThrow(SceneVersionConflictError)
+    expect((await store.load('cover-save'))?.thumbnailUrl).toBeNull()
+  })
+
+  test('updates only the cover for the expected version and rejects stale captures', async () => {
+    const original = await store.save({ id: 'cover', name: 'Cover', graph: makeGraph() })
+    const before = await store.load('cover')
+    const thumbnailUrl = 'data:image/png;base64,iVBORw0KGgo='
+    const updated = await store.updateThumbnail('cover', thumbnailUrl, { expectedVersion: 1 })
+    expect(updated).toEqual({ ...original, thumbnailUrl })
+    expect(await store.load('cover')).toEqual({ ...before, thumbnailUrl })
+    await expect(store.updateThumbnail('cover', 'stale', { expectedVersion: 2 })).rejects.toThrow(
+      SceneVersionConflictError,
+    )
+    await expect(
+      store.updateThumbnail('missing', thumbnailUrl, { expectedVersion: 1 }),
+    ).rejects.toThrow(SceneNotFoundError)
+    await expect(
+      store.updateThumbnail('cover', thumbnailUrl, { expectedVersion: 0 }),
+    ).rejects.toThrow(SceneInvalidError)
+    expect((await store.load('cover'))?.thumbnailUrl).toBe(thumbnailUrl)
+    const db = new Database(path.join(rootDir, 'pascal.db'))
+    try {
+      expect(
+        db.query('SELECT COUNT(*) AS count FROM scene_revisions WHERE scene_id = ?').get('cover'),
+      ).toEqual({ count: 1 })
+      expect(
+        db.query('SELECT COUNT(*) AS count FROM scene_events WHERE scene_id = ?').get('cover'),
+      ).toEqual({ count: 0 })
+    } finally {
+      db.close()
+    }
   })
 
   test('sanitizes explicit ids', async () => {

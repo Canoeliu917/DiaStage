@@ -1,6 +1,7 @@
 :root {
-  --dia-font-ui: "Inter", "Arial", var(--font-source-han-sans), "Source Han Sans SC", "Microsoft YaHei", sans-serif;
-  --dia-font-notation: "Courier Prime", "Courier New", var(--font-source-han-sans), monospace;
+  --dia-font-ui: var(--font-dia-latin), var(--font-huiwen-mincho), var(--font-source-han-sans), "Microsoft YaHei", serif;
+  --dia-font-reading: var(--dia-font-ui);
+  --dia-font-notation: var(--dia-font-ui);
   --dia-type-caption: 0.75rem;
   --dia-type-ui: 0.8125rem;
   --dia-type-body: 0.875rem;

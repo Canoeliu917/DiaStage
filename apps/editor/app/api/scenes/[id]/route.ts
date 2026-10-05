@@ -112,8 +112,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       projectId: existing.projectId,
       ownerId: existing.ownerId,
       graph: parsed.data.graph as never,
-      thumbnailUrl:
-        parsed.data.thumbnailUrl === undefined ? existing.thumbnailUrl : parsed.data.thumbnailUrl,
+      thumbnailUrl: parsed.data.thumbnailUrl,
       expectedVersion: expectedVersion ?? existing.version,
     })
     return sceneApiJson(request, meta, {
