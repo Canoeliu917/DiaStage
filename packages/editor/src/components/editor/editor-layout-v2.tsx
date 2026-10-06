@@ -31,7 +31,7 @@ function LeftColumn({
   sidebarOverlay?: ReactNode
   sidebarTopSlot?: ReactNode
 }) {
-  const width = useSidebarStore((s) => s.width)
+  const storedWidth = useSidebarStore((s) => s.width)
   const isCollapsed = useSidebarStore((s) => s.isCollapsed)
   const setIsCollapsed = useSidebarStore((s) => s.setIsCollapsed)
   const storeSetWidth = useSidebarStore((s) => s.setWidth)
@@ -40,17 +40,20 @@ function LeftColumn({
   const activePanel = useEditor((s) => s.activeSidebarPanel)
   const setActivePanel = useEditor((s) => s.setActiveSidebarPanel)
   const hasSlot = sidebarTopSlot != null
-  const minimumWidth = hasSlot ? 120 : SIDEBAR_MIN_WIDTH
+  const minimumWidth = hasSlot ? 204 : SIDEBAR_MIN_WIDTH
+  const width = hasSlot
+    ? Math.max(minimumWidth, Math.min(storedWidth, SIDEBAR_MAX_WIDTH))
+    : storedWidth
   const setWidth = useCallback(
     (value: number) => {
       if (hasSlot)
         useSidebarStore.setState({
-          width: Math.max(120, Math.min(value, SIDEBAR_MAX_WIDTH)),
+          width: Math.max(minimumWidth, Math.min(value, SIDEBAR_MAX_WIDTH)),
           isCollapsed: false,
         })
       else storeSetWidth(value)
     },
-    [hasSlot, storeSetWidth],
+    [hasSlot, minimumWidth, storeSetWidth],
   )
 
   const isResizing = useRef<{ startX: number; startWidth: number } | null>(null)

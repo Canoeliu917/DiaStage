@@ -11,15 +11,15 @@
 .studio-property-tabs button[aria-pressed=true] { background:var(--dia-active,var(--accent)); color:var(--dia-ink,var(--background)); }
 .studio-property-tabs button:focus-visible { outline:2px solid var(--dia-focus,var(--foreground)); outline-offset:2px; }
 .studio-properties-dock > :last-child { min-height:0; flex:1; }
-.studio-workspace .diastage-tool-rail,.studio-workspace[data-studio-group=rehearse] .diastage-tool-rail { display:flex; flex-direction:column; align-items:center; width:64px; gap:4px; padding:8px 4px; }
-.studio-workspace .diastage-tool-rail button,.studio-workspace[data-studio-group=rehearse] .diastage-tool-rail button { width:56px; min-height:56px; border-radius:5px; }
+.studio-workspace .diastage-tool-rail,.studio-workspace[data-studio-group=rehearse] .diastage-tool-rail { display:flex; flex-direction:column; align-items:center; width:56px; gap:4px; padding:8px 4px; }
+.studio-workspace .diastage-tool-rail button,.studio-workspace[data-studio-group=rehearse] .diastage-tool-rail button { width:48px; min-height:52px; border-radius:5px; }
 .studio-workspace .editor-dock-controls { min-height:36px; color:var(--dia-muted,var(--muted-foreground)); background:var(--dia-panel,var(--background)); }
 @media (pointer:coarse) { .studio-property-tabs button,.studio-venue.theatre-panel > .studio-venue-summary { min-height:44px; } }
 
-.studio-workspace .stage-manual { padding:10px; font-size:14px; gap:8px; }
-.studio-workspace .stage-manual h2 { font-size:17px; }
-.studio-workspace .stage-overview { font-size:14px; }
-.studio-workspace .stage-overview td,.studio-workspace .stage-overview th { font-size:13px; }
+.studio-workspace .stage-manual { padding:10px; font-size:13px; line-height:1.5; gap:8px; }
+.studio-workspace .stage-manual h2 { font-size:16px; }
+.studio-workspace .stage-overview { font-size:13px; }
+.studio-workspace .stage-overview td,.studio-workspace .stage-overview th { font-size:12px; }
 
 /* The asset row layout applies to every project. */
 .studio-assets-dock { display:flex; flex-direction:column; height:100%; min-height:0; overflow:auto; }
@@ -28,17 +28,23 @@
 .stage-library-browser { display:flex; flex-direction:column; gap:6px; flex:1; min-height:90px; overflow:auto; }
 .stage-library-browser > * { flex-shrink:0; }
 .studio-assets-dock .studio-venue-summary { border:0; color:var(--dia-muted); }
+.studio-assets-dock .studio-venue.theatre-panel > .studio-venue-summary { padding:6px 0; font-size:13px; }
+.studio-workspace .stage-presets > summary { font-size:12px; line-height:1.5; }
 .studio-workspace .stage-library-grid { grid-template-columns:minmax(0,1fr); gap:8px; }
-.studio-workspace .stage-library-grid button { grid-template-columns:76px minmax(0,1fr); gap:12px; padding:8px; background:transparent; border-color:var(--dia-border); }
+.studio-workspace .stage-library-grid button { grid-template-columns:56px minmax(0,1fr); min-height:72px; gap:8px; padding:8px; background:transparent; border-color:var(--dia-border); }
+.studio-workspace .stage-library-grid strong { font-size:13px; line-height:1.5; }
+.studio-workspace .stage-library-copy { gap:3px; padding-right:0; }
+.studio-workspace .stage-library-check { top:4px; right:4px; width:14px; height:14px; font-size:10px; }
 .studio-workspace .stage-library-grid img { max-height:none; }
 .studio-workspace .stage-object > label:first-of-type { display:grid; grid-template-columns:auto minmax(0,1fr); }
 .studio-workspace .stage-library-grid button[aria-pressed=true] { border-color:var(--dia-muted); background:var(--dia-hover); color:var(--dia-text); }
 .studio-workspace .stage-library-grid button[aria-pressed=true] small { color:var(--dia-muted); }
-.studio-workspace .stage-library-preview { position:static; grid-template-columns:40px minmax(0,1fr) auto; padding:6px; margin-top:auto; }
-.studio-workspace .stage-library-preview > .stage-library-use { grid-column:auto; min-height:44px; padding:8px; font-size:16px; font-weight:700; }
-.studio-workspace .stage-library-preview > div > strong { font-size:16px; }
-.studio-workspace .stage-library-preview small { font-size:13px; }
-.studio-workspace .stage-library-category { display:grid; grid-template-columns:auto minmax(0,1fr); gap:12px; align-items:center; }
+.studio-workspace .stage-library-preview { position:static; grid-template-columns:36px minmax(0,1fr) auto; gap:6px; padding:6px; margin-top:auto; }
+.studio-workspace .stage-library-preview > .stage-library-use { grid-column:auto; min-height:36px; padding:6px 8px; font-size:13px; font-weight:700; white-space:nowrap; }
+.studio-workspace .stage-library-preview > div { gap:3px; }
+.studio-workspace .stage-library-preview > div > strong { font-size:13px; }
+.studio-workspace .stage-library-preview small { font-size:11px; }
+.studio-workspace .stage-library-category { display:grid; grid-template-columns:auto minmax(0,1fr); gap:8px; align-items:center; }
 .studio-workspace .stage-library-category select { min-height:34px; }
 /* Panel options occupy a full row; viewport tools keep their horizontal toolbar. */
 .studio-workspace .theatre-panel .th-buttons,
@@ -53,10 +59,13 @@
 .studio-navigation .studio-save-status { font-size:11px; color:var(--dia-muted); }
 .studio-workspace .stage-transform-toolbar { padding:2px; gap:0; border:1px solid var(--dia-border); box-shadow:none; }
 .studio-workspace .stage-transform-toolbar > button { padding:5px 8px; min-height:32px; }
+.studio-workspace .diastage-viewer-toolbar :is(button,select,label,summary) { font-size:13px; line-height:1.5; }
+.studio-workspace .diastage-viewer-toolbar :is(button,select) { min-height:32px; }
+.studio-workspace .diastage-viewer-toolbar button > span { font-size:inherit; }
 .stage-edit-toolbar { display:flex; flex-wrap:wrap; align-items:flex-start; gap:6px; min-width:0; }
 .stage-edit-toolbar .stage-transform-toolbar { overflow:visible; }
 .stage-display-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:4px; padding:3px 6px; border:1px solid var(--dia-border); border-radius:6px; background:var(--dia-panel); }
-.stage-display-toolbar > button,.stage-controls-help > summary { padding:5px 8px; min-height:32px; font-size:12px; cursor:pointer; }
+.stage-display-toolbar > button,.stage-controls-help > summary { padding:5px 8px; min-height:32px; font-size:12px; white-space:nowrap; cursor:pointer; }
 .stage-controls-help { position:relative; }
 .stage-controls-help > div { position:absolute; right:0; top:100%; width:290px; padding:12px; border:1px solid var(--dia-border); border-radius:6px; background:var(--dia-panel); color:var(--dia-text); font-size:12px; line-height:1.7; }
 .stage-controls-help p + p { margin-top:8px; }

@@ -72,7 +72,10 @@ if (!process.env.SIDEBAR_SPLIT_TEST) {
     },
   }
   const selectorStore = <T extends object>(state: T) =>
-    Object.assign(<R,>(selector: (value: T) => R) => selector(state), { getState: () => state })
+    Object.assign(<R,>(selector: (value: T) => R) => selector(state), {
+      getState: () => state,
+      setState: (next: Partial<T>) => Object.assign(state, next),
+    })
   mock.module('../../hooks/use-mobile', () => ({ useIsMobile: () => mobile }))
   mock.module('../../store/use-editor', () => ({ default: selectorStore(editor) }))
   mock.module('../ui/primitives/sidebar', () => ({ useSidebarStore: selectorStore(sidebar) }))
@@ -278,6 +281,35 @@ if (!process.env.SIDEBAR_SPLIT_TEST) {
     assert.equal(render().separator().hidden, true)
     click(`展开${title}`)
   }
+
+  sidebar.width = 120
+  view = render()
+  const split = view.tree.find((node) =>
+    String(node.props.className).includes('editor-sidebar-split'),
+  )!
+  assert.equal(
+    (split.props.style as { width: number }).width,
+    300,
+    'persisted narrow widths render at the usable desktop split minimum',
+  )
+  function resizeWidth(key: string) {
+    const separator = render().tree.find(
+      (node) => node.props.role === 'separator' && node.props['aria-orientation'] === 'vertical',
+    )!
+    assert.equal(separator.props['aria-valuemin'], 204)
+    assert.equal(separator.props['aria-valuenow'], Math.max(204, sidebar.width))
+    ;(separator.props.onKeyDown as (event: object) => void)({
+      key,
+      preventDefault() {},
+      stopPropagation() {},
+    })
+  }
+  resizeWidth('ArrowRight')
+  assert.equal(sidebar.width, 224, 'keyboard resizing starts from the rendered width')
+  resizeWidth('Home')
+  resizeWidth('ArrowLeft')
+  assert.equal(sidebar.width, 204, 'resizing cannot squeeze the split below 300 pixels')
+  sidebar.width = 320
 
   view = render(false)
   assert.equal(topRenders, 0)
