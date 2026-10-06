@@ -1,10 +1,12 @@
 html:has(.dia-home) { overflow-y: auto; scroll-behavior: smooth; }
 .ds-library.dia-home { --dia-font-ui: var(--font-huiwen-mincho), var(--font-source-han-sans), "Microsoft YaHei", serif; position: relative; min-height: 100dvh; overflow-x: clip; font-family: var(--dia-font-ui); background-color: #191b18; color: #e8e5da; caret-color: #e8e5da; color-scheme: dark; }
 .dia-home ::selection { background: #e8e5da; color: #111212; }
-.dia-space-brand { position: absolute; z-index: 6; top: 24px; left: 36px; pointer-events: none; }
-.dia-space-brand :is(.studio-brand-cn,.studio-brand-en) { color: inherit; background: transparent; }
-.dia-home:has(.dia-home-space[data-illuminated=true]) .dia-space-brand { color: #252820; }
-.dia-space-brand { transition: color 550ms ease; }
+.dia-space-brand { position: absolute; z-index: 6; top: 24px; left: 36px; opacity: 0; visibility: hidden; transition: color 550ms ease, opacity 550ms ease, visibility 550ms; }
+.dia-space-brand :is(.studio-brand-cn,.studio-brand-en) { height: auto; color: inherit; background: transparent; }
+.dia-space-brand .studio-wordmark { line-height: 1; }
+.dia-space-brand .studio-brand-en { font-size: 44px; }
+.dia-space-brand .studio-brand-cn { font-size: 30px; }
+.dia-home:has(.dia-home-space[data-illuminated=true]) .dia-space-brand { color: #252820; opacity: 1; visibility: visible; }
 .dia-home :is(a,button) { touch-action: manipulation; }
 .dia-home a { text-underline-offset: 5px; }
 .dia-home button { cursor: pointer; }
@@ -14,11 +16,13 @@ html:has(.dia-home) { overflow-y: auto; scroll-behavior: smooth; }
 .dia-home-simplified { font-family: var(--font-source-han-sans), "Microsoft YaHei", sans-serif; }
 .dia-home-space { --space-muted: #aaa99e; --space-rule: #42443e; background: #191b18; color: #e8e5da; transition: background-color 550ms ease, color 550ms ease; }
 .dia-home-space[data-illuminated=true] { --space-muted: #676b5f; --space-rule: #c6c6b9; background: #edeadd; color: #252820; color-scheme: light; }
+.dia-space-tagline { position: absolute; z-index: 6; top: 36px; right: 36px; margin: 0; font-size: 14px; line-height: 24px; letter-spacing: .08em; pointer-events: none; animation: dia-coordinate-enter 550ms ease both; }
 .dia-home-space .dia-coordinate-field { height: calc(100dvh - 72px); }
 .dia-space-footer { position: relative; border-top: 1px solid var(--space-rule); }
 .dia-space-footer h2 { display: flex; justify-content: center; align-items: center; gap: 4px; height: 71px; margin: 0; font-size: 14px; font-weight: 400; line-height: 24px; }
 .dia-space-footer h2 > span:last-child { margin-left: 16px; color: var(--space-muted); }
 .dia-space-details { padding: 24px max(36px,6vw) 36px; }
+.dia-space-companion { margin: 0 0 28px; font-size: 14px; line-height: 1.9; }
 .dia-space-footer dl { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 24px; margin: 0; }
 .dia-space-footer dt { font-size: 18px; line-height: 24px; }
 .dia-space-footer dd { margin: 14px 0 0; color: var(--space-muted); font-size: 13px; line-height: 1.9; }
@@ -35,4 +39,4 @@ html:has(.dia-home) { overflow-y: auto; scroll-behavior: smooth; }
 @supports (animation-timeline: view()) { .dia-space-details { animation: dia-intro-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; } }
 @keyframes dia-intro-reveal { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @media (max-width: 640px) { .dia-space-brand { left: 20px; top: 20px; } .dia-space-details { padding-inline: 20px; } .dia-space-footer dl { grid-template-columns: repeat(2,minmax(0,1fr)); } .dia-space-introduction { grid-template-columns: 1fr; gap: 16px; } }
-@media (prefers-reduced-motion: reduce) { html:has(.dia-home) { scroll-behavior: auto; } .dia-space-brand, .dia-home-space { transition: none; } .dia-space-details { animation: none; } }
+@media (prefers-reduced-motion: reduce) { html:has(.dia-home) { scroll-behavior: auto; } .dia-space-brand, .dia-home-space { transition: none; } .dia-space-details, .dia-space-tagline { animation: none; } }

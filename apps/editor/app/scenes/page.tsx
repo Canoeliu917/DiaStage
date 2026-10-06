@@ -32,13 +32,13 @@ export default async function ScenesPage({
   return (
     <div className="ds-library dia-scene-gallery">
       <header className="ds-library-header">
-        <Link className="studio-identity" href="/">
+        <div className="studio-identity">
           <Image alt="" src="/diastage-mark.svg" width={36} height={36} />
           <div>
             <StudioWordmark />
             <span className="studio-slogan">Stage Build &amp; Remount Preview</span>
           </div>
-        </Link>
+        </div>
         <div className="ds-library-actions">
           <Link href="/">
             进入工作台 <ArrowRight size={15} />

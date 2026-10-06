@@ -60,6 +60,7 @@ export function HomeStageSpace({ initialEntry }: { initialEntry?: string }) {
 
   return (
     <div className="dia-home-space" data-illuminated={illuminated}>
+      <p className="dia-space-tagline">咫尺之外，自在舞台。</p>
       <CoordinateField
         onSelect={open}
         illuminated={illuminated}
@@ -74,6 +75,7 @@ export function HomeStageSpace({ initialEntry }: { initialEntry?: string }) {
           <span aria-hidden="true">↓</span>
         </h2>
         <div className="dia-space-details">
+          <p className="dia-space-companion">{DIASTAGE_BRAND.companion}</p>
           <dl>
             {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
               <div key={name}>
@@ -83,10 +85,9 @@ export function HomeStageSpace({ initialEntry }: { initialEntry?: string }) {
             ))}
           </dl>
           <div className="dia-space-introduction">
-            <p>{DIASTAGE_BRAND.product}</p>
-            <p>{DIASTAGE_BRAND.companion}</p>
+            <p>{DIASTAGE_BRAND.nameMeaning}</p>
           </div>
-          <p className="dia-space-motto">DiaStage · 与 AI 共构，让想象登台。</p>
+          <p className="dia-space-motto">AI虽能完成想象，但还请相信直觉。</p>
         </div>
       </section>
       {entry && (

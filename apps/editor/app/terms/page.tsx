@@ -13,12 +13,9 @@ export default function TermsPage() {
       <header className="sticky top-0 z-10 border-border border-b bg-background/95 backdrop-blur">
         <div className="container mx-auto px-6 py-4">
           <nav className="flex items-center gap-4 text-sm">
-            <Link
-              className="text-muted-foreground transition-colors hover:text-foreground"
-              href="/"
-            >
+            <span className="text-muted-foreground transition-colors hover:text-foreground">
               <StudioWordmark />
-            </Link>
+            </span>
             <span className="text-muted-foreground">/</span>
             <span className="font-medium text-foreground">服务条款</span>
             <span className="text-muted-foreground">|</span>
