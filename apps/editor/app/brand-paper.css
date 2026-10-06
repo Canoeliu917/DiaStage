@@ -8,7 +8,7 @@ svg text, [style*="font-family"]:not(.studio-brand-en) { font-family: var(--dia-
 .studio-wordmark :is(.studio-brand-cn,.studio-brand-en) { padding-inline: 0; }
 .studio-wordmark .studio-brand-en { font-size: 32px; }
 .studio-wordmark .studio-brand-cn { font-size: 22px; }
-.studio-brand-en { font-weight: 500; letter-spacing: 0; }
+.studio-brand-en { font-family: var(--font-huiwen-mincho), var(--font-source-han-sans), "Microsoft YaHei", serif; font-weight: 500; letter-spacing: 0; }
 .studio-slogan { font-weight: 600; letter-spacing: 0; }
 .ds-library, .ds-document { background-color: var(--dia-brand-paper); background-image: url('/brand/paper-grain.svg'); }
 .ds-library .ds-library-header, .ds-document header, .studio-workspace .studio-navigation {
