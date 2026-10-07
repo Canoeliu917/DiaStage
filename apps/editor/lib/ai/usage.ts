@@ -5,7 +5,12 @@ import { usageLedger } from './usage-ledger'
 
 export interface AiUsageRecord {
   requestId: string
-  feature: 'voice-transcription' | 'stage-command' | 'script-stage-plan' | 'rehearsal-proposal'
+  feature:
+    | 'voice-transcription'
+    | 'stage-command'
+    | 'script-stage-plan'
+    | 'rehearsal-proposal'
+    | 'photo-stage-plan'
   model: string
   inputTokens: number | null
   cachedInputTokens: number | null

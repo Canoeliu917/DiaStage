@@ -1,8 +1,21 @@
 export const SLOT_MATERIAL_PREFIX = 'slot_'
 
-/** A glTF material name marks a paintable slot when it starts with `slot_` (case-insensitive). */
+// The shipped stage library uses authored labels instead of the upload slot_ convention.
+const STAGE_MATERIAL_SLOTS = new Map([
+  ['Matte off-white / 雾白景片', 'body'],
+  ['Matte light grey / 浅灰框架', 'frame'],
+  ['Matte beige / 米灰构件', 'component'],
+  ['Matte cream / 米白台面', 'top'],
+  ['Matte warm grey / 暖灰软包', 'upholstery'],
+  ['Matte graphite / 石墨五金', 'metal'],
+  ['Matte charcoal / 炭黑把手', 'handle'],
+  ['Matte grey-white / 灰白台块', 'platform'],
+  ['Neutral opening placeholder / 中性窗占位', 'opening'],
+  ['Matte neutral floor / 中灰舞台', 'floor'],
+])
+
 export function isSlotMaterialName(name: string): boolean {
-  return name.toLowerCase().startsWith(SLOT_MATERIAL_PREFIX)
+  return STAGE_MATERIAL_SLOTS.has(name) || name.toLowerCase().startsWith(SLOT_MATERIAL_PREFIX)
 }
 
 /**
@@ -13,6 +26,8 @@ export function isSlotMaterialName(name: string): boolean {
  * renderer so DB metadata and runtime meshes can never drift.
  */
 export function deriveSlotId(materialName: string): string | null {
+  const stageSlot = STAGE_MATERIAL_SLOTS.get(materialName)
+  if (stageSlot) return stageSlot
   if (!isSlotMaterialName(materialName)) return null
   let rest = materialName.slice(SLOT_MATERIAL_PREFIX.length)
   rest = rest.replace(/\.\d+$/, '')

@@ -40,6 +40,7 @@ export default async function ScenesPage({
           </div>
         </div>
         <div className="ds-library-actions">
+          <Link href="/photo-stage">从照片复原舞台</Link>
           <Link href="/">
             进入工作台 <ArrowRight size={15} />
           </Link>

@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils'
 import { validateCameraProject } from './camera-studio/model'
 import { CameraPersistence } from './camera-studio/persistence'
 import { DiaDock } from './dia-dock'
+import { PhotoStageReference } from './photo-stage-reference'
 import { StageCommandRuntime } from './stage-entry/runtime'
 import { useAudienceCover } from './use-audience-cover'
 
@@ -554,6 +555,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
               </>
             }
           />
+          {stageReady && !immersive && <PhotoStageReference key={meta.id} sceneId={meta.id} />}
           <div className="dia-stage-layout">
             <div className="dia-editor">
               <Editor
