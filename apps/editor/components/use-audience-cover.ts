@@ -70,7 +70,7 @@ export function useAudienceCover({ sceneId, ready }: { sceneId: string; ready: b
               fov: camera.fov,
             },
             captureMode: 'standard',
-            standardSize: { w: 1280, h: 720 },
+            standardSize: { w: 1920, h: 1080 },
           })
         })
         if (!fresh()) return

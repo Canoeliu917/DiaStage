@@ -252,7 +252,14 @@ export async function createSnapshotPipeline({
       capture: async ({ captureMode, cropRegion, standardSize }) => {
         const standardW = standardSize?.w ?? THUMBNAIL_WIDTH
         const standardH = standardSize?.h ?? THUMBNAIL_HEIGHT
-        const { width: captureWidth, height: captureHeight } = renderer.domElement
+        const { width, height } = renderer.domElement
+        const resolutionScale =
+          standardSize && (!captureMode || captureMode === 'standard')
+            ? Math.max(1, standardW / width, standardH / height)
+            : 1
+        const captureWidth = Math.ceil(width * resolutionScale)
+        const captureHeight = Math.ceil(height * resolutionScale)
+        scenePass.setResolutionScale(resolutionScale)
 
         // Resize RT if the canvas dimensions changed
         if (renderTarget.width !== captureWidth || renderTarget.height !== captureHeight) {

@@ -170,7 +170,7 @@ if (!process.env.AUDIENCE_COVER_TEST) {
   assert.equal(captures[0]?.projectId, 'default')
   assert.equal(captures[0]?.captureMode, 'standard')
   assert.equal(captures[0]?.snapLevels, undefined)
-  assert.deepEqual(captures[0]?.standardSize, { w: 1280, h: 720 })
+  assert.deepEqual(captures[0]?.standardSize, { w: 1920, h: 1080 })
   assert.ok(captures[0]?.cameraPose && captures[0].cameraPose.position[2] > 3)
   respond('other-snapshot')
   await flush()
