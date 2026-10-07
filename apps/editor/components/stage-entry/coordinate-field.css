@@ -26,6 +26,16 @@
   background-color: #edeadd;
 }
 
+.dia-coordinate-light-prompt {
+  position: absolute;
+  top: 36px;
+  left: 36px;
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: .08em;
+}
+
 .dia-coordinate-welcome {
   position: absolute;
   z-index: 2;
@@ -237,7 +247,7 @@
 }
 
 .dia-coordinate-node[data-light=true] .dia-coordinate-node-title {
-  font-size: calc(clamp(20px, 2.2vw, 29px) + 4px);
+  font-size: clamp(36px, 4vw, 56px);
 }
 
 .dia-home .dia-coordinate-field .dia-coordinate-node[data-light=true] {
@@ -450,6 +460,7 @@
 }
 
 @media (max-width: 640px) {
+  .dia-coordinate-light-prompt { top: 76px; left: 20px; }
   .dia-coordinate-welcome { left: 20px; }
   .dia-home .dia-coordinate-field .dia-coordinate-node { padding: 10px 6px; }
   .dia-coordinate-node-title { font-size: 16px; }

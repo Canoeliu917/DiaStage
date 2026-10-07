@@ -60,8 +60,9 @@ export const HOME_SPACE_GROUPS: Record<
     title: '置景',
     english: 'Diagonal',
     options: [
-      { title: '新建舞台', label: 'New stage', action: 'manual', x: 34, y: 35, z: 30 },
-      { title: '继续置景', label: 'Continue', href: '/scenes', x: 67, y: 61, z: 10 },
+      { title: '新建舞台', label: 'New stage', action: 'manual', x: 24, y: 30, z: 30 },
+      { title: '照片复原', label: 'From photo', href: '/photo-stage', x: 50, y: 52, z: 20 },
+      { title: '继续置景', label: 'Continue', href: '/scenes', x: 76, y: 74, z: 10 },
     ],
   },
   diagram: {
@@ -372,7 +373,7 @@ export function CoordinateField({
   function renderNode(option: SpaceNode, index: number) {
     const id = option.light ? 'all-光' : (option.noteId ?? `${group ?? 'all'}-${option.title}`)
     const offset = offsets[id] ?? { x: 0, y: 0 }
-    const columns = group ? gridOptions.length : 4
+    const columns = group === 'diagonal' ? 1 : group ? gridOptions.length : 4
     const gridIndex = gridOptions.indexOf(option)
     const inGrid = gathered && gridIndex >= 0
     const props = {
@@ -395,7 +396,7 @@ export function CoordinateField({
       draggable: false,
       style: {
         '--node-x': `${inGrid ? 50 + ((gridIndex % columns) - (columns - 1) / 2) * (group ? 19 : 22) : option.x}%`,
-        '--node-y': `${inGrid ? (group ? 50 : 20 + Math.floor(gridIndex / columns) * 30) : option.y}%`,
+        '--node-y': `${inGrid ? (group === 'diagonal' ? 25 + gridIndex * 27 : group ? 50 : 20 + Math.floor(gridIndex / columns) * 30) : option.y}%`,
         '--node-z': `${inGrid ? (group ? 0 : ((gridIndex % 3) - 1) * 24) : option.z}px`,
         '--node-offset-x': `${offset.x}px`,
         '--node-offset-y': `${offset.y}px`,
@@ -489,6 +490,7 @@ export function CoordinateField({
         event.currentTarget.style.setProperty('--coordinate-y', '0px')
       }}
     >
+      {!revealed && <p className="dia-coordinate-light-prompt">先从点亮舞台开始吧</p>}
       <div className="dia-coordinate-welcome" hidden={!revealed}>
         {group && (
           <nav className="dia-coordinate-breadcrumb" aria-label="空间路径">
