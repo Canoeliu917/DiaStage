@@ -1,6 +1,15 @@
-import { expect, test } from 'bun:test'
+import { expect, spyOn, test } from 'bun:test'
 import { z } from 'zod'
-import { handleRemoteVoiceRequest, readRemoteJson, takeRemoteJoinRateLimit } from './api'
+import {
+  POST as transcribe,
+  OPTIONS as transcribePreflight,
+} from '../../app/api/remote-voice/sessions/[id]/transcribe/route'
+import {
+  handleRemoteVoiceRequest,
+  readRemoteJson,
+  remoteVoicePreflight,
+  takeRemoteJoinRateLimit,
+} from './api'
 import {
   REMOTE_VOICE_LIMITS,
   RemoteVoiceSessionError,
@@ -142,15 +151,53 @@ test('remote JSON is bounded and scene authority is required only for session cr
     method: 'POST',
     headers: { origin: 'https://stage.example' },
   })
-  const response = await handleRemoteVoiceRequest(
-    publicRequest,
-    () => {
+  const oldDeviceLink = process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+  try {
+    process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = 'true'
+    const response = await handleRemoteVoiceRequest(
+      publicRequest,
+      () => {
+        called = true
+        return { body: {} }
+      },
+      { requireSceneAuth: true },
+    )
+    expect(response.status).toBe(503)
+    expect(called).toBe(false)
+    expect((await response.json()).error.message).toContain('安全访问')
+  } finally {
+    if (oldDeviceLink === undefined) delete process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+    else process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = oldDeviceLink
+  }
+})
+
+test('device linking defaults off and rejects operations, preflight and transcription before AI', async () => {
+  const oldDeviceLink = process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+  const fetchSpy = spyOn(globalThis, 'fetch').mockImplementation(() => {
+    throw new Error('Disabled device linking must not make external requests')
+  })
+  try {
+    delete process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+    const request = new Request('http://127.0.0.1/api/remote-voice/sessions/test/transcribe', {
+      method: 'POST',
+    })
+    let called = false
+    const response = await handleRemoteVoiceRequest(request, () => {
       called = true
       return { body: {} }
-    },
-    { requireSceneAuth: true },
-  )
-  expect(response.status).toBe(503)
-  expect(called).toBe(false)
-  expect((await response.json()).error.message).toContain('安全访问')
+    })
+    expect(response.status).toBe(404)
+    expect((await response.json()).error.code).toBe('DEVICE_LINK_DISABLED')
+    expect(called).toBe(false)
+    expect(remoteVoicePreflight(new Request(request.url, { method: 'OPTIONS' })).status).toBe(404)
+    expect(transcribePreflight(new Request(request.url, { method: 'OPTIONS' })).status).toBe(404)
+    const transcription = await transcribe(request, { params: Promise.resolve({ id: 'test' }) })
+    expect(transcription.status).toBe(404)
+    expect((await transcription.json()).error.code).toBe('DEVICE_LINK_DISABLED')
+    expect(fetchSpy).not.toHaveBeenCalled()
+  } finally {
+    fetchSpy.mockRestore()
+    if (oldDeviceLink === undefined) delete process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+    else process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = oldDeviceLink
+  }
 })

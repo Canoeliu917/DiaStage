@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
 import './coordinate-field.css'
 
 export type HomeSpaceAction = 'dialogue' | 'voice' | 'script' | 'manual' | 'archive-info'
@@ -53,7 +54,9 @@ export const HOME_SPACE_GROUPS: Record<
       { title: '对话构思', label: 'Dialogue', action: 'dialogue', x: 20, y: 35, z: 30 },
       { title: '语音搭台', label: 'Voice', action: 'voice', x: 42, y: 64, z: 50 },
       { title: '剧本搭台', label: 'Script', action: 'script', x: 63, y: 31, z: -20 },
-      { title: '连接手机', label: 'Connect', href: '/remote-voice', x: 83, y: 66, z: 5 },
+      ...(isDeviceLinkEnabled()
+        ? [{ title: '连接手机', label: 'Connect', href: '/remote-voice', x: 83, y: 66, z: 5 }]
+        : []),
     ],
   },
   diagonal: {

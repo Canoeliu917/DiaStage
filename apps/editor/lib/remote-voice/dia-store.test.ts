@@ -374,6 +374,7 @@ test('Build projection carries bounded scenery and confirmed Ghost without exten
 
 test('Dia HTTP routes validate requests/responses, enforce roles and streamed payload limits', async () => {
   const oldRate = process.env.PASCAL_SCENE_API_RATE_LIMIT
+  const oldDeviceLink = process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
   process.env.PASCAL_SCENE_API_RATE_LIMIT = '0'
   const owner = remoteVoiceSessions.create('synthetic', 'synthetic-scene')
   const remote = remoteVoiceSessions.join(owner.pairingCode)
@@ -388,6 +389,7 @@ test('Dia HTTP routes validate requests/responses, enforce roles and streamed pa
       body: JSON.stringify(body),
     })
   try {
+    process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = 'true'
     expect((await GET(new Request(url), context)).status).toBe(401)
     expect(
       (await PATCH(json('PATCH', remoteHeaders, { snapshot: snapshot() }), context)).status,
@@ -440,6 +442,8 @@ test('Dia HTTP routes validate requests/responses, enforce roles and streamed pa
     remoteVoiceSessions.revoke(owner.id, owner.ownerToken)
     expect((await GET(new Request(url, { headers: remoteHeaders }), context)).status).toBe(410)
   } finally {
+    if (oldDeviceLink === undefined) delete process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+    else process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = oldDeviceLink
     try {
       remoteVoiceSessions.revoke(owner.id, owner.ownerToken)
     } catch {}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { z } from 'zod'
+import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
 import type { CreationLease } from '@/lib/stage/creation-policy'
 
 const LeaseSchema = z.strictObject({
@@ -81,7 +82,8 @@ export function CreationModeControl({
             仅授权当前本机项目与会话。允许新增、移动、旋转、缩放布景及调整镜头；仍需通过完整空间校验。
           </p>
           <p>
-            删除、修改舞台尺寸、超过20个对象、外部导入、费用超限及不支持的请求仍需确认。30分钟无操作、断开手机或离开面板后授权失效。
+            删除、修改舞台尺寸、超过20个对象、外部导入、费用超限及不支持的请求仍需确认。30分钟无操作
+            {isDeviceLinkEnabled() ? '、断开手机' : ''}或离开面板后授权失效。
           </p>
           <p>
             {requested === 'draft'

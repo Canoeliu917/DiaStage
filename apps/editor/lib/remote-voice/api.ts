@@ -5,6 +5,7 @@ import {
   sceneApiPreflight,
   withSceneApiHeaders,
 } from '@/lib/scene-api-security'
+import { isDeviceLinkEnabled } from './availability'
 import { RemoteVoiceSessionError } from './session-store'
 
 const MAX_JSON_BYTES = 32 * 1024
@@ -22,7 +23,17 @@ export class RemoteVoiceApiError extends Error {
   }
 }
 
-export const remoteVoicePreflight = sceneApiPreflight
+function deviceLinkDisabled(request: Request) {
+  return sceneApiJson(
+    request,
+    { error: { code: 'DEVICE_LINK_DISABLED', message: '设备联动暂未开放。' } },
+    { status: 404 },
+  )
+}
+
+export function remoteVoicePreflight(request: Request) {
+  return isDeviceLinkEnabled() ? sceneApiPreflight(request) : deviceLinkDisabled(request)
+}
 
 export function ownerToken(request: Request): string | null {
   return request.headers.get('x-diastage-owner-token')
@@ -111,6 +122,7 @@ export async function handleRemoteVoiceRequest(
     | Response,
   options: { requireSceneAuth?: boolean } = {},
 ): Promise<Response> {
+  if (!isDeviceLinkEnabled()) return deviceLinkDisabled(request)
   const guard = guardSceneApiRequest(request, { skipAuth: !options.requireSceneAuth })
   if (guard) {
     const message =

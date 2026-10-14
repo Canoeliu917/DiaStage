@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 import { DIASTAGE_BRAND } from '@/lib/brand'
 import { prepareSyntheticDemo } from '@/lib/rehearsal-intelligence/synthetic-demo-intention'
+import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
 import type { VoiceState } from './command-input'
 
 const VoiceRecorder = dynamic(
@@ -44,9 +45,11 @@ export function DiaHomeEntry() {
         <p className="dia-home-demo-label">演示数据 · 非真实模型输出</p>
       </div>
       <div className="dia-home-example">
-        <a className="dia-home-phone-entry" href="/remote-voice">
-          手机 Dia · 连接电脑舞台
-        </a>
+        {isDeviceLinkEnabled() && (
+          <a className="dia-home-phone-entry" href="/remote-voice">
+            手机 Dia · 连接电脑舞台
+          </a>
+        )}
         <p>从一段原创告别开始</p>
         <blockquote>
           两个人在告别。
@@ -110,7 +113,7 @@ export function DiaHomeEntry() {
         <Link href="/scenes">继续已有排演</Link>
         <Link href="/?entry=script#stage-tools">剧本</Link>
         <Link href="/?entry=manual#stage-tools">舞台</Link>
-        <Link href="/remote-voice">扫描上传</Link>
+        {isDeviceLinkEnabled() && <Link href="/remote-voice">扫描上传</Link>}
       </nav>
       <div className="dia-home-prompts" role="group" aria-label="排演想法">
         {['帮我看看这一段', '给我两个排法', '这个人物还能怎么做'].map((text) => (

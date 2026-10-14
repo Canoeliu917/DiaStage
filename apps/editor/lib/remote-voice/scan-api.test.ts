@@ -12,6 +12,7 @@ import { remoteVoiceSessions } from './session-store'
 
 test('scan API: role isolation, saved scene, streamed upload, verified download, idempotent receipts and revoke', async () => {
   const oldRate = process.env.PASCAL_SCENE_API_RATE_LIMIT
+  const oldDeviceLink = process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
   process.env.PASCAL_SCENE_API_RATE_LIMIT = '0'
   const owner = remoteVoiceSessions.create('synthetic', 'saved-scene'),
     remote = remoteVoiceSessions.join(owner.pairingCode)
@@ -24,6 +25,7 @@ test('scan API: role isolation, saved scene, streamed upload, verified download,
   const ownerHeaders = { 'x-diastage-owner-token': owner.ownerToken },
     remoteHeaders = { 'x-diastage-remote-token': remote.remoteToken }
   try {
+    process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = 'true'
     expect((await list(new Request(base), params)).status).toBe(401)
     const response = await upload(
       new Request(base, {
@@ -71,6 +73,8 @@ test('scan API: role isolation, saved scene, streamed upload, verified download,
     remoteVoiceSessions.revokeRemote(owner.id, remote.remoteToken)
     expect((await list(new Request(base, { headers: ownerHeaders }), params)).status).toBe(410)
   } finally {
+    if (oldDeviceLink === undefined) delete process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+    else process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = oldDeviceLink
     await scanUploads.revoke(owner.id)
     if (oldRate === undefined) delete process.env.PASCAL_SCENE_API_RATE_LIMIT
     else process.env.PASCAL_SCENE_API_RATE_LIMIT = oldRate

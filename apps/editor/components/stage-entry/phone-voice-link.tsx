@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { type ComponentProps, useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
+import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
 import {
   CreatedRemoteVoiceResponseSchema,
   type CreatedRemoteVoiceSession,
@@ -34,7 +35,11 @@ type Receipt = z.infer<typeof receiptSchema>
 const terminal = (value: RemoteVoiceDisposition) =>
   ['applied', 'rejected', 'failed'].includes(value)
 
-export function PhoneVoiceLink({
+export function PhoneVoiceLink(props: ComponentProps<typeof EnabledPhoneVoiceLink>) {
+  return isDeviceLinkEnabled() ? <EnabledPhoneVoiceLink {...props} /> : null
+}
+
+function EnabledPhoneVoiceLink({
   sceneId,
   sceneLabel,
   storageKey,

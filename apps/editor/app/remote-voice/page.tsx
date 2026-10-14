@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
 import { RemoteVoiceController } from '@/components/stage-entry/remote-voice-controller'
 import { StudioWordmark } from '@/components/studio-wordmark'
+import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
 
 export const metadata: Metadata = {
   title: '舞台助手 · 咫台 DiaStage',
@@ -8,6 +10,7 @@ export const metadata: Metadata = {
 }
 
 export default function RemoteVoicePage() {
+  if (!isDeviceLinkEnabled()) notFound()
   return (
     <main className="remote-voice-page">
       <StudioWordmark />

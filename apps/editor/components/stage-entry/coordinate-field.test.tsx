@@ -33,7 +33,9 @@ test('first space enters categories; only second space exposes real actions and 
     'script',
     'voice',
   ])
-  expect(secondLevel.flatMap((node) => (node.href ? [node.href] : []))).toContain('/remote-voice')
+  expect(secondLevel.flatMap((node) => (node.href ? [node.href] : []))).not.toContain(
+    '/remote-voice',
+  )
   expect(secondLevel.flatMap((node) => (node.href ? [node.href] : []))).toContain(
     '/scenes?workspace=remount',
   )

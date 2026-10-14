@@ -1,12 +1,12 @@
-import { aiPreflight, handleAiRequest } from '@/lib/ai/api'
+import { handleAiRequest } from '@/lib/ai/api'
 import { readAudioUpload } from '@/lib/ai/audio-validation'
 import { transcribeVoice } from '@/lib/ai/voice-transcriber'
-import { handleRemoteVoiceRequest, remoteToken } from '@/lib/remote-voice/api'
+import { handleRemoteVoiceRequest, remoteToken, remoteVoicePreflight } from '@/lib/remote-voice/api'
 import { remoteVoiceSessions } from '@/lib/remote-voice/session-store'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-export const OPTIONS = aiPreflight
+export const OPTIONS = remoteVoicePreflight
 
 type RouteParams = { params: Promise<{ id: string }> }
 

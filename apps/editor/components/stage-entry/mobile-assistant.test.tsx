@@ -16,16 +16,26 @@ test('mobile assistant starts with Dia and secondary tools without a Canvas; uns
   expect(markup).not.toContain('class="assistant-entries"')
   expect(markup).not.toContain('/?entry=script')
   expect(markup).toContain('/?entry=manual')
-  const owner = renderToStaticMarkup(
+  const owner = (
     <PhoneVoiceLink
       sceneLabel="合成场景"
       storageKey="synthetic"
       canLoad
       onTranscript={async () => {}}
-    />,
+    />
   )
-  expect(owner).toMatch(/<button[^>]+disabled=""[^>]*>生成配对码/)
-  expect(owner).toContain('先建立并保存舞台')
+  const previous = process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+  try {
+    delete process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+    expect(renderToStaticMarkup(owner)).toBe('')
+    process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = 'true'
+    const enabled = renderToStaticMarkup(owner)
+    expect(enabled).toMatch(/<button[^>]+disabled=""[^>]*>生成配对码/)
+    expect(enabled).toContain('先建立并保存舞台')
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED
+    else process.env.NEXT_PUBLIC_DIASTAGE_DEVICE_LINK_ENABLED = previous
+  }
 })
 
 test('mobile Dia starts disconnected, keeps voice lazy, and never offers remote adopt', () => {

@@ -4,6 +4,7 @@ import { stageObjectBounds, stageToWorldPosition } from '@pascal-app/core/stage'
 import { useEffect } from 'react'
 import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import type { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
+import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
 import type { CreatedRemoteVoiceSession } from '@/lib/remote-voice/client'
 import { readRemoteVoiceResponse } from '@/lib/remote-voice/client'
 import {
@@ -198,7 +199,7 @@ export function DiaRemoteBridge({
   controller: DiaConversation
 }) {
   useEffect(() => {
-    if (!session || session.sceneId !== controller.sceneId) return
+    if (!isDeviceLinkEnabled() || !session || session.sceneId !== controller.sceneId) return
     let stopped = false,
       timer: ReturnType<typeof setTimeout> | undefined,
       lastSnapshot = '',
