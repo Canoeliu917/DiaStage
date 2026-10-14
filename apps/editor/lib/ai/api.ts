@@ -1,4 +1,9 @@
-import { guardSceneApiRequest, sceneApiJson, withSceneApiHeaders } from '../scene-api-security'
+import {
+  guardSceneApiRequest,
+  requireSceneSession,
+  sceneApiJson,
+  withSceneApiHeaders,
+} from '../scene-api-security'
 import { SceneContextTooLargeError } from '../stage/relevant-context'
 import { ModelBudgetError } from './model-budget'
 import { aiRequestContext } from './usage'
@@ -164,11 +169,11 @@ export async function handleAiRequest(
   options: { skipSceneAuth?: boolean } = {},
 ): Promise<Response> {
   const requestId = crypto.randomUUID()
-  const guard = guardSceneApiRequest(request, {
-    skipRateLimit: true,
-    skipAuth: options.skipSceneAuth,
-  })
-  if (guard) return errorResponse(request, requestId, accessError(guard.status))
+  const access = options.skipSceneAuth
+    ? guardSceneApiRequest(request, { skipRateLimit: true, skipAuth: true })
+    : await requireSceneSession(request, { skipRateLimit: true })
+  if (access instanceof Response)
+    return errorResponse(request, requestId, accessError(access.status))
   const ip =
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     request.headers.get('x-real-ip') ||

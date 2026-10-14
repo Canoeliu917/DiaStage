@@ -1,85 +1,47 @@
-import { afterAll, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, expect, test } from 'bun:test'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import type { SqliteSceneStore } from '@pascal-app/mcp/storage'
+import {
+  __resetSceneStoreForTests,
+  __getSceneStoreForTests as getSceneStore,
+} from './scene-store-server'
 
-// bun's mock.module poisons the module registry for EVERY test file that
-// runs after this one in the same process — capture the real modules and
-// restore them when this file finishes, or route tests downstream get a
-// stub facade without saveScene/loadStoredScene (night-5 CI failure).
-const realOperations = await import('@pascal-app/mcp/operations')
-const realStorage = await import('@pascal-app/mcp/storage')
-afterAll(() => {
-  mock.module('@pascal-app/mcp/operations', () => realOperations)
-  mock.module('@pascal-app/mcp/storage', () => realStorage)
+const databasePath = process.env.PASCAL_DB_PATH
+let directory: string
+let opened: SqliteSceneStore[]
+
+beforeEach(() => {
+  directory = mkdtempSync(join(tmpdir(), 'scene-singleton-'))
+  process.env.PASCAL_DB_PATH = join(directory, 'scenes.db')
+  opened = []
+  __resetSceneStoreForTests()
 })
 
-describe('getSceneStore', () => {
-  beforeEach(() => {
-    mock.module('@pascal-app/mcp/operations', () => ({
-      createSceneOperations: ({ store }: { store: unknown }) => ({
-        __store: store,
-        hasStore: true,
-      }),
-    }))
-    mock.module('@pascal-app/mcp/storage', () => {
-      let callCount = 0
-      return {
-        createSceneStore: async (_env?: NodeJS.ProcessEnv) => {
-          callCount++
-          return {
-            backend: 'sqlite' as const,
-            __instanceNumber: callCount,
-            save: async () => ({}) as never,
-            load: async () => null,
-            list: async () => [],
-            delete: async () => false,
-            rename: async () => ({}) as never,
-          }
-        },
-      }
-    })
-  })
+afterEach(() => {
+  for (const store of opened) store.close()
+  __resetSceneStoreForTests()
+  if (databasePath === undefined) delete process.env.PASCAL_DB_PATH
+  else process.env.PASCAL_DB_PATH = databasePath
+  rmSync(directory, { recursive: true, force: true })
+})
 
-  test('returns the same promise on repeated calls', async () => {
-    const mod = await import('./scene-store-server')
-    mod.__resetSceneStoreForTests()
+test('the scene store caches its promise and resolved instance', async () => {
+  const first = getSceneStore()
+  const second = getSceneStore()
+  expect(first).toBe(second)
+  const store = (await first) as SqliteSceneStore
+  opened.push(store)
+  expect(await second).toBe(store)
+  expect(store.databasePath).toBe(process.env.PASCAL_DB_PATH)
+})
 
-    const a = mod.getSceneStore()
-    const b = mod.getSceneStore()
-
-    expect(a).toBe(b)
-  })
-
-  test('resolves to the same store instance across calls', async () => {
-    const mod = await import('./scene-store-server')
-    mod.__resetSceneStoreForTests()
-
-    const storeA = await mod.getSceneStore()
-    const storeB = await mod.getSceneStore()
-
-    expect(storeA).toBe(storeB)
-    // Factory should have been invoked exactly once — asserted indirectly via
-    // our mock's instance counter.
-    expect((storeA as unknown as { __instanceNumber: number }).__instanceNumber).toBe(1)
-    expect((storeB as unknown as { __instanceNumber: number }).__instanceNumber).toBe(1)
-  })
-
-  test('reset helper clears the cached singleton', async () => {
-    const mod = await import('./scene-store-server')
-    mod.__resetSceneStoreForTests()
-
-    const first = await mod.getSceneStore()
-    mod.__resetSceneStoreForTests()
-    const second = await mod.getSceneStore()
-
-    expect(first).not.toBe(second)
-  })
-
-  test('getSceneOperations wraps the cached store', async () => {
-    const mod = await import('./scene-store-server')
-    mod.__resetSceneStoreForTests()
-
-    const store = await mod.getSceneStore()
-    const operations = await mod.getSceneOperations()
-
-    expect((operations as unknown as { __store: unknown }).__store).toBe(store)
-  })
+test('reset replaces the cached store without module mocks', async () => {
+  const first = (await getSceneStore()) as SqliteSceneStore
+  opened.push(first)
+  __resetSceneStoreForTests()
+  const second = (await getSceneStore()) as SqliteSceneStore
+  opened.push(second)
+  expect(second).not.toBe(first)
 })

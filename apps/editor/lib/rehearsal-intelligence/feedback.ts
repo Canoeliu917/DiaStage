@@ -1,9 +1,12 @@
 import { BuildFeedbackSchema } from './dia-backbone'
 import { type Feedback, FeedbackSchema, type Interaction, InteractionSchema } from './schema'
 
-function openLog(): Promise<IDBDatabase> {
+function openLog(ownerId = getLocalAccountOwner()): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('diastage-rehearsal-feedback', 3)
+    const request = indexedDB.open(
+      localAccountStorageKey('diastage-rehearsal-feedback', ownerId),
+      3,
+    )
     request.onupgradeneeded = () => {
       for (const [name, keyPath] of [
         ['interactions', 'interactionId'],
@@ -139,3 +142,5 @@ export async function clearFeedbackLog(sceneId: string) {
     db.close()
   }
 }
+
+import { getLocalAccountOwner, localAccountStorageKey } from '../auth/local-account'

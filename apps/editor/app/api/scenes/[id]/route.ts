@@ -1,14 +1,10 @@
+import type { SceneOperations } from '@pascal-app/mcp/operations'
 import { type NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { apiGraphSchema } from '@/lib/graph-schema'
-import {
-  guardSceneApiRequest,
-  sceneApiJson,
-  sceneApiPreflight,
-  withSceneApiHeaders,
-} from '@/lib/scene-api-security'
-import { getSceneOperations } from '@/lib/scene-store-server'
+import { sceneApiJson, sceneApiPreflight, withSceneApiHeaders } from '@/lib/scene-api-security'
+import { getPrivateSceneAccess } from '@/lib/scene-store-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,11 +34,11 @@ export function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const guard = guardSceneApiRequest(request)
-  if (guard) return guard
+  const access = await getPrivateSceneAccess(request)
+  if (access instanceof Response) return access
 
   const { id } = await params
-  const operations = await getSceneOperations()
+  const { operations } = access
   try {
     const scene = await operations.loadStoredScene(id)
     if (!scene) {
@@ -57,8 +53,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
-  const guard = guardSceneApiRequest(request)
-  if (guard) return guard
+  const access = await getPrivateSceneAccess(request)
+  if (access instanceof Response) return access
 
   const { id } = await params
 
@@ -85,7 +81,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   const ifMatch = parseIfMatch(request.headers.get('If-Match'))
   const expectedVersion = ifMatch ?? parsed.data.expectedVersion
 
-  const operations = await getSceneOperations()
+  const { operations } = access
   try {
     const existing = await operations.loadStoredScene(id)
     if (!existing) {
@@ -119,18 +115,18 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       headers: { ETag: `"${meta.version}"` },
     })
   } catch (error) {
-    return handleStoreError(request, error, { includeCurrentVersionFor: id })
+    return handleStoreError(request, error, operations, id)
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
-  const guard = guardSceneApiRequest(request)
-  if (guard) return guard
+  const access = await getPrivateSceneAccess(request)
+  if (access instanceof Response) return access
 
   const { id } = await params
   const ifMatch = parseIfMatch(request.headers.get('If-Match'))
 
-  const operations = await getSceneOperations()
+  const { operations } = access
   try {
     const removed = await operations.deleteStoredScene(id, { expectedVersion: ifMatch })
     if (!removed) {
@@ -138,13 +134,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
     return withSceneApiHeaders(request, new NextResponse(null, { status: 204 }))
   } catch (error) {
-    return handleStoreError(request, error, { includeCurrentVersionFor: id })
+    return handleStoreError(request, error, operations, id)
   }
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
-  const guard = guardSceneApiRequest(request)
-  if (guard) return guard
+  const access = await getPrivateSceneAccess(request)
+  if (access instanceof Response) return access
 
   const { id } = await params
 
@@ -171,14 +167,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const ifMatch = parseIfMatch(request.headers.get('If-Match'))
   const expectedVersion = ifMatch ?? parsed.data.expectedVersion
 
-  const operations = await getSceneOperations()
+  const { operations } = access
   try {
     const meta = await operations.renameStoredScene(id, parsed.data.name, { expectedVersion })
     return sceneApiJson(request, meta, {
       headers: { ETag: `"${meta.version}"` },
     })
   } catch (error) {
-    return handleStoreError(request, error, { includeCurrentVersionFor: id })
+    return handleStoreError(request, error, operations, id)
   }
 }
 
@@ -202,25 +198,15 @@ function parseIfMatch(raw: string | null): number | undefined {
 async function handleStoreError(
   request: NextRequest,
   error: unknown,
-  opts: { includeCurrentVersionFor?: string } = {},
+  operations?: SceneOperations,
+  id?: string,
 ): Promise<NextResponse> {
   const code = (error as { code?: string })?.code
   if (code === 'version_conflict') {
-    let currentVersion: number | undefined
-    if (opts.includeCurrentVersionFor) {
-      try {
-        const operations = await getSceneOperations()
-        const current = await operations.loadStoredScene(opts.includeCurrentVersionFor)
-        currentVersion = current?.version
-      } catch {
-        // Best-effort; skip reporting currentVersion on secondary failure.
-      }
-    }
+    const current = operations && id ? await operations.loadStoredScene(id) : null
     return sceneApiJson(
       request,
-      currentVersion === undefined
-        ? { error: 'version_conflict' }
-        : { error: 'version_conflict', currentVersion },
+      { error: 'version_conflict', ...(current && { currentVersion: current.version }) },
       { status: 409 },
     )
   }

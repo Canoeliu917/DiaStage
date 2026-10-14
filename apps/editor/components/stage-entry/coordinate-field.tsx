@@ -9,6 +9,7 @@ import {
   useState,
 } from 'react'
 import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
+import { createUUID } from '@/lib/uuid'
 import './coordinate-field.css'
 
 export type HomeSpaceAction = 'dialogue' | 'voice' | 'script' | 'manual' | 'archive-info'
@@ -136,15 +137,18 @@ export function clampSpaceMove(x: number, y: number, node: Bounds, field: Bounds
 }
 
 export function CoordinateField({
+  accountId,
   onSelect,
   illuminated,
   onToggleLight,
 }: {
+  accountId?: string
   onSelect: (action: HomeSpaceAction) => void
   illuminated: boolean
   onToggleLight: () => void
 }) {
   const field = useRef<HTMLElement>(null)
+  const notesKey = `${NOTES_STORAGE_KEY}:${accountId ?? 'guest'}`
   const space = useRef<HTMLDivElement>(null)
   const title = useRef<HTMLHeadingElement>(null)
   const firstRender = useRef(true)
@@ -193,17 +197,16 @@ export function CoordinateField({
 
   useEffect(() => {
     try {
-      setNotes(parseSpaceNotes(localStorage.getItem(NOTES_STORAGE_KEY)))
+      setNotes(parseSpaceNotes(localStorage.getItem(notesKey)))
     } catch {
       setNoteError('浏览器未允许本地保存，台词仅保留在本次打开中。')
     }
     const syncNotes = (event: StorageEvent) => {
-      if (event.key === NOTES_STORAGE_KEY || event.key === null)
-        setNotes(parseSpaceNotes(event.newValue))
+      if (event.key === notesKey || event.key === null) setNotes(parseSpaceNotes(event.newValue))
     }
     window.addEventListener('storage', syncNotes)
     return () => window.removeEventListener('storage', syncNotes)
-  }, [])
+  }, [notesKey])
 
   useEffect(() => {
     if (revealed && noteEditorKey !== null) noteInput.current?.focus({ preventScroll: true })
@@ -212,7 +215,7 @@ export function CoordinateField({
   function saveNotes(next: SpaceNote[]) {
     setNotes(next)
     try {
-      localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(next))
+      localStorage.setItem(notesKey, JSON.stringify(next))
       setNoteError('')
     } catch {
       setNoteError('未能保存到浏览器；请先保留文字，刷新后本次修改可能丢失。')
@@ -543,7 +546,7 @@ export function CoordinateField({
               : [
                   ...notes,
                   {
-                    id: `note-${crypto.randomUUID()}`,
+                    id: `note-${createUUID()}`,
                     text,
                     x: 38 + (notes.length % 3) * 13,
                     y: 36 + (notes.length % 4) * 12,

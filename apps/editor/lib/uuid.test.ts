@@ -115,13 +115,20 @@ test('browser-facing modules use the helper; only audited server modules keep na
     'lib/ai/api.ts',
     'lib/ai/usage.ts',
     'lib/ai/creation-permission.ts',
+    'lib/auth/bootstrap.ts',
     'lib/remote-voice/session-store.ts',
     'lib/rehearsal-intelligence/real-eval.ts',
   ])
   const root = new URL('../', import.meta.url)
   for (const file of new Glob('{lib,components}/**/*.{ts,tsx}').scanSync(fileURLToPath(root))) {
     const path = file.replaceAll('\\', '/')
-    if (path.includes('.test.') || path === 'lib/uuid.ts' || serverOnly.has(path)) continue
+    if (
+      path.includes('.test.') ||
+      path.endsWith('.integration.ts') ||
+      path === 'lib/uuid.ts' ||
+      serverOnly.has(path)
+    )
+      continue
     expect(readFileSync(new URL(path, root), 'utf8')).not.toMatch(/\brandomUUID\s*\(/)
   }
   expect(readFileSync(new URL('./uuid.ts', import.meta.url), 'utf8')).not.toContain('Math.random')

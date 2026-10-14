@@ -14,6 +14,27 @@ type RateBucket = {
 
 const rateBuckets = new Map<string, RateBucket>()
 
+export async function requireSceneSession(
+  request: Request,
+  options: { skipRateLimit?: boolean } = {},
+) {
+  const origin = request.headers.get('origin')
+  if (origin && !isSameOrigin(request, origin) && !isWebsiteOrigin(origin))
+    return sceneApiJson(request, { error: 'origin_not_allowed' }, { status: 403 })
+  if (
+    !['GET', 'HEAD', 'OPTIONS'].includes(request.method) &&
+    request.headers.get('sec-fetch-site') === 'cross-site'
+  )
+    return sceneApiJson(request, { error: 'origin_not_allowed' }, { status: 403 })
+  const denied = guardSceneApiRequest(request, { ...options, skipAuth: true })
+  if (denied) return denied
+  if (request.headers.has('x-diastage-remote-token'))
+    return sceneApiJson(request, { error: 'phone_scene_access_forbidden' }, { status: 403 })
+  const { getSession } = await import('./auth/server')
+  const session = await getSession(request.headers)
+  return session ?? sceneApiJson(request, { error: 'unauthorized' }, { status: 401 })
+}
+
 export function sceneApiPreflight(request: Request): NextResponse {
   const guard = guardSceneApiRequest(request, { skipRateLimit: true, skipAuth: true })
   if (guard) return guard
@@ -127,11 +148,17 @@ function clientIp(request: Request): string {
 }
 
 function isOriginAllowed(request: Request, origin: string): boolean {
-  if (isSameOrigin(request, origin)) return true
+  if (isSameOrigin(request, origin) || isWebsiteOrigin(origin)) return true
   const parsed = parseUrl(origin)
   if (!parsed) return false
   if (isLoopbackHostname(parsed.hostname)) return true
   return configuredOrigins().has(normalizeOrigin(parsed))
+}
+
+function isWebsiteOrigin(origin: string): boolean {
+  const website = parseUrl(process.env.BETTER_AUTH_URL ?? '')
+  const supplied = parseUrl(origin)
+  return !!website && !!supplied && normalizeOrigin(website) === normalizeOrigin(supplied)
 }
 
 function configuredOrigins(): Set<string> {

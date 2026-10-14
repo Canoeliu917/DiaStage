@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { z } from 'zod'
-import { guardSceneApiRequest, sceneApiJson, sceneApiPreflight } from '@/lib/scene-api-security'
-import { getSceneStore } from '@/lib/scene-store-server'
+import { sceneApiJson, sceneApiPreflight } from '@/lib/scene-api-security'
+import { getPrivateSceneAccess } from '@/lib/scene-store-server'
 
 const thumbnailSchema = z.object({
   thumbnailUrl: z
@@ -28,8 +28,8 @@ export function OPTIONS(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const denied = guardSceneApiRequest(request)
-  if (denied) return denied
+  const access = await getPrivateSceneAccess(request)
+  if (access instanceof Response) return access
   let body: unknown
   try {
     body = await request.json()
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return sceneApiJson(request, { error: 'invalid_thumbnail' }, { status: 400 })
 
   try {
-    const store = await getSceneStore()
+    const { store } = access
     if (!store.updateThumbnail)
       return sceneApiJson(request, { error: 'thumbnail_storage_unavailable' }, { status: 503 })
     const { id } = await params

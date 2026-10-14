@@ -59,21 +59,31 @@ test('AI rate limits expire and keep a bounded map without evicting active clien
 })
 
 test('responses carry request ID and safe errors without exposing provider details', async () => {
-  const result = await handleAiRequest(request('{}'), async () => ({ plan: {} }))
+  const result = await handleAiRequest(request('{}'), async () => ({ plan: {} }), {
+    skipSceneAuth: true,
+  })
   expect(result.status).toBe(200)
   expect((await result.json()).requestId).toBeString()
   expect(result.headers.get('cache-control')).toBe('no-store')
-  const error = await handleAiRequest(request('{}'), async () => {
-    throw new Error('secret provider body and stack')
-  })
+  const error = await handleAiRequest(
+    request('{}'),
+    async () => {
+      throw new Error('secret provider body and stack')
+    },
+    { skipSceneAuth: true },
+  )
   expect(error.status).toBe(500)
   const body = await error.json()
   expect(body.requestId).toBeString()
   expect(body.error.code).toBe('INTERNAL_ERROR')
   expect(JSON.stringify(body)).not.toContain('secret')
-  const known = await handleAiRequest(request('{}'), async () => {
-    throw new AiError('PLAN_INVALID', '请明确台位。', 422, true)
-  })
+  const known = await handleAiRequest(
+    request('{}'),
+    async () => {
+      throw new AiError('PLAN_INVALID', '请明确台位。', 422, true)
+    },
+    { skipSceneAuth: true },
+  )
   expect(known.status).toBe(422)
   expect((await known.json()).error).toEqual({
     code: 'PLAN_INVALID',
@@ -97,10 +107,14 @@ test('origin guard and cancelled request prevent execution', async () => {
   const controller = new AbortController()
   controller.abort()
   const aborted = new Request(request('{}'), { signal: controller.signal })
-  const cancelled = await handleAiRequest(aborted, async () => {
-    called = true
-    return {}
-  })
+  const cancelled = await handleAiRequest(
+    aborted,
+    async () => {
+      called = true
+      return {}
+    },
+    { skipSceneAuth: true },
+  )
   expect(cancelled.status).toBe(499)
   expect(called).toBe(false)
 })

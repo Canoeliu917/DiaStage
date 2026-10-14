@@ -283,6 +283,7 @@ function rowToSceneEvent(row: SceneEventRow): SceneEvent {
  */
 export class SqliteSceneStore implements SceneStore {
   readonly backend = 'sqlite' as const
+  readonly supportsOwnerChecks = true
 
   readonly databasePath: string
 
@@ -305,6 +306,16 @@ export class SqliteSceneStore implements SceneStore {
     const id = opts.id ? sanitizeSlug(opts.id) : this.generateUniqueId(db)
     if (!isValidSlug(id)) {
       throw new SceneInvalidError(`Invalid project id after sanitization: "${id}"`)
+    }
+    if (opts.expectedOwnerId !== undefined) {
+      const current = this.getRow(db, id)
+      const placeholder = this.projectPlaceholders.get(id)
+      if (
+        opts.ownerId !== opts.expectedOwnerId ||
+        (current && current.owner_id !== opts.expectedOwnerId) ||
+        (placeholder && placeholder.ownerId !== opts.expectedOwnerId)
+      )
+        throw new SceneNotFoundError()
     }
     if (this.getRow(db, id)) {
       throw new SceneInvalidError(`Project with id "${id}" already exists`)
@@ -346,6 +357,24 @@ export class SqliteSceneStore implements SceneStore {
 
       const existing = this.getRow(db, id)
       const placeholder = this.projectPlaceholders.get(id)
+
+      if (opts.expectedOwnerId !== undefined) {
+        if (
+          opts.ownerId !== opts.expectedOwnerId ||
+          (existing && existing.owner_id !== opts.expectedOwnerId) ||
+          (placeholder && placeholder.ownerId !== opts.expectedOwnerId)
+        )
+          throw new SceneNotFoundError()
+        if (opts.projectId) {
+          const project = this.getRow(db, sanitizeSlug(opts.projectId))
+          const pendingProject = this.projectPlaceholders.get(sanitizeSlug(opts.projectId))
+          if (
+            (project && project.owner_id !== opts.expectedOwnerId) ||
+            (pendingProject && pendingProject.ownerId !== opts.expectedOwnerId)
+          )
+            throw new SceneNotFoundError()
+        }
+      }
 
       if (existing && providedId !== undefined && opts.expectedVersion === undefined) {
         throw new SceneInvalidError(
@@ -502,6 +531,8 @@ export class SqliteSceneStore implements SceneStore {
       const safeId = sanitizeSlug(id)
       const existing = this.getRow(db, safeId)
       if (!existing) return false
+      if (opts.expectedOwnerId !== undefined && existing.owner_id !== opts.expectedOwnerId)
+        throw new SceneNotFoundError()
       if (opts.expectedVersion !== undefined && existing.version !== opts.expectedVersion) {
         throw new SceneVersionConflictError(
           `Scene "${safeId}" version mismatch: expected ${opts.expectedVersion}, got ${existing.version}`,
@@ -520,6 +551,8 @@ export class SqliteSceneStore implements SceneStore {
       if (!existing) {
         throw new SceneNotFoundError(`Scene "${safeId}" not found`)
       }
+      if (opts.expectedOwnerId !== undefined && existing.owner_id !== opts.expectedOwnerId)
+        throw new SceneNotFoundError()
       if (opts.expectedVersion !== undefined && existing.version !== opts.expectedVersion) {
         throw new SceneVersionConflictError(
           `Scene "${safeId}" version mismatch: expected ${opts.expectedVersion}, got ${existing.version}`,
@@ -553,7 +586,7 @@ export class SqliteSceneStore implements SceneStore {
   async updateThumbnail(
     id: string,
     thumbnailUrl: string,
-    opts: { expectedVersion: number },
+    opts: { expectedVersion: number; expectedOwnerId?: string },
   ): Promise<SceneMeta> {
     if (!Number.isSafeInteger(opts.expectedVersion) || opts.expectedVersion < 1)
       throw new SceneInvalidError('expectedVersion must be a positive safe integer')
@@ -561,6 +594,8 @@ export class SqliteSceneStore implements SceneStore {
       const safeId = sanitizeSlug(id)
       const existing = this.getRow(db, safeId)
       if (!existing) throw new SceneNotFoundError(`Scene "${safeId}" not found`)
+      if (opts.expectedOwnerId !== undefined && existing.owner_id !== opts.expectedOwnerId)
+        throw new SceneNotFoundError()
       if (existing.version !== opts.expectedVersion)
         throw new SceneVersionConflictError('The scene changed before its cover was captured')
       db.query('UPDATE scenes SET thumbnail_url = ? WHERE id = ? AND version = ?').run(
@@ -579,6 +614,8 @@ export class SqliteSceneStore implements SceneStore {
       if (!existing) {
         throw new SceneNotFoundError(`Scene "${safeId}" not found`)
       }
+      if (opts.expectedOwnerId !== undefined && existing.owner_id !== opts.expectedOwnerId)
+        throw new SceneNotFoundError()
 
       const graphJson = serializeGraph(opts.graph)
       const now = new Date().toISOString()
@@ -612,10 +649,19 @@ export class SqliteSceneStore implements SceneStore {
            FROM scene_events
           WHERE scene_id = ?
             AND event_id > ?
+            AND (? IS NULL OR EXISTS (
+              SELECT 1 FROM scenes WHERE scenes.id = scene_events.scene_id AND scenes.owner_id = ?
+            ))
           ORDER BY event_id ASC
           LIMIT ?`,
       )
-      .all(sanitizeSlug(sceneId), afterEventId, limit)
+      .all(
+        sanitizeSlug(sceneId),
+        afterEventId,
+        opts.expectedOwnerId ?? null,
+        opts.expectedOwnerId ?? null,
+        limit,
+      )
 
     return rows.map((row) => rowToSceneEvent(row as SceneEventRow))
   }

@@ -24,14 +24,16 @@ export function creationSession(request: Request) {
 export function handleCreationPermission(
   request: Request,
   input: z.infer<typeof CreationRequestSchema>,
+  userId: string,
   now = Date.now(),
 ) {
   const internalUrl = new URL(request.url)
   // Next may use an internal host in request.url; validate the browser-facing Host and Origin.
   const url = new URL(`${internalUrl.protocol}//${request.headers.get('host') ?? internalUrl.host}`)
   const origin = request.headers.get('origin')
-  // The repository has no multi-user owner identity. Never treat a shared API token as ownership.
+  // Continuous creation remains a local capability in this release.
   if (
+    !userId ||
     !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) ||
     origin !== url.origin ||
     (request.headers.has('x-forwarded-host') &&
@@ -74,7 +76,7 @@ export function handleCreationPermission(
     const id = randomBytes(32).toString('base64url')
     const lease: CreationLease = {
       projectId: input.projectId,
-      userId: 'local-workspace-owner',
+      userId,
       sessionId: crypto.randomUUID(),
       mode: input.mode,
       expiresAt: now + ttl,
@@ -94,7 +96,7 @@ export function handleCreationPermission(
     }
   }
   const lease = session ? leases.get(session) : null
-  if (!lease || lease.projectId !== input.projectId)
+  if (!lease || lease.projectId !== input.projectId || lease.userId !== userId)
     return {
       status: 403,
       body: {

@@ -1,10 +1,6 @@
-import {
-  guardSceneApiRequest,
-  sceneApiJson,
-  sceneApiPreflight,
-  withSceneApiHeaders,
-} from '@/lib/scene-api-security'
-import { getSceneOperations } from '@/lib/scene-store-server'
+import { getSession } from '@/lib/auth/server'
+import { sceneApiJson, sceneApiPreflight, withSceneApiHeaders } from '@/lib/scene-api-security'
+import { getPrivateSceneAccess } from '@/lib/scene-store-server'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -20,11 +16,11 @@ export function OPTIONS(request: Request) {
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
-  const guard = guardSceneApiRequest(request)
-  if (guard) return guard
+  const access = await getPrivateSceneAccess(request)
+  if (access instanceof Response) return access
 
   const { id } = await params
-  const operations = await getSceneOperations()
+  const { operations, user } = access
 
   if (!operations.canListSceneEvents) {
     return sceneApiJson(request, { error: 'scene_events_unavailable' }, { status: 501 })
@@ -73,6 +69,11 @@ export async function GET(request: Request, { params }: RouteParams) {
       const poll = async () => {
         if (closed) return
         try {
+          const session = await getSession(request.headers)
+          if (session?.user.id !== user.id) {
+            close()
+            return
+          }
           const events = await operations.listSceneEvents(id, {
             afterEventId: cursor,
             limit: MAX_EVENTS_PER_POLL,
@@ -87,6 +88,7 @@ export async function GET(request: Request, { params }: RouteParams) {
           const message = error instanceof Error ? error.message : String(error)
           enqueue('event: error\n')
           enqueue(`data: ${JSON.stringify({ message })}\n\n`)
+          close()
         } finally {
           if (!closed) pollTimer = setTimeout(poll, POLL_MS)
         }

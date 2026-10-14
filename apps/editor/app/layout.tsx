@@ -1,5 +1,8 @@
 import localFont from 'next/font/local'
+import { headers } from 'next/headers'
 import type { CSSProperties } from 'react'
+import { AccountSessionBoundary } from '@/components/account-session-boundary'
+import { getSession } from '@/lib/auth/server'
 import { DIASTAGE_BRAND } from '@/lib/brand'
 import { DIA_CSS_VARIABLES } from '@/lib/visual-system'
 import { DevDiagnostics } from './dev-diagnostics'
@@ -38,13 +41,14 @@ const diaLatin = localFont({
   adjustFontFallback: false,
 })
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   const enableDevDiagnostics =
     process.env.NODE_ENV === 'development' && process.env.DIASTAGE_DEV_DIAGNOSTICS === '1'
+  const session = await getSession(await headers())
 
   return (
     <html
@@ -54,6 +58,7 @@ export default function RootLayout({
     >
       <body className="font-sans">
         {children}
+        <AccountSessionBoundary userId={session?.user.id ?? null} />
         <DevDiagnostics enabled={enableDevDiagnostics} />
       </body>
     </html>

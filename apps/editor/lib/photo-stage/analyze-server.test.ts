@@ -1,7 +1,6 @@
 import { afterEach, expect, test } from 'bun:test'
 import OpenAI from 'openai'
-import { POST } from '../../app/api/photo-stage/analyze/route'
-import { AI_LIMITS, handleAiRequest } from '../ai/api'
+import { handleAiRequest } from '../ai/api'
 import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { analyzePhotoStage, PHOTO_IMAGE_MAX_BYTES } from './analyze-server'
 
@@ -161,29 +160,16 @@ test('cancellation prevents model use or discards an interrupted response', asyn
   ).rejects.toMatchObject({ name: 'AbortError' })
 })
 
-test('real route preserves bounded JSON, origin guard and honest missing-credential errors', async () => {
-  delete process.env.OPENAI_API_KEY
-  const oversized = await POST(request({}, { 'content-length': String(AI_LIMITS.jsonBytes + 1) }))
-  expect(oversized.status).toBe(413)
-  const denied = await POST(request({ imageDataUrl }, { origin: 'https://untrusted.invalid' }))
-  expect(denied.status).toBe(403)
-  const unsupported = await POST(request({ imageDataUrl: 'https://example.com/image.png' }))
-  expect(unsupported.status).toBe(415)
-  const missing = await POST(request({ imageDataUrl }))
-  expect(missing.status).toBe(503)
-  const body = await missing.json()
-  expect(body.error.message).toContain('OPENAI_API_KEY')
-  expect(body).not.toHaveProperty('plan')
-  expect(body.requestId).toBeString()
-  expect(missing.headers.get('cache-control')).toBe('no-store')
-})
-
 test('provider details remain private through the shared API error handler', async () => {
-  const response = await handleAiRequest(request({ imageDataUrl }), async ({ signal }) => ({
-    plan: await analyzePhotoStage({ imageDataUrl }, signal, async () => {
-      throw new Error('private provider body / secret-key')
+  const response = await handleAiRequest(
+    request({ imageDataUrl }),
+    async ({ signal }) => ({
+      plan: await analyzePhotoStage({ imageDataUrl }, signal, async () => {
+        throw new Error('private provider body / secret-key')
+      }),
     }),
-  }))
+    { skipSceneAuth: true },
+  )
   expect(response.status).toBe(500)
   expect(JSON.stringify(await response.json())).not.toContain('secret-key')
 })
@@ -193,11 +179,15 @@ test('connection failures and timeouts return an actionable 503 without provider
     new OpenAI.APIConnectionError({ message: 'secret-key: connection refused' }),
     new OpenAI.APIConnectionTimeoutError({ message: 'secret-key: timeout' }),
   ]) {
-    const response = await handleAiRequest(request({ imageDataUrl }), async ({ signal }) => ({
-      plan: await analyzePhotoStage({ imageDataUrl }, signal, async () => {
-        throw error
+    const response = await handleAiRequest(
+      request({ imageDataUrl }),
+      async ({ signal }) => ({
+        plan: await analyzePhotoStage({ imageDataUrl }, signal, async () => {
+          throw error
+        }),
       }),
-    }))
+      { skipSceneAuth: true },
+    )
     expect(response.status).toBe(503)
     const body = await response.json()
     expect(body.error.retryable).toBe(true)

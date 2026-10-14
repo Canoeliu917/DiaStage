@@ -146,23 +146,28 @@ test('explicit local desktop grant is HttpOnly, scoped, revocable, inactivity-li
     mode: 'create' as const,
     explainedAndConfirmed: true as const,
   }
-  expect(handleCreationPermission(request(undefined, undefined, true), input).status).toBe(403)
+  expect(handleCreationPermission(request(undefined, undefined, true), input, 'owner').status).toBe(
+    403,
+  )
   expect(
     handleCreationPermission(
       request(undefined, 'https://stage.example/api/ai/creation-permission'),
       input,
+      'owner',
     ).status,
   ).toBe(403)
   expect(
-    handleCreationPermission(request(), { ...input, explainedAndConfirmed: undefined }).status,
+    handleCreationPermission(request(), { ...input, explainedAndConfirmed: undefined }, 'owner')
+      .status,
   ).toBe(403)
-  const grant = handleCreationPermission(request(), input, 0)
+  const grant = handleCreationPermission(request(), input, 'owner', 0)
   expect(
     handleCreationPermission(
       new Request('http://localhost:4320/api/ai/creation-permission', {
         headers: { host: '127.0.0.1:4320', origin: 'http://127.0.0.1:4320' },
       }),
       input,
+      'owner',
       0,
     ).status,
   ).toBe(200)
@@ -172,27 +177,40 @@ test('explicit local desktop grant is HttpOnly, scoped, revocable, inactivity-li
         headers: { host: 'stage.example', origin: 'https://stage.example' },
       }),
       input,
+      'owner',
       0,
     ).status,
   ).toBe(403)
   expect(grant.cookie).toContain('HttpOnly')
   const cookie = grant.cookie!.split(';')[0]!
   expect(
-    handleCreationPermission(request(cookie), { action: 'check', projectId: 'other' }, 1).status,
+    handleCreationPermission(request(cookie), { action: 'check', projectId: 'other' }, 'owner', 1)
+      .status,
   ).toBe(403)
   expect(
-    handleCreationPermission(request(cookie), { action: 'check', projectId: 'project' }, 1).status,
+    handleCreationPermission(request(cookie), { action: 'check', projectId: 'project' }, 'owner', 1)
+      .status,
   ).toBe(200)
   expect(
     handleCreationPermission(
       request(cookie),
       { action: 'check', projectId: 'project' },
+      'owner',
       30 * 60000 + 1,
     ).status,
   ).toBe(403)
-  const second = handleCreationPermission(request(), input, 0).cookie!.split(';')[0]!
-  handleCreationPermission(request(second), { action: 'revoke', projectId: 'project' }, 1)
+  const second = handleCreationPermission(request(), input, 'owner', 0).cookie!.split(';')[0]!
   expect(
-    handleCreationPermission(request(second), { action: 'check', projectId: 'project' }, 2).status,
+    handleCreationPermission(
+      request(second),
+      { action: 'check', projectId: 'project' },
+      'other-account',
+      1,
+    ).status,
+  ).toBe(403)
+  handleCreationPermission(request(second), { action: 'revoke', projectId: 'project' }, 'owner', 1)
+  expect(
+    handleCreationPermission(request(second), { action: 'check', projectId: 'project' }, 'owner', 2)
+      .status,
   ).toBe(403)
 })

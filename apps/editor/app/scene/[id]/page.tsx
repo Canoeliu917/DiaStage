@@ -2,13 +2,14 @@ import { headers } from 'next/headers'
 import Link from 'next/link'
 import { ClientBootstrap } from '@/app/client-bootstrap'
 import { SceneLoader } from '@/components/scene-loader'
+import { SceneOwnerBoundary } from '@/components/scene-owner-boundary'
 import { getScenePageOperations } from '@/lib/scene-store-server'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ScenePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const operations = await getScenePageOperations(await headers())
+  const operations = await getScenePageOperations(await headers(), `/scene/${id}`)
   const scene = await operations.loadStoredScene(id)
 
   if (!scene) {
@@ -41,12 +42,14 @@ export default async function ScenePage({ params }: { params: Promise<{ id: stri
 
   const { graph, ...meta } = scene
   return (
-    <ClientBootstrap>
-      <SceneLoader
-        initialScene={graph}
-        meta={meta}
-        modelConfigured={!!process.env.OPENAI_API_KEY}
-      />
-    </ClientBootstrap>
+    <SceneOwnerBoundary ownerId={meta.ownerId!}>
+      <ClientBootstrap>
+        <SceneLoader
+          initialScene={graph}
+          meta={meta}
+          modelConfigured={!!process.env.OPENAI_API_KEY}
+        />
+      </ClientBootstrap>
+    </SceneOwnerBoundary>
   )
 }

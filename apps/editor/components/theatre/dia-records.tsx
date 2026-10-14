@@ -4,6 +4,7 @@ import { Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 import { useStore } from 'zustand'
+import { localAccountStorageKey } from '@/lib/auth/local-account'
 import type { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
 import { DiaBuildProposalSchema } from '@/lib/rehearsal-intelligence/dia-backbone'
 import { readFeedbackLog } from '@/lib/rehearsal-intelligence/feedback'
@@ -35,7 +36,7 @@ export function DiaRecords({
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [notice, setNotice] = useState('')
   const history = useRef<Interaction[]>([])
-  const key = `diastage:favorite-proposals:${sceneId}`
+  const key = localAccountStorageKey(`diastage:favorite-proposals:${sceneId}`)
   useEffect(() => {
     let disposed = false
     void readFeedbackLog(sceneId)

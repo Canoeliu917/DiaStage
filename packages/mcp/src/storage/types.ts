@@ -51,6 +51,8 @@ export interface SceneSaveOptions {
   name: string
   projectId?: string | null
   ownerId?: string | null
+  /** Enforce the authenticated owner inside the write transaction. */
+  expectedOwnerId?: string
   graph: SceneGraph
   thumbnailUrl?: string | null
   /** When set, save fails with `SceneVersionConflictError` on mismatch. */
@@ -75,6 +77,7 @@ export interface SceneListOptions {
 
 export interface SceneMutateOptions {
   expectedVersion?: number
+  expectedOwnerId?: string
 }
 
 export interface SceneEventAppendOptions {
@@ -82,17 +85,20 @@ export interface SceneEventAppendOptions {
   version: number
   kind: string
   graph: SceneGraph
+  expectedOwnerId?: string
 }
 
 export interface SceneEventListOptions {
   afterEventId?: number
   limit?: number
+  expectedOwnerId?: string
 }
 
 export interface ProjectCreateOptions {
   id?: SceneId
   name: string
   ownerId?: string | null
+  expectedOwnerId?: string
   isPrivate?: boolean
 }
 
@@ -120,6 +126,7 @@ export interface ProjectStatus {
 
 export interface SceneStore {
   readonly backend: 'sqlite' | 'supabase'
+  readonly supportsOwnerChecks?: boolean
   createProject?(opts: ProjectCreateOptions): Promise<ProjectStatus>
   getProjectStatus?(id: SceneId): Promise<ProjectStatus | null>
   save(opts: SceneSaveOptions): Promise<SceneMeta>
@@ -130,7 +137,7 @@ export interface SceneStore {
   updateThumbnail?(
     id: SceneId,
     thumbnailUrl: string,
-    opts: { expectedVersion: number },
+    opts: { expectedVersion: number; expectedOwnerId?: string },
   ): Promise<SceneMeta>
   appendSceneEvent?(opts: SceneEventAppendOptions): Promise<SceneEvent>
   listSceneEvents?(sceneId: SceneId, opts?: SceneEventListOptions): Promise<SceneEvent[]>

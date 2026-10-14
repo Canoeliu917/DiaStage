@@ -7,6 +7,7 @@ import {
   validateStagePlan,
 } from '@pascal-app/core/stage'
 import { createStore } from 'zustand/vanilla'
+import { localAccountStorageKey } from '../auth/local-account'
 import { waitForLocalScene } from '../scene-journal'
 import { sceneContentVersion } from '../scene-signature'
 import { executeStageCommands } from '../stage/command-executor'
@@ -318,7 +319,7 @@ export class DiaConversation {
   }
 
   private get draftKey() {
-    return `diastage:dia-draft:${this.sceneId}`
+    return localAccountStorageKey(`diastage:dia-draft:${this.sceneId}`)
   }
 
   async deleteMessage(messageId: string) {

@@ -1,4 +1,5 @@
 import type { SceneGraph } from '@pascal-app/editor'
+import { getLocalAccountOwner, localAccountStorageKey } from './auth/local-account'
 import { sceneGraphSignature } from './scene-signature'
 
 type Patch = {
@@ -212,9 +213,9 @@ function complete(tx: IDBTransaction) {
     tx.onabort = tx.onerror = () => reject(tx.error ?? new Error('本机事务未完成'))
   })
 }
-function openJournal(): Promise<IDBDatabase> {
+function openJournal(ownerId = getLocalAccountOwner()): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const opening = indexedDB.open('diastage-scene-journal', 2)
+    const opening = indexedDB.open(localAccountStorageKey('diastage-scene-journal', ownerId), 2)
     opening.onupgradeneeded = () => {
       const db = opening.result
       if (!db.objectStoreNames.contains('heads')) {
@@ -239,7 +240,10 @@ export class SceneJournal {
   private graph: SceneGraph | undefined
   private head: Head | undefined
   private revisions = new WeakMap<SceneGraph, number>()
-  constructor(readonly id: string) {}
+  constructor(
+    readonly id: string,
+    private readonly ownerId = getLocalAccountOwner(),
+  ) {}
 
   async assertCurrent() {
     if (!this.db || !this.head) throw new Error('本机日志尚未加载')
@@ -252,7 +256,7 @@ export class SceneJournal {
 
   async recover(server: SceneGraph, version: number) {
     server = { nodes: server.nodes, ...scenePatch(server, server).document }
-    this.db ??= await openJournal()
+    this.db ??= await openJournal(this.ownerId)
     const tx = this.db.transaction(
       ['heads', 'checkpoints', 'transactions', 'receipts'],
       'readwrite',

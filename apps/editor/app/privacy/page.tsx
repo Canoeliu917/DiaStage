@@ -33,6 +33,17 @@ export default function PrivacyPage() {
         <article className="prose prose-neutral dark:prose-invert max-w-none">
           <h1 className="mb-2 font-bold text-3xl">隐私政策</h1>
           <section className="mb-8 space-y-4">
+            <h2 className="font-semibold text-xl">DiaStage 账号与私人剧目</h2>
+            <p>
+              邮箱用于注册和登录。服务器保存账号邮箱、密码的安全散列和登录会话，不保存明文密码；浏览器使用必要的登录
+              Cookie 保持会话。
+            </p>
+            <p>
+              新建剧目归当前登录账号所有，其他普通用户无法查看或修改。退出登录或切换账号后，剧目库按新的账号重新读取。旧版尚未归属账号的剧目不会自动公开，也不会交给首个注册者。
+            </p>
+            <p>当前尚未开放验证邮件和邮件找回密码，请使用自己的常用邮箱并妥善保管密码。</p>
+          </section>
+          <section className="mb-8 space-y-4">
             <h2 className="font-semibold text-xl">DiaStage 0.1 本机版</h2>
             <p>
               录音会发送至模型服务完成本次转写。当前 Dia

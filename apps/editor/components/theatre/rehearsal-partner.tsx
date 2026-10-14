@@ -4,6 +4,7 @@ import { useScene } from '@pascal-app/core'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
+import { localAccountStorageKey } from '@/lib/auth/local-account'
 import { BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
 import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
@@ -882,8 +883,9 @@ export function RehearsalPartner({
                               conversation,
                               events,
                               favorites: JSON.parse(
-                                localStorage.getItem(`diastage:favorite-proposals:${sceneId}`) ??
-                                  '[]',
+                                localStorage.getItem(
+                                  localAccountStorageKey(`diastage:favorite-proposals:${sceneId}`),
+                                ) ?? '[]',
                               ),
                             },
                             null,
@@ -918,7 +920,9 @@ export function RehearsalPartner({
                     void privateAction(async () => {
                       controller.dispose()
                       await clearFeedbackLog(sceneId)
-                      localStorage.removeItem(`diastage:favorite-proposals:${sceneId}`)
+                      localStorage.removeItem(
+                        localAccountStorageKey(`diastage:favorite-proposals:${sceneId}`),
+                      )
                       window.location.reload()
                     })
                 }}

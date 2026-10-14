@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
+import { type AccountUser, HomeAccountPanel } from '@/components/account-panel'
 import { DIASTAGE_BRAND } from '@/lib/brand'
 import { CoordinateField, type HomeSpaceAction } from './coordinate-field'
 import './stage-entry.css'
@@ -29,10 +30,18 @@ const entries = {
   'archive-info': ['留存你的舞台', '每一次修改，都让同一件作品继续生长。'],
 } satisfies Record<Entry, readonly [string, string]>
 
-export function HomeStageSpace({ initialEntry }: { initialEntry?: string }) {
+export function HomeStageSpace({
+  initialEntry,
+  initiallyLit = false,
+  user,
+}: {
+  initialEntry?: string
+  initiallyLit?: boolean
+  user: AccountUser | null
+}) {
   const [entry, setEntry] = useState<Entry | null>(null)
   const [draft, setDraft] = useState('')
-  const [illuminated, setIlluminated] = useState(false)
+  const [illuminated, setIlluminated] = useState(initiallyLit)
   const dialog = useRef<HTMLDialogElement>(null)
   const opener = useRef<HTMLElement | null>(null)
 
@@ -43,8 +52,12 @@ export function HomeStageSpace({ initialEntry }: { initialEntry?: string }) {
       initialEntry === 'script' ||
       initialEntry === 'manual'
     )
-      setEntry(initialEntry)
-  }, [initialEntry])
+      if (user) setEntry(initialEntry)
+      else
+        window.location.replace(
+          `/login?next=${encodeURIComponent(`/?entry=${initialEntry}&lit=1`)}`,
+        )
+  }, [initialEntry, user])
 
   useEffect(() => {
     if (!entry || dialog.current?.open) return
@@ -54,14 +67,20 @@ export function HomeStageSpace({ initialEntry }: { initialEntry?: string }) {
   }, [entry])
 
   const open = (action: Entry) => {
+    if (!user && action !== 'archive-info') {
+      window.location.assign(`/login?next=${encodeURIComponent(`/?entry=${action}&lit=1`)}`)
+      return
+    }
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     setEntry(action)
   }
 
   return (
     <div className="dia-home-space" data-illuminated={illuminated}>
-      <p className="dia-space-tagline">咫尺之外，自在舞台。</p>
+      {!illuminated && <p className="dia-space-tagline">咫尺之外，自在舞台。</p>}
+      {illuminated && <HomeAccountPanel user={user} />}
       <CoordinateField
+        accountId={user?.id}
         onSelect={open}
         illuminated={illuminated}
         onToggleLight={() => setIlluminated((current) => !current)}

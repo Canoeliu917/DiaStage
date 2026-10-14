@@ -1,8 +1,8 @@
 import type { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { apiGraphSchema } from '@/lib/graph-schema'
-import { guardSceneApiRequest, sceneApiJson, sceneApiPreflight } from '@/lib/scene-api-security'
-import { getSceneOperations } from '@/lib/scene-store-server'
+import { sceneApiJson, sceneApiPreflight } from '@/lib/scene-api-security'
+import { getPrivateSceneAccess } from '@/lib/scene-store-server'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,8 +24,8 @@ export function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const guard = guardSceneApiRequest(request)
-  if (guard) return guard
+  const access = await getPrivateSceneAccess(request)
+  if (access instanceof Response) return access
 
   const url = new URL(request.url)
   const parsed = listQuerySchema.safeParse({
@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const operations = await getSceneOperations()
+  const { operations } = access
   const scenes = await operations.listScenes({
     projectId: parsed.data.projectId,
     limit: parsed.data.limit,
@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const guard = guardSceneApiRequest(request)
-  if (guard) return guard
+  const access = await getPrivateSceneAccess(request)
+  if (access instanceof Response) return access
 
   let body: unknown
   try {
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const operations = await getSceneOperations()
+  const { operations } = access
   try {
     const meta = await operations.saveScene({
       id: parsed.data.id,

@@ -153,7 +153,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
       /* Default remains stable. */
     }
   }, [])
-  const journal = useMemo(() => new SceneJournal(meta.id), [meta.id])
+  const journal = useMemo(() => new SceneJournal(meta.id, meta.ownerId), [meta.id, meta.ownerId])
   const needsRecoverySync = useRef(false)
   const syncConflict = useRef(false)
   useEffect(

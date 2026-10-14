@@ -2,9 +2,11 @@ import { ArrowRight } from 'lucide-react'
 import { headers } from 'next/headers'
 import Image from 'next/image'
 import Link from 'next/link'
+import { AccountMenu } from '@/components/account-panel'
 import { CreateSceneButton } from '@/components/save-button'
 import { StageDrawing } from '@/components/stage-entry/stage-drawing'
 import { StudioWordmark } from '@/components/studio-wordmark'
+import { getSession } from '@/lib/auth/server'
 import { artworkModifiedTime, sceneArtworkDimensions } from '@/lib/scene-artwork'
 import { getScenePageOperations } from '@/lib/scene-store-server'
 import './scene-gallery.css'
@@ -16,7 +18,9 @@ export default async function ScenesPage({
 }: {
   searchParams: Promise<{ workspace?: string }>
 }) {
-  const operations = await getScenePageOperations(await headers())
+  const requestHeaders = await headers()
+  const operations = await getScenePageOperations(requestHeaders)
+  const session = await getSession(requestHeaders)
   const scenes = await operations.listScenes({ limit: 50 })
   const artworks = await Promise.all(
     scenes.map(async (scene) => {
@@ -40,6 +44,7 @@ export default async function ScenesPage({
           </div>
         </div>
         <div className="ds-library-actions">
+          {session && <AccountMenu user={session.user} />}
           <Link href="/photo-stage">从照片复原舞台</Link>
           <Link href="/">
             进入工作台 <ArrowRight size={15} />
