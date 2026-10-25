@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { StudioWordmark } from '@/components/studio-wordmark'
 
 export const metadata: Metadata = {
-  title: '隐私政策 · 咫台',
-  description: '咫台本机版的舞台输入、模型处理和数据保存说明。',
+  title: '隐私说明（内测版） · 咫台',
+  description: 'DiaStage 内测版的账号、私人剧目、AI 输入和数据保存说明。',
 }
 
 export default function PrivacyPage() {
@@ -31,33 +31,56 @@ export default function PrivacyPage() {
 
       <main className="container mx-auto max-w-3xl px-6 py-12">
         <article className="prose prose-neutral dark:prose-invert max-w-none">
-          <h1 className="mb-2 font-bold text-3xl">隐私政策</h1>
+          <h1 className="mb-2 font-bold text-3xl">隐私说明（内测版）</h1>
+          <p className="mb-8 text-muted-foreground text-sm">
+            更新于 2026 年 10 月 25 日。本页说明 DiaStage 当前内测版本的数据处理方式。
+          </p>
           <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">DiaStage 账号与私人剧目</h2>
+            <h2 className="font-semibold text-xl">账号与私人剧目</h2>
             <p>
-              邮箱用于注册和登录。服务器保存账号邮箱、密码的安全散列和登录会话，不保存明文密码；浏览器使用必要的登录
+              当前使用邮箱和密码注册、登录。服务端保存账号邮箱、显示名称、密码的安全散列及登录会话信息，不保存明文密码；浏览器使用必要的登录
               Cookie 保持会话。
             </p>
             <p>
-              新建剧目归当前登录账号所有，其他普通用户无法查看或修改。退出登录或切换账号后，剧目库按新的账号重新读取。旧版尚未归属账号的剧目不会自动公开，也不会交给首个注册者。
+              新建剧目归当前登录账号所有，其他普通用户无法查看或修改。切换账号后，剧目库按新账号读取。旧版尚未归属账号的剧目不会自动公开，也不会交给首个注册者。
             </p>
-            <p>当前尚未开放验证邮件和邮件找回密码，请使用自己的常用邮箱并妥善保管密码。</p>
+            <p>
+              验证邮件、邮件找回密码和自助注销账号入口尚未开放。请使用自己的常用邮箱并妥善保管密码；内测期间需要账号协助时，请联系邀请你参加测试的人。
+            </p>
           </section>
           <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">DiaStage 0.1 本机版</h2>
+            <h2 className="font-semibold text-xl">数据保存在哪里</h2>
             <p>
-              录音会发送至模型服务完成本次转写。当前 Dia
-              通过本机规则处理置景、版本、复台预览与视图口令；剧本规划和排演入口未开放。原始录音不会写入舞台项目。
+              账号、已保存的剧目及其修订记录、AI
+              额度账本保存在当前网站的服务端。本机运行时，服务端在运行网站的电脑上；访问云端网站时，这些数据保存在网站服务器上。本机版与云端版的数据不会自动互相同步。
             </p>
             <p>
-              Dia 的布景提案需要先预览，再由人决定采用、修改或放弃。当前界面不提供连续制景授权，Dia
-              不会直接修改正式舞台。
+              对话、提案及采用、修改、拒绝等反馈另存于当前浏览器，并按账号区分。这些浏览器记录不会随剧目自动同步到其他设备。
             </p>
             <p>
-              本机费用账本记录请求编号、功能、模型、用量、估算费用、延迟和错误类型，不记录录音、口令、转写或完整剧本。项目仅保存已确认布景所需的依据摘录。
+              使用照片复原并确认建立剧目后，处理后的参考照片与复原方案会一同保存到剧目中，用于继续对照和编辑。
             </p>
+          </section>
+          <section className="mb-8 space-y-4">
+            <h2 className="font-semibold text-xl">AI 会接收哪些内容</h2>
             <p>
-              模型请求使用 store: false；这不代表供应商绝不保留任何数据。供应商处理规则请参阅
+              能由本地规则处理的口令无需调用模型。使用付费 AI
+              功能时，网站服务端会将本次功能所需的输入发送至 OpenAI：
+            </p>
+            <ul className="list-disc space-y-2 pl-6 text-foreground/90">
+              <li>
+                文字对话与复杂口令：发送输入文本和相关舞台上下文，例如对象名称、选中对象、当前方案及视图设置；使用剧本规划时，还会发送筛选后的剧本片段。
+              </li>
+              <li>
+                语音转写：发送本次录音进行识别。转写文字可继续用于舞台口令解析；原始录音不会写入剧目或费用账本。
+              </li>
+              <li>
+                照片复原：点击识别后，发送按所选范围裁切、压缩后的图片和方案名称，结合舞台资产目录生成复原草稿。
+              </li>
+            </ul>
+            <p>
+              文字与照片的模型请求设置了 store:
+              false。该设置不代表供应商不保留任何数据。供应商处理规则可查看
               <a
                 className="underline"
                 href="https://developers.openai.com/api/docs/guides/your-data"
@@ -70,170 +93,33 @@ export default function PrivacyPage() {
             </p>
           </section>
           <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">Dia 私有记录</h2>
+            <h2 className="font-semibold text-xl">用量与费用记录</h2>
             <p>
-              当前对话记录与历史提案继续保留。旧排演提案可以作为历史资料读取，但不会恢复为 0.1
-              可执行的能力。
-            </p>
-            <p>
-              建议、生成依据、你的采用/部分采用/修改/拒绝以及采用后的最终调整，独立保存在当前浏览器的私有反馈记录中。项目保存与训练授权分开，训练授权默认关闭，可随时撤销。当前版本没有训练上传或模型训练流程。
+              服务端账本将账号与请求编号、功能、模型、用量、估算费用、时间、处理状态及错误类型关联，用于额度控制和故障排查。账本不保存录音、照片、输入文本、转写原文或完整剧本。
             </p>
             <p>
-              你可在“Dia → 详情与设置 →
-              私有记录与训练授权”中导出或删除这些记录。导出的备份可能包含历史原文，应作为私有文件保管；删除反馈不会删除舞台。清理浏览器数据可能删除本机记录，建议定期导出项目及反馈备份。
+              “查看我的 AI
+              额度”显示本账号的用量与限额；管理员另可查看全站汇总。费用按内部参考价估算，并包含进行中请求的预留额度，不是供应商最终账单。
             </p>
           </section>
-          <h2 className="font-semibold text-xl">上游 Pascal 历史政策参考</h2>
-          <p className="mb-2 text-muted-foreground text-sm">生效日期：2026 年 2 月 20 日</p>
-          <p className="mb-8 text-muted-foreground text-sm">
-            下文为 Pascal 上游隐私政策的中文译文，文中的“我们”指 Pascal Group
-            Inc.，不代表本机咫台接入了所列账户、托管或分析服务。
-          </p>
-
           <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">1. 简介</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              Pascal Group Inc.（以下简称“我们”）运营 Pascal Editor 以及位于 pascal.app 的平台。
-              本隐私政策说明您使用我们的服务时，我们如何收集、使用和保护您的信息。
+            <h2 className="font-semibold text-xl">浏览器记录的导出与删除</h2>
+            <p>
+              在“Dia → 详情与设置 →
+              私有记录与训练授权”中，可以导出或删除当前剧目的本机对话与反馈。导出文件可能包含历史原文，请自行保管。删除本机记录不会删除正式剧目、账号或服务端费用账本。
+            </p>
+            <p>
+              页面中的训练授权开关默认关闭，仅记录授权意向；当前没有据此上传反馈或启动模型训练的流程。这个开关与完成本次
+              AI 请求时向模型服务发送输入是两件事。
+            </p>
+            <p>
+              清理浏览器数据可能删除本机记录。退出账号不会自动删除已保存的数据，请按需要导出项目及本机记录备份。
             </p>
           </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">2. 我们收集的信息</h2>
-
-            <h3 className="mt-4 font-medium text-lg">账户信息</h3>
-            <p className="text-foreground/90 leading-relaxed">当您创建账户时，我们会收集：</p>
-            <ul className="list-disc space-y-2 pl-6 text-foreground/90">
-              <li>电子邮箱地址</li>
-              <li>姓名</li>
-              <li>个人资料照片或头像</li>
-              <li>OAuth 提供方的数据（使用 Google 登录时，由 Google 提供）</li>
-            </ul>
-
-            <h3 className="mt-4 font-medium text-lg">项目数据</h3>
-            <p className="text-foreground/90 leading-relaxed">
-              当您使用平台时，我们会存储您的项目，包括舞台置景与排演记录、平面图及相关元数据。
-            </p>
-
-            <h3 className="mt-4 font-medium text-lg">使用情况分析</h3>
-            <p className="text-foreground/90 leading-relaxed">
-              我们使用 Vercel Analytics 和 Speed Insights 收集匿名化的使用数据，包括页面浏览量、
-              性能指标和一般使用模式，以帮助我们改进平台。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">3. 我们如何使用您的信息</h2>
-            <p className="text-foreground/90 leading-relaxed">我们将您的信息用于：</p>
-            <ul className="list-disc space-y-2 pl-6 text-foreground/90">
-              <li>提供和维护您的账户</li>
-              <li>存储您的项目，并在不同设备之间同步</li>
-              <li>根据使用模式改进我们的服务</li>
-              <li>发送可选的新功能和更新电子邮件通知（您可以在设置中取消订阅）</li>
-              <li>回应支持请求</li>
-              <li>保障平台安全并防止滥用</li>
-            </ul>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">4. 数据存储</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              您的数据使用 Supabase（PostgreSQL 数据库）存储在安全的云基础设施上。
-              我们采取适当的技术和组织措施保护您的数据。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">5. 第三方服务</h2>
-            <p className="text-foreground/90 leading-relaxed">我们使用以下第三方服务运营平台：</p>
-            <ul className="list-disc space-y-2 pl-6 text-foreground/90">
-              <li>
-                <strong>Google</strong> — 用于登录的 OAuth 身份验证
-              </li>
-              <li>
-                <strong>Vercel</strong> — 应用托管、分析和性能监测
-              </li>
-              <li>
-                <strong>Supabase</strong> — 数据库托管和身份验证基础设施
-              </li>
-            </ul>
-            <p className="mt-4 text-foreground/90 leading-relaxed">
-              这些服务各自设有隐私政策，规定其如何处理您的数据。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">6. 浏览器记录文件</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              我们仅使用平台正常运行所必需的最少量浏览器记录文件：
-            </p>
-            <ul className="list-disc space-y-2 pl-6 text-foreground/90">
-              <li>
-                <strong>会话记录文件</strong> — 身份验证和保持登录状态所必需
-              </li>
-              <li>
-                <strong>分析记录文件</strong> — 由 Vercel Analytics 用于收集匿名化的使用数据
-              </li>
-            </ul>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">7. 您的权利</h2>
-            <p className="text-foreground/90 leading-relaxed">您有权：</p>
-            <ul className="list-disc space-y-2 pl-6 text-foreground/90">
-              <li>访问我们持有的有关您的个人数据</li>
-              <li>要求更正不准确的数据</li>
-              <li>要求删除您的数据</li>
-              <li>导出您的项目数据</li>
-              <li>取消接收营销信息</li>
-            </ul>
-            <p className="mt-4 text-foreground/90 leading-relaxed">
-              如需行使上述任何权利，请通过以下邮箱联系我们：
-              <a
-                className="text-foreground underline hover:text-foreground/80"
-                href="mailto:support@pascal.app"
-              >
-                support@pascal.app
-              </a>
-              。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">8. 数据保留</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              在您的账户处于有效状态期间，我们会保留您的数据。如果您删除账户，我们将在 30 天内
-              删除您的个人数据和项目数据，但法律要求我们保留的特定信息除外。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">9. 儿童隐私</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              本平台不面向 13 岁以下儿童。我们不会在知情的情况下收集 13 岁以下儿童的个人信息。
-              如果您认为我们收集了此类信息，请立即联系我们。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">10. 本政策的变更</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              我们可能不时更新本隐私政策。对于重大变更，我们会通过在平台上发布更新后的政策通知您。
-              变更发布后，您继续使用平台即表示接受修订后的政策。
-            </p>
-          </section>
-
           <section className="space-y-4">
-            <h2 className="font-semibold text-xl">11. 联系我们</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              如果您对本隐私政策或我们处理您数据的方式有任何疑问，请通过以下邮箱联系我们：
-              <a
-                className="text-foreground underline hover:text-foreground/80"
-                href="mailto:support@pascal.app"
-              >
-                support@pascal.app
-              </a>
-              。
+            <h2 className="font-semibold text-xl">内测反馈</h2>
+            <p>
+              如需核对账号或数据处理问题，请联系邀请你参加测试的人。正式公开运营的主体、联系方式及完整数据处理安排仍待确认。
             </p>
           </section>
         </article>

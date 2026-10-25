@@ -1,8 +1,11 @@
 import { expect, test } from 'bun:test'
 import {
+  BufferSource,
   EncodedAudioPacketSource,
   EncodedPacket,
   EncodedVideoPacketSource,
+  Input,
+  MP4,
   Mp4OutputFormat,
   Output,
   StreamTarget,
@@ -102,6 +105,47 @@ test('AAC MediaRecorder-compatible MP4 is accepted without needing a browser dec
     signal(),
   )
   expect(audio.durationSeconds).toBeCloseTo(duration, 5)
+})
+
+test('non-LC AAC is rejected before transcription with absent or forged codec claims', async () => {
+  const memory = memoryTarget()
+  const output = new Output({ target: memory.target, format: new Mp4OutputFormat() })
+  const source = new EncodedAudioPacketSource('aac')
+  output.addAudioTrack(source)
+  await output.start()
+  await source.add(
+    new EncodedPacket(new Uint8Array([0x21, 0x10, 0x04, 0x60, 0x8c, 0x1c]), 'key', 0, 1024 / 44100),
+    {
+      decoderConfig: {
+        codec: 'mp4a.40.5',
+        sampleRate: 44100,
+        numberOfChannels: 2,
+        description: new Uint8Array([0x2b, 0x92, 0x08, 0x00]),
+      },
+    },
+  )
+  await output.finalize()
+  const bytes = await memory.file('he-aac.mp4', 'audio/mp4').arrayBuffer()
+  const input = new Input({ source: new BufferSource(bytes), formats: [MP4] })
+  try {
+    const tracks = await input.getTracks()
+    expect(await tracks[0]!.getCodecParameterString()).toBe('mp4a.40.5')
+  } finally {
+    input.dispose()
+  }
+  for (const type of ['audio/mp4', 'audio/mp4;codecs=mp4a.40.2']) {
+    let called = false
+    await expect(
+      transcribeVoice(new File([bytes], 'he-aac.mp4', { type }), signal(), async () => {
+        called = true
+        return { text: 'must not happen' }
+      }),
+    ).rejects.toMatchObject({
+      code: 'AUDIO_UNSUPPORTED',
+      message: '这份录音的编码不受支持，请使用浏览器重新录制。',
+    })
+    expect(called).toBe(false)
+  }
 })
 
 test('overlong audio is rejected even when container duration metadata is falsified', async () => {

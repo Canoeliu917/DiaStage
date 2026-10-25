@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { StudioWordmark } from '@/components/studio-wordmark'
 
 export const metadata: Metadata = {
-  title: '服务条款 · 咫台',
-  description: 'Pascal Editor 与 Pascal 平台服务条款的中文译文。',
+  title: '使用说明（内测版） · 咫台',
+  description: 'DiaStage 内测版的舞台编辑、账号保存、AI 额度与确认操作说明。',
 }
 
 export default function TermsPage() {
@@ -31,129 +31,75 @@ export default function TermsPage() {
 
       <main className="container mx-auto max-w-3xl px-6 py-12">
         <article className="prose prose-neutral dark:prose-invert max-w-none">
-          <h1 className="mb-2 font-bold text-3xl">服务条款</h1>
-          <p className="mb-2 text-muted-foreground text-sm">生效日期：2026 年 2 月 20 日</p>
+          <h1 className="mb-2 font-bold text-3xl">使用说明（内测版）</h1>
           <p className="mb-8 text-muted-foreground text-sm">
-            本页为 Pascal 上游服务条款的中文译文，文中的“我们”指 Pascal Group Inc.。
+            更新于 2026 年 10 月 25 日。本页说明 DiaStage 当前内测功能和使用边界。
           </p>
-
           <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">1. 简介</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              欢迎使用由 Pascal Group Inc.（以下简称“我们”）运营的 Pascal Editor（以下简称“编辑器”）
-              以及位于 pascal.app 的 Pascal 平台（以下简称“平台”）。访问或使用我们的服务即表示
-              您同意本服务条款。
+            <h2 className="font-semibold text-xl">舞台编辑与保存</h2>
+            <p>
+              DiaStage
+              用于舞台置景、三维与平面预览、剧目保存及照片复原草稿编辑。当前以电脑端操作为主；手机与平板联动是否开放，以页面提供的入口为准。
+            </p>
+            <p>
+              请先用自己的邮箱注册并登录。新建剧目按账号独立保存，其他普通用户无法查看或修改；同一账号在本机版和云端版的剧目不会自动互相同步。
+            </p>
+            <p>
+              内测功能仍在调整，请留意保存结果并导出重要项目备份。验证邮件、邮件找回密码和自助注销账号入口尚未开放。
             </p>
           </section>
-
           <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">2. 编辑器与平台</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              Pascal Editor 是根据 MIT 许可证发布的开源软件。您可以依照 MIT 许可证条款，使用、
-              复制、修改、合并、发布、分发、再许可和／或出售编辑器软件的副本。
+            <h2 className="font-semibold text-xl">AI 内测资格与额度</h2>
+            <p>
+              注册账号不等于自动开通付费 AI。当前最多向 20
+              个受邀账号开放，由网站承担模型调用费用；用户无需提供个人 API 密钥，也不会扣除用户的
+              ChatGPT 订阅额度。
             </p>
-            <p className="text-foreground/90 leading-relaxed">
-              Pascal 平台（pascal.app）及其相关服务，包括用户账户、云存储和项目托管，均为 Pascal
-              Group Inc. 拥有并运营的专有服务。本条款适用于您对平台的使用。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">3. 账户与身份验证</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              要使用平台的部分功能，您必须创建账户。我们通过 Supabase 使用 Google OAuth 和
-              电子邮件免密链接进行身份验证。您有责任维护账户凭据的安全，并对您账户下发生的
-              所有活动负责。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">4. 可接受的使用行为</h2>
-            <p className="text-foreground/90 leading-relaxed">您同意不从事以下行为：</p>
             <ul className="list-disc space-y-2 pl-6 text-foreground/90">
-              <li>将平台用于任何非法目的，或违反任何适用法律</li>
-              <li>上传、分享或传播侵犯知识产权的内容</li>
-              <li>试图未经授权访问平台或其系统</li>
-              <li>干扰或破坏平台的基础设施</li>
-              <li>上传恶意代码、病毒或有害内容</li>
-              <li>骚扰、辱骂或伤害其他用户</li>
-              <li>使用平台发送垃圾信息或未经请求的通信</li>
+              <li>每个受邀账号：每天最多 1 元、每月最多 5 元的 AI 估算额度。</li>
+              <li>全站：每月最多 100 元的 AI 估算额度；单次任务上限为 1 元。</li>
+              <li>按北京时间的自然日、自然月计算；同一账号的多个剧目共用额度。</li>
             </ul>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">5. 您的内容与知识产权</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              您对自己创建或上传至平台的所有内容、项目和数据（以下简称“您的内容”）保留完整
-              所有权。使用平台即表示您授予我们有限许可，允许我们仅为向您提供服务而存储、展示和
-              传输您的内容。
+            <p>
+              这些额度用于限制调用，不是可提现余额或固定对话次数。请求开始前会预留估算费用；超过单次提醒额度时会询问是否继续，确认也不能突破账号或全站限额。额度不足时停止新的付费调用，本地口令和手动置景仍可使用。
             </p>
-            <p className="text-foreground/90 leading-relaxed">
-              我们不对您的内容主张任何所有权。您可以随时导出或删除您的内容。
+            <p>
+              可在“AI
+              使用详情与隐私”中查看本账号额度。估算与供应商最终账单可能不同，取消或失败的请求也不一定没有模型费用。已生成剧目的打开、保存和手动编辑本身无需再次调用
+              AI；重新识别照片或重新请求生成会再次使用额度。
             </p>
           </section>
-
           <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">6. 平台所有权</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              平台及其设计、功能和专有代码归 Pascal Group Inc. 所有，并受知识产权法律保护。
-              虽然编辑器源代码根据 MIT 许可证开源，但平台服务、品牌和基础设施仍属于我们的专有财产。
+            <h2 className="font-semibold text-xl">建议、预览与操作确认</h2>
+            <p>
+              Dia
+              默认先生成供检查的建议或预览，由你决定采用、修改或放弃。照片复原先生成草稿，确认建立独立剧目后才保存。
+            </p>
+            <p>
+              如果页面提供连续制景，你主动授权后，符合授权范围并通过校验的操作可以自动应用；方案草台则保留为临时方案，最终确认后写入。可通过“停止并退回建议模式”结束连续授权。
+            </p>
+            <p>
+              AI
+              可能误解对象、方位或尺度，请在采用前检查。单张照片无法提供完整尺寸与被遮挡结构，复原结果标记为估算尺度，需要根据实际资料继续校正。
             </p>
           </section>
-
           <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">7. 账户终止</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              如果您违反本条款，或从事我们认定有害于平台或其他用户的行为，我们保留暂停或终止
-              您账户的权利。您也可以随时通过以下邮箱联系我们，以删除您的账户：
-              <a
-                className="text-foreground underline hover:text-foreground/80"
-                href="mailto:support@pascal.app"
-              >
-                support@pascal.app
-              </a>
+            <h2 className="font-semibold text-xl">输入内容与数据</h2>
+            <p>
+              使用文字、录音、照片及剧本功能前，请确认你有相应的使用和提交权限。素材出现在剧目或复原结果中，不代表获得了原作品、照片或资产的额外授权。
+            </p>
+            <p>
+              AI 输入发送范围、私人剧目保存位置及本机记录的导出、删除方式，请查看
+              <Link className="underline" href="/privacy">
+                隐私说明
+              </Link>
               。
             </p>
           </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">8. 不作保证</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              平台按“现状”和“现有可用状态”提供，不作任何明示或默示保证，包括但不限于有关
-              适销性、特定用途适用性以及不侵权的默示保证。
-            </p>
-            <p className="text-foreground/90 leading-relaxed">
-              我们不保证平台不会中断、没有错误或不含有害组件。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">9. 责任限制</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              在法律允许的最大范围内，PASCAL GROUP INC. 不对因您使用平台而产生的任何间接、
-              附带、特殊、后果性或惩罚性损害承担责任，包括数据、利润或商誉损失。
-            </p>
-          </section>
-
-          <section className="mb-8 space-y-4">
-            <h2 className="font-semibold text-xl">10. 条款变更</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              我们可能不时更新本条款。对于重大变更，我们会通过在平台上发布更新后的条款通知您。
-              变更发布后，您继续使用平台即表示接受修订后的条款。
-            </p>
-          </section>
-
           <section className="space-y-4">
-            <h2 className="font-semibold text-xl">11. 联系我们</h2>
-            <p className="text-foreground/90 leading-relaxed">
-              如果您对本条款有任何疑问，请通过以下邮箱联系我们：
-              <a
-                className="text-foreground underline hover:text-foreground/80"
-                href="mailto:support@pascal.app"
-              >
-                support@pascal.app
-              </a>
-              。
+            <h2 className="font-semibold text-xl">内测问题与联系</h2>
+            <p>
+              遇到账号、额度、数据或功能问题，请联系邀请你参加测试的人。正式公开运营的主体、联系方式及服务条款仍待确认。
             </p>
           </section>
         </article>

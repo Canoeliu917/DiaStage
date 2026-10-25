@@ -11,6 +11,7 @@
 3. [腾讯云上线准备清单](docs/diastage-release-readiness-20261025.md)
 4. [现有部署操作说明](docs/diastage-production-deploy.md)：云端状态记录日期为 10 月 22 日，操作前重新核实。
 5. [运行环境与账号说明](SETUP.md)
+6. [按优先级执行的待办](docs/diastage-release-todo.md)及[集中保留的待决事项](docs/diastage-release-decisions.md)：继续工作以这两份更新记录为准，不把历史验收当作当前云端状态。
 
 ## 在另一台电脑取得这一版
 
