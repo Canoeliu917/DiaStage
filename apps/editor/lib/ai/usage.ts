@@ -14,6 +14,8 @@ export interface AiUsageRecord {
   model: string
   inputTokens: number | null
   cachedInputTokens: number | null
+  cacheWriteTokens: number | null
+  cacheWrite12hTokens: number | null
   outputTokens: number | null
   audioSeconds: number | null
   estimatedCostCny: number | null
@@ -25,7 +27,11 @@ export interface AiUsageRecord {
   errorClass: string | null
 }
 
-export const aiRequestContext = new AsyncLocalStorage<{ requestId: string; approvedCny?: number }>()
+export const aiRequestContext = new AsyncLocalStorage<{
+  requestId: string
+  userId?: string
+  approvedCny?: number
+}>()
 const records: AiUsageRecord[] = []
 
 export function recordAiUsage(record: AiUsageRecord) {
@@ -36,6 +42,8 @@ export function recordAiUsage(record: AiUsageRecord) {
     model: record.model,
     inputTokens: record.inputTokens,
     cachedInputTokens: record.cachedInputTokens,
+    cacheWriteTokens: record.cacheWriteTokens,
+    cacheWrite12hTokens: record.cacheWrite12hTokens,
     outputTokens: record.outputTokens,
     audioSeconds: record.audioSeconds,
     estimatedCostCny: record.estimatedCostCny,
@@ -57,7 +65,11 @@ export function readAiUsage() {
 type ProviderUsage = {
   input_tokens: number
   output_tokens: number
-  input_tokens_details?: { cached_tokens: number }
+  input_tokens_details?: {
+    cached_tokens?: number
+    cache_write_tokens?: number
+    cache_write_tokens_details?: { ttl_12h_tokens?: number }
+  }
 }
 
 export async function trackAiCall<T>(
@@ -76,6 +88,8 @@ export async function trackAiCall<T>(
     model,
     inputTokens: null,
     cachedInputTokens: null,
+    cacheWriteTokens: null,
+    cacheWrite12hTokens: null,
     outputTokens: null,
     audioSeconds,
     estimatedCostCny: null,
@@ -87,11 +101,12 @@ export async function trackAiCall<T>(
     errorClass: null,
   }
   const reservationId = crypto.randomUUID()
-  const budgeted = model !== 'local-parser' && payload !== undefined
+  const budgeted = model !== 'local-parser'
   let reserved = false
   try {
     signal.throwIfAborted()
     if (budgeted) {
+      if (payload === undefined) throw new Error('付费调用缺少预算输入，已停止调用')
       record.estimatedCostCny = estimateCall(feature, model, payload, audioSeconds)
       await reserveModelCall(
         reservationId,
@@ -99,6 +114,7 @@ export async function trackAiCall<T>(
         feature,
         record.estimatedCostCny,
         aiRequestContext.getStore()?.approvedCny ?? 0,
+        aiRequestContext.getStore()?.userId,
       )
       reserved = true
     }
@@ -108,6 +124,9 @@ export async function trackAiCall<T>(
     if (actual) {
       record.inputTokens = actual.input_tokens
       record.cachedInputTokens = actual.input_tokens_details?.cached_tokens ?? 0
+      record.cacheWriteTokens = actual.input_tokens_details?.cache_write_tokens ?? null
+      record.cacheWrite12hTokens =
+        actual.input_tokens_details?.cache_write_tokens_details?.ttl_12h_tokens ?? null
       record.outputTokens = actual.output_tokens
       record.estimatedCostCny = estimateTextCostCny(
         model,
@@ -115,6 +134,9 @@ export async function trackAiCall<T>(
         actual.input_tokens_details?.cached_tokens ?? 0,
         actual.output_tokens,
         usdCnyReference(),
+        actual.input_tokens > 272_000,
+        record.cacheWriteTokens ?? actual.input_tokens - record.cachedInputTokens,
+        record.cacheWrite12hTokens ?? 0,
       )
     }
     signal.throwIfAborted()
@@ -128,10 +150,6 @@ export async function trackAiCall<T>(
     if (record.path === 'local-parser') record.estimatedCostCny = 0
     recordAiUsage(record)
     if (reserved)
-      await usageLedger().reconcile(
-        reservationId,
-        record.estimatedCostCny,
-        JSON.stringify(readAiUsage().at(-1)),
-      )
+      await usageLedger().reconcile(reservationId, record.estimatedCostCny, JSON.stringify(record))
   }
 }

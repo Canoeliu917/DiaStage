@@ -1,6 +1,7 @@
 export const MODEL_PRICING = {
   effectiveDate: '2026-09-10',
-  source: 'DiaStage internal budget reference supplied in the implementation specification',
+  source:
+    'DiaStage internal budget reference; cache-write rates verified 2026-10-25: https://developers.openai.com/api/docs/guides/prompt-caching',
   usdCnyReference: 7,
   text: {
     'gpt-5.6-luna': { input: 0.2, cached: 0.02, cacheWrite: 0.25, output: 1.2 },
@@ -22,10 +23,17 @@ export function estimateTextCostCny(
   output: number,
   exchange = 7,
   longContext = false,
+  cacheWriteTokens = 0,
+  cacheWrite12hTokens = 0,
 ) {
-  for (const count of [input, cached, output])
+  for (const count of [input, cached, output, cacheWriteTokens, cacheWrite12hTokens])
     if (!Number.isSafeInteger(count) || count < 0) throw new Error('用量无效')
-  if (cached > input || !Number.isFinite(exchange) || exchange <= 0)
+  if (
+    cached + cacheWriteTokens > input ||
+    cacheWrite12hTokens > cacheWriteTokens ||
+    !Number.isFinite(exchange) ||
+    exchange <= 0
+  )
     throw new Error('用量或汇率无效')
   const price =
     longContext && model === 'gpt-5.6-luna'
@@ -36,9 +44,14 @@ export function estimateTextCostCny(
           ? MODEL_PRICING.text['gpt-5.6-terra']
           : null
   if (!price) throw new Error('此模型尚未配置人民币价格，已停止付费调用')
-  // Provider input_tokens includes cached tokens; charge each token only once.
+  // Reads and writes are disjoint subsets of input_tokens, not additional tokens.
   return (
-    (((input - cached) * price.input + cached * price.cached + output * price.output) * exchange) /
+    (((input - cached - cacheWriteTokens) * price.input +
+      cached * price.cached +
+      (cacheWriteTokens - cacheWrite12hTokens) * (price.cacheWrite ?? price.input * 1.25) +
+      cacheWrite12hTokens * price.input * 2.5 +
+      output * price.output) *
+      exchange) /
     1_000_000
   )
 }

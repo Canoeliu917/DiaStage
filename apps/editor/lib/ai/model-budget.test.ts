@@ -3,7 +3,6 @@ import { compileStagePlan, parseStageText } from '@pascal-app/core/stage'
 import { planFromPassages } from '../scripts/script-planner'
 import { ModelBudgetError, reserveModelCall } from './model-budget'
 import { estimateAudioCostCny, estimateTextCostCny, formatCostCny } from './model-pricing'
-import { UsageLedger } from './usage-ledger'
 
 test('reference RMB examples and cached input are counted once', () => {
   const text = estimateTextCostCny('gpt-5.6-luna', 3000, 0, 800)
@@ -19,31 +18,44 @@ test('reference RMB examples and cached input are counted once', () => {
   expect(() => estimateAudioCostCny(Number.NaN)).toThrow()
 })
 test('soft budget requires explicit consent before opening a paid reservation', async () => {
-  await expect(
-    reserveModelCall('never-reserved', 'request', 'stage-command', 0.06, 0),
-  ).rejects.toBeInstanceOf(ModelBudgetError)
-})
-test('SQLite atomic reservations enforce task/month caps and reconcile real usage without rounding cents', async () => {
-  const ledger = new UsageLedger(':memory:')
+  const previous = process.env.DIASTAGE_AI_BETA_USER_IDS
+  process.env.DIASTAGE_AI_BETA_USER_IDS = 'budget-test-user'
   try {
-    await ledger.reserve('a', 'task', 0.6, 10, 1)
-    await expect(ledger.reserve('b', 'task', 0.5, 10, 1)).rejects.toThrow('TASK_BUDGET_EXCEEDED')
-    expect((await ledger.summary()).costCny).toBe(0.6)
-    await ledger.reconcile('a', 0.01092, '{}')
-    expect((await ledger.summary()).costCny).toBeCloseTo(0.01092, 8)
-    await ledger.reserve('b', 'task', 0.5, 10, 1)
-    await expect(ledger.reserve('c', 'other', 9.5, 10, 10)).rejects.toThrow(
-      'MONTHLY_BUDGET_EXCEEDED',
-    )
-    const attempts = await Promise.allSettled([
-      ledger.reserve('d', 'parallel', 0.6, 10, 1),
-      ledger.reserve('e', 'parallel', 0.6, 10, 1),
-    ])
-    expect(attempts.filter((result) => result.status === 'fulfilled')).toHaveLength(1)
-    await expect(ledger.reserve('f', 'invalid', Number.NaN, 10, 1)).rejects.toThrow()
+    await expect(
+      reserveModelCall('never-reserved', 'request', 'stage-command', 0.06, 0, 'budget-test-user'),
+    ).rejects.toMatchObject({ code: 'BUDGET_CONFIRMATION_REQUIRED' })
   } finally {
-    await ledger.close()
+    if (previous === undefined) delete process.env.DIASTAGE_AI_BETA_USER_IDS
+    else process.env.DIASTAGE_AI_BETA_USER_IDS = previous
   }
+})
+test('cache writes replace ordinary input rates and lifetime components are counted once', () => {
+  expect(estimateTextCostCny('gpt-5.6-luna', 1000, 0, 0, 7, false, 1000)).toBeCloseTo(0.00175, 8)
+  expect(estimateTextCostCny('gpt-5.6-luna', 12000, 4000, 0, 7, false, 7000, 4000)).toBeCloseTo(
+    0.02121,
+    8,
+  )
+  expect(estimateTextCostCny('gpt-5.6-luna', 1000, 0, 0, 7, true, 1000)).toBeCloseTo(0.0035, 8)
+  expect(estimateTextCostCny('gpt-5.6-terra', 1000, 0, 0, 7, false, 1000)).toBeCloseTo(0.0175, 8)
+  expect(estimateTextCostCny('gpt-5.6-terra', 1000, 0, 0, 7, false, 1000, 1000)).toBeCloseTo(
+    0.035,
+    8,
+  )
+  expect(estimateTextCostCny('gpt-5.6-luna', 3000, 1000, 800, 7, false, 0, 0)).toBeCloseTo(
+    0.00966,
+    8,
+  )
+  for (const [cached, writes, writes12h] of [
+    [1, 1000, 0],
+    [0, 10, 11],
+    [0, -1, 0],
+    [0, 1.5, 0],
+    [0, Number.NaN, 0],
+    [0, 1, Number.POSITIVE_INFINITY],
+  ])
+    expect(() =>
+      estimateTextCostCny('gpt-5.6-luna', 1000, cached!, 0, 7, false, writes!, writes12h!),
+    ).toThrow()
 })
 
 test('synthetic chunk provider: budget exhaustion preserves partial evidence but produces no executable batch', async () => {

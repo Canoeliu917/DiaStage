@@ -31,6 +31,7 @@ export interface ApiErrorBody {
       | 'INTERNAL_ERROR'
       | 'BUDGET_CONFIRMATION_REQUIRED'
       | 'BUDGET_EXCEEDED'
+      | 'AI_INVITE_REQUIRED'
     message: string
     retryable: boolean
     estimateCny?: number
@@ -197,6 +198,7 @@ export async function handleAiRequest(
       aiRequestContext.run(
         {
           requestId,
+          userId: access && !(access instanceof Response) ? access.user.id : undefined,
           approvedCny: Math.max(
             0,
             Math.min(100, Number(request.headers.get('x-diastage-budget-consent')) || 0),
@@ -216,7 +218,13 @@ export async function handleAiRequest(
         : error instanceof SceneContextTooLargeError
           ? new AiError('AMBIGUOUS_COMMAND', error.message, 422)
           : error instanceof ModelBudgetError
-            ? new AiError(error.code, error.message, 402, false, error.estimateCny)
+            ? new AiError(
+                error.code,
+                error.message,
+                error.code === 'AI_INVITE_REQUIRED' ? 403 : 402,
+                false,
+                error.estimateCny,
+              )
             : error instanceof AiError
               ? error
               : new AiError('INTERNAL_ERROR', '舞台输入服务暂时不可用，请稍后重试。', 500, true)

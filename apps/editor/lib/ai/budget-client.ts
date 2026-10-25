@@ -16,7 +16,9 @@ export async function fetchAiWithBudgetConsent(url: string, init: RequestInit) {
   if (
     !parsed.success ||
     init.signal?.aborted ||
-    !window.confirm(`${parsed.data.error.message}\n仅同意本次调用费用，不授予额外场景编辑权限。`)
+    !window.confirm(
+      `${parsed.data.error.message}\n仅确认使用本次 AI 额度，不授予额外场景编辑权限。`,
+    )
   )
     return { response, budgetApproved: false }
   headers.set('x-diastage-budget-consent', String(parsed.data.error.estimateCny))

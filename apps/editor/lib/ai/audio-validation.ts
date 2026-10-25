@@ -108,6 +108,7 @@ export async function validateAudio(file: File, signal: AbortSignal): Promise<Va
     if (
       !codec ||
       !['aac', 'opus'].includes(codec) ||
+      (codec === 'aac' && codecString !== 'mp4a.40.2') ||
       !Number.isFinite(sampleRate) ||
       sampleRate < 8000 ||
       sampleRate > 192000 ||
@@ -143,7 +144,8 @@ export async function validateAudio(file: File, signal: AbortSignal): Promise<Va
         const duration =
           codec === 'opus'
             ? Math.max(packet.duration, opusPacketDuration(packet.data))
-            : packet.duration
+            : // AAC-LC access units contain at most 1024 samples; do not trust shortened timestamps.
+              Math.max(packet.duration, 1024 / sampleRate)
         first = Math.min(first, packet.timestamp)
         end = Math.max(end, packet.timestamp + duration)
         total += duration

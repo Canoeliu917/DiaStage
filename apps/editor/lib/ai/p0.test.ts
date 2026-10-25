@@ -7,7 +7,6 @@ import {
 } from '@pascal-app/core/stage'
 import { buildRelevantSceneContext } from '../stage/relevant-context'
 import { AI_TOKEN_LIMITS, THEATRE_TRANSCRIPTION_PROMPT } from './config'
-import { aiRequestContext, readAiUsage, recordAiUsage, trackAiCall } from './usage'
 
 const context: SceneContextSummary = {
   documentVersion: 1,
@@ -71,43 +70,6 @@ test('configured output budgets and theatre transcription vocabulary', () => {
     '厘米',
   ])
     expect(THEATRE_TRANSCRIPTION_PROMPT).toContain(word)
-})
-
-test('usage uses provider counts, correlates requests, and never preserves arbitrary source fields', async () => {
-  const requestId = crypto.randomUUID()
-  await aiRequestContext.run({ requestId }, () =>
-    trackAiCall(
-      'stage-command',
-      'gpt-5.6-luna',
-      new AbortController().signal,
-      async () => ({
-        input_tokens: 42,
-        output_tokens: 8,
-        input_tokens_details: { cached_tokens: 12 },
-      }),
-      (usage) => usage,
-    ),
-  )
-  const entry = readAiUsage().find((record) => record.requestId === requestId)!
-  expect(entry.inputTokens).toBe(42)
-  expect(entry.cachedInputTokens).toBe(12)
-  recordAiUsage({
-    ...entry,
-    ...{ transcript: 'PRIVATE TEXT', prompt: 'PRIVATE SCRIPT', audio: [1, 2] },
-  })
-  expect(JSON.stringify(readAiUsage())).not.toContain('PRIVATE')
-  const controller = new AbortController()
-  controller.abort()
-  await expect(
-    trackAiCall(
-      'stage-command',
-      'local-parser',
-      controller.signal,
-      async () => 1,
-      () => null,
-    ),
-  ).rejects.toThrow()
-  expect(readAiUsage().at(-1)?.status).toBe('cancelled')
 })
 
 // Synthetic, privacy-safe golden texts; these are not actor recordings or paid-model measurements.

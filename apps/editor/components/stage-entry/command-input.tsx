@@ -406,17 +406,21 @@ export function StageCommandInput({
               const response = await fetch('/api/ai/usage', { cache: 'no-store' })
               const body = await response.json()
               if (!response.ok) throw new Error(body.error?.message ?? '无法读取用量')
-              const cost = Number(body.summary?.costCny)
-              if (!Number.isFinite(cost)) throw new Error('用量格式无效')
+              const daily = Number(body.summary?.dailyCny)
+              const monthly = Number(body.summary?.monthlyCny)
+              const dailyLimit = Number(body.limits?.dailyCny)
+              const monthlyLimit = Number(body.limits?.monthlyCny)
+              if (![daily, monthly, dailyLimit, monthlyLimit].every(Number.isFinite))
+                throw new Error('用量格式无效')
               setUsageDetail(
-                `本机工作区本月估算：${formatCostCny(cost)}。按内部参考价计算，不是供应商账单。`,
+                `${body.invited ? '内测 AI 已开通，费用由网站承担。' : '尚未获邀开通内测 AI，可继续使用本地口令和手动置景。'}今日已用 ${formatCostCny(daily)} / ¥${dailyLimit.toFixed(2)}；本月已用 ${formatCostCny(monthly)} / ¥${monthlyLimit.toFixed(2)}。按北京时间重置。用量含进行中的预留费用，按内部参考价估算，不是供应商账单。${body.site ? `全站本月估算：${formatCostCny(Number(body.site.costCny))} / ¥${Number(body.site.limitCny).toFixed(2)}。` : ''}`,
               )
             } catch (failure) {
               setUsageDetail(failure instanceof Error ? failure.message : '无法读取用量')
             }
           }}
         >
-          查看本月估算
+          查看我的 AI 额度
         </button>
         {usageDetail && <p role="status">{usageDetail}</p>}
       </details>

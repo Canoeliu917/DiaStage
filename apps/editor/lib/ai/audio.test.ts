@@ -140,6 +140,41 @@ test('overlong audio is rejected even when container duration metadata is falsif
   }
 })
 
+test('AAC-LC timestamps cannot understate encoded audio duration or bypass the 90 second cap', async () => {
+  for (const count of [10, 4000]) {
+    const memory = memoryTarget()
+    const output = new Output({ target: memory.target, format: new Mp4OutputFormat() })
+    const source = new EncodedAudioPacketSource('aac')
+    output.addAudioTrack(source)
+    await output.start()
+    for (let i = 0; i < count; i++)
+      await source.add(
+        new EncodedPacket(
+          new Uint8Array([0x21, 0x10, 0x04, 0x60, 0x8c, 0x1c]),
+          'key',
+          i / 44100,
+          1 / 44100,
+        ),
+        {
+          decoderConfig: {
+            codec: 'mp4a.40.2',
+            sampleRate: 44100,
+            numberOfChannels: 2,
+            description: new Uint8Array([0x12, 0x10]),
+          },
+        },
+      )
+    await output.finalize()
+    const validating = validateAudio(memory.file('short-timestamps.mp4', 'audio/mp4'), signal())
+    if (count === 10) expect((await validating).durationSeconds).toBeCloseTo((10 * 1024) / 44100, 5)
+    else
+      await expect(validating).rejects.toMatchObject({
+        code: 'AUDIO_UNSUPPORTED',
+        message: '单次录音不能超过 90 秒，请分成两段录制。',
+      })
+  }
+})
+
 test('MIME, codec, size, missing tracks, and corrupt file cannot reach transcription', async () => {
   const webm = await recording('webm')
   for (const file of [
