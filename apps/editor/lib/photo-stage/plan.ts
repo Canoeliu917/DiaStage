@@ -1,5 +1,6 @@
 import { STAGE_OBJECT_REGISTRY, StageItemKindSchema } from '@pascal-app/core/stage'
 import { z } from 'zod'
+import { AVAILABLE_STAGE_ASSET_IDS } from '../stage/prop-assets'
 
 const length = z.number().finite().min(0.01).max(100)
 const angle = z
@@ -33,8 +34,12 @@ export const PhotoStageObjectSchema = z
       ctx.addIssue({ code: 'custom', path: [path], message })
     if (object.assetId !== null) {
       const asset = STAGE_OBJECT_REGISTRY.find((entry) => entry.canonicalId === object.assetId)
-      if (!asset || asset.kind !== object.kind)
-        issue('assetId', '请选择与布景类型相符的 22 件舞台库资产。')
+      if (
+        !asset ||
+        asset.kind !== object.kind ||
+        !AVAILABLE_STAGE_ASSET_IDS.includes(asset.canonicalId)
+      )
+        issue('assetId', '请选择与布景类型相符的 21 件舞台库资产。')
     } else if (Math.abs(object.rotation[0]) > 1e-8 || Math.abs(object.rotation[2]) > 1e-8) {
       issue('rotation', '可编辑基础形体仅支持绕竖直轴旋转。')
     }

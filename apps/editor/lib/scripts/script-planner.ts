@@ -1,6 +1,7 @@
 import {
   type ClarificationAnswer,
   parseStageText,
+  resolveStageObjectSpecs,
   type SceneContextSummary,
   SceneContextSummarySchema,
   type StagePlan,
@@ -13,6 +14,7 @@ import { AiError, withAbort } from '../ai/api'
 import { AI_TOKEN_LIMITS } from '../ai/config'
 import { budgetLimit, estimateCall, ModelBudgetError } from '../ai/model-budget'
 import { aiRequestContext, trackAiCall } from '../ai/usage'
+import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { buildRelevantSceneContext } from '../stage/relevant-context'
 import {
   chunkStagePassages,
@@ -124,14 +126,31 @@ function validateEvidence(input: StagePlan, passages: Passage[]): StagePlan {
   const plan = StagePlanSchema.parse(input)
   if (
     plan.source !== 'script' ||
-    plan.items.some(
-      (item) =>
+    plan.items.some((item) => {
+      const installed = AVAILABLE_STAGE_SCENERY.find(
+        ({ asset }) => asset.id === item.libraryAssetId,
+      )
+      const dimensions = [
+        item.dimensionsMeters.width,
+        item.dimensionsMeters.height,
+        item.dimensionsMeters.depth,
+      ]
+      const verifiedAsset =
+        installed?.kind === item.kind &&
+        resolveStageObjectSpecs(item.displayName).some(
+          (spec) => spec.canonicalId === item.libraryAssetId,
+        ) &&
+        installed.asset.dimensions?.every(
+          (value, axis) => Math.abs(value - dimensions[axis]!) <= 1e-6,
+        )
+      return (
         item.existingNodeId !== null ||
-        item.libraryAssetId !== null ||
+        (item.libraryAssetId !== null && !verifiedAsset) ||
         item.kind === 'camera' ||
         item.kind === 'performer-marker' ||
-        !permitsSceneryName(item.displayName),
-    )
+        !permitsSceneryName(item.displayName)
+      )
+    })
   )
     throw new AiError(
       'PLAN_INVALID',

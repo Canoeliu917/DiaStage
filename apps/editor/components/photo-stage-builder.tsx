@@ -334,7 +334,7 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
               </ul>
             </details>
             <details className="photo-stage-details">
-              <summary>检查物件与 22 款资产匹配</summary>
+              <summary>检查物件与 {AVAILABLE_STAGE_SCENERY.length} 款资产匹配</summary>
               <p className="photo-stage-hint">
                 可更换匹配资产；进入舞台后继续调整位置、尺寸、旋转与折角。
               </p>

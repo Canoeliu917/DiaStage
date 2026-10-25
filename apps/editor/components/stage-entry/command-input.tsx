@@ -31,8 +31,10 @@ import {
   draftContext,
   mergeDraftPlan,
 } from '@/lib/stage/creation-policy'
+import { groundStageAssets } from '@/lib/stage/ground-assets'
 import type { ScriptImport } from '@/lib/stage/import-metadata'
 import { createManualStageGraph } from '@/lib/stage/initial-stage'
+import { AVAILABLE_STAGE_ASSET_IDS } from '@/lib/stage/prop-assets'
 import { createUUID } from '../../lib/uuid'
 import { CreationModeControl, requestCreationPermission } from './creation-mode'
 import { PhoneVoiceLink, type RemoteVoiceReport } from './phone-voice-link'
@@ -64,6 +66,15 @@ export async function applyReviewedPlan(
   signal?: AbortSignal,
   scriptImport?: ScriptImport,
 ) {
+  if (
+    plan.items.some(
+      (item) =>
+        !item.existingNodeId &&
+        item.libraryAssetId !== null &&
+        !AVAILABLE_STAGE_ASSET_IDS.includes(item.libraryAssetId),
+    )
+  )
+    throw new Error('方案包含当前不可选的舞台库资产，请重新生成后确认。')
   if (sceneId) {
     const compiled = compileStagePlan(plan, context, {
       transactionId,
@@ -251,7 +262,8 @@ export function StageCommandInput({
         !remote && lease?.mode === 'draft' && draft.current
           ? draftContext(draft.current.context, draft.current.plan)
           : full
-      const local = parseStageText(input, current, priorAnswers, inputSource)
+      const parsed = parseStageText(input, current, priorAnswers, inputSource)
+      const local = parsed ? groundStageAssets(parsed) : null
       const request = local
         ? null
         : await fetchAiWithBudgetConsent('/api/stage/plan', {

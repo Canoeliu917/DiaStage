@@ -9,6 +9,7 @@ import {
   type SceneContextSummary,
   type StageCommand,
 } from '@pascal-app/core/stage'
+import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { planStageRequest } from '../ai/stage-planner'
 import { groundStageAssets } from './ground-assets'
 import {
@@ -27,15 +28,16 @@ const context: SceneContextSummary = {
   selectedObjectIds: [],
 }
 
-test('installed menu maps 22 canonical models and 44 correctly sized PNGs without modifying source bytes', () => {
-  expect(AVAILABLE_STAGE_ASSET_IDS).toHaveLength(22)
-  expect(new Set(AVAILABLE_STAGE_ASSET_IDS).size).toBe(22)
-  expect(SCENERY_LIBRARY).toHaveLength(22)
+test('selectable menu maps 21 canonical models and 42 correctly sized PNGs without modifying source bytes', () => {
+  expect(AVAILABLE_STAGE_ASSET_IDS).toHaveLength(21)
+  expect(new Set(AVAILABLE_STAGE_ASSET_IDS).size).toBe(21)
+  expect(SCENERY_LIBRARY).toHaveLength(21)
+  expect(STAGE_PROP_MENU.asset_count).toBe(21)
   expect(
     STAGE_PROP_MENU.categories.map(
       (category) => STAGE_PROP_MENU.assets.filter((prop) => prop.category === category).length,
     ),
-  ).toEqual([3, 4, 5, 2, 4, 4])
+  ).toEqual([2, 4, 5, 2, 4, 4])
   for (const prop of STAGE_PROP_MENU.assets) {
     const bytes = readFileSync(resolve(import.meta.dir, '../../public/stage-library', prop.model))
     expect(createHash('sha256').update(bytes).digest('hex')).toBe(prop.model_sha256)
@@ -69,6 +71,53 @@ test('installed menu maps 22 canonical models and 44 correctly sized PNGs withou
     expect(installed.asset.dimensions![1]).toBeCloseTo(bounds.height, 12)
     expect(installed.asset.dimensions![2]).toBeCloseTo(bounds.depth, 12)
   }
+})
+
+test('retired single flat remains readable with collision bounds but cannot be newly placed or generated', async () => {
+  const asset = CATALOG_ITEMS.find((item) => item.id === 'SCN-FLAT-090')!
+  expect(CATALOG_ITEMS).toHaveLength(22)
+  expect(ItemNode.parse(JSON.parse(JSON.stringify(ItemNode.parse({ asset })))).asset).toEqual(asset)
+  expect(AVAILABLE_STAGE_ASSET_IDS).not.toContain(asset.id)
+  expect(STAGE_PROP_MENU.assets.some((item) => item.id === asset.id)).toBe(false)
+  const parsed = parseStageText('添加单帘景片', context)!
+  const proposal = parsed.items[0]!
+  expect(stagePropCollisionGeometry(asset.id, proposal.dimensionsMeters)).toBeDefined()
+  expect(groundStageAssets(parsed).items).toEqual([])
+  const serverPlan = await planStageRequest(
+    { source: 'typed-command', input: '添加单帘景片', sceneContext: context, priorAnswers: [] },
+    new AbortController().signal,
+    async () => {
+      throw new Error('retired local asset must not call a model')
+    },
+  )
+  expect(serverPlan.items).toEqual([])
+  expect(serverPlan.questions).toHaveLength(1)
+  expect(serverPlan.questions[0]!.message).toContain('当前不在可选舞台库')
+  expect(() =>
+    makeScenery(
+      {
+        type: 'AddScenery',
+        meta: {
+          commandId: 'retired:0',
+          transactionId: 'retired',
+          source: 'manual',
+          issuedAt: '2026-10-23T00:00:00Z',
+          expectedDocumentVersion: 0,
+        },
+        nodeId: 'retired:proposal',
+        name: proposal.displayName,
+        kind: proposal.kind,
+        libraryAssetId: asset.id,
+        dimensionsMeters: proposal.dimensionsMeters,
+        transform: proposal.transform,
+      },
+      'level_test',
+      [0, 0, 0],
+      [0, 0, 0],
+    ),
+  ).toThrow('所选舞台库布景不存在')
+  proposal.existingNodeId = 'existing-flat'
+  expect(groundStageAssets(parsed).items).toHaveLength(1)
 })
 
 for (const prop of STAGE_PROP_MENU.assets) {

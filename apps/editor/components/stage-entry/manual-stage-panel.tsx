@@ -360,7 +360,7 @@ export function StagePlacementRuntime() {
 export function StageLibraryPanel() {
   const [category, setCategory] = useState(0)
   const [query, setQuery] = useState('')
-  const [selectedId, setSelectedId] = useState('SCN-FLAT-090')
+  const [selectedId, setSelectedId] = useState(STAGE_LIBRARY[0]!.menu.id)
   const previewDialog = useRef<HTMLDialogElement>(null)
   const selected = STAGE_LIBRARY.find(({ menu }) => menu.id === selectedId)
   const search = query.trim().toLocaleLowerCase()
@@ -378,7 +378,7 @@ export function StageLibraryPanel() {
       <div className="stage-library-browser">
         <header className="stage-library-heading">
           <h2>舞台库</h2>
-          <span>22 件</span>
+          <span>{STAGE_LIBRARY.length} 件</span>
         </header>
         <StagePresets />
         <label className="stage-library-category">
@@ -656,7 +656,30 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
   }, [id, nodes])
   if (!object) {
     const selectedNode = id ? nodes[id as AnyNodeId] : undefined
-    if (!selectedNode) return null
+    if (!selectedNode)
+      return (
+        <section aria-label="布景属性">
+          <h2>布景属性</h2>
+          <p>
+            {selected.length > 1
+              ? `已选中 ${selected.length} 个物件，请选择其中一个继续调整。`
+              : '请先在舞台或场景列表中选中一个布景，再调整名称、位置与尺寸。'}
+          </p>
+          {selected.length > 1 && (
+            <div className="stage-manual-actions">
+              {selected.map((selectedId) => (
+                <button
+                  key={selectedId}
+                  type="button"
+                  onClick={() => useViewer.getState().setSelection({ selectedIds: [selectedId] })}
+                >
+                  {nodes[selectedId as AnyNodeId]?.name || '未命名物件'}
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      )
     const locked = !!getNodeLock(nodes, selectedNode.id, true)
     return (
       <fieldset className="stage-object" disabled={readOnly} aria-label="对象属性">

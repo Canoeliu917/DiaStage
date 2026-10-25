@@ -78,6 +78,7 @@
 .stage-prop-rotation > div { display:flex; align-items:center; gap:6px; }
 .stage-prop-rotation span { flex:1; }
 .stage-prop-rotation button { width:40px; min-height:34px; text-align:center; padding:4px; }
+.stage-prop-rotation > button { width:100%; }
 .stage-ghost-label { pointer-events:none; white-space:nowrap; color:var(--dia-text); background:var(--dia-panel); padding:5px 9px; font-size:12px; }
 .stage-selection-content { height:auto; min-height:0; overflow:auto; }
 .stage-selection-mobile { position:fixed; z-index:55; bottom:78px; left:8px; right:8px; width:auto; height:auto; max-height:48dvh; padding:10px; background:var(--background); border:1px solid var(--border); pointer-events:auto; }

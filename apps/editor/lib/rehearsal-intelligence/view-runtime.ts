@@ -69,7 +69,7 @@ export function runViewCommand(sceneId: string, command: ViewCommand) {
     command = action
   }
   if (command.type !== 'SAVE_VIEW' && editor.viewMode === '2d') editor.setViewMode('3d')
-  return executeViewCommand(command, {
+  const notice = executeViewCommand(command, {
     sceneId,
     pose,
     selectedIds: useViewer.getState().selection.selectedIds,
@@ -78,4 +78,7 @@ export function runViewCommand(sceneId: string, command: ViewCommand) {
     focus: (nodeId) => emitter.emit('camera-controls:focus', { nodeId: nodeId as AnyNodeId }),
     reset: () => emitter.emit('camera-controls:fit-scene', {}),
   })
+  if (command.type === 'SAVE_VIEW' && pose)
+    window.dispatchEvent(new Event('diastage:views-changed'))
+  return notice
 }

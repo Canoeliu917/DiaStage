@@ -16,10 +16,13 @@ export const dynamic = 'force-dynamic'
 export default async function ScenesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ workspace?: string }>
+  searchParams: Promise<{ workspace?: string | string[] }>
 }) {
+  const { workspace } = await searchParams
+  const workspaceQuery =
+    typeof workspace === 'string' ? `?workspace=${encodeURIComponent(workspace)}` : ''
   const requestHeaders = await headers()
-  const operations = await getScenePageOperations(requestHeaders)
+  const operations = await getScenePageOperations(requestHeaders, `/scenes${workspaceQuery}`)
   const session = await getSession(requestHeaders)
   const scenes = await operations.listScenes({ limit: 50 })
   const artworks = await Promise.all(
@@ -31,7 +34,6 @@ export default async function ScenesPage({
       }
     }),
   )
-  const remount = (await searchParams).workspace === 'remount'
 
   return (
     <div className="ds-library dia-scene-gallery">
@@ -47,7 +49,7 @@ export default async function ScenesPage({
           {session && <AccountMenu user={session.user} />}
           <Link href="/photo-stage">从照片复原舞台</Link>
           <Link href="/">
-            进入工作台 <ArrowRight size={15} />
+            返回首页 <ArrowRight size={15} />
           </Link>
         </div>
       </header>
@@ -74,7 +76,7 @@ export default async function ScenesPage({
               <StageDrawing />
             </div>
             <h2>从一座空舞台开始。</h2>
-            <p>新建剧目，设置场地尺寸，用 22 件标准资产放置布景。</p>
+            <p>新建剧目，设置场地尺寸，用 21 件标准资产放置布景。</p>
             <CreateSceneButton />
           </div>
         ) : (
@@ -83,7 +85,7 @@ export default async function ScenesPage({
               <li key={scene.id}>
                 <Link
                   className="ds-scene-entry"
-                  href={`/scene/${scene.id}${remount ? '?workspace=remount' : ''}`}
+                  href={`/scene/${scene.id}${workspaceQuery}`}
                   prefetch={false}
                   aria-label={`${index + 1}. ${scene.name}，最后修改 ${artworkModifiedTime(scene.updatedAt)}，打开剧目`}
                 >

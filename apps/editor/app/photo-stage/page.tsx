@@ -7,7 +7,7 @@ import './photo-stage.css'
 export const dynamic = 'force-dynamic'
 
 export default async function PhotoStagePage() {
-  await getScenePageOperations(await headers())
+  await getScenePageOperations(await headers(), '/photo-stage')
   return (
     <main className="photo-stage-page">
       <header className="photo-stage-header">

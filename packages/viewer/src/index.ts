@@ -85,7 +85,7 @@ export {
   temporarilyHideNodeTypes,
   unionRegisteredNodeBounds,
 } from './lib/hero-pose'
-export { configureKtx2Support, ensureKtx2Support } from './lib/ktx2-loader'
+export { configureKtx2Support, ensureKtx2Support, ktx2Loader } from './lib/ktx2-loader'
 export {
   BATCHED_LAYER,
   GRID_LAYER,

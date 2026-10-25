@@ -7,7 +7,7 @@ import { type DiaAppContext, DiaAppContextSchema } from './open-language'
 export const DIASTAGE_CAPABILITIES: DiaAppContext['capabilities'] = [
   { id: 'scene-management', label: '新建、打开、保存与管理剧目', authority: 'manual_only' },
   { id: 'venue-settings', label: '设置舞台类型、宽度、深度与高度', authority: 'manual_only' },
-  { id: 'asset-library', label: '浏览、搜索并放置 22 种标准舞台资产', authority: 'manual_only' },
+  { id: 'asset-library', label: '浏览、搜索并放置 21 种标准舞台资产', authority: 'manual_only' },
   {
     id: 'object-properties',
     label: '查看并精确设置名称、尺寸、位置、锁定与显示',

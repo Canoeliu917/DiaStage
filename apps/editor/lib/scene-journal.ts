@@ -240,6 +240,7 @@ export class SceneJournal {
   private graph: SceneGraph | undefined
   private head: Head | undefined
   private revisions = new WeakMap<SceneGraph, number>()
+  private acceptingServer = false
   constructor(
     readonly id: string,
     private readonly ownerId = getLocalAccountOwner(),
@@ -307,6 +308,7 @@ export class SceneJournal {
   }
 
   async append(graph: SceneGraph) {
+    if (this.acceptingServer) throw new Error('正在使用服务器版本，请等待页面重新打开')
     if (!this.db || !this.head || !this.graph) throw new Error('本机日志尚未加载')
     const patch = scenePatch(this.graph, graph)
     const changed =
@@ -346,6 +348,7 @@ export class SceneJournal {
   }
 
   async acknowledge(graph: SceneGraph, version: number) {
+    if (this.acceptingServer) throw new Error('正在使用服务器版本，请等待页面重新打开')
     const sequence = this.revisions.get(graph)
     if (!this.db || sequence === undefined) throw new Error('缺少本机事务，不清除任何记录')
     const tx = this.db.transaction(['heads', 'checkpoints', 'transactions'], 'readwrite', {
@@ -369,5 +372,38 @@ export class SceneJournal {
     // append can finish during the request; don't roll back its sequence.
     if (this.head)
       this.head = { ...this.head, acknowledged: head.acknowledged, version: head.version }
+  }
+
+  /** Caller must first preserve the local snapshot in a successfully created scene copy. */
+  async acceptServer(graph: SceneGraph, version: number) {
+    if (!this.db || !this.head) throw new Error('本机日志尚未加载')
+    this.acceptingServer = true
+    try {
+      const tx = this.db.transaction(['heads', 'checkpoints', 'transactions'], 'readwrite', {
+        durability: 'strict',
+      })
+      const done = complete(tx)
+      void done.catch(() => {})
+      const head = await request<Head>(tx.objectStore('heads').get(this.id))
+      if (head.sequence !== this.head.sequence || head.version !== this.head.version) {
+        tx.abort()
+        throw new Error('另一个窗口已更新本机记录，请重新打开后再处理版本冲突')
+      }
+      const next = { id: this.id, version, sequence: head.sequence + 1, acknowledged: head.sequence + 1 }
+      tx.objectStore('heads').put(next)
+      tx.objectStore('checkpoints').put(
+        { nodes: graph.nodes, ...scenePatch(graph, graph).document },
+        this.id,
+      )
+      tx.objectStore('transactions').delete(IDBKeyRange.bound([this.id, 0], [this.id, Number.MAX_SAFE_INTEGER]))
+      await done
+      this.head = next
+      this.graph = graph
+      publishLocalCommit(this.id, graph, next.sequence)
+      broadcastCommit(this.id)
+    } catch (error) {
+      this.acceptingServer = false
+      throw error
+    }
   }
 }

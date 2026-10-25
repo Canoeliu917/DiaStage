@@ -114,7 +114,10 @@ test('usage uses provider counts, correlates requests, and never preserves arbit
 export const GOLDEN_COMMANDS = [
   { text: '建立宽8米深6米的舞台', outcome: 'valid' },
   { text: '建立宽八米深六米的舞台', outcome: 'valid' },
-  { text: '添加沙发', outcome: 'valid' },
+  // The approved catalog has long and short sofas; the generic category needs a choice.
+  { text: '添加沙发', outcome: 'question' },
+  { text: '添加双人沙发', outcome: 'valid' },
+  { text: '添加单人沙发', outcome: 'valid' },
   { text: '添加圆桌', outcome: 'valid' },
   { text: '门在窗旁边', outcome: 'question' },
   { text: '把它向台右移半米', outcome: 'question' },

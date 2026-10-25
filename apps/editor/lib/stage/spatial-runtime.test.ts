@@ -8,12 +8,14 @@ import {
   subscribeSceneCommits,
   useScene,
 } from '@pascal-app/core'
+import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { Group } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { bindRehearsalScene } from '../rehearsal-intelligence/authority'
 import { DiaConversation } from '../rehearsal-intelligence/conversation-controller'
 import { groundLanguage } from '../rehearsal-intelligence/language-grounding'
+import { OpenLanguageRequestSchema, parseOpenLanguage } from '../rehearsal-intelligence/open-language'
 import { SceneJournal } from '../scene-journal'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { currentStageContext } from './context'
@@ -34,7 +36,10 @@ async function setup(assetIds: string[]) {
     }
   const ids: string[] = []
   for (const [index, assetId] of assetIds.entries()) {
-    const source = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
+    const source =
+      assetId === 'SCN-FLAT-090'
+        ? { asset: CATALOG_ITEMS.find((asset) => asset.id === assetId)!, kind: 'scenic-flat' }
+        : AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
     const node = ItemNode.parse({
       parentId: level.id,
       asset: source.asset,
@@ -86,14 +91,55 @@ for (const [name, assets, phrase] of [
       queue = queue.then(() => journal.append(snapshot))
     })
     const dia = new DiaConversation(sceneId, () => null, undefined, false)
+    const originalFetch = globalThis.fetch
+    let providerCalls = 0
+    // Exercise the production grounding contract without a live model or a permission fallback.
+    globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+      expect(url).toBe('/api/dia/ground')
+      providerCalls++
+      const request = OpenLanguageRequestSchema.parse(JSON.parse(String(init?.body)))
+      const grounding = parseOpenLanguage(request.rawUtterance)
+      expect(grounding).not.toBeNull()
+      return Response.json({
+        requestId: crypto.randomUUID(),
+        grounding,
+        provider: 'openai',
+        model: 'mock-provider-not-live',
+      })
+    }) as typeof fetch
     try {
       await dia.load()
       const before = JSON.stringify(useScene.getState().nodes)
       await dia.send(phrase)
+      expect(providerCalls).toBe(1)
+      expect(dia.buildProposal()?.groundingProvider).toEqual({
+        provider: 'openai',
+        model: 'mock-provider-not-live',
+      })
       const candidateCount = dia.buildProposal()?.spatialSolution?.candidates.length
       if (name === 'partial-enclosure')
         expect(candidateCount, dia.store.getState().notice).toBeGreaterThan(0)
-      else expect(candidateCount, dia.store.getState().notice).toBe(name === 'corner' ? 2 : 1)
+      else expect(candidateCount, dia.store.getState().notice).toBe(2)
+      if (name === 'multi-hinge') {
+        // The manifest/runtime permits both 90 and 270 degree U folds on this clear stage.
+        const candidates = dia.buildProposal()!.spatialSolution!.candidates
+        expect(
+          candidates
+            .map((candidate) => candidate.folds[0]?.controls.fold_angle_1_deg)
+            .sort((a, b) => a! - b!),
+        ).toEqual([90, 270])
+        const transform = currentStageContext([]).objects.find((object) => object.id === ids[0])!
+          .transform
+        for (const candidate of candidates) {
+          expect(candidate.folds).toHaveLength(1)
+          expect(candidate.folds[0]?.controls.fold_angle_2_deg).toBe(
+            candidate.folds[0]?.controls.fold_angle_1_deg,
+          )
+          expect(candidate.resolvedTransforms).toEqual([{ subject: ids[0], transform }])
+          expect(candidate.feasibility).toBe('feasible')
+          expect(candidate.constraintsUnsatisfied).toEqual([])
+        }
+      }
       const a = dia.buildProposal()!.spatialSolution!.candidates[0]!
       const b = dia.buildProposal()!.spatialSolution!.candidates.at(-1)!
       await dia.chooseSpatialCandidate(a!.candidateId)
@@ -123,6 +169,7 @@ for (const [name, assets, phrase] of [
       useScene.temporal.getState().redo()
       expect(JSON.stringify(useScene.getState().nodes)).toBe(accepted)
     } finally {
+      globalThis.fetch = originalFetch
       dia.dispose()
       stop()
       unbind()

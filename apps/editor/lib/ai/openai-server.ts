@@ -2,7 +2,7 @@ import 'server-only'
 import { STAGE_OBJECT_REGISTRY } from '@pascal-app/core/stage'
 import OpenAI from 'openai'
 import { zodTextFormat } from 'openai/helpers/zod'
-import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
+import { AVAILABLE_STAGE_ASSET_IDS, AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { buildRelevantSceneContext } from '../stage/relevant-context'
 import { AI_LIMITS, AiError } from './api'
 import type { ValidatedAudio } from './audio-validation'
@@ -51,7 +51,9 @@ export async function generateStagePlan(
   const payload = JSON.stringify({
     ...request,
     sceneContext: context,
-    objectRegistry: STAGE_OBJECT_REGISTRY,
+    objectRegistry: STAGE_OBJECT_REGISTRY.filter((entry) =>
+      AVAILABLE_STAGE_ASSET_IDS.includes(entry.canonicalId),
+    ),
     availableSceneryLibrary: AVAILABLE_STAGE_SCENERY.map(({ asset }) => ({
       canonicalId: asset.id,
       name: asset.name,

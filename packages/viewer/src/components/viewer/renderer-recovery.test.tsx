@@ -22,6 +22,7 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
   let slots: unknown[] = []
   let cursor = 0
   let dirty = true
+  let refreshHooks = false
   let tree: unknown
   const pendingEffects: (() => void)[] = []
   let renderViewer: () => unknown
@@ -38,7 +39,7 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
   function effect(callback: () => undefined | (() => void), dependencies?: Dependencies) {
     const index = cursor++
     const previous = slots[index] as EffectSlot | undefined
-    if (previous && sameDependencies(previous.dependencies, dependencies)) return
+    if (previous && !refreshHooks && sameDependencies(previous.dependencies, dependencies)) return
     pendingEffects.push(() => {
       previous?.cleanup?.()
       const cleanup = callback()
@@ -97,7 +98,7 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
     useMemo: <T,>(factory: () => T, dependencies?: Dependencies): T => {
       const index = cursor++
       const previous = slots[index] as MemoSlot | undefined
-      if (!previous || !sameDependencies(previous.dependencies, dependencies))
+      if (!previous || refreshHooks || !sameDependencies(previous.dependencies, dependencies))
         slots[index] = { dependencies, value: factory() }
       return (slots[index] as MemoSlot).value as T
     },
@@ -154,6 +155,7 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
     ['../error-boundary', ['ErrorBoundary']],
     ['../renderers/scene-renderer', ['SceneRenderer']],
     ['./frame-limiter', ['default']],
+    ['./black-line-view', ['BlackLineView']],
     ['./lights', ['Lights']],
     ['./perf-monitor', ['PerfMonitor']],
     ['./perf-panel', ['PerfPanel']],
@@ -264,6 +266,12 @@ if (!process.env.VIEWER_RECOVERY_TEST) {
   assert.ok(firstCanvas)
   assert.equal(firstCanvas.key, '0')
   const first = await factory(firstCanvas)({ canvas: {} as HTMLCanvasElement })
+  refreshHooks = true
+  dirty = true
+  flush()
+  refreshHooks = false
+  await settle()
+  assert.equal(first.disposed, 0, 'Fast Refresh must not dispose the renderer retained by Canvas')
   const obsoleteLoss = first.onDeviceLost
   first.onDeviceLost({ reason: 'unknown' })
   assert.equal(canvas(), undefined, 'device loss synchronously removes the old Canvas')

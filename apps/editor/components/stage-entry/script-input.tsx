@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import { currentStageContext } from '@/lib/stage/context'
 import { draftContext, mergeDraftPlan } from '@/lib/stage/creation-policy'
+import { groundStageAssets } from '@/lib/stage/ground-assets'
 import {
   confirmedScriptImport,
   type ScriptFile,
@@ -151,7 +152,7 @@ export function ScriptStageInput({ sceneId }: { sceneId?: string }) {
     try {
       const draft = draftContext(context, validateStagePlan(plan, context).plan)
       const local = parseStageText(revisionText, draft, [], 'voice')
-      let next = local
+      let next = local ? groundStageAssets(local) : null
       if (!next) {
         const { response } = await fetchAiWithBudgetConsent('/api/stage/plan', {
           method: 'POST',

@@ -9,6 +9,7 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { useInteractionScope } from '@pascal-app/editor'
+import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { applyItemFoldControls } from '@pascal-app/nodes'
 import { useViewer } from '@pascal-app/viewer'
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial } from 'three'
@@ -280,4 +281,28 @@ test('shape initialization restores official dimensions, tilt, scale and fold wh
   const locked = useScene.getState().nodes[node.id]
   expect(resetStageObjectShape(node.id).ok).toBe(false)
   expect(useScene.getState().nodes[node.id]).toBe(locked)
+})
+
+test('a saved retired single flat keeps its original shape reset and undo support', () => {
+  const asset = CATALOG_ITEMS.find((entry) => entry.id === 'SCN-FLAT-090')!
+  const saved = ItemNode.parse({
+    ...node,
+    asset: { ...asset, dimensions: [1.8, 2.4, 0.08], boundsCenter: [0, 1.2, 0] },
+    position: [1, 0.2, -1],
+    rotation: [0.2, 0.4, 0.1],
+    scale: [2, 1, 2],
+    controls: undefined,
+  })
+  useScene.setState({ nodes: { ...useScene.getState().nodes, [node.id]: saved } })
+  clearSceneHistory()
+  expect(resetStageObjectShape(node.id).ok).toBe(true)
+  const reset = useScene.getState().nodes[node.id] as ItemNode
+  expect(reset.asset.dimensions).toEqual(asset.dimensions)
+  expect(reset.asset.boundsCenter).toEqual(asset.boundsCenter)
+  expect(reset.position).toEqual(saved.position)
+  expect(reset.rotation).toEqual([0, 0, 0])
+  expect(reset.scale).toEqual([1, 1, 1])
+  expect(useScene.temporal.getState().pastStates).toHaveLength(1)
+  useScene.temporal.getState().undo()
+  expect(useScene.getState().nodes[node.id]).toEqual(saved)
 })

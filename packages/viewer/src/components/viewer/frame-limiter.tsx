@@ -7,6 +7,7 @@ type FrameLimiterProps = {
   fps?: number
   paused?: boolean
   onError?: (error: unknown) => void
+  runIfActive: (operation: () => void) => void
 }
 
 export type FrameClock = {
@@ -60,7 +61,12 @@ const DRAW_DISABLED =
       .map((s) => s.trim()),
   ).has('draw')
 
-const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 60, paused = false, onError }) => {
+const FrameLimiter: React.FC<FrameLimiterProps> = ({
+  fps = 60,
+  paused = false,
+  onError,
+  runIfActive,
+}) => {
   const errorHandler = useRef(onError)
   errorHandler.current = onError
   const { advance, set, frameloop: initFrameloop } = useThree()
@@ -81,8 +87,11 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 60, paused = false, o
     const draw = (time: number) => {
       if (failed || document.hidden) return
       try {
-        syncSize()
-        timeSpan('frame-cpu', () => advance(time))
+        // Canvas reconciles its scene separately; queued frames can outlive the owner.
+        runIfActive(() => {
+          syncSize()
+          timeSpan('frame-cpu', () => advance(time))
+        })
       } catch (error) {
         failed = true
         errorHandler.current?.(error)
@@ -155,6 +164,7 @@ const FrameLimiter: React.FC<FrameLimiterProps> = ({ fps = 60, paused = false, o
     paused,
     renderPaused,
     renderer,
+    runIfActive,
     set,
     size.height,
     size.width,

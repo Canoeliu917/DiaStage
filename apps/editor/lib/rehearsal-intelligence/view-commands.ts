@@ -150,6 +150,10 @@ const SavedViewsSchema = z
   .array(z.object({ name: z.string().min(1).max(40), pose: PoseSchema }))
   .max(100)
 
+export function readSavedViews(sceneId: string, storage: Pick<Storage, 'getItem'>) {
+  return SavedViewsSchema.parse(JSON.parse(storage.getItem(`diastage:view-state:v1:${sceneId}`) ?? '[]'))
+}
+
 export function cameraIntentAction(
   command: CameraIntentCommand,
 ): Exclude<ViewCommand, CameraIntentCommand> | null {
@@ -201,7 +205,7 @@ export function executeViewCommand(
   }
   if (command.type === 'SAVE_VIEW' || command.type === 'RECALL_CAMERA') {
     const key = `diastage:view-state:v1:${ports.sceneId}`
-    const saved = SavedViewsSchema.parse(JSON.parse(ports.storage.getItem(key) ?? '[]'))
+    const saved = readSavedViews(ports.sceneId, ports.storage)
     if (command.type === 'RECALL_CAMERA') {
       const view = saved.find((entry) => entry.name === command.name)
       if (!view) return `没有保存的「${command.name}」视角，请明确视角名称。`

@@ -109,6 +109,11 @@ export function HomeStageSpace({
           <p className="dia-space-motto">AI虽能完成想象，但还请相信直觉。</p>
         </div>
       </section>
+      <footer className="dia-space-registration">
+        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
+          粤ICP备2026162365号
+        </a>
+      </footer>
       {entry && (
         <dialog
           ref={dialog}

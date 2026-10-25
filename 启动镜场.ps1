@@ -16,6 +16,7 @@ try {
     $env:PASCAL_DATA_DIR = Join-Path $PSScriptRoot 'data'
     $env:PASCAL_DB_PATH = Join-Path $env:PASCAL_DATA_DIR 'pascal.db'
     $env:NEXT_PUBLIC_APP_URL = 'http://127.0.0.1:4318'
+    $env:BETTER_AUTH_URL = $env:NEXT_PUBLIC_APP_URL
 
     if ($Check) {
         $planText = & $npmCommand.Source exec --yes --package=bun@1.3.14 -- bun x turbo run build '--filter=editor^...' --dry=json

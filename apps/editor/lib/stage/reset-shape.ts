@@ -5,9 +5,9 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { useInteractionScope } from '@pascal-app/editor'
+import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { useStageCommandNotice } from './command-executor'
 import { exitStageFolding, foldPositionCount } from './folding'
-import { AVAILABLE_STAGE_SCENERY } from './prop-assets'
 
 export function resetStageObjectShape(id: string): { ok: boolean; message: string } {
   const state = useScene.getState()
@@ -22,9 +22,7 @@ export function resetStageObjectShape(id: string): { ok: boolean; message: strin
   useStageCommandNotice.setState({ error: '' })
   runAsSingleSceneHistoryStep(useScene, () => {
     if (node.type === 'item') {
-      const original = AVAILABLE_STAGE_SCENERY.find(
-        (entry) => entry.asset.id === node.asset.id,
-      )?.asset
+      const original = CATALOG_ITEMS.find((entry) => entry.id === node.asset.id)
       state.updateNode(node.id, {
         rotation: [0, 0, 0],
         scale: [1, 1, 1],

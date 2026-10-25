@@ -209,7 +209,7 @@ export function EditorCommands() {
         : []),
       {
         id: 'editor.export.share-link',
-        label: '复制分享链接',
+        label: '复制当前地址',
         group: '导出与分享',
         icon: <Copy className="h-4 w-4" />,
         keywords: ['share', 'copy', 'url', 'link'],

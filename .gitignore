@@ -65,6 +65,8 @@ og-test
 .vscode/launch.json
 
 **/data/*.db*
+**/data/auth.sqlite*
+**/data/auth.secret
 /.tmp-*
 /.local/
 

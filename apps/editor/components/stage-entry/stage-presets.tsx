@@ -23,7 +23,7 @@ export function StagePresets() {
   )
   return (
     <details className="stage-presets">
-      <summary>搭景预设 · 22 件标准资产</summary>
+      <summary>搭景预设 · 21 件标准资产</summary>
       {STAGE_PRESETS.map((preset, index) => (
         <button
           type="button"

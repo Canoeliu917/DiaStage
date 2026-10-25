@@ -50,7 +50,7 @@ const ZONES = {
   downstage: '台前',
 }
 const SHORTCUTS = [
-  { label: '搭建构思', items: ['一张圆桌，两把硬椅', '两块单帘景片'] },
+  { label: '搭建构思', items: ['一张圆桌，两把硬椅', '二帘组合'] },
   { label: '视图与版本', items: ['从正面看一下', '查看已保存版本'] },
   { label: '调整构思', items: ['两块景片怎么摆', '我自己来'] },
 ]

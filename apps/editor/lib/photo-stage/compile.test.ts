@@ -34,6 +34,14 @@ const plan: PhotoStagePlan = {
 
 describe('photo stage compilation', () => {
   test('rejects non-finite, oversized, unknown and incompatible input before scene creation', () => {
+    expect(
+      PhotoStageObjectSchema.safeParse({
+        ...object,
+        kind: 'scenic-flat',
+        assetId: 'SCN-FLAT-090',
+        profile: undefined,
+      }).success,
+    ).toBe(false)
     for (const patch of [
       { dimensions: { width: Infinity, height: 1, depth: 2 } },
       { dimensions: { width: 101, height: 1, depth: 2 } },
@@ -43,6 +51,7 @@ describe('photo stage compilation', () => {
       { kind: 'camera' },
       { assetId: 'https://example.com/model.glb' },
       { assetId: 'SCN-SOFA-175' },
+      { assetId: 'SCN-FLAT-090', kind: 'scenic-flat' },
       { color: 'url(https://example.com)' },
       { stepCount: 3 },
       { hingeAngles: [90] },
@@ -65,8 +74,8 @@ describe('photo stage compilation', () => {
     ).toThrow('参考照片')
   })
 
-  test('all 22 catalogue entries remain native items with their transforms, color and folding controls', () => {
-    expect(SCENERY_LIBRARY).toHaveLength(22)
+  test('all 21 selectable catalogue entries remain native items with their transforms, color and folding controls', () => {
+    expect(SCENERY_LIBRARY).toHaveLength(21)
     const before = JSON.stringify(SCENERY_LIBRARY)
     const cataloguePlan = PhotoStagePlanSchema.parse({
       ...plan,
@@ -94,7 +103,8 @@ describe('photo stage compilation', () => {
     const graph = compilePhotoStagePlan(cataloguePlan)
     expect(apiGraphSchema.safeParse(graph).success).toBe(true)
     const items = Object.values(graph.nodes).filter((node) => node.type === 'item')
-    expect(items).toHaveLength(22)
+    expect(items).toHaveLength(21)
+    expect(items.some((item) => item.asset.id === 'SCN-FLAT-090')).toBe(false)
     for (const item of items) {
       const asset = SCENERY_LIBRARY.find((entry) => entry.asset.id === item.asset.id)!.asset
       expect(item.id.startsWith('item_')).toBe(true)
@@ -154,6 +164,14 @@ describe('photo stage compilation', () => {
 
   test('example faces the native +Z audience and stairs rise toward the left rear', () => {
     const graph = compilePhotoStagePlan(PHOTO_STAGE_EXAMPLE)
+    expect(PHOTO_STAGE_EXAMPLE.objects.some((object) => object.assetId === 'SCN-FLAT-090')).toBe(
+      false,
+    )
+    expect(
+      Object.values(graph.nodes).some(
+        (node) => node.type === 'item' && node.asset.id === 'SCN-FLAT-090',
+      ),
+    ).toBe(false)
     const find = (id: string) => PHOTO_STAGE_EXAMPLE.objects.find((entry) => entry.id === id)!
     expect(find('left-door').position[0]).toBeLessThan(0)
     expect(find('right-wall').position[0]).toBeGreaterThan(0)

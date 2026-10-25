@@ -2,7 +2,7 @@
 
 import { type AnyNodeId, nodeRegistry, sceneRegistry, useScene } from '@pascal-app/core'
 import { Canvas, extend, type ThreeElement, useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import * as THREE from 'three/webgpu'
 import { hasDrawableGeometry } from '../../lib/drawable-geometry'
@@ -375,8 +375,15 @@ function Viewer({
   const [deviceLost, setDeviceLost] = useState(false)
   const [retryReady, setRetryReady] = useState(false)
   const [retryWebGl, setRetryWebGl] = useState(false)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: each new Canvas owns a separate renderer lifetime.
-  const rendererLifecycle = useMemo(() => createRendererLifecycle(), [rendererGeneration])
+  // Fast Refresh resets memo values while Canvas retains its existing renderer.
+  const rendererOwner = useRef<{
+    generation: number
+    lifecycle: ReturnType<typeof createRendererLifecycle>
+  } | null>(null)
+  if (rendererOwner.current?.generation !== rendererGeneration) {
+    rendererOwner.current = { generation: rendererGeneration, lifecycle: createRendererLifecycle() }
+  }
+  const rendererLifecycle = rendererOwner.current.lifecycle
   const recoveryNeeded = deviceLost || (rendererInitFailed && rendererGeneration > 0)
 
   function retryRenderer() {
@@ -598,6 +605,7 @@ function Viewer({
           fps={stable ? Math.min(maxFps, budget.fps) : maxFps}
           paused={renderPaused}
           onError={() => setDeviceLost(true)}
+          runIfActive={rendererLifecycle.runIfActive}
         />
         <ViewerCamera />
         <PointerRaycastLayers />

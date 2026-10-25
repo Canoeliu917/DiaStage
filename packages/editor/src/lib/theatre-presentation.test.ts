@@ -21,7 +21,11 @@ describe('theatre presentation boundary', () => {
 
   test('all default asset categories and search candidates are theatrical', () => {
     expect(CATALOG_ITEMS).toHaveLength(22)
-    expect(THEATRE_CATALOG_ITEMS).toHaveLength(22)
+    expect(THEATRE_CATALOG_ITEMS).toHaveLength(21)
+    expect(CATALOG_ITEMS.some((item) => item.id === 'SCN-FLAT-090')).toBe(true)
+    expect(
+      theatreCatalogItems([CATALOG_ITEMS.find((item) => item.id === 'SCN-FLAT-090')!]),
+    ).toEqual([])
     expect(new Set(THEATRE_CATALOG_ITEMS.map((item) => item.category))).toEqual(
       new Set(['scenery']),
     )

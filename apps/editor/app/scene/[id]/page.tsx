@@ -7,9 +7,18 @@ import { getScenePageOperations } from '@/lib/scene-store-server'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ScenePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ScenePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ workspace?: string | string[] }>
+}) {
   const { id } = await params
-  const operations = await getScenePageOperations(await headers(), `/scene/${id}`)
+  const { workspace } = await searchParams
+  const workspaceQuery =
+    typeof workspace === 'string' ? `?workspace=${encodeURIComponent(workspace)}` : ''
+  const operations = await getScenePageOperations(await headers(), `/scene/${id}${workspaceQuery}`)
   const scene = await operations.loadStoredScene(id)
 
   if (!scene) {

@@ -29,6 +29,8 @@ html:has(.dia-home) { overflow-y: auto; scroll-behavior: smooth; }
 .dia-space-introduction { grid-column: 1/-1; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--space-rule); }
 .dia-space-introduction p { margin: 0; max-width: 65ch; font-size: 14px; line-height: 1.9; }
 .dia-space-footer .dia-space-motto { grid-column: 1/-1; margin: 24px 0 0; color: var(--space-muted); font-size: 13px; }
+.dia-space-registration { display: flex; justify-content: flex-end; padding: 12px max(20px,6vw); border-top: 1px solid var(--space-rule); color: var(--space-muted); font-size: 13px; line-height: 1.5; }
+.dia-space-registration a { display: inline-flex; align-items: center; min-height: 44px; color: inherit; text-decoration: underline; }
 .dia-home .stage-entry-dialog { color-scheme: light; color: #20211d; background: #f3f1e9; caret-color: #20211d; }
 .dia-home .dia-space-dialog { width: min(940px, calc(100% - 48px)); }
 .dia-space-dialog h2 { font-size: 24px; }

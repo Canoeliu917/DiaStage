@@ -44,7 +44,7 @@ function request(body: unknown, headers: Record<string, string> = {}) {
   })
 }
 
-test('passes the uploaded image to vision with all 22 real assets and strict structured output', async () => {
+test('passes the uploaded image to vision with 21 selectable assets and strict structured output', async () => {
   const signal = new AbortController().signal
   const plan = await analyzePhotoStage(
     { imageDataUrl, name: '此次照片' },
@@ -59,7 +59,9 @@ test('passes the uploaded image to vision with all 22 real assets and strict str
       })
       const context = JSON.parse(input.input[0]!.content[0]!.text!)
       expect(context.name).toBe('此次照片')
-      expect(context.availableSceneryLibrary).toHaveLength(22)
+      expect(context.availableSceneryLibrary).toHaveLength(21)
+      expect(JSON.stringify(context.availableSceneryLibrary)).not.toContain('SCN-FLAT-090')
+      expect(JSON.stringify(input.text.format)).not.toContain('SCN-FLAT-090')
       expect(
         context.availableSceneryLibrary.map((asset: { assetId: string }) => asset.assetId),
       ).toEqual(AVAILABLE_STAGE_SCENERY.map(({ asset }) => asset.id))
@@ -117,6 +119,10 @@ test('rejects hallucinated assets, kind conflicts, impossible transforms and arb
   const invalid = [
     { ...modelPlan(), command: 'execute' },
     { ...modelPlan(), objects: [{ ...modelPlan().objects[0], assetId: 'invented-asset' }] },
+    {
+      ...modelPlan(),
+      objects: [{ ...modelPlan().objects[0], assetId: 'SCN-FLAT-090', kind: 'scenic-flat' }],
+    },
     { ...modelPlan(), objects: [{ ...modelPlan().objects[0], kind: 'chair' }] },
     { ...modelPlan(), objects: [{ ...modelPlan().objects[0], position: [0, -1, 0] }] },
     { ...modelPlan(), objects: [{ ...modelPlan().objects[0], rotation: [0, 90, 0] }] },

@@ -17,6 +17,7 @@ import { createTheatreSceneGraph } from '../theatre/new-production'
 import { bindRehearsalScene } from './authority'
 import { DiaConversation } from './conversation-controller'
 import { groundLanguage } from './language-grounding'
+import { parseOpenLanguage } from './open-language'
 import { compileStageProposalPreview } from './stage-proposal-runtime'
 import { STAGE_PROPOSAL_CASES, stageProposalEvalContext } from './stage-proposal-test-fixture'
 
@@ -283,11 +284,32 @@ test('C. Dia routes Knowledge through Ghost, Cancel and one-transaction Accept',
   await queue
   clearSceneHistory()
   const dia = new DiaConversation(sceneId, () => null, undefined, false)
+  const originalFetch = globalThis.fetch
+  let providerCalls = 0
+  // Production confirms non-camera language through this contract; no live provider is used here.
+  globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+    expect(url).toBe('/api/dia/ground')
+    providerCalls++
+    const request = JSON.parse(String(init?.body))
+    const grounding = parseOpenLanguage(request.rawUtterance)
+    expect(grounding).not.toBeNull()
+    return Response.json({
+      requestId: crypto.randomUUID(),
+      grounding,
+      provider: 'openai',
+      model: 'mock-provider-not-live',
+    })
+  }) as typeof fetch
   let commits = 0
   const stopCounter = subscribeSceneCommits(() => commits++)
   try {
     await dia.load()
     await dia.send('把二号台块叠在一号台块上。')
+    expect(providerCalls).toBe(1)
+    expect(dia.buildProposal()?.groundingProvider).toEqual({
+      provider: 'openai',
+      model: 'mock-provider-not-live',
+    })
     expect(dia.buildProposal()?.knowledgeProposal?.actions[0]?.type).toBe('stack_on')
     const originalPlan = structuredClone(dia.buildProposal()!.plan)
     const editedPlan = structuredClone(originalPlan)
@@ -321,6 +343,7 @@ test('C. Dia routes Knowledge through Ghost, Cancel and one-transaction Accept',
     useScene.temporal.getState().redo()
     expect(JSON.stringify(useScene.getState().nodes)).toBe(accepted)
   } finally {
+    globalThis.fetch = originalFetch
     dia.dispose()
     stopCounter()
     stopJournal()

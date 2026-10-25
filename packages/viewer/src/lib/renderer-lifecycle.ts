@@ -15,6 +15,10 @@ export function createRendererLifecycle() {
     candidate.dispose()
   }
 
+  function isActive(): boolean {
+    return attached && (!renderer || !disposed.has(renderer))
+  }
+
   return {
     attach() {
       if (!renderer || !disposed.has(renderer)) attached = true
@@ -35,8 +39,9 @@ export function createRendererLifecycle() {
       renderer = candidate
       return true
     },
-    isActive(): boolean {
-      return attached && (!renderer || !disposed.has(renderer))
+    isActive,
+    runIfActive(operation: () => void): void {
+      if (isActive()) operation()
     },
   }
 }

@@ -3,7 +3,7 @@
 // Node registry bootstrap is loaded once at the root via
 // `<ClientBootstrap>` in the scene route — no per-component side-effect
 // import here.
-import { SiteNode, useScene } from '@pascal-app/core'
+import { acquireSceneReadOnlyLease, SiteNode, useScene } from '@pascal-app/core'
 import {
   applySceneGraphToEditor,
   Editor,
@@ -13,11 +13,13 @@ import {
 } from '@pascal-app/editor'
 import { NeutralRenderEnvironment, StableRenderMode, ViewerErrorBoundary } from '@pascal-app/viewer'
 import dynamic from 'next/dynamic'
-import { useSearchParams } from 'next/navigation'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { BETA_EXPERT_MEDIA_ENABLED, BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
+import { apiGraphSchema } from '@/lib/graph-schema'
+import { createSceneCopy } from '@/lib/scene-backup'
 import { bindRehearsalScene, clearProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import { SceneJournal } from '@/lib/scene-journal'
 import { type PersistedSceneGraph, sceneGraphSignature } from '@/lib/scene-signature'
@@ -28,6 +30,7 @@ import { validateCameraProject } from './camera-studio/model'
 import { CameraPersistence } from './camera-studio/persistence'
 import { DiaDock } from './dia-dock'
 import { PhotoStageReference } from './photo-stage-reference'
+import { SceneBackupControls } from './scene-backup-controls'
 import { StageCommandRuntime } from './stage-entry/runtime'
 import { useAudienceCover } from './use-audience-cover'
 
@@ -145,6 +148,7 @@ function isLightPreviewQuery(searchParams: URLSearchParams): boolean {
 }
 
 export function SceneLoader({ initialScene, meta, modelConfigured = false }: SceneLoaderProps) {
+  const router = useRouter()
   const [stableMode, setStableMode] = useState(true)
   useEffect(() => {
     try {
@@ -153,9 +157,17 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
       /* Default remains stable. */
     }
   }, [])
-  const journal = useMemo(() => new SceneJournal(meta.id, meta.ownerId), [meta.id, meta.ownerId])
+  const journalRef = useRef<{ key: string; journal: SceneJournal } | null>(null)
+  const journalKey = JSON.stringify([meta.id, meta.ownerId])
+  if (journalRef.current?.key !== journalKey)
+    journalRef.current = { key: journalKey, journal: new SceneJournal(meta.id, meta.ownerId) }
+  const journal = journalRef.current.journal
   const needsRecoverySync = useRef(false)
   const syncConflict = useRef(false)
+  const recovering = useRef(false)
+  const [recoveryBusy, setRecoveryBusy] = useState(false)
+  const [recoveryError, setRecoveryError] = useState<string | null>(null)
+  const [serverRecoveryRequested, setServerRecoveryRequested] = useState(false)
   useEffect(
     () =>
       bindRehearsalScene(meta.id, async () => {
@@ -178,18 +190,8 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
     group === 'rehearse' &&
     ['observe', 'record', 'camera-rehearsal'].includes(activePanel)
   const searchParams = useSearchParams()
-  const initialWorkspace = useRef(searchParams.get('workspace'))
-  useEffect(() => {
-    if (
-      initialWorkspace.current === 'remount' ||
-      initialWorkspace.current === 'set' ||
-      initialWorkspace.current === 'rehearse'
-    ) {
-      const workspace = initialWorkspace.current
-      initialWorkspace.current = null
-      onGroupChange(workspace)
-    }
-  }, [onGroupChange])
+  const workspace = searchParams.get('workspace')
+  const appliedWorkspace = useRef<string | null>(null)
   const versionRef = useRef(meta.version)
   const loadedMetaKeyRef = useRef<string | null>(null)
   const localDirtyRef = useRef(false)
@@ -204,6 +206,18 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   const [saveError, setSaveError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [stageReady, setStageReady] = useState(false)
+  useEffect(() => {
+    // The editor restores its persisted sidebar during load; the explicit URL wins afterward.
+    if (!stageReady || loadedMetaKeyRef.current !== `${meta.id}:${meta.version}`) return
+    const key = JSON.stringify([meta.id, workspace])
+    if (appliedWorkspace.current === key) return
+    if (workspace === 'remount' || workspace === 'set' || workspace === 'rehearse') {
+      onGroupChange(workspace)
+      if (useEditor.getState().activeSidebarPanel !== (workspace === 'remount' ? 'remount' : 'items'))
+        return
+    }
+    appliedWorkspace.current = key
+  }, [stageReady, meta.id, meta.version, workspace, onGroupChange])
   const { onThumbnailCapture, scheduleCover } = useAudienceCover({
     sceneId: meta.id,
     ready: stageReady && !conflict,
@@ -230,6 +244,38 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
     link.click()
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }, [meta.id])
+  const resolveConflict = async (useServer: boolean) => {
+    if (recovering.current || (useServer && !serverRecoveryRequested)) return
+    recovering.current = true
+    setRecoveryBusy(true)
+    setRecoveryError(null)
+    const release = acquireSceneReadOnlyLease()
+    try {
+      const graph = JSON.parse(sceneGraphSignature(useScene.getState())) as SceneGraph
+      const copyPath = await createSceneCopy(graph, `${document?.production.name ?? meta.name}（本机副本）`)
+      if (sceneGraphSignature(useScene.getState()) !== sceneGraphSignature(graph))
+        throw new Error('本机舞台在备份期间发生变化，副本已保存；请重新处理版本冲突。')
+      if (!useServer) {
+        router.push(copyPath)
+        return
+      }
+      const response = await fetch(`/api/scenes/${meta.id}`, { cache: 'no-store', signal: AbortSignal.timeout(10_000) })
+      if (!response.ok) throw new Error(`读取服务器版本失败（${response.status}），本机记录仍保留。`)
+      const stored = (await response.json()) as { graph: unknown; version: number }
+      const checked = apiGraphSchema.safeParse(stored.graph)
+      if (!checked.success || !Number.isSafeInteger(stored.version) || stored.version < 1)
+        throw new Error('服务器版本无法读取，本机记录仍保留。')
+      await journal.acceptServer(checked.data as SceneGraph, stored.version)
+      window.location.reload()
+    } catch (reason) {
+      setRecoveryError(reason instanceof Error ? reason.message : '版本处理失败，本机记录仍保留。')
+    } finally {
+      release()
+      recovering.current = false
+      setRecoveryBusy(false)
+      setServerRecoveryRequested(false)
+    }
+  }
   useEffect(() => {
     if (stageReady && needsRecoverySync.current) {
       needsRecoverySync.current = false
@@ -250,6 +296,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
     lastRemoteGraphJsonRef.current = null
     applyingRemoteRef.current = false
     setConflict(false)
+    setServerRecoveryRequested(false)
     setSaveError(null)
     setStageReady(false)
   }, [sceneLoadKey, meta.version, meta.nodeCount])
@@ -421,6 +468,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
     const source = new EventSource(`/api/scenes/${meta.id}/events`)
 
     source.addEventListener('scene', (event) => {
+      if (recovering.current) return
       let payload: LiveSceneEvent
       try {
         payload = JSON.parse((event as MessageEvent<string>).data) as LiveSceneEvent
@@ -489,24 +537,63 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
             >
               <h2 className="font-semibold text-sm">此场景已在其他窗口更新</h2>
               <p className="mt-1 text-muted-foreground text-xs">
-                本机事务已保留，同步已暂停。请导出本机版本备份后处理差异；重新打开仍会恢复本机事务。
+                本机事务已保留，同步已暂停。可另存本机版本；使用服务器版本前也会自动保存本机副本。
               </p>
-              <div className="mt-3 flex items-center gap-2">
+              {recoveryError && <p role="alert" className="mt-2 text-destructive text-xs">{recoveryError}</p>}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <button
                   className="rounded-md border border-border bg-accent px-3 py-1.5 font-medium text-xs hover:bg-accent/80"
                   onClick={exportBackup}
+                  disabled={recoveryBusy}
                   type="button"
                 >
                   导出本机版本
                 </button>
                 <button
                   className="rounded-md border border-border bg-background px-3 py-1.5 font-medium text-xs hover:bg-accent/40"
-                  onClick={() => setConflict(false)}
+                  onClick={() => resolveConflict(false)}
+                  disabled={recoveryBusy || serverRecoveryRequested}
                   type="button"
                 >
-                  关闭提示
+                  保留本机为新剧目
+                </button>
+                <button
+                  className="rounded-md border border-border bg-background px-3 py-1.5 font-medium text-xs hover:bg-accent/40"
+                  onClick={() => {
+                    setRecoveryError(null)
+                    setServerRecoveryRequested(true)
+                  }}
+                  disabled={recoveryBusy || serverRecoveryRequested}
+                  type="button"
+                >
+                  使用服务器版本
                 </button>
               </div>
+              {serverRecoveryRequested && (
+                <div role="group" aria-label="确认使用服务器版本" className="mt-3">
+                  <p className="text-xs">
+                    将先把当前本机版本保存为独立副本，再打开服务器版本。原服务器内容不会被覆盖；副本保存失败时，本机记录仍会保留。
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      className="rounded-md border border-border bg-accent px-3 py-1.5 font-medium text-xs"
+                      onClick={() => resolveConflict(true)}
+                      disabled={recoveryBusy}
+                      type="button"
+                    >
+                      确认保留副本并使用服务器版本
+                    </button>
+                    <button
+                      className="rounded-md border border-border bg-background px-3 py-1.5 font-medium text-xs"
+                      onClick={() => setServerRecoveryRequested(false)}
+                      disabled={recoveryBusy}
+                      type="button"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {saveError && !conflict && (
@@ -552,6 +639,11 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                     }[saveStatus]
                   }
                 </span>
+                <SceneBackupControls
+                  sceneName={document?.production.name ?? meta.name}
+                  onExport={exportBackup}
+                  disabled={!stageReady || recoveryBusy}
+                />
               </>
             }
           />

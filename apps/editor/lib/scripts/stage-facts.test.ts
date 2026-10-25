@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { parseStageText, type StagePlan, StagePlanSchema } from '@pascal-app/core/stage'
+import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { planFromPassages, type ScriptModelPlanner } from './script-planner'
 import {
   chunkStagePassages,
@@ -103,7 +104,7 @@ describe('script physical fact selection and merge', () => {
     const resolved = resolveScriptQuestions(merged, [{ questionId, answer: '采用前一处描述' }])
     expect(resolved.questions).toHaveLength(0)
     expect(resolved.items).toHaveLength(1)
-    expect(resolved.items[0]?.dimensionsMeters.width).toBe(2)
+    expect(resolved.items[0]?.dimensionsMeters.width).toBe(first.items[0]!.dimensionsMeters.width)
     expect(merged.items).toHaveLength(2)
   })
 
@@ -135,8 +136,28 @@ describe('script planner', () => {
       }))
     expect(geometry(pdf)).toEqual(geometry(docx))
     expect(pdf.venue?.widthMeters).toBe(8)
-    for (const [index, x] of [0, 1.9, 2.95].entries())
+    for (const [index, x] of [0, 1.825].entries())
       expect(pdf.items[index]?.transform.position.x).toBeCloseTo(x, 8)
+    expect(pdf.questions).toMatchObject([{ id: 'kind-3', options: ['单门景片', '双门景片'] }])
+    const answered = await planFromPassages(
+      [passage()],
+      signal(),
+      { priorAnswers: [{ questionId: 'kind-3', answer: '单门景片' }] },
+      noModel,
+    )
+    expect(answered.items).toHaveLength(3)
+    expect(answered.items[2]!.transform.position.x).toBeCloseTo(3.125, 8)
+    expect(answered.questions).toHaveLength(0)
+    for (const item of pdf.items) {
+      const installed = AVAILABLE_STAGE_SCENERY.find(
+        ({ asset }) => asset.id === item.libraryAssetId,
+      )!
+      expect(item.dimensionsMeters).toEqual({
+        width: installed.asset.dimensions![0],
+        height: installed.asset.dimensions![1],
+        depth: installed.asset.dimensions![2],
+      })
+    }
     expect(
       pdf.items.every(
         (item) =>
@@ -215,6 +236,41 @@ describe('script planner', () => {
         execute: 'deleteScene()',
       })),
     ).rejects.toThrow('可靠原文证据')
+  })
+
+  test('only installed assets matching the proposed object and standard dimensions pass evidence validation', async () => {
+    for (const mutate of [
+      (plan: StagePlan) => {
+        plan.items[0]!.libraryAssetId = 'invented-asset'
+      },
+      (plan: StagePlan) => {
+        plan.items[0]!.libraryAssetId = 'SCN-SOFA-090'
+      },
+      (plan: StagePlan) => {
+        plan.items[0]!.kind = 'chair'
+      },
+      (plan: StagePlan) => {
+        plan.items[0]!.displayName = '圆桌'
+      },
+      (plan: StagePlan) => {
+        plan.items[0]!.dimensionsMeters.width += 1
+      },
+    ]) {
+      let calls = 0
+      await expect(
+        planFromPassages([passage('舞台中央摆着双人沙发')], signal(), {}, async () => {
+          calls++
+          const plan = oneSofa()
+          mutate(plan)
+          return plan
+        }),
+      ).rejects.toThrow('可靠原文证据')
+      expect(calls).toBe(2)
+    }
+    const plan = await planFromPassages([passage('舞台中央摆着双人沙发')], signal(), {}, async () =>
+      oneSofa(),
+    )
+    expect(plan.items[0]!.libraryAssetId).toBe('SCN-SOFA-175')
   })
 
   test('canceled work, forbidden-only scripts and unrelated prose produce no guessed stage', async () => {

@@ -3,6 +3,38 @@ import type { SceneGraph } from '@pascal-app/editor'
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb'
 import { replayScenePatch, SceneJournal, scenePatch } from './scene-journal'
 
+test('explicit server recovery replaces only its journal after backup and prevents stale queued appends', async () => {
+  const previous = globalThis.indexedDB
+  const previousRange = globalThis.IDBKeyRange
+  globalThis.indexedDB = new IDBFactory()
+  globalThis.IDBKeyRange = IDBKeyRange
+  const base = { nodes: { stage: { position: [0, 0, 0] } }, rootNodeIds: ['stage'] } as SceneGraph
+  const local = { ...base, nodes: { stage: { position: [1, 0, 0] } } } as SceneGraph
+  const remote = { ...base, nodes: { stage: { position: [-1, 0, 0] } } } as SceneGraph
+  try {
+    const journal = new SceneJournal('recover-server')
+    await journal.recover(base, 1)
+    await journal.append(local)
+    expect((await journal.recover(remote, 2)).conflict).toBe(true)
+    await journal.acceptServer(remote, 2)
+    await expect(journal.append(local)).rejects.toThrow('正在使用服务器版本')
+    const reopened = await new SceneJournal('recover-server').recover(remote, 2)
+    expect(reopened.pending).toBe(false)
+    expect(reopened.conflict).toBe(false)
+    expect(reopened.graph.nodes).toEqual(remote.nodes)
+    const stale = new SceneJournal('recover-server')
+    await stale.recover(remote, 2)
+    const anotherWindow = new SceneJournal('recover-server')
+    await anotherWindow.recover(remote, 2)
+    await anotherWindow.append(local)
+    await expect(stale.acceptServer(remote, 2)).rejects.toThrow('另一个窗口')
+    expect((await new SceneJournal('recover-server').recover(remote, 2)).graph.nodes).toEqual(local.nodes)
+  } finally {
+    globalThis.indexedDB = previous
+    globalThis.IDBKeyRange = previousRange
+  }
+})
+
 test('journal v1 upgrade preserves pending edits and checkpoints before adding decision receipts', async () => {
   const previous = globalThis.indexedDB
   const previousRange = globalThis.IDBKeyRange

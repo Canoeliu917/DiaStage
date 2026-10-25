@@ -1,7 +1,12 @@
 import { type AnyNode, type AnyNodeDefinition, nodeRegistry, registerNode } from '@pascal-app/core'
 import { configureEditorScope, preloadRegistryAffordanceTool } from '@pascal-app/editor'
 import { stagePlugin as builtinPlugin } from '@pascal-app/nodes/stage'
+import { ktx2Loader } from '@pascal-app/viewer'
+import { useGLTF } from '@react-three/drei'
 import { centeredPropFloorplan } from './stage/rigid-floorplan'
+
+ktx2Loader.setTranscoderPath('/decoders/basis/')
+useGLTF.setDecoderPath('/decoders/draco/')
 
 configureEditorScope({
   creationTools: ['item', 'measurement', 'construction-dimension'],

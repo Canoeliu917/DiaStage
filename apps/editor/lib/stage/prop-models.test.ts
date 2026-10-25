@@ -6,15 +6,16 @@ import { useViewer } from '@pascal-app/viewer'
 import { Box3, Euler, Group, Quaternion, Vector3 } from 'three'
 import { applyItemFoldControls } from '../../../../packages/nodes/src/item/fold-controls'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
+import manifest from '../../public/stage-library/prop-menu-manifest.json'
 import { stageContactIds } from './contacts'
 import { stageModelBelowFloor, stageModelFootprints } from './model-contact'
-import { AVAILABLE_STAGE_SCENERY, STAGE_PROP_MENU } from './prop-assets'
+import { AVAILABLE_STAGE_SCENERY } from './prop-assets'
 import { centeredPropFloorplan } from './rigid-floorplan'
 import { rigidRotation, stageManipulationCenter } from './rigid-rotation'
 
 test('all approved GLBs load with their real dimensions, authored pivots, hierarchy and matte materials', async () => {
   let sourceParts = 0
-  for (const entry of STAGE_PROP_MENU.assets) {
+  for (const entry of manifest.assets) {
     const bytes = readFileSync(
       new URL(`../../public/stage-library/${entry.model}`, import.meta.url),
     )

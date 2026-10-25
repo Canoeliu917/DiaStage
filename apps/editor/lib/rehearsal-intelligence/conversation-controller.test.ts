@@ -414,6 +414,11 @@ test('reopening after an external stage edit marks old proposals stale without r
 
 test('Dia View commands preserve the waiting-human proposal and never write the formal scene or journal', async () => {
   const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
+  const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window')
+  const windowEvents = new EventTarget()
+  let viewsChanged = 0
+  windowEvents.addEventListener('diastage:views-changed', () => viewsChanged++)
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: windowEvents })
   const values = new Map<string, string>()
   Object.defineProperty(globalThis, 'localStorage', {
     configurable: true,
@@ -458,6 +463,7 @@ test('Dia View commands preserve the waiting-human proposal and never write the 
     await controller.send('视角往左转一点')
     await controller.send('保存当前视角为全景')
     await controller.send('召回视角全景')
+    expect(viewsChanged).toBe(1)
     expect(applications).toBe(2)
     expect(writes).toBe(0)
     expect(useScene.getState().nodes).toBe(before)
@@ -471,5 +477,7 @@ test('Dia View commands preserve the waiting-human proposal and never write the 
   } finally {
     if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor)
     else Reflect.deleteProperty(globalThis, 'localStorage')
+    if (windowDescriptor) Object.defineProperty(globalThis, 'window', windowDescriptor)
+    else Reflect.deleteProperty(globalThis, 'window')
   }
 })

@@ -6,6 +6,7 @@ import {
   type SceneContextSummary,
   stageFootprintGap,
 } from '@pascal-app/core/stage'
+import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { applyItemFoldControls } from '@pascal-app/nodes'
 import { Group, Mesh } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
@@ -285,8 +286,10 @@ test('folding panels may touch outer boundaries without falsely reporting full f
 
 test('single, double and triple scenic flats share magnetic outer-edge alignment', async () => {
   const assetIds = ['SCN-FLAT-090', 'SCN-FOLD-02', 'SCN-FOLD-03'] as const
-  const assets = assetIds.map(
-    (assetId) => AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === assetId)!.asset,
+  const assets = assetIds.map((assetId) =>
+    assetId === 'SCN-FLAT-090'
+      ? CATALOG_ITEMS.find((asset) => asset.id === assetId)!
+      : AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === assetId)!.asset,
   )
   const models = await Promise.all(
     assets.map(async (asset) => {

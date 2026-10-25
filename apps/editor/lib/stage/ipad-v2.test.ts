@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test'
 import { ItemNode, useScene } from '@pascal-app/core'
 import { prepareStageCollision, type SceneContextObject } from '@pascal-app/core/stage'
+import { currentDiaAppContext } from '../rehearsal-intelligence/dia-app-context'
 import {
   openGroundingPlacement,
   parseOpenLanguage,
@@ -52,6 +53,7 @@ for (const phrase of [
       sceneVersion: 'v1',
       proposal: null,
       lastReferencedIds: [],
+      app: currentDiaAppContext(),
     })
     const mapped = openGroundingPlacement(resolved, scene)
     if ('type' in mapped) throw new Error('expected placement')
@@ -106,14 +108,14 @@ test('lateral platform drag snaps side-to-side without selecting the top support
   expect(result.position.y).toBe(0)
   expect(result.labels).toContain('贴合 a')
 })
-test('all 22 library assets: single Euler component, 30 degree default and stage floor clamp without writes', () => {
+test('all 21 selectable library assets: single Euler component, 30 degree default and stage floor clamp without writes', () => {
   const previous = useScene.getState()
   const graph = createTheatreSceneGraph()
   useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
   const initialNodes = useScene.getState().nodes
   const level = Object.values(graph.nodes).find((node) => node.type === 'level')!
   try {
-    expect(AVAILABLE_STAGE_SCENERY).toHaveLength(22)
+    expect(AVAILABLE_STAGE_SCENERY).toHaveLength(21)
     expect(STAGE_ROTATION_STEP).toBeCloseTo(Math.PI / 6)
     for (const entry of AVAILABLE_STAGE_SCENERY) {
       const node = ItemNode.parse({
@@ -162,6 +164,7 @@ test('wider partial enclosure keeps the current stage-left flat fixed', () => {
     sceneVersion: 'v1',
     proposal: null,
     lastReferencedIds: [],
+    app: currentDiaAppContext(),
   })
   const mapped = openGroundingPlacement(resolved, scene)
   if ('type' in mapped) throw new Error('expected placement')

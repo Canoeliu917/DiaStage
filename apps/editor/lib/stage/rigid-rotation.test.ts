@@ -181,7 +181,7 @@ for (const axis of ['x', 'z'] as const) {
 
   test(`1m library item ${axis} tilt preserves the model centre without automatic floor correction`, () => {
     const asset = {
-      ...SCENERY_LIBRARY[0]!.asset,
+      ...SCENERY_LIBRARY.find((entry) => entry.asset.id === 'SCN-CUBE-045')!.asset,
       dimensions: [1, 1, 1] as [number, number, number],
       boundsCenter: [0, 0.5, 0] as [number, number, number],
     }

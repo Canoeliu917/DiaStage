@@ -9,7 +9,12 @@ import {
 import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import manifest from '../../public/stage-library/prop-menu-manifest.json'
 
-export const STAGE_PROP_MENU = manifest
+const selectableAssets = manifest.assets.filter((asset) => asset.id !== 'SCN-FLAT-090')
+export const STAGE_PROP_MENU = {
+  ...manifest,
+  asset_count: selectableAssets.length,
+  assets: selectableAssets,
+}
 
 export function stagePropAssetUrl(relativePath: string): string {
   return `/stage-library/${relativePath}`
@@ -17,7 +22,9 @@ export function stagePropAssetUrl(relativePath: string): string {
 
 export type SceneryLibraryItem = { kind: StageItemKind; asset: AssetInput }
 
-export const AVAILABLE_STAGE_SCENERY: SceneryLibraryItem[] = CATALOG_ITEMS.map((asset) => ({
+export const AVAILABLE_STAGE_SCENERY: SceneryLibraryItem[] = CATALOG_ITEMS.filter((asset) =>
+  STAGE_PROP_MENU.assets.some((entry) => entry.id === asset.id),
+).map((asset) => ({
   kind: STAGE_OBJECT_REGISTRY.find((entry) => entry.canonicalId === asset.id)!.kind,
   asset,
 }))
@@ -28,7 +35,7 @@ export function stagePropCollisionGeometry(
   assetId: string | null,
   dimensions: StageDimensions,
 ): StageCollisionGeometry | undefined {
-  const asset = AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === assetId)?.asset
+  const asset = CATALOG_ITEMS.find((entry) => entry.id === assetId)
   if (!asset) return undefined
   const size = [dimensions.width, dimensions.height, dimensions.depth]
   const offset = asset.boundsCenter!.map(

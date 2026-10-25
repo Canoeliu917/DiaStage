@@ -79,3 +79,49 @@ test('repeated detach and track calls dispose once, including completion before 
   lifecycle.attach()
   assert.equal(lifecycle.isActive(), false, 'a disposed renderer cannot be revived')
 })
+
+test('queued frame work cannot resize or advance a detached or disposed renderer', async () => {
+  const lifecycle = createRendererLifecycle()
+  const owned = resource()
+  lifecycle.track(owned.renderer)
+  let resizes = 0
+  let frames = 0
+  const queuedFrame = () =>
+    lifecycle.runIfActive(() => {
+      resizes++
+      frames++
+    })
+  queuedFrame()
+  assert.deepEqual([resizes, frames], [1, 1])
+  lifecycle.detach()
+  queuedFrame()
+  assert.deepEqual([resizes, frames], [1, 1], 'detach stops work before disposal runs')
+  await Promise.resolve()
+  assert.equal(owned.disposals(), 1)
+  queuedFrame()
+  lifecycle.attach()
+  queuedFrame()
+  assert.deepEqual(
+    [resizes, frames],
+    [1, 1],
+    'disposed owners cannot run late rAF, timer or focus work',
+  )
+})
+
+test('StrictMode reattachment resumes frame work and live frame errors are not swallowed', () => {
+  const lifecycle = createRendererLifecycle()
+  const owned = resource()
+  lifecycle.track(owned.renderer)
+  lifecycle.detach()
+  lifecycle.attach()
+  let frames = 0
+  lifecycle.runIfActive(() => frames++)
+  assert.equal(frames, 1)
+  assert.throws(
+    () =>
+      lifecycle.runIfActive(() => {
+        throw new Error('render failed')
+      }),
+    /render failed/,
+  )
+})

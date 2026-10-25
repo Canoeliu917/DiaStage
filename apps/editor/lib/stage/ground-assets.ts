@@ -23,7 +23,9 @@ export function groundStageAssets(
       result.questions.push({
         id: `object-type-${item.proposalId}`,
         message: `“${item.displayName}”没有唯一规范物品，请明确物品名称。`,
-        options: STAGE_OBJECT_REGISTRY.filter((spec) => spec.kind === item.kind)
+        options: STAGE_OBJECT_REGISTRY.filter(
+          (spec) => spec.kind === item.kind && availableAssetIds.includes(spec.canonicalId),
+        )
           .map((spec) => spec.displayName)
           .slice(0, 6),
       })
@@ -65,9 +67,16 @@ export function groundStageAssets(
       result.questions.push({
         id,
         message: spec
-          ? `${spec.displayName}的规范模型尚未接入，请先接入资源包。`
+          ? AVAILABLE_STAGE_ASSET_IDS.includes(spec.canonicalId)
+            ? `${spec.displayName}的规范模型尚未接入，请先接入资源包。`
+            : `${spec.displayName}当前不在可选舞台库中，请选择其他布景。`
           : `“${item.displayName}”对应多个规范物品，请明确类型。`,
-        options: spec ? [] : specs.map((candidate) => candidate.displayName).slice(0, 6),
+        options: spec
+          ? []
+          : specs
+              .filter((candidate) => availableAssetIds.includes(candidate.canonicalId))
+              .map((candidate) => candidate.displayName)
+              .slice(0, 6),
       })
   }
   result.items = result.items.filter((item) => !removed.has(item.proposalId))

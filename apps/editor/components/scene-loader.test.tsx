@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import type { SaveStatus, SceneGraph } from '@pascal-app/editor'
 
 if (!process.env.SCENE_LOADER_SAVE_TEST) {
-  test('scene saving rejects failures, retains conflicts and retries only persisted data', () => {
+  test('scene loading honors workspace entry and keeps saves recoverable', () => {
     const child = spawnSync(process.execPath, ['run', fileURLToPath(import.meta.url)], {
       env: { ...process.env, SCENE_LOADER_SAVE_TEST: '1' },
       encoding: 'utf8',
@@ -19,6 +19,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const { BlockNode, SiteNode } = await import('@pascal-app/core/schema')
   const { createTheatreDocument } = await import('../lib/theatre/schema')
   const { sceneGraphSignature } = await import('../lib/scene-signature')
+  const { validateBuildJson } = await import('../../../packages/core/src/validation/validate-build-json')
   let displayedDocument: ReturnType<typeof createTheatreDocument> | null = null
   const site = SiteNode.parse({ id: 'site_save', name: '排演', metadata: { existing: 'retain' } })
   const prop = BlockNode.parse({ id: 'block_letter', name: '信', position: [1, 0, 3] })
@@ -35,11 +36,19 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   let hooks: unknown[] = []
   let effects: (() => void)[] = []
   let forceEffects = false
+  let forgetMemo = false
   let metaVersion = 7
+  let workspaceQuery = ''
+  let panelOpeningAllowed = true
+  const editorState = { activeSidebarPanel: 'theatre-roles' }
   let exports = 0,
     retries = 0
+  let reloads = 0
+  const navigations: string[] = []
   const windowEvents = Object.assign(new EventTarget(), {
     document: { createElement: () => ({ click: () => exports++ }) },
+    confirm: () => { throw new Error('server recovery must use the in-page confirmation') },
+    location: { reload: () => reloads++ },
   })
   windowEvents.addEventListener('scene:retry-save', () => retries++)
   Object.assign(globalThis, { window: windowEvents })
@@ -79,6 +88,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     clearProposalGhost: () => {
       proposalInvalidations++
     },
+    observeRehearsalFeedback: () => () => {},
   }))
   const requests: { url: string; init: RequestInit }[] = []
   const coverRequests: { version: number; signature: string }[] = []
@@ -99,7 +109,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     useMemo: <T,>(factory: () => T, deps: unknown[]) => {
       const index = hookIndex++
       const previous = hooks[index] as { deps: unknown[]; value: T } | undefined
-      if (!previous || deps.some((dep, i) => !Object.is(dep, previous.deps[i])))
+      if (forgetMemo || !previous || deps.some((dep, i) => !Object.is(dep, previous.deps[i])))
         hooks[index] = { deps: [...deps], value: factory() }
       return (hooks[index] as { value: T }).value
     },
@@ -132,6 +142,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   }))
   mock.module('@pascal-app/core', () => ({
     SiteNode,
+    validateBuildJson,
+    acquireSceneReadOnlyLease: () => () => {},
     useScene: { getState: () => liveGraph },
     useLiveTransforms: {
       getState: () => ({ transforms: new Map([[prop.id, { position: transientPosition }]]) }),
@@ -140,8 +152,11 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   mock.module('@pascal-app/editor', () => ({
     Editor,
     useSidebarStore: { getState: () => ({ isCollapsed: false, setIsCollapsed: () => {} }) },
-    useEditor: (select: (state: { activeSidebarPanel: string }) => unknown) =>
-      select({ activeSidebarPanel: 'theatre-roles' }),
+    useEditor: Object.assign(
+      (select: (state: typeof editorState) => unknown) => select(editorState),
+      { getState: () => editorState },
+    ),
+    useIsMobile: () => false,
     applySceneGraphToEditor: (graph: SceneGraph) => {
       applied.push(graph)
       liveGraph = graph
@@ -154,14 +169,20 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     ViewerErrorBoundary: empty,
   }))
   let recoveryPending = false
+  let journalInstances = 0
+  const serverAccepts: { graph: SceneGraph; version: number }[] = []
   mock.module('../lib/scene-journal', () => ({
     SceneJournal: class {
+      loaded = false
+      constructor() { journalInstances++ }
       async recover(graph: SceneGraph) {
+        this.loaded = true
         return { graph, pending: recoveryPending, conflict: false }
       }
-      async append() {}
+      async append() { if (!this.loaded) throw new Error('本机日志尚未加载') }
       async acknowledge() {}
       async assertCurrent() {}
+      async acceptServer(graph: SceneGraph, version: number) { serverAccepts.push({ graph, version }) }
     },
   }))
   mock.module('next/navigation', () => ({
@@ -169,18 +190,18 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
       refresh: () => {
         throw new Error('conflicts must not discard local data by refreshing')
       },
-      push: () => {},
+      push: (path: string) => navigations.push(path),
     }),
-    useSearchParams: () => new URLSearchParams(),
-  }))
-  mock.module('./studio-sidebar', () => ({
-    useStudioSidebar: () => ({ group: 'director', onGroupChange: () => {}, sidebarTabs: [] }),
+    useSearchParams: () => new URLSearchParams(workspaceQuery),
   }))
   mock.module('./theatre/state', () => ({
     useTheatreDocument: () => ({ document: displayedDocument, error: null }),
   }))
   mock.module('../lib/theatre/scene-adapter', () => ({
     THEATRE_METADATA_KEY: 'diastageTheatre',
+    assertTheatreWritable: () => {},
+    stageFloorUpdates: () => [],
+    parseSnapshot: (graph: SceneGraph) => graph,
   }))
   const componentModules = {
     // Save/revision behavior is independent of placement, command execution and selection UI.
@@ -199,13 +220,21 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     './theatre/scene-visibility': ['SceneLayersRuntime'],
     './remount-preview-system': ['RemountPreviewSystem'],
     './stage-overview-panel': ['StageOverviewPanel'],
-    './studio-navigation': ['StudioNavigation'],
+    './scene-backup-controls': ['SceneBackupControls'],
     './theatre/runtime': ['RehearsalTransport', 'TheatreFloorplan', 'TheatreRuntime'],
     './viewer-toolbar': ['EditorViewerToolbarLeft', 'EditorViewerToolbarRight'],
   }
   for (const [path, names] of Object.entries(componentModules)) {
     mock.module(path, () => Object.fromEntries(names.map((name) => [name, empty])))
   }
+  mock.module('./studio-navigation', () => ({
+    StudioNavigation: empty,
+    openStudioPanel: (panel: string) => {
+      if (!panelOpeningAllowed) return false
+      editorState.activeSidebarPanel = panel
+      return true
+    },
+  }))
   globalThis.fetch = async (url, init = {}) => {
     requests.push({ url: String(url), init })
     return respond()
@@ -214,6 +243,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   type Element = { type?: unknown; props?: Record<string, unknown> }
   type EditorProps = {
     onLoad: () => Promise<SceneGraph>
+    onLocalSave: (graph: SceneGraph) => Promise<void>
     onLoaderChange: (visible: boolean) => void
     onSave: (graph: SceneGraph, options?: { keepalive?: boolean }) => Promise<void>
     onSaveStatusChange: (status: SaveStatus) => void
@@ -261,7 +291,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
       (node) => node.type === 'button' && node.props?.children === label,
     )?.props?.onClick
     assert.equal(typeof action, 'function', `missing action: ${label}`)
-    ;(action as () => void)()
+    return (action as () => void | Promise<void>)()
   }
   function status() {
     return elements(render().navigation?.actions).find((node) => node.props?.role === 'status')
@@ -289,7 +319,45 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     }
   const matchVersion = (index: number) => new Headers(requests[index]?.init.headers).get('If-Match')
 
+  for (const [previousPanel, workspace, expectedPanel] of [
+    ['remount', 'set', 'items'],
+    ['items', 'remount', 'remount'],
+  ] as const) {
+    hooks = []
+    workspaceQuery = `workspace=${workspace}`
+    editorState.activeSidebarPanel = previousPanel
+    const loading = render()
+    editorState.activeSidebarPanel = previousPanel
+    panelOpeningAllowed = false
+    loading.props.onLoaderChange(false)
+    render()
+    assert.equal(editorState.activeSidebarPanel, previousPanel)
+    panelOpeningAllowed = true
+    render()
+    const ready = render()
+    assert.equal(ready.navigation?.group, workspace, 'the URL workspace wins after layout hydration')
+    assert.equal(editorState.activeSidebarPanel, expectedPanel, 'the sidebar opens the requested workspace')
+    const otherWorkspace = workspace === 'set' ? 'remount' : 'set'
+    const changeGroup = ready.navigation?.onGroupChange as (group: string) => void
+    changeGroup(otherWorkspace)
+    render()
+    assert.equal(render().navigation?.group, otherWorkspace, 'a consumed URL does not override later manual navigation')
+  }
+  hooks = []
+  workspaceQuery = ''
+  editorState.activeSidebarPanel = 'remount'
+  render().props.onLoaderChange(false)
+  render()
+  assert.equal(render().navigation?.group, 'remount', 'entry without a workspace keeps the saved preference')
+  hooks = []
+  editorState.activeSidebarPanel = 'theatre-roles'
+
   await render().props.onLoad()
+  const initializedJournalCount = journalInstances
+  forgetMemo = true
+  await render().props.onLocalSave(initialScene)
+  forgetMemo = false
+  assert.equal(journalInstances, initializedJournalCount, 'Fast Refresh must retain the initialized journal when the scene and account are unchanged')
   liveGraph.nodes[prop.id] = { ...prop, slots: { body: 'library:metal-steel' } }
   render().props.onLoaderChange(false)
   assert.deepEqual(
@@ -582,5 +650,45 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     'invalid theatre metadata remains preserved for recovery',
   )
   assert.equal(render().navigation?.sceneName, '排演')
+  hooks = []
+  liveGraph = structuredClone(initialScene)
+  await render().props.onLoad()
+  render().props.onDirty()
+  sources.at(-1)!.scene(99, dirtyGraph)
+  const beforeCancelled = requests.length
+  await click('使用服务器版本')
+  assert.equal(requests.length, beforeCancelled, 'opening the in-page confirmation writes nothing')
+  assert.ok(render().nodes.some((node) => node.props?.children === '确认保留副本并使用服务器版本'))
+  await click('取消')
+  assert.equal(requests.length, beforeCancelled, 'cancelled server recovery writes nothing')
+  assert.equal(serverAccepts.length, 0)
+  assert.deepEqual(liveGraph, initialScene, 'cancelling retains the local stage')
+  assert.ok(!render().nodes.some((node) => node.props?.children === '确认保留副本并使用服务器版本'))
+  respond = async () => new Response(null, { status: 500 })
+  await click('使用服务器版本')
+  assert.equal(requests.length, beforeCancelled, 'a second opening still requires an explicit confirm')
+  await click('确认保留副本并使用服务器版本')
+  assert.equal(serverAccepts.length, 0, 'failed local backup cannot clear the journal')
+  assert.equal(reloads, 0)
+  assert.deepEqual(liveGraph, initialScene)
+  let recoveryCall = 0
+  respond = async () => ++recoveryCall === 1
+    ? Response.json({ id: 'kept-local' }, { status: 201 })
+    : Response.json({ graph: dirtyGraph, version: 99 })
+  const beforeRecovery = requests.length
+  await click('使用服务器版本')
+  assert.equal(requests.length, beforeRecovery, 'no backup request is sent until explicit confirmation')
+  await click('确认保留副本并使用服务器版本')
+  assert.equal(requests[beforeRecovery]?.url, '/api/scenes')
+  assert.equal(requests[beforeRecovery]?.init.method, 'POST')
+  assert.deepEqual(sentGraph(beforeRecovery).graph, initialScene, 'the local snapshot is saved as an independent scene first')
+  assert.equal(serverAccepts.length, 1)
+  assert.equal(serverAccepts[0]?.version, 99)
+  assert.deepEqual(serverAccepts[0]?.graph.nodes, dirtyGraph.nodes)
+  assert.equal(reloads, 1, 'explicit server choice reloads only after the backup and journal replacement succeed')
+  respond = async () => Response.json({ id: 'my-local-version' }, { status: 201 })
+  await click('保留本机为新剧目')
+  assert.equal(navigations.at(-1), '/scene/my-local-version')
+  assert.equal(serverAccepts.length, 1, 'keeping the local copy does not alter the source journal')
   for (const source of sources) source.close()
 }

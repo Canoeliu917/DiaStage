@@ -9,6 +9,7 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { validateStagePlan } from '@pascal-app/core/stage'
+import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { Group } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
@@ -32,7 +33,10 @@ async function setup(assets: string[]) {
     }
   const ids: string[] = []
   for (const [index, assetId] of assets.entries()) {
-    const source = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
+    const source =
+      assetId === 'SCN-FLAT-090'
+        ? { asset: CATALOG_ITEMS.find((asset) => asset.id === assetId)!, kind: 'scenic-flat' }
+        : AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
     const node = ItemNode.parse({
       parentId: level.id,
       asset: source.asset,

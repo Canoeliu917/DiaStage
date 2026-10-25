@@ -69,7 +69,7 @@ import {
   type StructuredGrounding,
   validateOpenGrounding,
 } from './open-language'
-import { requestOpenGrounding } from './open-language-client'
+import { OpenGroundingRequestError, requestOpenGrounding } from './open-language-client'
 import {
   keepCurrentStageLeftFixed,
   openLanguageContext,
@@ -87,6 +87,8 @@ import {
   SYNTHETIC_DEMO_SCRIPT,
   syntheticConversationOutput,
 } from './synthetic-demo'
+
+const SERVICE_REQUEST_FAILURE_NOTICE = '服务请求未完成；已有提案保持原样，可继续手动置景。'
 
 export type DiaView = {
   thread: RehearsalThread | null
@@ -1085,7 +1087,11 @@ export class DiaConversation {
             context.performers.map((performer) => performer.name),
           )
     const reply = async (content: string, viewOnly = false) => {
-      if (viewOnly) this.store.setState({ draft: '' })
+      if (viewOnly)
+        this.store.setState((state) => ({
+          draft: '',
+          notice: state.notice === SERVICE_REQUEST_FAILURE_NOTICE ? '' : state.notice,
+        }))
       else {
         useStagePlanPreview.setState({ plan: null })
         this.store.setState({
@@ -1263,13 +1269,16 @@ export class DiaConversation {
         return true
       } catch (error) {
         signal.throwIfAborted()
+        const requestFailed = error instanceof OpenGroundingRequestError
         await reply(
-          `需要澄清：${error instanceof Error ? error.message : '这句话没有通过语义验证。'} 正式舞台未改变。`,
+          `${requestFailed ? '' : '需要澄清：'}${error instanceof Error ? error.message : '这句话没有通过语义验证。'} 正式舞台未改变。`,
           true,
         )
         this.status(
           parent?.status === 'previewed' ? 'waiting-human' : 'idle',
-          '口令未采用；已有提案保持原样，请补充明确要求。',
+          requestFailed
+            ? SERVICE_REQUEST_FAILURE_NOTICE
+            : '口令未采用；已有提案保持原样，请补充明确要求。',
         )
         await this.persist()
         return true

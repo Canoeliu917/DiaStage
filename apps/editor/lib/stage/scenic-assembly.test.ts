@@ -7,6 +7,7 @@ import {
   type SceneContextSummary,
   stageFootprintGap,
 } from '@pascal-app/core/stage'
+import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { useViewer } from '@pascal-app/viewer'
 import { Box3, BoxGeometry, Group, Mesh, MeshBasicMaterial } from 'three'
@@ -70,7 +71,13 @@ afterEach(() => {
   clearSceneHistory()
 })
 function add(assetId: string): SceneContextObject {
-  const source = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
+  const source =
+    assetId === 'SCN-FLAT-090'
+      ? {
+          asset: CATALOG_ITEMS.find((asset) => asset.id === assetId)!,
+          kind: 'scenic-flat' as const,
+        }
+      : AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
   const level = Object.values(useScene.getState().nodes).find((node) => node.type === 'level')!
   const node = ItemNode.parse({ asset: source.asset, parentId: level.id })
   useScene.getState().createNode(node)

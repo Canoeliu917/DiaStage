@@ -4,6 +4,7 @@ import {
   changeViewPose,
   executeViewCommand,
   parseViewCommand,
+  readSavedViews,
   type ViewCommand,
 } from './view-commands'
 
@@ -64,6 +65,23 @@ test('view changes preserve the target for orbit/zoom and use one pose for save/
   ).toContain('没有保存')
   expect(pose).toEqual(before)
   expect([...data.keys()]).toEqual(['diastage:view-state:v1:scene-a'])
+  expect(readSavedViews('scene-a', ports.storage)).toEqual([{ name: '全景', pose }])
+  expect(readSavedViews('scene-b', ports.storage)).toEqual([])
+})
+
+test('listing malformed saved views fails without overwriting the original data', () => {
+  for (const original of ['not-json', JSON.stringify([{ name: '全景', pose: { position: [] } }])]) {
+    let writes = 0
+    const storage = {
+      getItem: () => original,
+      setItem: () => {
+        writes++
+      },
+    }
+    expect(() => readSavedViews('scene-a', storage)).toThrow()
+    expect(writes).toBe(0)
+    expect(storage.getItem()).toBe(original)
+  }
 })
 
 test('fixed views are idempotent; unqualified rotation/zoom does not guess view vs scenery', () => {
