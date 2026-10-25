@@ -31,8 +31,7 @@ try {
 
     & $npmCommand.Source exec --yes --package=bun@1.3.14 -- bun x turbo run build '--filter=editor^...' --env-mode=loose
     if ($LASTEXITCODE -ne 0) { throw 'Dependency build failed.' }
-    Write-Host 'Open http://127.0.0.1:4318/scene/empty-table-camera after Next.js is ready.'
-    Write-Host 'First setup: run the seed command in CAMERA_STUDIO.md from another terminal.'
+    Write-Host 'Open http://127.0.0.1:4318/?lit=1 after Next.js is ready.'
     & $nodeCommand.Source node_modules/dotenv-cli/cli.js -e .env -e .env.local -e .env.defaults -- $nodeCommand.Source node_modules/next/dist/bin/next dev apps/editor --hostname=127.0.0.1 --port=4318
     if ($LASTEXITCODE -ne 0) { throw 'The development server exited with an error. Check the log above.' }
 } finally {
