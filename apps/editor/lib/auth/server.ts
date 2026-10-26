@@ -1,11 +1,15 @@
 import 'server-only'
+import { after } from 'next/server'
 import type { createAuth } from './factory'
+import { createAuthMailSenders } from './tencent-ses'
 
 let instance: ReturnType<typeof createAuth> | null = null
 
 async function getAuthContext() {
   instance ??= import('./factory')
-    .then(({ createAuth }) => createAuth())
+    .then(({ createAuth }) =>
+      createAuth({ ...(createAuthMailSenders() ?? {}), afterResponse: after }),
+    )
     .catch((error) => {
       instance = null
       throw error
@@ -18,10 +22,11 @@ export async function getAuth() {
 }
 
 export async function getSession(headers: Headers) {
-  return (await getAuth()).api.getSession({
-    headers,
-    query: { disableCookieCache: true, disableRefresh: true },
-  })
+  return (await getAuthContext()).getSession(headers)
+}
+
+export function getAuthMailEnabled() {
+  return createAuthMailSenders() !== null
 }
 
 export async function getBootstrapOwnerId(): Promise<string | null> {

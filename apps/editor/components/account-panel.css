@@ -15,6 +15,9 @@
 .dia-account-form .dia-account-note { margin: 16px 0 6px; font-size: 11px; }
 .dia-account-privacy { font-size: 11px; color: #64675e; text-underline-offset: 4px; }
 .dia-account-form .dia-account-error { margin: 0; color: #9b3333; font-size: 12px; line-height: 1.6; }
+.dia-account-form .dia-account-message { margin: 0; font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.dia-account-help { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; }
+.dia-account-help button { min-height: 44px; padding: 4px 0; border: 0; background: transparent; color: inherit; font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
 .dia-account-menu { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 16px; font-size: 12px; }
 .dia-account-menu > span:first-child { max-width: 210px; overflow: hidden; text-overflow: ellipsis; }
 .dia-account-menu button { min-height: 36px; border: 0; background: transparent; color: inherit; }

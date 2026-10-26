@@ -33,10 +33,12 @@ const entries = {
 export function HomeStageSpace({
   initialEntry,
   initiallyLit = false,
+  emailEnabled = false,
   user,
 }: {
   initialEntry?: string
   initiallyLit?: boolean
+  emailEnabled?: boolean
   user: AccountUser | null
 }) {
   const [entry, setEntry] = useState<Entry | null>(null)
@@ -78,7 +80,7 @@ export function HomeStageSpace({
   return (
     <div className="dia-home-space" data-illuminated={illuminated}>
       {!illuminated && <p className="dia-space-tagline">咫尺之外，自在舞台。</p>}
-      {illuminated && <HomeAccountPanel user={user} />}
+      {illuminated && <HomeAccountPanel user={user} emailEnabled={emailEnabled} />}
       <CoordinateField
         accountId={user?.id}
         onSelect={open}
