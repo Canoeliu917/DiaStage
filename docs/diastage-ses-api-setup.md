@@ -1,6 +1,6 @@
 # DiaStage 腾讯云 SES API 接入
 
-更新：2026-10-26（北京时间）。SES 广州根域及品牌发信地址已验证，企业邮与 Gmail 双向收发通过，两份模板约 15:20 审核通过。服务器私有 SES 配置已保存但关闭，未加入现有服务；隔离 Linux 生产构建 8/8、认证集成 9/9 通过，候选未启动。品牌联系链接已完成源代码修改，尚未部署，且晚于 b57 云端构建。实际 API 鉴权、SES 投递、应用浏览器验收及正式切换尚未完成，额外两封 SES 测试待用户确认。
+更新：2026-10-26（北京时间）。SES 广州根域、品牌发信地址及两份模板已通过验证或审核。经用户明确批准，16:28:48 两封独立 SES 测试均经实际 API 接受并进入 Gmail 收件箱，SPF/DKIM/DMARC 全通过且域名对齐，证据见第 5 节。发送后旧生产服务仍 active，私有邮件开关仍为 `false`。隔离 Linux 构建 8/8、认证集成 9/9 通过，候选未启动；品牌联系源码晚于 b57 构建且未部署。应用真实令牌流程、QQ/163、浏览器及正式切换仍待验收。
 
 ## 1. 统一品牌地址与当前进度
 
@@ -28,11 +28,11 @@ SES API 支持 `ap-guangzhou`、`ap-hongkong`。按 SES 控制台实际开通地
 - 新增 `_dmarc` TXT → `v=DMARC1; p=none`。
 - 新增 `qcloudgz2048._domainkey` TXT，配置 SES 广州的 2048 位 DKIM 公钥，不在本文复制公钥全文。
 
-公网解析器 `119.29.29.29` 已核对两条 MX（优先级 5、10）和 SPF、DMARC、SES DKIM 三条 TXT 正确；此前也已查询到 `qqmail95878e99.diastage.art` → `mail.qq.com` 的 CNAME。此结果仅代表该解析器当前返回，不代表所有 DNS 缓存已更新。11:41，SES 广州根域整体“验证通过”，信誉等级 1、日额度 500 封、共享 IP；11:42 创建 `21@diastage.art` 发信地址，别名“DiaStage 咫台”。企业邮与 Gmail 双向收发已通过，SES 实际投递仍待验收；此处 DKIM TXT 属 SES，不证明企业邮邮件已有 DKIM 签名。
+公网解析器 `119.29.29.29` 已核对两条 MX（优先级 5、10）和 SPF、DMARC、SES DKIM 三条 TXT 正确；此前也已查询到 `qqmail95878e99.diastage.art` → `mail.qq.com` 的 CNAME。此结果仅代表该解析器当前返回，不代表所有 DNS 缓存已更新。11:41，SES 广州根域整体“验证通过”，信誉等级 1、日额度 500 封、共享 IP；11:42 创建 `21@diastage.art` 发信地址，别名“DiaStage 咫台”。企业邮双向收发及后续独立 SES → Gmail 两封投递均已通过；SES 的 DKIM 通过证据见第 5 节，不代表此前企业邮回复具有 DKIM 签名。
 
 官方口径存在差异：[域名 FAQ](https://cloud.tencent.com/document/product/1288/52776) 说明必须与企业邮箱共用时需要合并 SPF；[身份验证 FAQ](https://cloud.tencent.com/document/product/1288/60652) 允许 MX 使用自有邮件服务器；[快速入门](https://cloud.tencent.com/document/product/1288/47454) 则提示不可使用企业邮箱域名。本次保留企业邮 MX 并合并单条 SPF 后，SES 广州整体验证已通过；这证明当前配置通过服务商验证，不等同实际投递验收。
 
-1. 企业邮和 SES 根域配置均已验证，主邮箱及 SES 发信地址 `21@diastage.art` 均已创建；企业邮双向收发已通过，接下来单独验收实际 SES 投递。公开网页品牌联系链接已完成源代码修改，尚未部署。
+1. 企业邮和 SES 根域配置均已验证，主邮箱及 SES 发信地址 `21@diastage.art` 均已创建；企业邮双向收发和独立 SES → Gmail 两封投递已通过。应用真实认证邮件及其他收件方仍待分别获准并验收；公开网页品牌联系源码尚未部署。
 2. 后续继续保留企业邮两条收件 MX、验证 CNAME 及网站 A/CNAME；同一主机名只保留一条已合并的 SPF，不用向导默认值覆盖。保护现有 DKIM、DMARC，后续策略调整须独立验证。
 3. 后续 DNS 变更按控制台实际主机名、类型、记录值、优先级核对并验证；本文件不提供通用值代填真实记录。
 4. 模板审核、企业邮真实收发和 SES 实际送达分别验收，不以“记录已保存”或域名“验证通过”代替。
@@ -54,7 +54,7 @@ SES API 支持 `ap-guangzhou`、`ap-hongkong`。按 SES 控制台实际开通地
 
 开通时用户已明确同意并完成腾讯云服务角色 `SES_QCSLinkedRoleBilling` 授权。官方策略 `QcloudAccessForSESLinkedRoleInBilling` 允许 `billing:CreateOrdersAndPay`（资源 `*`）及 `finance:trade`（资源 `qcs::ses:::*`），角色由腾讯 SES 服务扮演；这与下述应用发信密钥不同，不把计费权限加给应用子用户。授权本身不能证明已产生具体费用。[官方服务角色权限](https://intl.cloud.tencent.com/zh/document/product/598/80322)
 
-11:48:17 已保存专用 CAM 策略 `DiaStageSesSendEmail`，ID `291316357`；仅允许 `ses:SendEmail`、资源 `*`，没有其他权限。专用用户 `diastage-ses` 已由运营者完成创建；详情已核验访问方式为“编程访问”、用户组为 0，且仅有一条直接关联策略 `DiaStageSesSendEmail`，关联时间为 2026-10-26 11:48:36。15:06 用户已下载凭据 CSV，已确认本机文件存在、仅有一条记录且 SecretId/SecretKey 字段非空，未输出凭据内容；现已通过 SSH 保存服务器私有配置，但实际 API 鉴权尚未测试。生产邮件保持关闭，不附加计费、模板管理、DNS 或管理员权限。官方将 `SendEmail` 列为操作级授权，资源必须为 `*`；不能假设它支持按发信域或模板 ID 限制资源。已保存并关联的策略内容如下：[官方 SES 授权粒度](https://intl.cloud.tencent.com/zh/document/product/598/57150)
+11:48:17 已保存专用 CAM 策略 `DiaStageSesSendEmail`，ID `291316357`；仅允许 `ses:SendEmail`、资源 `*`，没有其他权限。专用用户 `diastage-ses` 已由运营者完成创建；详情已核验访问方式为“编程访问”、用户组为 0，且仅有一条直接关联策略 `DiaStageSesSendEmail`，关联时间为 2026-10-26 11:48:36。15:06 用户下载凭据 CSV 后已核验必需字段非空，凭据未输出，随后经 SSH 保存至服务器私有配置；实际 API 鉴权已通过获准的两封测试验证。生产邮件保持关闭，不附加计费、模板管理、DNS 或管理员权限。官方将 `SendEmail` 列为操作级授权，资源必须为 `*`；不能假设它支持按发信域或模板 ID 限制资源。已保存并关联的策略内容如下：[官方 SES 授权粒度](https://intl.cloud.tencent.com/zh/document/product/598/57150)
 
 ```json
 {
@@ -79,13 +79,20 @@ SES API 支持 `ap-guangzhou`、`ap-hongkong`。按 SES 控制台实际开通地
 
 `/home/ubuntu/diastage-backups/20261026-pre-ses-153333` 已通过 SQLite backup API 生成一致快照；隔离 `restore-check` 的完整性、三表计数及 SHA 一致。服务 unit 与 `.env.defaults` 备份权限 `600`、目录 `700`，未输出内容。候选 `b57c1d5` 纯 tracked 源码包已上传 `/home/ubuntu/diastage-candidate-b57c1d5` 并解压 `app`，SHA-256 `de5e50937e785d7f3e59737d14a98b3e47dc0533fc9354e2ccba612b89c7e578` 远端校验通过。
 
-独立 SES probe 已加载真实私有环境，并通过 mock fetch 完成两模板路由 dry-run，未真实发送，不能视为实际 API 鉴权成功。额外两封 SES 测试仍待用户确认。
+独立 SES probe 的两模板路由 dry-run 已通过；随后按用户明确授权，恰好执行两封实际 SES 测试，API 均接受，Gmail 投递及认证结果见第 5 节。未触发真实注册、验证或密码重置操作。
 
 Linux 依赖安装首次因腾讯默认镜像全包 404 失败，随后仅该次命令指定 `registry.npmjs.org`，成功安装 782 个包。候选代码 `b57c1d56cb96955db49305ae27fee38e8ece8a38` 在 `/home/ubuntu/diastage-candidate-b57c1d5/app` 完整生产构建 8/8 通过，含 Next 编译、TypeScript 和 18 页生成。此构建早于后续品牌联系页面源码修改，不能作为新联系页的 Linux 验收。候选尚未启动，生产服务不变。
 
 Linux 认证集成最终 9/9 通过（auth 3/3、email 6/6，9.96 秒）：Bun 打包已有测试后，以 `env -i` 的 Node 22 执行，网络防护记录 fetch/socket/listen 尝试均为 0，临时数据库已清理。首次 8/9 源于启动器额外加入 `NODE_ENV=test`，使 Better Auth 在测试模式跳过 Origin 校验，原预期 403 的断言得到 200；只移除启动器变量后复测通过，未改源码或断言。前后均确认生产 active、私有 SES 开关为 `false`。
 
 ## 5. 启用前验收
+
+2026-10-26 16:28:48 +0800，用户明确批准的两封独立 SES 测试均执行一次，模板 `65290`、`65291` 的实际 API 请求均被接受，probe 退出码为 0。两封发送至 `25101763g@gmail.com`，均显示 From `DiaStage 咫台 <21@diastage.art>`，Reply-To、Return-Path 均为 `21@diastage.art`：
+
+- 验证邮件：Gmail ID `1a177539d8117e2f`；链接为 `https://diastage.art/login?ses_delivery_test=20261026-verify`。
+- 重置邮件：Gmail ID `1a177539cd788295`；链接为 `https://diastage.art/login?ses_delivery_test=20261026-reset`。
+
+Gmail 两封均含 `INBOX`、`UNREAD`、`IMPORTANT`、`CATEGORY_PERSONAL` 标签，不含 `SPAM`。两封均为 `spf=pass`（`smtp.mailfrom=21@diastage.art`）、`dkim=pass`（`d=diastage.art`，selector `qcloudgz2048`）、`dmarc=pass`（`header.from=diastage.art`，`p=NONE`），域名完全对齐。链接仅为测试标识，不含真实认证令牌，也未执行账号操作；这不代替应用真实令牌端到端、QQ/163 或浏览器验收。发送后生产服务仍 active、私有 SES 开关仍为 `false`。
 
 - [x] SES 广州根域整体“验证通过”，`21@diastage.art` 发信地址已创建，别名“DiaStage 咫台”。
 - [x] 修正纯变量链接导致的退回，重新上传模板 `65290`、`65291` 并提交审核，预览已核对；两份各仅含 `{{url}}`，域名固定为 `https://diastage.art/`，15:17 均为“审核中”。
@@ -96,12 +103,12 @@ Linux 认证集成最终 9/9 通过（auth 3/3、email 6/6，9.96 秒）：Bun �
 - [x] 通过 SSH 保存服务器私有 SES 配置，目录 `700`、文件 `600`、属 `ubuntu`，邮件开关 `false`，未加入现有服务。
 - [x] 完成获准的 Gmail 与品牌企业邮双向测试，共两封、均进收件箱；Gmail 回复 SPF/DMARC 通过且域名对齐，该企业邮邮件无 DKIM 签名。
 - [x] SSH 严格核验接入、实际场景库只读检查、一致性备份及隔离恢复核对通过，未改现有服务或数据。
-- [x] 候选源码包上传、SHA-256 校验及解压完成；独立 SES probe 加载真实私有环境，以 mock fetch 验证两模板路由通过，未真实发送。
+- [x] 候选源码包上传、SHA-256 校验及解压完成；独立 SES probe 的两模板路由 dry-run 通过。
 - [x] 隔离 Linux 安装 782 个依赖包并完成生产构建，8/8 任务、Next 编译、TypeScript 及 18 页生成通过；候选未启动，生产服务不变。
 - [x] Linux auth 3/3、email 6/6 集成通过，无网络尝试，临时数据库已清理；首次失败已定位为启动器环境变量并在不改源码/断言的情况下复测通过。
 - [x] 品牌联系链接完成源代码修改及 Biome/tsgo/定向 diff 检查；尚未部署，b57 Linux 构建早于这些联系页改动。
-- [ ] 完成实际 SES API 鉴权及投递验证。额外两封 SES 测试待用户确认，尚未执行实际 API 请求；日志及错误响应不含凭据、验证链接或重置令牌，生产邮件在验收前保持关闭。
+- [x] 完成获准的两封独立 SES 实际 API 鉴权及 Gmail 投递验证，品牌 From/Reply-To、SPF/DKIM/DMARC 和收件箱状态均已核对；生产邮件仍关闭。
 - [ ] 隔离账号验证注册、未验证访问、重发限流、忘记密码统一回复、过期/重复使用链接、发送失败提示和重置后旧会话失效。
-- [ ] 按获准范围对指定测试收件人实测 SES，分别检查 QQ、163、Gmail 的实际收件和垃圾箱；企业邮与 Gmail 已完成的互测不能替代此项。再验两个账号的剧目隔离。
+- [ ] 完成其他获准收件方及完整应用流程验收。Gmail 两封独立 SES 投递已通过；QQ、163、真实注册/重置及两个账号的剧目隔离仍待验收，企业邮互测或独立 probe 不替代这些项目。
 
-此前完整本地复核：生产构建 6/6（生成 18 个页面）、真实 Better Auth + Node SQLite 认证集成 9/9、包含可选 Reply-To 的 Bun 相关测试 17/17（115 次断言）、类型检查 9/9、11 个文件的 Biome 检查通过；独立代码审阅无阻断项。最新 Linux 构建见第 4 节；实际 SES API 鉴权与投递、正式启用及应用浏览器验收仍未完成。进度见[上线队列](diastage-release-todo.md)，运营待决事项见[发布待决事项](diastage-release-decisions.md)。
+此前完整本地复核：生产构建 6/6（生成 18 个页面）、真实 Better Auth + Node SQLite 认证集成 9/9、包含可选 Reply-To 的 Bun 相关测试 17/17（115 次断言）、类型检查 9/9、11 个文件的 Biome 检查通过；独立代码审阅无阻断项。最新 Linux 构建见第 4 节；独立 SES → Gmail 两封已通过，正式启用、应用真实认证邮件及浏览器验收仍未完成。进度见[上线队列](diastage-release-todo.md)，运营待决事项见[发布待决事项](diastage-release-decisions.md)。
