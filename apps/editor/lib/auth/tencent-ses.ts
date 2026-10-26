@@ -49,9 +49,7 @@ export function createAuthMailSenders(
     return invalidConfig('BETTER_AUTH_URL')
   }
   if (
-    !['http:', 'https:'].includes(baseURL.protocol) ||
-    (baseURL.protocol === 'http:' &&
-      !['localhost', '127.0.0.1', '[::1]'].includes(baseURL.hostname)) ||
+    baseURL.origin !== 'https://diastage.art' ||
     baseURL.username ||
     baseURL.password ||
     baseURL.pathname !== '/' ||
@@ -76,7 +74,10 @@ export function createAuthMailSenders(
         FromEmailAddress: fromEmailAddress,
         Destination: [user.email],
         Subject: subject,
-        Template: { TemplateID: template, TemplateData: JSON.stringify({ url }) },
+        Template: {
+          TemplateID: template,
+          TemplateData: JSON.stringify({ url: link.pathname.slice(1) + link.search + link.hash }),
+        },
         TriggerType: 1,
         ...(replyToEmail ? { ReplyToAddresses: replyToEmail } : {}),
       })

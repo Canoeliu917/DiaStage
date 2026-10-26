@@ -1,4 +1,5 @@
 import { expect, mock, spyOn, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 import { createAuthMailSenders } from './tencent-ses'
 
 const env = {
@@ -9,11 +10,11 @@ const env = {
   TENCENT_SES_FROM_EMAIL: 'DiaStage <noreply@mail.example.com>',
   TENCENT_SES_RESET_TEMPLATE_ID: '101',
   TENCENT_SES_VERIFY_TEMPLATE_ID: '102',
-  BETTER_AUTH_URL: 'https://diastage.example',
+  BETTER_AUTH_URL: 'https://diastage.art',
 }
 const message = {
   user: { email: 'member@example.com' },
-  url: 'https://diastage.example/api/auth/reset-password/fake-reset-token?callbackURL=%2Flogin',
+  url: 'https://diastage.art/api/auth/reset-password/fake-reset-token?callbackURL=%2Flogin%3Fnext%3D%252Fscenes#finish',
 }
 const now = () => Date.parse('2026-10-26T00:05:06.000Z')
 const accepted = () => Response.json({ Response: { MessageId: 'test-message-id' } })
@@ -25,14 +26,18 @@ test('authentication email stays disabled without explicit opt-in, even with cre
   expect(
     createAuthMailSenders({ ...env, DIASTAGE_AUTH_EMAIL_ENABLED: 'false' }, { fetcher }),
   ).toBeNull()
+  expect(
+    createAuthMailSenders(
+      { ...env, DIASTAGE_AUTH_EMAIL_ENABLED: 'false', BETTER_AUTH_URL: 'http://localhost:4329' },
+      { fetcher },
+    ),
+  ).toBeNull()
   expect(fetcher).not.toHaveBeenCalled()
 })
 
 test('explicit enablement requires every SES setting and never sends partial configuration', () => {
   const fetcher = mock(async () => accepted())
-  for (const name of Object.keys(env).filter(
-    (key) => key !== 'DIASTAGE_AUTH_EMAIL_ENABLED' && key !== 'BETTER_AUTH_URL',
-  )) {
+  for (const name of Object.keys(env).filter((key) => key !== 'DIASTAGE_AUTH_EMAIL_ENABLED')) {
     expect(() => createAuthMailSenders({ ...env, [name]: '' }, { fetcher })).toThrow(
       `Invalid authentication email configuration: ${name}`,
     )
@@ -49,9 +54,18 @@ test('malformed configuration fails with field names without exposing values', (
     ['TENCENT_SES_FROM_EMAIL', 'broken <from@example.com'],
     ['TENCENT_SES_RESET_TEMPLATE_ID', '1.5'],
     ['TENCENT_SES_VERIFY_TEMPLATE_ID', '9007199254740992'],
-    ['BETTER_AUTH_URL', 'http://diastage.example'],
-    ['BETTER_AUTH_URL', 'https://user:password@diastage.example'],
-    ['BETTER_AUTH_URL', 'https://diastage.example/path?token=private'],
+    ['BETTER_AUTH_URL', 'http://diastage.art'],
+    ['BETTER_AUTH_URL', 'https://another.example'],
+    ['BETTER_AUTH_URL', 'https://www.diastage.art'],
+    ['BETTER_AUTH_URL', 'https://diastage.art:4329'],
+    ['BETTER_AUTH_URL', 'http://localhost:4329'],
+    ['BETTER_AUTH_URL', 'https://localhost:4329'],
+    ['BETTER_AUTH_URL', 'http://127.0.0.1:4329'],
+    ['BETTER_AUTH_URL', 'http://[::1]:4329'],
+    ['BETTER_AUTH_URL', 'https://user:password@diastage.art'],
+    ['BETTER_AUTH_URL', 'https://diastage.art/path?token=private'],
+    ['BETTER_AUTH_URL', 'https://diastage.art/?token=private'],
+    ['BETTER_AUTH_URL', 'https://diastage.art/#private'],
     ['BETTER_AUTH_URL', 'not a URL'],
   ]
   for (const [name, value] of invalid) {
@@ -79,35 +93,66 @@ test('reset email uses the approved template, an isolated recipient and a fixed 
     'X-TC-Region': 'ap-hongkong',
     'X-TC-Timestamp': '1792973106',
     Authorization:
-      'TC3-HMAC-SHA256 Credential=AKIDTESTID/2026-10-26/ses/tc3_request, SignedHeaders=content-type;host;x-tc-action, Signature=0919ea91bdc9aa4557d691e336f1babd9022fb63d930ec4c0e523a6adf16a469',
+      'TC3-HMAC-SHA256 Credential=AKIDTESTID/2026-10-26/ses/tc3_request, SignedHeaders=content-type;host;x-tc-action, Signature=d6709f5b5973e0ffdf1874f6d6c8654a73b967e49efaab57cb4e8b53b2146d41',
   })
   expect(JSON.parse(options.body as string)).toEqual({
     FromEmailAddress: env.TENCENT_SES_FROM_EMAIL,
     Destination: [message.user.email],
     Subject: '重置 DiaStage 密码',
-    Template: { TemplateID: 101, TemplateData: JSON.stringify({ url: message.url }) },
+    Template: {
+      TemplateID: 101,
+      TemplateData:
+        '{"url":"api/auth/reset-password/fake-reset-token?callbackURL=%2Flogin%3Fnext%3D%252Fscenes#finish"}',
+    },
     TriggerType: 1,
   })
   expect(JSON.stringify(options.headers)).not.toContain(env.TENCENTCLOUD_SECRET_KEY)
   expect(options.body as string).not.toContain(env.TENCENTCLOUD_SECRET_ID)
 })
 
-test('verification email selects its own template and permits configured local development', async () => {
+test('verification email selects its own template and preserves the relative token link', async () => {
   const fetcher = mock(async (_url: string, _options: RequestInit) => accepted())
   const senders = createAuthMailSenders(
-    { ...env, BETTER_AUTH_URL: 'http://127.0.0.1:4329', TENCENT_SES_REGION: 'ap-guangzhou' },
+    { ...env, TENCENT_SES_REGION: 'ap-guangzhou' },
     { fetcher, now },
   )!
   await senders.sendVerificationEmail({
     ...message,
-    url: 'http://127.0.0.1:4329/verify?token=test',
+    url: 'https://diastage.art/api/auth/verify-email?token=fake.verify.token&callbackURL=%2Flogin%3Fverified%3D1%26next%3D%252Fscenes#verified',
   })
   const options = fetcher.mock.calls[0]![1]
   const body = JSON.parse(options.body as string)
   expect(body.Template.TemplateID).toBe(102)
   expect(body.Subject).toBe('验证 DiaStage 邮箱')
-  expect(body.Template.TemplateData).toBe('{"url":"http://127.0.0.1:4329/verify?token=test"}')
+  expect(body.Template.TemplateData).toBe(
+    '{"url":"api/auth/verify-email?token=fake.verify.token&callbackURL=%2Flogin%3Fverified%3D1%26next%3D%252Fscenes#verified"}',
+  )
   expect(new Headers(options.headers).get('X-TC-Region')).toBe('ap-guangzhou')
+})
+
+test('both templates retain a fixed HTTPS brand host and reconstruct the original links exactly', async () => {
+  const fetcher = mock(async (_url: string, _options: RequestInit) => accepted())
+  const senders = createAuthMailSenders(env, { fetcher, now })!
+  const verificationURL =
+    'https://diastage.art/api/auth/verify-email?token=fake.verify.token&callbackURL=%2Flogin%3Fverified%3D1%26next%3D%252Fscenes#verified'
+  for (const [name, sender, url] of [
+    ['reset-password', senders.sendResetPassword, message.url],
+    ['verify-email', senders.sendVerificationEmail, verificationURL],
+  ] as const) {
+    await sender({ ...message, url })
+    const template = readFileSync(
+      new URL(`../../../../deploy/email-templates/${name}.html`, import.meta.url),
+      'utf8',
+    )
+    const href = template.match(/href="([^"]+)"/)?.[1]
+    expect(href).toBe('https://diastage.art/{{url}}')
+    expect(template.match(/\{\{[^}]+\}\}/g)).toEqual(['{{url}}'])
+    const body = JSON.parse(fetcher.mock.calls.at(-1)![1].body as string)
+    const relative = JSON.parse(body.Template.TemplateData).url
+    expect(relative.startsWith('/')).toBe(false)
+    expect(relative).not.toContain('https://')
+    expect(href!.replace('{{url}}', relative)).toBe(url)
+  }
 })
 
 test('optional replies target one plain mailbox and reject header injection or multiple recipients', async () => {
@@ -141,8 +186,10 @@ test('cross-origin, credentialed and malformed links cannot be sent', async () =
   const senders = createAuthMailSenders(env, { fetcher, now })!
   for (const url of [
     'https://attacker.example/reset?token=private',
-    'https://user:password@diastage.example/reset?token=private',
-    'http://diastage.example/reset?token=private',
+    'https://user:password@diastage.art/reset?token=private',
+    'http://diastage.art/reset?token=private',
+    'https://localhost/reset?token=private',
+    'http://localhost:4329/reset?token=private',
     '/relative/reset?token=private',
     'javascript:alert(1)',
   ]) {
