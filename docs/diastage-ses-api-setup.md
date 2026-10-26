@@ -1,44 +1,46 @@
 # DiaStage 腾讯云 SES API 接入
 
-更新：2026-10-26（北京时间）。用户已选定腾讯云 SES API，广州服务已成功开通；SES 控制台仍显示 1000 免费封，域名、地址及模板均为 0。企业邮 `diastage.art` 域名验证及开通已通过，域名页显示“使用中，域名指向：企业微信”；`21` 账号仍待创建及收发验证。尚未上传 SES 模板、发送真实邮件或切换云端服务。
+更新：2026-10-26（北京时间）。SES 广州服务已开通；11:41，根域 `diastage.art` 整体“验证通过”，信誉等级 1、日额度 500 封、共享 IP；11:42 创建发信地址 `21@diastage.art`，别名“DiaStage 咫台”。企业邮域名已开通，用户已登录品牌主邮箱真实收件箱，真实收发尚未验收。模板 `65290`、`65291` 已提交且均审核中，生产配置、正式启用及真实发信尚未完成，未切换云端服务。
 
 ## 1. 统一品牌地址与当前进度
 
-用户当前目标是网站联系、人工收发、自动通知的可见 From 及回复地址统一为 `21@diastage.art`。已选择腾讯企业邮基础版，企业微信“DiaStage咫台”已注册成功，自动 DNSPod 解析已写入；企业邮域名页最新确认 `diastage.art`“使用中，域名指向：企业微信”，域名验证和开通已通过。`21` 账号尚未创建或分配、收发尚未验证，公开联系邮箱继续使用 `25101763g@gmail.com`。
+用户当前目标是网站联系、人工收发、自动通知的可见 From 及回复地址统一为 `21@diastage.art`。已选择腾讯企业邮基础版，企业微信“DiaStage咫台”已注册成功，DNSPod 解析已生效；企业邮域名页最新确认 `diastage.art`“使用中，域名指向：企业微信”，域名验证和开通已通过。自动生成账号的用户名已由 `liuchen` 改为 `21` 并保存，成员列表已显示主邮箱 `21@diastage.art`；编辑器提示原 `liuchen@diastage.art` 保留为别名。用户已登录真实收件箱，但真实收发尚未验收，公开联系邮箱继续使用 `25101763g@gmail.com`。
 
-SES 的 `FromEmailAddress` 首选目标同为 `21@diastage.art`，需先核验企业邮与 SES 共用根域的 DNS 可行性；当前不提交自动发信域名。此前子域 `noreply` 方案未采用。
+SES 与企业邮共用根域的配置已在 SES 广州整体验证通过，已创建发信地址 `21@diastage.art`，别名“DiaStage 咫台”；实际 `FromEmailAddress` 配置仍需与控制台地址一致，生产邮件继续关闭。此前子域 `noreply` 方案未采用。
 
 可选 `TENCENT_SES_REPLY_TO_EMAIL` 默认留空；品牌邮箱收发验收通过且用户确认后才填写 `21@diastage.art`。它映射到官方可选字符串参数 `ReplyToAddresses`，仅改变回复收件地址，不改变可见 From；当前未配置。[官方 SendEmail 参数](https://cloud.tencent.com/document/api/1288/51034)
 
-若根域共用不可行，`HeaderFrom` 代发仅作为待验证备选；官方说明可能显示代发标识，不能保证纯品牌显示，也未在本项目验证或配置。[官方代发说明](https://cloud.tencent.com/document/product/1288/54785)
+当前使用已验证的根域及已创建的品牌发信地址，不需要为域名验证切换为 `HeaderFrom` 代发；代发在本项目仍未配置或验收，官方说明可能显示代发标识。[官方代发说明](https://cloud.tencent.com/document/product/1288/54785)
 
 SES API 支持 `ap-guangzhou`、`ap-hongkong`。按 SES 控制台实际开通地域填写配置，并在同一地域核对发信域、发信地址及模板。API 使用 `ses.tencentcloudapi.com`、`SendEmail`、版本 `2020-10-02`。[官方接口说明](https://cloud.tencent.com/document/api/1288/51034)
 
 ## 2. 配置 DNS 并创建发信地址
 
-2026-10-26 11:21 DNSPod 实际记录由 2 条增至 6 条，TTL 均为 600：
+2026-10-26 11:41，DNSPod 实际记录共 8 条；11:21 创建的企业邮收件记录和原网站记录保留：
 
 - 原 `@` A → `106.53.215.79`、`www` CNAME → `diastage.art.` 保留。
-- 新增 `@` MX → `mxbiz1.qq.com.`，优先级 5。
-- 新增 `@` MX → `mxbiz2.qq.com.`，优先级 10。
-- 新增 `@` TXT → `v=spf1 include:spf.mail.qq.com ~all`。
-- 新增 `qqmail95878e99` CNAME → `mail.qq.com.`。
+- 保留 `@` MX → `mxbiz1.qq.com.`，优先级 5。
+- 保留 `@` MX → `mxbiz2.qq.com.`，优先级 10。
+- 根域保持单条 SPF TXT，现值为 `v=spf1 include:spf.mail.qq.com include:qcloudmail.com ~all`。
+- 保留 `qqmail95878e99` CNAME → `mail.qq.com.`。
+- 新增 `_dmarc` TXT → `v=DMARC1; p=none`。
+- 新增 `qcloudgz2048._domainkey` TXT，配置 SES 广州的 2048 位 DKIM 公钥，不在本文复制公钥全文。
 
-公网解析器 `119.29.29.29` 已查询到上述两条 MX（优先级 5、10）、SPF TXT 及 `qqmail95878e99.diastage.art` → `mail.qq.com` 的 CNAME；此结果仅代表该解析器当前返回，不代表所有 DNS 缓存已更新。企业邮域名页最新已确认“使用中，域名指向：企业微信”；`21` 账号仍未创建，收发验收待完成。
+公网解析器 `119.29.29.29` 已核对两条 MX（优先级 5、10）和 SPF、DMARC、DKIM 三条 TXT 正确；此前也已查询到 `qqmail95878e99.diastage.art` → `mail.qq.com` 的 CNAME。此结果仅代表该解析器当前返回，不代表所有 DNS 缓存已更新。11:41，SES 广州根域整体“验证通过”，信誉等级 1、日额度 500 封、共享 IP；11:42 创建 `21@diastage.art` 发信地址，别名“DiaStage 咫台”。用户已登录企业邮真实收件箱，实际收发和 SES 投递仍待验收。
 
-官方口径存在差异：[域名 FAQ](https://cloud.tencent.com/document/product/1288/52776) 说明必须与企业邮箱共用时需要合并 SPF；[身份验证 FAQ](https://cloud.tencent.com/document/product/1288/60652) 允许 MX 使用自有邮件服务器；[快速入门](https://cloud.tencent.com/document/product/1288/47454) 则提示不可使用企业邮箱域名。根域方案尚未验证，不据单篇文档直接认定可用。
+官方口径存在差异：[域名 FAQ](https://cloud.tencent.com/document/product/1288/52776) 说明必须与企业邮箱共用时需要合并 SPF；[身份验证 FAQ](https://cloud.tencent.com/document/product/1288/60652) 允许 MX 使用自有邮件服务器；[快速入门](https://cloud.tencent.com/document/product/1288/47454) 则提示不可使用企业邮箱域名。本次保留企业邮 MX 并合并单条 SPF 后，SES 广州整体验证已通过；这证明当前配置通过服务商验证，不等同实际投递验收。
 
-1. 企业邮域名验证及开通已通过；接下来创建或分配 `21` 账号并验收收发，完成后再更新公开联系方式。
-2. 后续 SES 共域必须保留企业邮两条收件 MX、验证 CNAME 及网站 A/CNAME，不用 SES 向导默认值盲目覆盖。同一主机名只保留一条 SPF，在当前企业邮 SPF 上按实际授权合并 SES；保护已有 DKIM、DMARC。
-3. 兼容性和操作范围确认后，再按控制台实际主机名、类型、记录值、优先级配置并验证；本文件不提供通用值代填真实记录。
-4. 两服务域名、品牌邮箱收发及 SES 发信地址均验证通过后，才进入模板和实际送达验收。验收不以“记录已保存”代替。
+1. 企业邮和 SES 根域配置均已验证，主邮箱及 SES 发信地址 `21@diastage.art` 均已创建；接下来完成真实收发验收，通过后再更新公开联系方式。
+2. 后续继续保留企业邮两条收件 MX、验证 CNAME 及网站 A/CNAME；同一主机名只保留一条已合并的 SPF，不用向导默认值覆盖。保护现有 DKIM、DMARC，后续策略调整须独立验证。
+3. 后续 DNS 变更按控制台实际主机名、类型、记录值、优先级核对并验证；本文件不提供通用值代填真实记录。
+4. 模板审核、企业邮真实收发和 SES 实际送达分别验收，不以“记录已保存”或域名“验证通过”代替。
 
-## 3. 上传两份模板并记录审核通过的 ID
+## 3. 两份模板已提交，等待审核结果
 
-- 邮箱验证：`deploy/email-templates/verify-email.html`；邮件主题使用“验证 DiaStage 邮箱”。
-- 重置密码：`deploy/email-templates/reset-password.html`；邮件主题使用“重置 DiaStage 密码”。
+- 邮箱验证：模板 ID `65290`，名称“DiaStage 验证邮箱”，11:44:22 提交，状态“审核中”；文件 `deploy/email-templates/verify-email.html`，邮件主题使用“验证 DiaStage 邮箱”。
+- 重置密码：模板 ID `65291`，名称“DiaStage 重置密码”，11:44:54 提交，状态“审核中”；文件 `deploy/email-templates/reset-password.html`，邮件主题使用“重置 DiaStage 密码”。
 
-在 SES 发信模板中选择 HTML 富文本，上传对应文件并预览，审核通过后将真实 ID 分别写入 `TENCENT_SES_VERIFY_TEMPLATE_ID`、`TENCENT_SES_RESET_TEMPLATE_ID`，不使用示例 ID。[官方模板操作](https://cloud.tencent.com/document/product/1288/77251)
+已选择 HTML 富文本，上传上述仓库原文件并核对预览正确。控制台提示审核预计 1 个工作日、节假日顺延；当前提交不代表审核通过。审核通过后再将对应真实 ID 写入服务器私有环境的 `TENCENT_SES_VERIFY_TEMPLATE_ID`、`TENCENT_SES_RESET_TEMPLATE_ID`，目前未配置或正式启用。[官方模板操作](https://cloud.tencent.com/document/product/1288/77251)
 
 两份模板仅有 `{{url}}` 变量。腾讯云占位语法为 `{{键}}`；发送时 `Template.TemplateData` 为 JSON 字符串，即 `JSON.stringify({ url })`，不是直接传入对象或 HTML。链接由服务器认证流程生成，邮箱验证及密码重置均为 1 小时有效；修改认证有效期时同步修改模板并重新审核。[官方 Template 数据结构](https://cloud.tencent.com/document/product/1288/51053)
 
@@ -46,7 +48,7 @@ SES API 支持 `ap-guangzhou`、`ap-hongkong`。按 SES 控制台实际开通地
 
 开通时用户已明确同意并完成腾讯云服务角色 `SES_QCSLinkedRoleBilling` 授权。官方策略 `QcloudAccessForSESLinkedRoleInBilling` 允许 `billing:CreateOrdersAndPay`（资源 `*`）及 `finance:trade`（资源 `qcs::ses:::*`），角色由腾讯 SES 服务扮演；这与下述应用发信密钥不同，不把计费权限加给应用子用户。授权本身不能证明已产生具体费用。[官方服务角色权限](https://intl.cloud.tencent.com/zh/document/product/598/80322)
 
-应用发信 CAM 子用户尚未创建；后续计划使用独立子用户的服务器凭据，只授予 `ses:SendEmail`，不附加计费、模板管理、DNS 或管理员权限。官方将 `SendEmail` 列为操作级授权，资源必须为 `*`；不能假设它支持按发信域或模板 ID 限制资源。以下为待运营者审核的最小策略建议：[官方 SES 授权粒度](https://intl.cloud.tencent.com/zh/document/product/598/57150)
+11:48:17 已保存专用 CAM 策略 `DiaStageSesSendEmail`，ID `291316357`；仅允许 `ses:SendEmail`、资源 `*`，没有其他权限。专用用户 `diastage-ses` 已由运营者完成创建；详情已核验访问方式为“编程访问”、用户组为 0，且仅有一条直接关联策略 `DiaStageSesSendEmail`，关联时间为 2026-10-26 11:48:36。凭据文件位置和保存情况尚未确认，未读取 SecretKey，服务器未配置，不认定凭据已可用。生产邮件保持关闭，不附加计费、模板管理、DNS 或管理员权限。官方将 `SendEmail` 列为操作级授权，资源必须为 `*`；不能假设它支持按发信域或模板 ID 限制资源。已保存并关联的策略内容如下：[官方 SES 授权粒度](https://intl.cloud.tencent.com/zh/document/product/598/57150)
 
 ```json
 {
@@ -67,9 +69,13 @@ SES API 支持 `ap-guangzhou`、`ap-hongkong`。按 SES 控制台实际开通地
 
 ## 5. 启用前验收
 
-- [ ] 发信域及地址真实验证通过；两份模板审核通过且变量、主题、1 小时文案与代码一致。
-- [ ] 服务器私有配置完整，最小 CAM 策略通过；日志及错误响应不含凭据、验证链接或重置令牌。
+- [x] SES 广州根域整体“验证通过”，`21@diastage.art` 发信地址已创建，别名“DiaStage 咫台”。
+- [x] 提交模板 `65290`、`65291` 审核，上传仓库 HTML 原文件并核对预览；两份各仅含 `{{url}}`。
+- [ ] 确认两份模板均审核通过，再填写私有配置并启用隔离验收；变量、主题、1 小时文案与代码保持一致。
+- [x] 保存并直接关联专用策略 `DiaStageSesSendEmail`；内容仅允许 `ses:SendEmail`、资源 `*`，绑定已核验。
+- [x] 创建专用用户 `diastage-ses`；已核验仅编程访问、无用户组且只有上述一条直接策略。
+- [ ] 确认凭据文件位置和保存情况，再完成服务器私有配置；当前未读取 SecretKey、未配置服务器，不认定凭据已可用。日志及错误响应不含凭据、验证链接或重置令牌，生产邮件在验收前保持关闭。
 - [ ] 隔离账号验证注册、未验证访问、重发限流、忘记密码统一回复、过期/重复使用链接、发送失败提示和重置后旧会话失效。
 - [ ] 运营者指定测试收件人并确认发送后，分别检查 QQ、163、Gmail 的实际收件和垃圾箱；再验两个账号的剧目隔离。
 
-最新本地复核：生产构建 6/6（生成 18 个页面）、真实 Better Auth + Node SQLite 认证集成 9/9、包含可选 Reply-To 的 Bun 相关测试 17/17（115 次断言）、类型检查 9/9、11 个文件的 Biome 检查通过；独立代码审阅无阻断项。发送使用模拟请求，未真实调用 SES；本地通过不代表浏览器、DNS、模板审核或送达验收通过。进度见[上线队列](diastage-release-todo.md)，未决地址与运营事项见[发布待决事项](diastage-release-decisions.md)。
+最新本地复核：生产构建 6/6（生成 18 个页面）、真实 Better Auth + Node SQLite 认证集成 9/9、包含可选 Reply-To 的 Bun 相关测试 17/17（115 次断言）、类型检查 9/9、11 个文件的 Biome 检查通过；独立代码审阅无阻断项。企业邮及 SES 域名/DNS 已通过验证，品牌主邮箱及发信地址已创建，两份模板均审核中；应用发送仍使用模拟请求，未真实发信。生产配置、正式启用、浏览器及实际收发/送达验收仍未完成。进度见[上线队列](diastage-release-todo.md)，未决地址与运营事项见[发布待决事项](diastage-release-decisions.md)。
