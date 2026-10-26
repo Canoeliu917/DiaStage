@@ -33,7 +33,7 @@ export default function TermsPage() {
         <article className="prose prose-neutral dark:prose-invert max-w-none">
           <h1 className="mb-2 font-bold text-3xl">使用说明（内测版）</h1>
           <p className="mb-8 text-muted-foreground text-sm">
-            更新于 2026 年 10 月 25 日。本页说明 DiaStage 当前内测功能和使用边界。
+            更新于 2026 年 10 月 26 日。本页说明 DiaStage 当前内测功能和使用边界。
           </p>
           <section className="mb-8 space-y-4">
             <h2 className="font-semibold text-xl">舞台编辑与保存</h2>
@@ -99,7 +99,11 @@ export default function TermsPage() {
           <section className="space-y-4">
             <h2 className="font-semibold text-xl">内测问题与联系</h2>
             <p>
-              遇到账号、额度、数据或功能问题，请联系邀请你参加测试的人。正式公开运营的主体、联系方式及服务条款仍待确认。
+              遇到账号、额度、数据或功能问题，请联系
+              <a className="underline" href="mailto:21@diastage.art">
+                21@diastage.art
+              </a>
+              。正式服务条款仍待确认。
             </p>
           </section>
         </article>

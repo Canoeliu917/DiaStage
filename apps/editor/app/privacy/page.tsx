@@ -33,7 +33,7 @@ export default function PrivacyPage() {
         <article className="prose prose-neutral dark:prose-invert max-w-none">
           <h1 className="mb-2 font-bold text-3xl">隐私说明（内测版）</h1>
           <p className="mb-8 text-muted-foreground text-sm">
-            更新于 2026 年 10 月 25 日。本页说明 DiaStage 当前内测版本的数据处理方式。
+            更新于 2026 年 10 月 26 日。本页说明 DiaStage 当前内测版本的数据处理方式。
           </p>
           <section className="mb-8 space-y-4">
             <h2 className="font-semibold text-xl">账号与私人剧目</h2>
@@ -45,7 +45,11 @@ export default function PrivacyPage() {
               新建剧目归当前登录账号所有，其他普通用户无法查看或修改。切换账号后，剧目库按新账号读取。旧版尚未归属账号的剧目不会自动公开，也不会交给首个注册者。
             </p>
             <p>
-              验证邮件、邮件找回密码和自助注销账号入口尚未开放。请使用自己的常用邮箱并妥善保管密码；内测期间需要账号协助时，请联系邀请你参加测试的人。
+              验证邮件、邮件找回密码和自助注销账号入口尚未开放。请使用自己的常用邮箱并妥善保管密码；内测期间需要账号协助时，请联系
+              <a className="underline" href="mailto:21@diastage.art">
+                21@diastage.art
+              </a>
+              。
             </p>
           </section>
           <section className="mb-8 space-y-4">
@@ -119,7 +123,11 @@ export default function PrivacyPage() {
           <section className="space-y-4">
             <h2 className="font-semibold text-xl">内测反馈</h2>
             <p>
-              如需核对账号或数据处理问题，请联系邀请你参加测试的人。正式公开运营的主体、联系方式及完整数据处理安排仍待确认。
+              如需核对账号或数据处理问题，请联系
+              <a className="underline" href="mailto:21@diastage.art">
+                21@diastage.art
+              </a>
+              。完整数据处理安排仍待确认。
             </p>
           </section>
         </article>
