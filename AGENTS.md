@@ -20,6 +20,10 @@ Public, open-source home of `@pascal-app/{core,viewer,editor,mcp}` and the stand
 
 `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` are symlinks to this file. Codex reads this file directly.
 
+## DiaStage work continuation
+
+When the user says `繼續工作` or `继续工作` in this project, follow [the continuation rule](.cursor/rules/diastage-continuation.mdc) and read the latest [release TODO](docs/diastage-release-todo.md). Resume the first remaining executable item without asking the user to repeat the project history. This applies across computers; confirm the checkout, current access and live state before relying on a previous machine's environment.
+
 ## Layer Boundaries (read once, internalise)
 
 - **`packages/core`** owns domain data and pure logic. It must not import Three.js, `packages/viewer`, `apps/editor`, rendering/UI concepts, tools, modes, phases, or view-specific concepts such as floorplan or paint preview.

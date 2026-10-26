@@ -1,0 +1,14 @@
+---
+description: Resume the DiaStage release TODO when the user says 繼續工作 or 继续工作.
+alwaysApply: true
+---
+
+# DiaStage continuation
+
+- Trigger: the user says `繼續工作` or `继续工作` in the DiaStage project. Example: `繼續工作` means resume the remaining release tasks, not restart completed setup.
+- Read `docs/diastage-release-todo.md`, `docs/diastage-release-decisions.md` and the deployment preflight linked from the TODO. Use their latest repository versions as the shared checkpoint.
+- Confirm repository `Canoeliu917/DiaStage` and branch `codex/private-scene-accounts-v01-20261014`; inspect local changes before syncing. Preserve uncommitted work and never force-reset to resume.
+- Briefly state the next task and its verification, then begin the first remaining executable item. Do not ask the user to repeat recorded decisions or completed work. If one item depends on missing access or a decision, continue independent work and ask only for that missing prerequisite.
+- Treat dated server, DNS, process and build observations as historical until rechecked. A new computer does not inherit localhost previews, browser logins, SSH access or private files. Do not transfer credentials through GitHub or chat.
+- Preserve the recorded boundaries: new cloud accounts/data, existing data retained, production switch still pending; completed email-test authorizations do not authorize additional messages. New sends, paid AI, certificate terms and production changes require the applicable specific authorization. Prepare a concrete reviewable result before requesting it; do not bypass approval blocks.
+- After each verified stage, update the TODO with date, tested revision, result, remaining work and the next action; publish the authorized documentation changes to the same branch and verify the remote revision. Mark only evidenced work complete.
