@@ -1,6 +1,6 @@
 # DiaStage 腾讯云 SES API 接入
 
-更新：2026-10-26（北京时间）。SES 广州根域、品牌发信地址及两份模板已通过验证或审核。经用户明确批准，16:28:48 两封独立 SES 测试均经实际 API 接受并进入 Gmail 收件箱，SPF/DKIM/DMARC 全通过且域名对齐，证据见第 5 节。发送后旧生产服务仍 active，私有邮件开关仍为 `false`。隔离 Linux 构建 8/8、认证集成 9/9 通过，候选未启动；品牌联系源码晚于 b57 构建且未部署。应用真实令牌流程、QQ/163、浏览器及正式切换仍待验收。
+更新：2026-10-26（北京时间）。SES 广州根域、品牌发信地址及两份模板已通过验证或审核。经用户明确批准，16:28:48 两封独立 SES 测试均经实际 API 接受并进入 Gmail 收件箱，SPF/DKIM/DMARC 全通过且域名对齐。隔离 Linux 构建 8/8、认证集成 9/9 及真实生产 Next HTTP 8 组通过，HTTP 的 SES 传输模拟，证据见第 5 节；测试实例已停止并清理。旧生产服务仍 active，私有邮件开关仍为 `false`；品牌联系源码晚于 b57 构建且未部署。真实邮件令牌端到端、QQ/163、浏览器及正式切换仍待验收。
 
 ## 1. 统一品牌地址与当前进度
 
@@ -81,7 +81,7 @@ SES API 支持 `ap-guangzhou`、`ap-hongkong`。按 SES 控制台实际开通地
 
 独立 SES probe 的两模板路由 dry-run 已通过；随后按用户明确授权，恰好执行两封实际 SES 测试，API 均接受，Gmail 投递及认证结果见第 5 节。未触发真实注册、验证或密码重置操作。
 
-Linux 依赖安装首次因腾讯默认镜像全包 404 失败，随后仅该次命令指定 `registry.npmjs.org`，成功安装 782 个包。候选代码 `b57c1d56cb96955db49305ae27fee38e8ece8a38` 在 `/home/ubuntu/diastage-candidate-b57c1d5/app` 完整生产构建 8/8 通过，含 Next 编译、TypeScript 和 18 页生成。此构建早于后续品牌联系页面源码修改，不能作为新联系页的 Linux 验收。候选尚未启动，生产服务不变。
+Linux 依赖安装首次因腾讯默认镜像全包 404 失败，随后仅该次命令指定 `registry.npmjs.org`，成功安装 782 个包。候选代码 `b57c1d56cb96955db49305ae27fee38e8ece8a38` 在 `/home/ubuntu/diastage-candidate-b57c1d5/app` 完整生产构建 8/8 通过，含 Next 编译、TypeScript 和 18 页生成。此构建早于后续品牌联系页面源码修改，不能作为新联系页的 Linux 验收。随后完成第 5 节的隔离 HTTP 验收，测试实例已停止，生产服务不变。
 
 Linux 认证集成最终 9/9 通过（auth 3/3、email 6/6，9.96 秒）：Bun 打包已有测试后，以 `env -i` 的 Node 22 执行，网络防护记录 fetch/socket/listen 尝试均为 0，临时数据库已清理。首次 8/9 源于启动器额外加入 `NODE_ENV=test`，使 Better Auth 在测试模式跳过 Origin 校验，原预期 403 的断言得到 200；只移除启动器变量后复测通过，未改源码或断言。前后均确认生产 active、私有 SES 开关为 `false`。
 
@@ -94,6 +94,23 @@ Linux 认证集成最终 9/9 通过（auth 3/3、email 6/6，9.96 秒）：Bun �
 
 Gmail 两封均含 `INBOX`、`UNREAD`、`IMPORTANT`、`CATEGORY_PERSONAL` 标签，不含 `SPAM`。两封均为 `spf=pass`（`smtp.mailfrom=21@diastage.art`）、`dkim=pass`（`d=diastage.art`，selector `qcloudgz2048`）、`dmarc=pass`（`header.from=diastage.art`，`p=NONE`），域名完全对齐。链接仅为测试标识，不含真实认证令牌，也未执行账号操作；这不代替应用真实令牌端到端、QQ/163 或浏览器验收。发送后生产服务仍 active、私有 SES 开关仍为 `false`。
 
+### 隔离 Next HTTP 验收（SES 传输模拟）
+
+同日，候选 `b57c1d5` 的生产 Next 构建在 Linux `127.0.0.1:4330` 实际启动，以独立数据库、临时认证密钥及假 SES 凭据执行 HTTP 请求。SES 请求被拦截并写入私有捕获文件，不发送邮件；保留 `https://diastage.art` 逻辑来源、手动重放 Cookie 和处理重定向。8 组全过，退出码 0：
+
+1. 健康接口识别隔离实例，登录页显示邮件入口；匿名场景 API 返回 401、场景页返回 307。
+2. 注册强制未验证，客户端伪传验证要求无效，不发会话；登录返回 403，经 Next 邮件任务捕获验证邮件。
+3. 已知用户重发验证邮件前三次成功、第四次 429，重启后限流仍保持。
+4. 无效及过期验证令牌返回 401；有效及重复验证返回 302 且无自动登录。显式登录的 Cookie 响应含 `Secure`、`HttpOnly`、`SameSite=Lax`。
+5. 两账号场景归属不可通过 `ownerId` 注入伪造；跨账号 GET/PUT/PATCH/DELETE 均 404，坏 Origin 写入 403。撤销 `emailVerified` 后现有 Cookie 立即被 API 401、页面 307 拒绝。
+6. 找回密码的已知/未知邮箱响应一致；过期重置令牌 400 且不撤销原会话。新链接 GET 跳转实际重置页，POST 成功、重用 400，旧会话和旧密码失效，新密码有效。
+7. 模拟发信失败隐藏详情；关闭邮件并重启后仍拦未验证账号，撤销会话不复活，账号会话、场景归属和图内容保持。
+8. SQLite `integrity_check` 通过，出站网络尝试为 0。
+
+测试实例已停止，测试数据库和邮件令牌文件已删除，复查 4330 空闲。旧生产 MainPID `27262`、目录 `/home/ubuntu/diastage-release-20261007/DiaStage` 未变，私有 `ses.env` 的邮件开关仍关闭。此验收不证明浏览器 JavaScript、TLS 或浏览器实际接收/发送 Secure Cookie 的行为，也未完成真实邮件令牌端到端或 QQ/163 投递。最新 `b6a0076` 的联系前端改动不在这份 b57 构建中。
+
+### 验收清单
+
 - [x] SES 广州根域整体“验证通过”，`21@diastage.art` 发信地址已创建，别名“DiaStage 咫台”。
 - [x] 修正纯变量链接导致的退回，重新上传模板 `65290`、`65291` 并提交审核，预览已核对；两份各仅含 `{{url}}`，域名固定为 `https://diastage.art/`，15:17 均为“审核中”。
 - [x] 约 15:20 确认两份模板均审核通过；对应 ID 已写入私有配置，变量、主题、1 小时文案与代码保持一致，邮件仍关闭。
@@ -104,11 +121,11 @@ Gmail 两封均含 `INBOX`、`UNREAD`、`IMPORTANT`、`CATEGORY_PERSONAL` 标签
 - [x] 完成获准的 Gmail 与品牌企业邮双向测试，共两封、均进收件箱；Gmail 回复 SPF/DMARC 通过且域名对齐，该企业邮邮件无 DKIM 签名。
 - [x] SSH 严格核验接入、实际场景库只读检查、一致性备份及隔离恢复核对通过，未改现有服务或数据。
 - [x] 候选源码包上传、SHA-256 校验及解压完成；独立 SES probe 的两模板路由 dry-run 通过。
-- [x] 隔离 Linux 安装 782 个依赖包并完成生产构建，8/8 任务、Next 编译、TypeScript 及 18 页生成通过；候选未启动，生产服务不变。
+- [x] 隔离 Linux 安装 782 个依赖包并完成生产构建，8/8 任务、Next 编译、TypeScript 及 18 页生成通过；随后隔离 HTTP 验收完成，测试实例已停止，生产服务不变。
 - [x] Linux auth 3/3、email 6/6 集成通过，无网络尝试，临时数据库已清理；首次失败已定位为启动器环境变量并在不改源码/断言的情况下复测通过。
 - [x] 品牌联系链接完成源代码修改及 Biome/tsgo/定向 diff 检查；尚未部署，b57 Linux 构建早于这些联系页改动。
 - [x] 完成获准的两封独立 SES 实际 API 鉴权及 Gmail 投递验证，品牌 From/Reply-To、SPF/DKIM/DMARC 和收件箱状态均已核对；生产邮件仍关闭。
-- [ ] 隔离账号验证注册、未验证访问、重发限流、忘记密码统一回复、过期/重复使用链接、发送失败提示和重置后旧会话失效。
-- [ ] 完成其他获准收件方及完整应用流程验收。Gmail 两封独立 SES 投递已通过；QQ、163、真实注册/重置及两个账号的剧目隔离仍待验收，企业邮互测或独立 probe 不替代这些项目。
+- [x] 隔离生产 Next HTTP 的 8 组验收通过，覆盖注册、验证、限流、找回、失败处理、会话撤销、账号隔离及重启持久化；SES 传输模拟，实例与私有测试数据已清理。
+- [ ] 完成其他获准收件方及完整应用流程验收。Gmail 两封独立 SES 投递及隔离 HTTP 已通过；QQ、163、真实认证邮件令牌端到端及浏览器交互仍待验收，模拟 SES 传输不替代这些项目。
 
-此前完整本地复核：生产构建 6/6（生成 18 个页面）、真实 Better Auth + Node SQLite 认证集成 9/9、包含可选 Reply-To 的 Bun 相关测试 17/17（115 次断言）、类型检查 9/9、11 个文件的 Biome 检查通过；独立代码审阅无阻断项。最新 Linux 构建见第 4 节；独立 SES → Gmail 两封已通过，正式启用、应用真实认证邮件及浏览器验收仍未完成。进度见[上线队列](diastage-release-todo.md)，运营待决事项见[发布待决事项](diastage-release-decisions.md)。
+此前完整本地复核：生产构建 6/6（生成 18 个页面）、真实 Better Auth + Node SQLite 认证集成 9/9、包含可选 Reply-To 的 Bun 相关测试 17/17（115 次断言）、类型检查 9/9、11 个文件的 Biome 检查通过；独立代码审阅无阻断项。最新 Linux 构建见第 4 节；独立 SES → Gmail 两封及隔离 HTTP 8 组已通过，正式启用、真实认证邮件令牌端到端及浏览器验收仍未完成。进度见[上线队列](diastage-release-todo.md)，运营待决事项见[发布待决事项](diastage-release-decisions.md)。
