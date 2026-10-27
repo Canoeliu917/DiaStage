@@ -1,3 +1,4 @@
+import { stageObjectsTouch } from './collision'
 import { resolveStageObjectSpecs } from './object-registry'
 import { resolveStagePlan, stageObjectBounds } from './plan'
 import {
@@ -175,6 +176,129 @@ export function parseStageText(
   }
   const text = input.normalize('NFKC').replace(/\s/g, '').replace(/、/g, '').replace(/[.]$/, '')
   if (!text || text.length > 20000) return null
+  const foldName = '[二两双三](?:连|联|帘|折)(?:折叠)?(?:组合|景片)?'
+  if (
+    new RegExp(`${foldName}|折叠景片`).test(text) &&
+    /围|房间|房屋|长方体|U[形型]/i.test(text) &&
+    /生成|创建|搭|做|布置|围/.test(text)
+  ) {
+    const request = text
+      .replace(/^(?:请|麻烦)/, '')
+      .replace(/给我|帮我/g, '')
+      .match(
+        new RegExp(
+          `^(?:用|拿)?(?:(${numberPattern})[组个套])?(${foldName})(?:来)?(?:生成|创建|搭建|搭|做|布置|围成|围出|围)(?:一个|个|一间|间|一处|处)?(?:[三3]面(?:包围|围合)?(?:式|的)?(?:空间|房间|布景)|U[形型](?:空间|房间|布景)?|房间(?:式空间)?|房屋|长方体(?:空间)?|空间)(.*)$`,
+          'i',
+        ),
+      )
+    if (!request) {
+      const materialUnclear = !new RegExp(foldName).test(text)
+      ask(
+        materialUnclear ? 'fold-enclosure-material' : 'fold-enclosure-modifiers',
+        materialUnclear
+          ? '要用两组二连，还是一组三联，搭成开口朝观众的三面围合？'
+          : '当前只预览标准尺度、开口朝观众的三面围合；请单独说明这一项搭建要求。',
+      )
+      return plan
+    }
+    const twoPanel = !request[2]!.startsWith('三')
+    const count = twoPanel ? 2 : 1
+    if (request[1] && parseStageNumber(request[1]) !== count) {
+      ask(
+        'fold-enclosure-count',
+        twoPanel
+          ? '单组二连只有两片；此三面 U 形方案需要两组二连，是否改用两组？'
+          : '此标准三面 U 形方案使用一组三联；是否按一组预览？',
+      )
+      return plan
+    }
+    const spec = resolveStageObjectSpecs(twoPanel ? 'SCN-FOLD-02' : 'SCN-FOLD-03')[0]!
+    const panel = resolveStageObjectSpecs('SCN-FLAT-090')[0]!.defaultDimensions!
+    const p = panel.width,
+      t = panel.depth
+    // Surface-edge hinges add frame thickness beyond the authored catalogue bounds.
+    const width = Math.round((twoPanel ? 2 * (p + t) : p + 2 * t) * 100) / 100
+    const depth = Math.round((p + t) * 100) / 100
+    const height = spec.modelDimensions!.height
+    let modifiers = request[3]!.replace(/[，,。；;]/g, '')
+    for (const [axis, expected] of [
+      ['宽', width],
+      ['深', depth],
+      ['高', height],
+    ] as const) {
+      const dimension = modifiers.match(new RegExp(`${axis}(?:度)?(${lengthPattern})`))
+      if (!dimension) continue
+      if (Math.abs((parseStageLength(dimension[1]!) ?? -1) - expected) > 1e-6) {
+        ask(
+          'fold-enclosure-size',
+          `标准方案外框宽 ${width}、深 ${depth}、高 ${height} 米；是否先按标准尺度预览？`,
+        )
+        return plan
+      }
+      modifiers = modifiers.replace(dimension[0], '')
+    }
+    modifiers = modifiers
+      .replace(/(?:开口|入口)(?:朝向?|面向)(?:观众|台前|台口)/, '')
+      .replace(/(?:放在|放到|置于)?(?:舞台中区|舞台中央|台中|中区)/, '')
+    if (modifiers) {
+      ask(
+        'fold-enclosure-modifiers',
+        '此模板开口朝观众、放在舞台中区；其他朝向、附加物件或建筑结构请分开说明。',
+      )
+      return plan
+    }
+    const venue = context.venue
+    if (!venue) {
+      ask('fold-enclosure-venue', '请先设置舞台宽度和深度，再预览这组三面围合。')
+      return plan
+    }
+    const z = venue.depthMeters / 2
+    if (
+      venue.widthMeters < width ||
+      venue.depthMeters < depth ||
+      (venue.heightMeters !== null && venue.heightMeters < height)
+    ) {
+      ask(
+        'fold-enclosure-space',
+        `舞台中区需有宽 ${width}、深 ${depth}、高 ${height} 米的空位；请先清出空间或调整场地。`,
+      )
+      return plan
+    }
+    const placements = twoPanel
+      ? [
+          [-p - t / 2, z - depth / 2, 270],
+          [0, z + depth / 2 - t / 2, 0],
+        ]
+      : [[-(p + t) / 2, z - depth / 2, 270]]
+    plan.assumptions.push({
+      id: 'fold-enclosure-template',
+      message: `按${count === 2 ? '两组二帘组合' : '一组三帘组合'}、各原生铰链 90° 预览三面 U 形；外框宽 ${width}、深 ${depth}、高 ${height} 米，放在舞台中区，开口朝台前观众。采用前可检查，不缩放资产，也不添加屋顶或永久连接。`,
+    })
+    plan.items = placements.map(([x, pz, yaw], index) => ({
+      proposalId: `fold-enclosure-${index + 1}`,
+      existingNodeId: null,
+      kind: spec.kind,
+      displayName: spec.displayName,
+      libraryAssetId: spec.canonicalId,
+      dimensionsMeters: { ...spec.modelDimensions! },
+      transform: { position: { x: x!, y: 0, z: pz! }, rotationDegrees: { x: 0, y: yaw!, z: 0 } },
+      certainty: 'inferred',
+      assumptionIds: ['fold-enclosure-template'],
+      evidenceIds: [],
+    }))
+    if (
+      plan.items.some((item) =>
+        context.objects.some((other) => stageObjectsTouch(item, other, true)),
+      )
+    ) {
+      plan.items = []
+      ask(
+        'fold-enclosure-space',
+        '标准围合会穿过现有布景；请先移开相交物件，围合空区内的家具可以保留。',
+      )
+    }
+    return StagePlanSchema.parse(plan)
+  }
   if (
     /(灯|照明|光束|屋顶|暖通|机电|厨房|卫浴|装修|房间|场次|节拍|人物心理|导演阐释|道具表|CueStack|\b(?:lighting|lamp|roof|HVAC|room|scene|beat|objective)\b)/i.test(
       text,

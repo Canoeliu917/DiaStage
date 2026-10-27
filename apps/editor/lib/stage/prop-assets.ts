@@ -37,6 +37,12 @@ export function stagePropCollisionGeometry(
 ): StageCollisionGeometry | undefined {
   const asset = CATALOG_ITEMS.find((entry) => entry.id === assetId)
   if (!asset) return undefined
+  if (assetId === 'SCN-FOLD-02' || assetId === 'SCN-FOLD-03')
+    return stageCollisionGeometry({
+      kind: 'scenic-flat',
+      libraryAssetId: assetId,
+      dimensionsMeters: dimensions,
+    })
   const size = [dimensions.width, dimensions.height, dimensions.depth]
   const offset = asset.boundsCenter!.map(
     (value, axis) => (value * size[axis]!) / asset.dimensions![axis]!,

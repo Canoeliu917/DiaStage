@@ -7,10 +7,11 @@ import './stage-entry.css'
 
 const ScriptStageInput = dynamic(() => import('./script-input').then((m) => m.ScriptStageInput), {
   ssr: false,
+  loading: () => <p role="status">正在准备文件…</p>,
 })
 const PhotoStageBuilder = dynamic(
   () => import('../photo-stage-builder').then((m) => m.PhotoStageBuilder),
-  { ssr: false },
+  { ssr: false, loading: () => <p role="status">正在准备文件…</p> },
 )
 
 export function useDiaAttachments({
@@ -26,6 +27,7 @@ export function useDiaAttachments({
     null,
   )
   const [busy, setBusy] = useState(false)
+  const [submission, setSubmission] = useState<{ note: string } | null>(null)
   const [error, setError] = useState('')
   const input = useRef<HTMLInputElement>(null)
   const choose = (files: readonly File[]) => {
@@ -55,8 +57,29 @@ export function useDiaAttachments({
       choose(Array.from(event.dataTransfer.files))
     },
   }
+  const remove = () => {
+    if (busy) return
+    setAttachment(null)
+    setSubmission(null)
+    setError('')
+  }
   return {
     open: attachment !== null,
+    pending: attachment !== null && submission === null,
+    busy,
+    send: (note: string) => {
+      if (disabled || !attachment || submission || busy) return
+      if (note.trim().length > 2000) {
+        setError('补充要求请控制在 2000 字以内。')
+        return
+      }
+      if (attachment.kind === 'photo' && !modelConfigured) {
+        setError('照片 AI 尚未启用，暂时无法生成。')
+        return
+      }
+      setError('')
+      setSubmission({ note: note.trim() })
+    },
     dropProps,
     controls: (
       <div className="dia-attachment-controls">
@@ -71,40 +94,44 @@ export function useDiaAttachments({
             event.target.value = ''
           }}
         />
-        <button
-          type="button"
-          disabled={disabled || !!attachment}
-          onClick={() => input.current?.click()}
-        >
-          添加图片 / PDF
-        </button>
-        <p>
-          也可拖入文字栏：解析已有剧本或照片中的场景布置，确认前不更改舞台。图片仅识别可见场地与布景，不做扫描剧本
-          OCR。
+        {attachment ? (
+          <div className="dia-attachment-file">
+            <span title={attachment.file.name}>{attachment.file.name}</span>
+            <button type="button" disabled={busy} onClick={remove} aria-label="移除附件">
+              ×
+            </button>
+          </div>
+        ) : (
+          <button type="button" disabled={disabled} onClick={() => input.current?.click()}>
+            添加图片 / PDF
+          </button>
+        )}
+        <p className="dia-attachment-hint">
+          <span>
+            {submission
+              ? '确认采用后，才会保存布景。'
+              : attachment
+                ? '可补充要求，发送后生成布景预览。'
+                : '拖入图片或 PDF，发送生成布景。'}
+          </span>
+          <span role={error ? 'alert' : undefined}>
+            {error ||
+              (attachment?.kind === 'photo'
+                ? modelConfigured
+                  ? '图片将交由 AI 识别，尺寸为估算。'
+                  : '照片 AI 尚未启用，暂时无法生成。'
+                : '仅保存采纳片段，不保存原 PDF。')}
+          </span>
         </p>
-        {error && <p role="alert">{error}</p>}
       </div>
     ),
-    panel: attachment && (
+    panel: attachment && submission && (
       <section className="dia-attachment-panel" aria-label="附件场景布置预览" aria-busy={busy}>
-        <div className="dia-attachment-heading">
-          <p>{attachment.file.name}</p>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setAttachment(null)
-              setError('')
-            }}
-          >
-            关闭附件草稿
-          </button>
-        </div>
-        <h3>解析场景布置</h3>
         {attachment.kind === 'script' ? (
           <ScriptStageInput
             sceneId={sceneId}
             initialFile={attachment.file}
+            note={submission.note}
             embedded
             onBusyChange={setBusy}
           />
@@ -112,6 +139,7 @@ export function useDiaAttachments({
           <PhotoStageBuilder
             modelConfigured={modelConfigured}
             initialFile={attachment.file}
+            note={submission.note}
             embedded
             onBusyChange={setBusy}
           />

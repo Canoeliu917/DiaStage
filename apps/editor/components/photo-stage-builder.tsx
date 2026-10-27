@@ -77,11 +77,13 @@ export function PhotoStageBuilder({
   modelConfigured,
   initialFile,
   embedded = false,
+  note = '',
   onBusyChange,
 }: {
   modelConfigured: boolean
   initialFile?: File
   embedded?: boolean
+  note?: string
   onBusyChange?: (busy: boolean) => void
 }) {
   const router = useRouter()
@@ -147,6 +149,7 @@ export function PhotoStageBuilder({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageDataUrl: prepared.imageDataUrl,
+          note: note || undefined,
           name:
             selectedFile?.name
               .replace(/\.[^.]+$/, '')
@@ -261,173 +264,216 @@ export function PhotoStageBuilder({
 
   return (
     <div className="photo-stage-builder">
-      <section className="photo-stage-section" aria-labelledby="photo-source-title">
-        <span className="photo-stage-number">01 / 原图</span>
-        <h2 id="photo-source-title">留下你看到的这一幕</h2>
-        {!embedded && (
-          <label className="photo-stage-upload">
-            <span>{file ? '更换照片' : '选择舞台照片'}</span>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              disabled={busy}
-              onChange={(event) => {
-                const selected = event.target.files?.[0]
-                if (selected) void changePhoto(selected, 'full')
-                event.target.value = ''
-              }}
-            />
-          </label>
-        )}
-        <p className="photo-stage-hint">
-          JPG、PNG、WebP · 最大 12 MB。选定区域会作为对照照片随剧目保存。
-        </p>
-        {file && (
-          <label className="photo-stage-field">
-            取图范围
-            <select
-              value={crop}
-              disabled={busy || preparing}
-              onChange={(event) => void changePhoto(file, event.target.value as PhotoCrop)}
-            >
-              <option value="full">整张照片</option>
-              <option value="upper">上下拼图 · 上半张</option>
-              <option value="lower">上下拼图 · 下半张</option>
-              {crop === 'reference' && <option value="reference">本图 · 下方完整舞台</option>}
-            </select>
-          </label>
-        )}
-        {preparing && <p role="status">正在准备照片…</p>}
-        {photo ? (
-          <img className="photo-stage-source" src={photo.sourceImage} alt="选定的舞台原图" />
-        ) : (
-          <div className="photo-stage-empty">一张照片，重新搭起一个空间。</div>
-        )}
-        <p className="photo-stage-hint">尺寸与被遮挡的结构将标为估算；照片不会被当作实测图纸。</p>
-        {!modelConfigured && (
-          <p className="photo-stage-notice">
-            当前未配置照片识别服务。可先打开下方的本图复原示例，对照原图继续搭建。
-          </p>
-        )}
-        <button
-          className="photo-stage-primary"
-          type="button"
-          disabled={!photo || !modelConfigured || busy || preparing}
-          onClick={() => void analyze()}
-        >
-          识别照片，生成搭建草稿
-        </button>
-        <p className="photo-stage-hint">
-          识别会将选定照片发送给已配置的 AI 服务。生成草稿后由你确认保存。
-        </p>
-        {busy && request.current && (
-          <button
-            type="button"
-            onClick={() => {
-              request.current?.abort()
-              request.current = null
-              setBusy(false)
-              setStatus('已取消识别，尚未创建剧目。')
-            }}
-          >
-            取消识别
-          </button>
-        )}
-        {!embedded && (
-          <>
-            <button type="button" disabled={busy || preparing} onClick={() => void openExample()}>
-              打开本图复原示例 · 花开庭院
-            </button>
-            <p className="photo-stage-hint">
-              示例根据本次讨论中的下半张舞台人工搭建，含弧形高台、左侧台阶、背墙、家具与前区花卉。
-            </p>
-          </>
-        )}
-      </section>
-
-      <section className="photo-stage-section" aria-labelledby="photo-plan-title">
-        <span className="photo-stage-number">02 / 搭建方案</span>
-        <h2 id="photo-plan-title">从照片，回到可编辑的舞台</h2>
-        {plan ? (
-          <>
-            <p className="photo-stage-badge">
-              {source === 'example' ? '人工复原示例' : 'AI 识别草稿'} · 估算尺度
-            </p>
-            <label className="photo-stage-field">
-              剧目名称
+      {!embedded && (
+        <section className="photo-stage-section" aria-labelledby="photo-source-title">
+          <span className="photo-stage-number">01 / 原图</span>
+          <h2 id="photo-source-title">留下你看到的这一幕</h2>
+          {!embedded && (
+            <label className="photo-stage-upload">
+              <span>{file ? '更换照片' : '选择舞台照片'}</span>
               <input
-                value={plan.name}
-                maxLength={120}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
                 disabled={busy}
-                onChange={(event) => setPlan({ ...plan, name: event.target.value })}
+                onChange={(event) => {
+                  const selected = event.target.files?.[0]
+                  if (selected) void changePhoto(selected, 'full')
+                  event.target.value = ''
+                }}
               />
             </label>
-            <p>{plan.summary}</p>
-            <div className="photo-stage-map">
-              <PlacementPreview plan={plan} />
-            </div>
-            <p className="photo-stage-hint">
-              平面布局预览 · 估算场地 {plan.stage.width} × {plan.stage.depth} 米 ·{' '}
-              {plan.objects.length} 个独立构件
+          )}
+          <p className="photo-stage-hint">
+            JPG、PNG、WebP · 最大 12 MB。选定区域会作为对照照片随剧目保存。
+          </p>
+          {file && (
+            <label className="photo-stage-field">
+              取图范围
+              <select
+                value={crop}
+                disabled={busy || preparing}
+                onChange={(event) => void changePhoto(file, event.target.value as PhotoCrop)}
+              >
+                <option value="full">整张照片</option>
+                <option value="upper">上下拼图 · 上半张</option>
+                <option value="lower">上下拼图 · 下半张</option>
+                {crop === 'reference' && <option value="reference">本图 · 下方完整舞台</option>}
+              </select>
+            </label>
+          )}
+          {preparing && <p role="status">正在准备照片…</p>}
+          {photo ? (
+            <img className="photo-stage-source" src={photo.sourceImage} alt="选定的舞台原图" />
+          ) : (
+            <div className="photo-stage-empty">一张照片，重新搭起一个空间。</div>
+          )}
+          <p className="photo-stage-hint">尺寸与被遮挡的结构将标为估算；照片不会被当作实测图纸。</p>
+          {!modelConfigured && (
+            <p className="photo-stage-notice">
+              当前未配置照片识别服务。可先打开下方的本图复原示例，对照原图继续搭建。
             </p>
-            <details className="photo-stage-details">
-              <summary>需要核实的部分（{plan.uncertainties.length}）</summary>
-              <ul>
-                {plan.uncertainties.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </details>
-            <details className="photo-stage-details">
-              <summary>检查物件与 {AVAILABLE_STAGE_SCENERY.length} 款资产匹配</summary>
-              <p className="photo-stage-hint">
-                可更换匹配资产；进入舞台后继续调整位置、尺寸、旋转与折角。
-              </p>
-              <ol className="photo-stage-objects">
-                {plan.objects.map((object, index) => (
-                  <li key={object.id}>
-                    <label htmlFor={`photo-asset-${index}`}>{object.name}</label>
-                    <select
-                      id={`photo-asset-${index}`}
-                      disabled={busy}
-                      value={object.assetId ?? ''}
-                      onChange={(event) => replaceAsset(index, event.target.value)}
-                    >
-                      {!object.assetId && <option value="">可编辑构件 · {object.kind}</option>}
-                      {AVAILABLE_STAGE_SCENERY.map(({ asset }) => (
-                        <option key={asset.id} value={asset.id}>
-                          {asset.name}
-                        </option>
-                      ))}
-                    </select>
-                    <small>
-                      宽 {object.dimensions.width} · 高 {object.dimensions.height} · 深{' '}
-                      {object.dimensions.depth} 米（估算）
-                    </small>
-                  </li>
-                ))}
-              </ol>
-            </details>
+          )}
+          <button
+            className="photo-stage-primary"
+            type="button"
+            disabled={!photo || !modelConfigured || busy || preparing}
+            onClick={() => void analyze()}
+          >
+            识别照片，生成搭建草稿
+          </button>
+          <p className="photo-stage-hint">
+            识别会将选定照片发送给已配置的 AI 服务。生成草稿后由你确认保存。
+          </p>
+          {busy && request.current && (
             <button
-              className="photo-stage-primary"
               type="button"
-              disabled={busy || preparing || !plan.name.trim()}
-              onClick={() => void create()}
+              onClick={() => {
+                request.current?.abort()
+                request.current = null
+                setBusy(false)
+                setStatus('已取消识别，尚未创建剧目。')
+              }}
             >
-              确认布置并新建场景
+              取消识别
             </button>
-            <p className="photo-stage-hint">
-              保存为独立剧目，使用现有三维、平面、移动、旋转、缩放、折叠及撤销工具继续搭建。
-            </p>
-          </>
-        ) : (
-          <div className="photo-stage-empty">上传照片后生成草稿，或先查看本图复原示例。</div>
-        )}
-      </section>
-      <div className="photo-stage-feedback" aria-live="polite">
-        {status && <p role="status">{status}</p>}
-        {error && <p role="alert">{error}</p>}
-      </div>
+          )}
+          {!embedded && (
+            <>
+              <button type="button" disabled={busy || preparing} onClick={() => void openExample()}>
+                打开本图复原示例 · 花开庭院
+              </button>
+              <p className="photo-stage-hint">
+                示例根据本次讨论中的下半张舞台人工搭建，含弧形高台、左侧台阶、背墙、家具与前区花卉。
+              </p>
+            </>
+          )}
+        </section>
+      )}
+
+      {embedded && !plan && (
+        <div className="photo-stage-feedback" aria-live="polite">
+          {(preparing || busy) && <p role="status">正在生成场景布置…</p>}
+          {error && <p role="alert">{error}</p>}
+          {!preparing && !busy && error && (
+            <button
+              type="button"
+              onClick={() => {
+                if (photo) void analyze()
+                else if (initialFile) void changePhoto(initialFile, 'full', true)
+              }}
+            >
+              重新生成
+            </button>
+          )}
+          {(preparing || busy) && (
+            <button
+              type="button"
+              onClick={() => {
+                generation.current++
+                request.current?.abort()
+                request.current = null
+                setBusy(false)
+                setPreparing(false)
+                setError('已停止生成，文件仍保留。')
+              }}
+            >
+              停止
+            </button>
+          )}
+        </div>
+      )}
+
+      {(!embedded || plan) && (
+        <section className="photo-stage-section" aria-labelledby="photo-plan-title">
+          <span className="photo-stage-number">02 / 搭建方案</span>
+          <h2 id="photo-plan-title">从照片，回到可编辑的舞台</h2>
+          {plan ? (
+            <>
+              <p className="photo-stage-badge">
+                {source === 'example' ? '人工复原示例' : 'AI 识别草稿'} · 估算尺度
+              </p>
+              {!embedded && (
+                <label className="photo-stage-field">
+                  剧目名称
+                  <input
+                    value={plan.name}
+                    maxLength={120}
+                    disabled={busy}
+                    onChange={(event) => setPlan({ ...plan, name: event.target.value })}
+                  />
+                </label>
+              )}
+              <p>{plan.summary}</p>
+              <div className="photo-stage-map">
+                <PlacementPreview plan={plan} />
+              </div>
+              <p className="photo-stage-hint">
+                平面布局预览 · 估算场地 {plan.stage.width} × {plan.stage.depth} 米 ·{' '}
+                {plan.objects.length} 个独立构件
+              </p>
+              <details className="photo-stage-details">
+                <summary>需要核实的部分（{plan.uncertainties.length}）</summary>
+                <ul>
+                  {plan.uncertainties.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </details>
+              <details className="photo-stage-details">
+                <summary>检查物件与 {AVAILABLE_STAGE_SCENERY.length} 款资产匹配</summary>
+                <p className="photo-stage-hint">
+                  可更换匹配资产；进入舞台后继续调整位置、尺寸、旋转与折角。
+                </p>
+                <ol className="photo-stage-objects">
+                  {plan.objects.map((object, index) => (
+                    <li key={object.id}>
+                      <label htmlFor={`photo-asset-${index}`}>{object.name}</label>
+                      <select
+                        id={`photo-asset-${index}`}
+                        disabled={busy}
+                        value={object.assetId ?? ''}
+                        onChange={(event) => replaceAsset(index, event.target.value)}
+                      >
+                        {!object.assetId && <option value="">可编辑构件 · {object.kind}</option>}
+                        {AVAILABLE_STAGE_SCENERY.map(({ asset }) => (
+                          <option key={asset.id} value={asset.id}>
+                            {asset.name}
+                          </option>
+                        ))}
+                      </select>
+                      <small>
+                        宽 {object.dimensions.width} · 高 {object.dimensions.height} · 深{' '}
+                        {object.dimensions.depth} 米（估算）
+                      </small>
+                    </li>
+                  ))}
+                </ol>
+              </details>
+              <button
+                className="photo-stage-primary"
+                type="button"
+                disabled={busy || preparing || !plan.name.trim()}
+                onClick={() => void create()}
+              >
+                确认布置并新建场景
+              </button>
+              {!embedded && (
+                <p className="photo-stage-hint">
+                  保存为独立剧目，使用现有三维、平面、移动、旋转、缩放、折叠及撤销工具继续搭建。
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="photo-stage-empty">上传照片后生成草稿，或先查看本图复原示例。</div>
+          )}
+        </section>
+      )}
+      {(!embedded || plan) && (
+        <div className="photo-stage-feedback" aria-live="polite">
+          {status && <p role="status">{status}</p>}
+          {error && <p role="alert">{error}</p>}
+        </div>
+      )}
     </div>
   )
 }

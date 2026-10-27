@@ -4,8 +4,8 @@ import {
   type BlockNode,
   cloneNodesInto,
   GROUND_SUPPORT_ID,
-  getNodeLock,
   getFloorPlacedElevation,
+  getNodeLock,
   ItemNode,
   installSceneMutationHandler,
   type NodeChanges,
@@ -25,6 +25,7 @@ import {
   StageCommandSchema,
   type StageItemProposal,
   type StagePlan,
+  stageFoldGeometry,
   stageStairBounds,
   stageToWorldPosition,
   stageToWorldRotation,
@@ -63,8 +64,8 @@ import {
 } from './context'
 import { ScriptImportSchema } from './import-metadata'
 import { makeScenery, SCENERY_LIBRARY } from './scenery'
-import { prepareSpatialFold } from './spatial-fold'
 import { SpatialFoldConfigurationSchema } from './spatial-constraints'
+import { prepareSpatialFold } from './spatial-fold'
 
 export const useStageCommandNotice = create<{ error: string }>(() => ({ error: '' }))
 export type StageExecutionResult = {
@@ -185,10 +186,15 @@ function proposal(
   existing: boolean,
 ): StageItemProposal {
   const snapshot = objectSnapshot(node, nodes)
+  const dimensions =
+    node.type === 'item'
+      ? (stageFoldGeometry(node.asset.id, node.controls, node.scale)?.dimensions ??
+        snapshot.dimensions)
+      : snapshot.dimensions
   const dimensionsMeters = {
-    width: snapshot.dimensions[0],
-    height: snapshot.dimensions[1],
-    depth: snapshot.dimensions[2],
+    width: dimensions[0],
+    height: dimensions[1],
+    depth: dimensions[2],
   }
   return {
     proposalId: node.id,

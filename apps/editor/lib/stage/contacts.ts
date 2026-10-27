@@ -83,24 +83,6 @@ export function stageContactIds(objects: ContactObject[], penetrationOnly = fals
     return new Set(cached.ids)
   }
   const prepared = physical.map(prepareStageCollision)
-  const interior = (collision: ReturnType<typeof prepareStageCollision>) => ({
-    ...collision,
-    parts: collision.parts.map((part) => {
-      const center = part.bounds.map(([min, max]) => (min + max) / 2)
-      return {
-        ...part,
-        vertices: part.vertices.map(
-          (vertex) =>
-            vertex.map((value, axis) => center[axis]! + (value - center[axis]!) * 0.99999) as [
-              number,
-              number,
-              number,
-            ],
-        ),
-      }
-    }),
-  })
-  const strict = penetrationOnly ? prepared.map(interior) : prepared
   const ids = new Set<string>()
   for (let i = 0; i < physical.length; i++) {
     if (stageModelBelowFloor(physical[i]!) ?? prepared[i]!.bounds[1]![0] < -1e-7)
@@ -109,7 +91,8 @@ export function stageContactIds(objects: ContactObject[], penetrationOnly = fals
       const a = physical[i]!,
         b = physical[j]!
       const modelContact = stageModelContact(a, b, penetrationOnly)
-      if (!(modelContact ?? stageCollisionsTouch(strict[i]!, strict[j]!))) continue
+      if (!(modelContact ?? stageCollisionsTouch(prepared[i]!, prepared[j]!, penetrationOnly)))
+        continue
       ids.add(physical[i]!.id)
       ids.add(physical[j]!.id)
     }

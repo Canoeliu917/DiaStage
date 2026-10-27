@@ -2,6 +2,7 @@ import { afterEach, expect, test } from 'bun:test'
 import OpenAI from 'openai'
 import { handleAiRequest } from '../ai/api'
 import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
+import { SCENERY_ASSEMBLY_RULES } from '../stage/scenery-assembly-rules'
 import { analyzePhotoStage, PHOTO_IMAGE_MAX_BYTES } from './analyze-server'
 
 const imageDataUrl =
@@ -47,7 +48,7 @@ function request(body: unknown, headers: Record<string, string> = {}) {
 test('passes the uploaded image to vision with 21 selectable assets and strict structured output', async () => {
   const signal = new AbortController().signal
   const plan = await analyzePhotoStage(
-    { imageDataUrl, name: '此次照片' },
+    { imageDataUrl, name: '此次照片', note: '  台右保留一米通道。\n ' },
     signal,
     async (input, passedSignal) => {
       expect(passedSignal).toBe(signal)
@@ -59,6 +60,7 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
       })
       const context = JSON.parse(input.input[0]!.content[0]!.text!)
       expect(context.name).toBe('此次照片')
+      expect(context.note).toBe('台右保留一米通道。')
       expect(context.availableSceneryLibrary).toHaveLength(21)
       expect(JSON.stringify(context.availableSceneryLibrary)).not.toContain('SCN-FLAT-090')
       expect(JSON.stringify(input.text.format)).not.toContain('SCN-FLAT-090')
@@ -72,6 +74,8 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
       expect(input.instructions).toContain('向台后升高的台阶应绕Y旋转π弧度')
       expect(input.instructions).toContain('弧度')
       expect(input.instructions).toContain('不可信')
+      expect(input.instructions).toContain('不是照片可见性或实测尺寸的证据')
+      expect(input.instructions).toContain(SCENERY_ASSEMBLY_RULES)
       expect(input.text.format.strict).toBe(true)
       expect(JSON.stringify(input.text.format)).not.toContain('prefixItems')
       return modelPlan()
@@ -83,6 +87,17 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
   expect(plan.uncertainties[0]).toContain('均为照片估算')
 })
 
+test('notes are optional, omit whitespace and accept the trimmed 2000-character boundary', async () => {
+  for (const note of [undefined, ' \n ', `  ${'注'.repeat(2000)}  `]) {
+    await analyzePhotoStage({ imageDataUrl, note }, new AbortController().signal, async (input) => {
+      const context = JSON.parse(input.input[0]!.content[0]!.text)
+      if (note?.trim()) expect(context.note).toBe(note.trim())
+      else expect(context).not.toHaveProperty('note')
+      return modelPlan()
+    })
+  }
+})
+
 test('rejects malformed, remote and oversized inputs before invoking the provider', async () => {
   let calls = 0
   const model = async () => {
@@ -92,6 +107,8 @@ test('rejects malformed, remote and oversized inputs before invoking the provide
   for (const input of [
     {},
     { imageDataUrl, name: 'x'.repeat(121) },
+    { imageDataUrl, note: '注'.repeat(2001) },
+    { imageDataUrl, note: 123 },
     { imageDataUrl, resourceUrl: 'https://example.com/image.png' },
     { imageDataUrl: 'https://example.com/image.png' },
     { imageDataUrl: 'data:image/svg+xml;base64,PHN2Zz4=' },

@@ -8,6 +8,7 @@ import {
   resolveStageObjectSpecs,
   type SceneContextSummary,
   type StageCommand,
+  stageFoldGeometry,
 } from '@pascal-app/core/stage'
 import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { planStageRequest } from '../ai/stage-planner'
@@ -58,7 +59,7 @@ test('selectable menu maps 21 canonical models and 42 correctly sized PNGs witho
     expect(installed.asset.src).toBe(stagePropAssetUrl(prop.model))
     expect(installed.asset.thumbnail).toBe(stagePropAssetUrl(prop.thumbnail))
     const [min, max] = prop.bounds_m
-    const center = [
+    const center = stageFoldGeometry(prop.id)?.boundsCenter ?? [
       (min![0]! + max![0]!) / 2,
       (min![2]! + max![2]!) / 2,
       -(min![1]! + max![1]!) / 2,
@@ -177,8 +178,8 @@ for (const prop of STAGE_PROP_MENU.assets) {
 
 test('fold pivots and open-door bounds are preserved separately from menu specifications', () => {
   const fold = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === 'SCN-FOLD-02')!.asset
-  expect(fold.boundsCenter).toEqual([0.46, 1.2, -0.44])
-  expect(fold.dimensions).toEqual([0.92, 2.4, 0.92])
+  expect(fold.boundsCenter).toEqual([0.47, 1.2, -0.45])
+  expect(fold.dimensions).toEqual([0.94, 2.4, 0.94])
   const door = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === 'SCN-DOOR-130')!.asset
   expect(door.dimensions![2]).toBeCloseTo(0.48669697251359767)
   expect(door.boundsCenter![2]).toBeCloseTo(0.2023484862567988)
@@ -186,11 +187,12 @@ test('fold pivots and open-door bounds are preserved separately from menu specif
   expect(prop.dimensions_m.depth).toBe(0.08)
   expect(prop.dimensions_m.leaf_depth).toBe(0.035)
   expect(prop.assumed_fields).toContain('leaf_depth')
-  const geometry = stagePropCollisionGeometry(fold.id, { width: 1.84, height: 4.8, depth: 1.84 })!
+  const geometry = stagePropCollisionGeometry(fold.id, { width: 1.88, height: 4.8, depth: 1.88 })!
+  expect(geometry).toHaveLength(2)
   const vertices = geometry.flatMap((part) => part.vertices)
   expect(Math.min(...vertices.map((point) => point[0]))).toBeCloseTo(0)
-  expect(Math.max(...vertices.map((point) => point[0]))).toBeCloseTo(1.84)
-  expect(Math.min(...vertices.map((point) => point[2]))).toBeCloseTo(-1.8)
+  expect(Math.max(...vertices.map((point) => point[0]))).toBeCloseTo(1.88)
+  expect(Math.min(...vertices.map((point) => point[2]))).toBeCloseTo(-1.84)
   expect(Math.max(...vertices.map((point) => point[2]))).toBeCloseTo(0.04)
   expect(stagePropCollisionGeometry(null, { width: 1, height: 1, depth: 1 })).toBeUndefined()
 })

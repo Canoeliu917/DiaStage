@@ -126,7 +126,7 @@ describe('script physical fact selection and merge', () => {
 
 describe('script planner', () => {
   test('equivalent PDF page and DOCX paragraph text yield the same offline stage with truthful evidence', async () => {
-    const pdf = await planFromPassages([passage()], signal(), {}, noModel)
+    const pdf = await planFromPassages([passage()], signal(), { note: ' \n ' }, noModel)
     const docx = await planFromPassages([passage(text, 'paragraph1', null)], signal(), {}, noModel)
     const geometry = (plan: StagePlan) =>
       plan.items.map(({ kind, dimensionsMeters, transform }) => ({
@@ -236,6 +236,54 @@ describe('script planner', () => {
         execute: 'deleteScene()',
       })),
     ).rejects.toThrow('可靠原文证据')
+  })
+
+  test('nonempty notes reach the model even for locally parseable scripts and remain separate from passages', async () => {
+    const input = passage('建立宽8米深6米的舞台。舞台中区放双人沙发')
+    let calls = 0
+    for (const note of [' \n 沙发向台右移动一米。\n ', ` ${'注'.repeat(2000)} `]) {
+      const plan = await planFromPassages([input], signal(), { note }, async (request) => {
+        calls++
+        expect(request.note).toBe(note.trim())
+        expect(request.passages.every((entry) => input.text.includes(entry.text))).toBe(true)
+        expect(request.passages.some((entry) => entry.text.includes(note.trim()))).toBe(false)
+        const result = oneSofa()
+        const source = request.passages.find((entry) => entry.text.includes('双人沙发'))!
+        result.evidence[0] = {
+          id: source.id,
+          page: source.page,
+          paragraph: source.paragraph,
+          excerpt: source.text,
+          certainty: 'stated',
+        }
+        result.items[0]!.evidenceIds = [source.id]
+        return result
+      })
+      expect(plan.items).toHaveLength(1)
+      expect(plan.evidence.every((entry) => input.text.includes(entry.excerpt))).toBe(true)
+    }
+    expect(calls).toBe(2)
+  })
+
+  test('oversized notes fail before local parsing or a provider, and cannot become script evidence', async () => {
+    let calls = 0
+    await expect(
+      planFromPassages([passage()], signal(), { note: '注'.repeat(2001) }, async () => {
+        calls++
+        return oneSofa()
+      }),
+    ).rejects.toMatchObject({ code: 'PLAN_INVALID' })
+    expect(calls).toBe(0)
+    const note = '沙发向台右移动一米。'
+    await expect(
+      planFromPassages([passage('舞台中央摆着双人沙发')], signal(), { note }, async () => {
+        calls++
+        const result = oneSofa()
+        result.evidence[0]!.excerpt = note
+        return result
+      }),
+    ).rejects.toThrow('可靠原文证据')
+    expect(calls).toBe(2)
   })
 
   test('only installed assets matching the proposed object and standard dimensions pass evidence validation', async () => {

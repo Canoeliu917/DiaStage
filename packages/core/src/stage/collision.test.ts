@@ -25,7 +25,7 @@ const context: SceneContextSummary = {
   venue: { type: 'black-box', widthMeters: 8, depthMeters: 6, heightMeters: 4 },
 }
 
-test('touch and penetration compile, without an old clearance or minimum gap', () => {
+test('touch and penetration compile, but only penetration warns without a minimum gap', () => {
   for (const x of [0, 1, 1.001]) {
     const a = object('neutral-block'),
       b = object('neutral-block')
@@ -65,8 +65,46 @@ test('touch and penetration compile, without an old clearance or minimum gap', (
     expect(
       result.warnings.some((warning) => warning.blocking || warning.code === 'clearance'),
     ).toBe(false)
-    expect(result.warnings.some((warning) => warning.code === 'collision')).toBe(x <= 1)
+    expect(result.warnings.some((warning) => warning.code === 'collision')).toBe(x < 1)
   }
+})
+
+test('strict collision distinguishes face, edge, corner and support contact from penetration', () => {
+  const a = object('neutral-block')
+  for (const [x, y, z] of [
+    [1, 0, 0],
+    [1, 0, 1],
+    [1, 1, 1],
+    [0, 1, 0],
+  ]) {
+    const b = object('neutral-block')
+    b.transform.position = { x: x!, y: y!, z: 3 + z! }
+    expect(stageObjectsTouch(a, b)).toBe(true)
+    expect(stageObjectsTouch(a, b, true)).toBe(false)
+  }
+  const b = object('neutral-block')
+  b.transform.position.x = 0.9999
+  expect(stageObjectsTouch(a, b, true)).toBe(true)
+  b.transform.position.y = 1.001
+  expect(stageObjectsTouch(a, b, true)).toBe(false)
+})
+
+test('strict collision preserves resized local geometry and rotated surface contact', () => {
+  const a = object('neutral-block', 2, 1.5, 0.4)
+  a.collisionGeometry = stageCollisionGeometry(a)
+  a.dimensionsMeters.width = 3
+  a.transform.rotationDegrees.y = 37
+  const b = structuredClone(a)
+  const offset = rotatePoint([3, 0, 0], [0, (37 * Math.PI) / 180, 0])
+  b.transform.position.x += offset[0]
+  b.transform.position.z += offset[2]
+  expect(stageObjectsTouch(a, b)).toBe(true)
+  expect(stageObjectsTouch(a, b, true)).toBe(false)
+  b.transform.position.x -= offset[0] * 0.0001
+  b.transform.position.z -= offset[2] * 0.0001
+  expect(stageObjectsTouch(a, b, true)).toBe(true)
+  b.transform.position.y = 1.5
+  expect(stageObjectsTouch(a, b, true)).toBe(false)
 })
 
 test('door and window openings, table legs and circular tops use occupied parts', () => {

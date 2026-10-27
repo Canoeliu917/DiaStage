@@ -95,7 +95,14 @@ export function groundLanguage(
           ? '请先选中一个要观察的物品。'
           : null,
     }
-  const placementIntent = parseStagePlacementIntent(text)
+  const foldPlan =
+    /[二两双三](?:连|联|帘|折)|折叠景片/.test(text) && /围|房间|房屋|长方体|U[形型]/i.test(text)
+      ? parseStageText(text, context, priorAnswers)
+      : null
+  const foldCreation =
+    foldPlan?.assumptions.some((item) => item.id === 'fold-enclosure-template') ||
+    foldPlan?.questions.some((item) => item.id.startsWith('fold-enclosure-'))
+  const placementIntent = foldCreation ? null : parseStagePlacementIntent(text)
   if (placementIntent) {
     const placementDraft = mapStagePlacementIntent(placementIntent, context)
     const knowledgeProposal = resolveKnowledgeForProposal(text, placementDraft, context)
@@ -141,7 +148,7 @@ export function groundLanguage(
       /(台左|台右|台前|台后)(?=[零〇一二两三四五六七八九十百千万半\d]+(?:厘米|公分|毫米|米|cm|mm|m))/g,
       '$1移',
     )
-  const plan = parseStageText(normalizedInput, context, priorAnswers)
+  const plan = foldCreation ? foldPlan : parseStageText(normalizedInput, context, priorAnswers)
   if (!plan) return null
   if (plan.questions.length)
     return {

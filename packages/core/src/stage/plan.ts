@@ -340,10 +340,8 @@ export function validateStagePlan(
       ['performer-marker', 'camera'].includes(b.kind)
     )
       return
-    if (stageCollisionsTouch(geometry.get(a)!, geometry.get(b)!)) {
-      warnings.push(
-        warning('collision', `${a.name} 与 ${b.name} 接触或重叠。`, [a.id, b.id], false),
-      )
+    if (stageCollisionsTouch(geometry.get(a)!, geometry.get(b)!, true)) {
+      warnings.push(warning('collision', `${a.name} 与 ${b.name} 穿插。`, [a.id, b.id], false))
     }
   }
   // ponytail: pair checks are quadratic; spatial indexing is only needed beyond the 200-item plan limit.

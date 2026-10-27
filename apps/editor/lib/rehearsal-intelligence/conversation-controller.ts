@@ -1109,6 +1109,15 @@ export class DiaConversation {
       if (!viewOnly) this.status('idle', '舞台没有改变，可以继续讨论或手动操作。')
       await this.persist()
     }
+    if (grounded?.plan?.questions.some((question) => question.id.startsWith('fold-enclosure-'))) {
+      await reply(grounded.clarification!, true)
+      this.status(
+        parent?.status === 'previewed' ? 'waiting-human' : 'idle',
+        '请补充搭建要求；正式舞台与已有提案均未改变。',
+      )
+      await this.persist()
+      return true
+    }
     if (isCompoundStageRequest(text)) {
       if (parent && parent.status !== 'applied') {
         await reply('请先采用或取消当前提案，再生成这套完整布景。', true)

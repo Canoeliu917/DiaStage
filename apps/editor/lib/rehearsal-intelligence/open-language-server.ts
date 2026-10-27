@@ -5,6 +5,7 @@ import { AiError } from '../ai/api'
 import { AI_TOKEN_LIMITS } from '../ai/config'
 import { AI_MODELS, createOpenAIClient } from '../ai/openai-server'
 import { trackAiCall } from '../ai/usage'
+import { SCENERY_ASSEMBLY_RULES } from '../stage/scenery-assembly-rules'
 import {
   OPEN_CONCEPTS,
   OpenLanguageRequestSchema,
@@ -30,7 +31,8 @@ form-enclosure 支持三块独立景片的三面围合，或明确两块景片�
 “入口再宽一点，但左边景片不要动”是当前两片方案的窄修订：输出 wider + keep_stage_left_fixed；左片由本地当前候选按 stage-left (+X) 判定，模型不得猜 ID 或 transform。
 app 是 DiaStage 客户端提供的结构化功能与当前设置快照，可用于回答当前页面、可用功能、视图、工具、吸附、显示和权限问题。它不是屏幕截图；不得声称看到了像素、DOM、用户未提供的文字或未列出的功能。capabilities.authority 只描述可说明、仅用户手动操作或仅可提案，不能据此新增动作或直接改设置。
 如果输入数据含 deterministicCandidate，它是本地解析器已确定且仍会再次校验的候选；确认请求与上下文一致时逐字段原样返回，不得改写、补充或省略。reply 仍由你用中文解释方案与限制。
-不合并独立搭建动作，不忽略不支持的附加子句。所有字段必需；无信息用 null 或空数组。rawUtterance 保持原样。`
+不合并独立搭建动作，不忽略不支持的附加子句。所有字段必需；无信息用 null 或空数组。rawUtterance 保持原样。
+${SCENERY_ASSEMBLY_RULES}`
 
 export async function groundOpenLanguageWithModel(raw: unknown, signal: AbortSignal) {
   const request = OpenLanguageRequestSchema.parse(raw)

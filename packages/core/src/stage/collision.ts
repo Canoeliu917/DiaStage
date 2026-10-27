@@ -1,5 +1,6 @@
 import { add, cross, dot, rotatePoint, subtract } from '../remount/geometry'
 import type { Vec3 } from '../remount/schema'
+import { stageFoldGeometry } from './fold-geometry'
 import { SCENERY_ROUND_SEGMENTS, sceneryProxyParts } from './scenery-parts'
 import type { SceneContextObject, StageCollisionGeometry } from './schema'
 
@@ -30,6 +31,13 @@ export function stageCollisionGeometry(
       ),
     }))
   }
+  const fold = stageFoldGeometry(item.libraryAssetId ?? '')
+  if (fold)
+    return stageFoldGeometry(item.libraryAssetId!, {}, [
+      item.dimensionsMeters.width / fold.dimensions[0],
+      item.dimensionsMeters.height / fold.dimensions[1],
+      item.dimensionsMeters.depth / fold.dimensions[2],
+    ])!.collisionGeometry
   const kind = item.libraryAssetId ? 'neutral-block' : item.kind
   return sceneryProxyParts(kind, item.dimensionsMeters, item.stepCount ?? undefined).map((part) => {
     const count = part.shape === 'cylinder' ? SCENERY_ROUND_SEGMENTS : 4
@@ -121,7 +129,11 @@ type PreparedCollision = ReturnType<typeof prepareStageCollision>
 const boundsTouch = (a: number[][], b: number[][]) =>
   a.every(([min, max], axis) => max! >= b[axis]![0]! - epsilon && min! <= b[axis]![1]! + epsilon)
 
-export function stageCollisionsTouch(a: PreparedCollision, b: PreparedCollision): boolean {
+export function stageCollisionsTouch(
+  a: PreparedCollision,
+  b: PreparedCollision,
+  penetrationOnly = false,
+): boolean {
   if (!boundsTouch(a.bounds, b.bounds)) return false
   return a.parts.some((left) =>
     b.parts.some((right) => {
@@ -134,19 +146,23 @@ export function stageCollisionsTouch(a: PreparedCollision, b: PreparedCollision)
       return axes.every((axis) => {
         const l = left.vertices.map((vertex) => dot(vertex, axis))
         const r = right.vertices.map((vertex) => dot(vertex, axis))
-        return (
-          Math.max(...l) >= Math.min(...r) - epsilon && Math.max(...r) >= Math.min(...l) - epsilon
-        )
+        const overlap =
+          Math.min(Math.max(...l), Math.max(...r)) - Math.max(Math.min(...l), Math.min(...r))
+        return penetrationOnly ? overlap > epsilon : overlap >= -epsilon
       })
     }),
   )
 }
 
-export function stageObjectsTouch(a: CollisionObject, b: CollisionObject): boolean {
+export function stageObjectsTouch(
+  a: CollisionObject,
+  b: CollisionObject,
+  penetrationOnly = false,
+): boolean {
   if (
     ['camera', 'performer-marker'].includes(a.kind) ||
     ['camera', 'performer-marker'].includes(b.kind)
   )
     return false
-  return stageCollisionsTouch(prepareStageCollision(a), prepareStageCollision(b))
+  return stageCollisionsTouch(prepareStageCollision(a), prepareStageCollision(b), penetrationOnly)
 }

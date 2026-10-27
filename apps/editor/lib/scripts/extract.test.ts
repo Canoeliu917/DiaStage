@@ -184,6 +184,7 @@ test('multipart rejects extra or duplicate files and parses bounded optional sce
     new Request('http://127.0.0.1/api/script/stage-plan', { method: 'POST', body: form })
   const parsed = await readScriptUpload(request(), signal())
   expect(parsed.options.sceneContext?.documentVersion).toBe(1)
+  expect(parsed.options).not.toHaveProperty('note')
   form.append('file', pdf())
   await expect(readScriptUpload(request(), signal())).rejects.toMatchObject({
     code: 'UNSUPPORTED_FILE',
@@ -193,6 +194,30 @@ test('multipart rejects extra or duplicate files and parses bounded optional sce
   form.set('sceneContext', JSON.stringify({ nodes: {} }))
   await expect(readScriptUpload(request(), signal())).rejects.toMatchObject({
     code: 'PLAN_INVALID',
+  })
+})
+
+test('multipart accepts a plain trimmed note and rejects oversized, file or duplicate notes', async () => {
+  const form = new FormData()
+  form.set('file', docx())
+  const request = () =>
+    new Request('http://127.0.0.1/api/script/stage-plan', { method: 'POST', body: form })
+  for (const note of [' \n 沙发向台右移动一米。\n ', `  ${'注'.repeat(2000)}  `]) {
+    form.set('note', note)
+    expect((await readScriptUpload(request(), signal())).options.note).toBe(note.trim())
+  }
+  form.set('note', '注'.repeat(2001))
+  await expect(readScriptUpload(request(), signal())).rejects.toMatchObject({
+    code: 'PLAN_INVALID',
+  })
+  form.set('note', new File(['not a string'], 'note.txt'))
+  await expect(readScriptUpload(request(), signal())).rejects.toMatchObject({
+    code: 'PLAN_INVALID',
+  })
+  form.set('note', '保留通道')
+  form.append('note', '第二份注解')
+  await expect(readScriptUpload(request(), signal())).rejects.toMatchObject({
+    code: 'UNSUPPORTED_FILE',
   })
 })
 

@@ -35,11 +35,13 @@ export function ScriptStageInput({
   sceneId,
   initialFile,
   embedded = false,
+  note = '',
   onBusyChange,
 }: {
   sceneId?: string
   initialFile?: File
   embedded?: boolean
+  note?: string
   onBusyChange?: (busy: boolean) => void
 }) {
   const router = useRouter()
@@ -103,6 +105,7 @@ export function ScriptStageInput({
       body.set('file', selectedFile)
       body.set('sceneContext', JSON.stringify(current))
       body.set('priorAnswers', JSON.stringify(priorAnswers))
+      if (note) body.set('note', note)
       const { response } = await fetchAiWithBudgetConsent('/api/script/stage-plan', {
         method: 'POST',
         body,
@@ -227,7 +230,9 @@ export function ScriptStageInput({
     <div className="stage-input" aria-busy={busy}>
       {!plan && (
         <>
-          <p>只解析已有剧本中的舞台空间与大型布景，不生成剧本文字；确认前不会更改舞台。</p>
+          {!embedded && (
+            <p>只解析已有剧本中的舞台空间与大型布景，不生成剧本文字；确认前不会更改舞台。</p>
+          )}
           {!initialFile && (
             <div
               className="stage-script-dropzone"
@@ -253,23 +258,26 @@ export function ScriptStageInput({
               <p>支持文本型 PDF、Word .docx · 最多 20 MB</p>
             </div>
           )}
-          {file && (
+          {!embedded && file && (
             <p className="stage-script-filename">
               {file.name} · {(file.size / 1024 / 1024).toFixed(2)} MB
             </p>
           )}
-          <button
-            type="button"
-            disabled={busy || !file || (!!error && state !== 'error')}
-            onClick={() => void generate()}
-          >
-            {state === 'parsing'
-              ? '正在提取舞台信息…'
-              : state === 'error'
-                ? '重新提取'
-                : '解析场景布置'}
-          </button>
-          <p>原文件仅在本次处理期间使用；项目只保存已确认布景的依据摘录。</p>
+          {embedded && busy && <p role="status">正在生成场景布置…</p>}
+          {(!embedded || !busy) && (
+            <button
+              type="button"
+              disabled={busy || !file || (!!error && state !== 'error')}
+              onClick={() => void generate()}
+            >
+              {state === 'parsing'
+                ? '正在提取舞台信息…'
+                : state === 'error'
+                  ? '重新提取'
+                  : '解析场景布置'}
+            </button>
+          )}
+          {!embedded && <p>原文件仅在本次处理期间使用；项目只保存已确认布景的依据摘录。</p>}
         </>
       )}
       {plan && (

@@ -10,6 +10,7 @@ import {
   type StageItemKind,
   StageItemKindSchema,
   stageCollisionGeometry,
+  stageFoldGeometry,
   worldToStagePosition,
   worldToStageRotation,
 } from '@pascal-app/core/stage'
@@ -98,6 +99,8 @@ export function cameraContextObject(camera: Shot, frame: StageCoordinateFrame): 
 const blockGeometry = new WeakMap<BlockTopology, StageCollisionGeometry>()
 export function stageNodeCollisionGeometry(node: AnyNode, dimensionsMeters: StageDimensions) {
   if (node.type === 'item') {
+    const fold = stageFoldGeometry(node.asset.id, node.controls, node.scale)
+    if (fold) return fold.collisionGeometry
     const center = getItemBoundsCenter(node)
     const offset = [center[0], center[1] - dimensionsMeters.height / 2, center[2]]
     const geometry = stageCollisionGeometry({ kind: 'neutral-block', dimensionsMeters })
@@ -217,6 +220,13 @@ export function stageContextObject(
     width: pose.dimensions[0],
     height: pose.dimensions[1],
     depth: pose.dimensions[2],
+  }
+  const fold =
+    node.type === 'item' ? stageFoldGeometry(node.asset.id, node.controls, node.scale) : undefined
+  if (fold) {
+    dimensionsMeters.width = fold.dimensions[0]
+    dimensionsMeters.height = fold.dimensions[1]
+    dimensionsMeters.depth = fold.dimensions[2]
   }
   return {
     id: node.id,

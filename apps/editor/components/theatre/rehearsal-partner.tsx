@@ -237,6 +237,18 @@ export function RehearsalPartner({
       setPrivateNotice('本机记录未能读写，请检查存储空间。正式舞台不受影响。')
     }
   }
+  const sendDisabled =
+    controllerState.busy ||
+    attachments.busy ||
+    (attachments.open && !attachments.pending) ||
+    voiceBusy ||
+    !state.ready ||
+    (!attachments.pending && !state.draft.trim())
+  const send = () => {
+    if (sendDisabled) return
+    if (attachments.pending) attachments.send(state.draft)
+    else void controller.send()
+  }
 
   return (
     <section className="dia-panel" aria-label="Dia 舞台对话">
@@ -802,7 +814,7 @@ export function RehearsalPartner({
             </label>
           )}
           {state.synthetic && <p role="note">演示数据 · 非真实模型输出</p>}
-          {state.ready && !state.synthetic && !modelConfigured && (
+          {state.ready && !state.synthetic && !modelConfigured && !attachments.open && (
             <p role="note">本机置景、版本、复台预览与视图口令可用。</p>
           )}
           {BETA_REHEARSAL_ENABLED && (
@@ -955,12 +967,14 @@ export function RehearsalPartner({
         className="dia-composer"
         onSubmit={(e) => {
           e.preventDefault()
-          if (!voiceBusy && !attachments.open) void controller.send()
+          send()
         }}
       >
-        <p role="status" aria-live="polite" data-dia-state={state.thread?.status ?? 'idle'}>
-          {state.notice || '说说你想怎么调整。'}
-        </p>
+        {!attachments.open && (
+          <p role="status" aria-live="polite" data-dia-state={state.thread?.status ?? 'idle'}>
+            {state.notice || '说说你想怎么调整。'}
+          </p>
+        )}
         <GhostFeedbackError />
         <details className="dia-input-examples">
           <summary>试着这样说</summary>
@@ -996,12 +1010,15 @@ export function RehearsalPartner({
               rows={2}
               maxLength={2000}
               value={state.draft}
-              placeholder="说说想放入的布景、位置或视图…"
+              placeholder={
+                attachments.pending ? '补充布景要求（可选）…' : '说说想放入的布景、位置或视图…'
+              }
+              readOnly={attachments.open && !attachments.pending}
               onChange={(e) => controller.patch({ draft: e.target.value })}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault()
-                  if (!voiceBusy && !attachments.open) void controller.send()
+                  send()
                 }
               }}
             />
@@ -1009,12 +1026,8 @@ export function RehearsalPartner({
           {attachments.controls}
         </div>
         <div className="dia-actions">
-          <button
-            className="dia-primary"
-            type="submit"
-            disabled={state.busy || voiceBusy || !state.ready || !state.draft.trim()}
-          >
-            发送
+          <button className="dia-primary" type="submit" disabled={sendDisabled}>
+            {attachments.pending ? '发送生成' : '发送'}
           </button>
           {VOICE_INPUT_ENABLED && (
             <button

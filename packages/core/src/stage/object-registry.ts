@@ -58,7 +58,18 @@ const rows: SpecRow[] = [
   [
     'SCN-FOLD-02',
     '二帘组合',
-    ['二帘', '双折景片', '两折景片', '折叠景片'],
+    [
+      '二帘',
+      '二连',
+      '二联',
+      '两联',
+      '二连景片',
+      '二联景片',
+      '两联景片',
+      '双折景片',
+      '两折景片',
+      '折叠景片',
+    ],
     '空间围合',
     'scenic-flat',
     null,
@@ -69,7 +80,7 @@ const rows: SpecRow[] = [
   [
     'SCN-FOLD-03',
     '三帘组合',
-    ['三帘', '三折景片', '折叠景片'],
+    ['三帘', '三连', '三联', '三连景片', '三联景片', '三折景片', '折叠景片'],
     '空间围合',
     'scenic-flat',
     null,
@@ -275,8 +286,8 @@ const rows: SpecRow[] = [
 
 // The authored folded/open poses differ from nominal panel/frame specifications.
 const modelDimensions: Record<string, StageDimensions> = {
-  'SCN-FOLD-02': { width: 0.92, height: 2.4, depth: 0.92 },
-  'SCN-FOLD-03': { width: 0.92, height: 2.4, depth: 0.9400000000000002 },
+  'SCN-FOLD-02': { width: 0.94, height: 2.4, depth: 0.94 },
+  'SCN-FOLD-03': { width: 0.94, height: 2.4, depth: 0.98 },
   'SCN-WIN-130': { width: 1.3, height: 2.4, depth: 0.08200000000000002 },
   'SCN-WIN-160': { width: 1.6, height: 2.4000000000000004, depth: 0.08200000000000002 },
   'SCN-DOOR-130': { width: 1.3, height: 2.4, depth: 0.48669697251359767 },

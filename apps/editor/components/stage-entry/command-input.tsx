@@ -189,10 +189,14 @@ export function StageCommandInput({
       useStagePlanPreview.setState({ plan: null })
     }
   }, [])
-  const busy =
-    ['requesting-permission', 'recording', 'transcribing', 'planning', 'applying'].includes(
-      state,
-    ) || attachments.open
+  const processing = [
+    'requesting-permission',
+    'recording',
+    'transcribing',
+    'planning',
+    'applying',
+  ].includes(state)
+  const busy = processing || attachments.open
   const handleControl = (input: string) => {
     const control = localControl(input)
     if (!control) return false
@@ -400,6 +404,14 @@ export function StageCommandInput({
       }
     }
   }
+  const sendDisabled = attachments.pending
+    ? processing || attachments.busy
+    : attachments.open || (busy && !localControl(text)) || !text.trim()
+  const send = () => {
+    if (sendDisabled) return
+    if (attachments.pending) attachments.send(text)
+    else void generate()
+  }
   return (
     <div className="stage-input" aria-busy={busy}>
       <details>
@@ -500,13 +512,27 @@ export function StageCommandInput({
             <label>
               {source === 'voice' ? '我听到的内容 · 可修改' : '舞台口令'}
               <textarea
-                maxLength={10000}
-                placeholder={sceneId ? '例如：把选中的布景向台后移半米。' : STAGE_EXAMPLE}
+                rows={2}
+                maxLength={attachments.pending ? 2000 : 10000}
+                placeholder={
+                  attachments.pending
+                    ? '补充布景要求（可选）…'
+                    : sceneId
+                      ? '例如：把选中的布景向台后移半米。'
+                      : STAGE_EXAMPLE
+                }
                 value={text}
                 disabled={state === 'applying'}
+                readOnly={attachments.open && !attachments.pending}
                 onChange={(event) => {
                   setText(event.target.value)
                   setAnswers([])
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                    event.preventDefault()
+                    send()
+                  }
                 }}
               />
             </label>
@@ -524,12 +550,12 @@ export function StageCommandInput({
             >
               试用示例
             </button>
-            <button
-              type="button"
-              onClick={() => void generate()}
-              disabled={(busy && !localControl(text)) || !text.trim()}
-            >
-              {state === 'planning' ? '正在理解台位…' : '生成舞台方案'}
+            <button type="button" onClick={send} disabled={sendDisabled}>
+              {attachments.pending
+                ? '发送生成'
+                : state === 'planning'
+                  ? '正在理解台位…'
+                  : '生成舞台方案'}
             </button>
           </div>
         </>

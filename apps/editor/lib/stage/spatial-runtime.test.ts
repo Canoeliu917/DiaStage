@@ -15,7 +15,10 @@ import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader
 import { bindRehearsalScene } from '../rehearsal-intelligence/authority'
 import { DiaConversation } from '../rehearsal-intelligence/conversation-controller'
 import { groundLanguage } from '../rehearsal-intelligence/language-grounding'
-import { OpenLanguageRequestSchema, parseOpenLanguage } from '../rehearsal-intelligence/open-language'
+import {
+  OpenLanguageRequestSchema,
+  parseOpenLanguage,
+} from '../rehearsal-intelligence/open-language'
 import { SceneJournal } from '../scene-journal'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { currentStageContext } from './context'
@@ -128,8 +131,9 @@ for (const [name, assets, phrase] of [
             .map((candidate) => candidate.folds[0]?.controls.fold_angle_1_deg)
             .sort((a, b) => a! - b!),
         ).toEqual([90, 270])
-        const transform = currentStageContext([]).objects.find((object) => object.id === ids[0])!
-          .transform
+        const transform = currentStageContext([]).objects.find(
+          (object) => object.id === ids[0],
+        )!.transform
         for (const candidate of candidates) {
           expect(candidate.folds).toHaveLength(1)
           expect(candidate.folds[0]?.controls.fold_angle_2_deg).toBe(
@@ -203,6 +207,37 @@ test('Runtime: actual half-open door leaf cannot satisfy the default straight pa
     const snapshot = currentStageContext([])
     const proposal = groundLanguage('门口留一条通道', snapshot)!.placement!.knowledgeProposal!
     expect(solveStageSpatialProposal(proposal, snapshot).candidates).toEqual([])
+  } finally {
+    for (const id of ids) sceneRegistry.nodes.delete(id)
+    useScene.getState().unloadScene()
+    clearSceneHistory()
+  }
+})
+
+test('Runtime: folded enclosure accepts furniture in its hollow and rejects leaf penetration', async () => {
+  const ids = await setup(['SCN-FOLD-03', 'SCN-CUBE-045'])
+  const fold = useScene.getState().nodes[ids[0]!]!
+  const cube = useScene.getState().nodes[ids[1]!]!
+  try {
+    if (fold.type !== 'item' || cube.type !== 'item') throw new Error('expected fold and cube')
+    useScene
+      .getState()
+      .updateNode(fold.id, { controls: { fold_angle_1_deg: 90, fold_angle_2_deg: 90 } })
+    applyItemFoldControls(sceneRegistry.nodes.get(fold.id)!, {})
+    for (const [x, allowed] of [
+      [0.45, true],
+      [0.92, false],
+    ] as const) {
+      useScene.getState().updateNode(cube.id, { position: [x, 0, -0.47] })
+      const snapshot = currentStageContext([])
+      const proposal = groundLanguage('三联景片折成U型', snapshot)!.placement!.knowledgeProposal!
+      const solution = solveStageSpatialProposal(proposal, snapshot)
+      expect(
+        solution.candidates.some(
+          (candidate) => candidate.folds[0]?.controls.fold_angle_1_deg === 90,
+        ),
+      ).toBe(allowed)
+    }
   } finally {
     for (const id of ids) sceneRegistry.nodes.delete(id)
     useScene.getState().unloadScene()

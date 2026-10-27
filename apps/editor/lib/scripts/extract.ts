@@ -18,6 +18,7 @@ export interface ExtractedScript {
 const optionsSchema = z.strictObject({
   sceneContext: SceneContextSummarySchema.optional(),
   priorAnswers: z.array(ClarificationAnswerSchema).max(30).optional(),
+  note: z.string().trim().max(2000).optional(),
 })
 const extractionSchema = z.strictObject({
   pageCount: z.number().int().min(1).max(SCRIPT_LIMITS.maxPages).nullable(),
@@ -59,8 +60,10 @@ export async function readScriptUpload(
     throw new AiError('CORRUPT_DOCUMENT', '上传未完成，请重新选择文档。')
   }
   if (
-    [...form.keys()].some((name) => !['file', 'sceneContext', 'priorAnswers'].includes(name)) ||
-    ['file', 'sceneContext', 'priorAnswers'].some((name) => form.getAll(name).length > 1)
+    [...form.keys()].some(
+      (name) => !['file', 'sceneContext', 'priorAnswers', 'note'].includes(name),
+    ) ||
+    ['file', 'sceneContext', 'priorAnswers', 'note'].some((name) => form.getAll(name).length > 1)
   )
     throw new AiError('UNSUPPORTED_FILE', '每次只能上传一份剧本文档。')
   const file = form.get('file')
@@ -69,17 +72,17 @@ export async function readScriptUpload(
   try {
     const options = optionsSchema.parse(
       Object.fromEntries(
-        ['sceneContext', 'priorAnswers'].flatMap((name) => {
+        ['sceneContext', 'priorAnswers', 'note'].flatMap((name) => {
           const value = form.get(name)
           if (value === null) return []
           if (typeof value !== 'string') throw new Error('invalid field')
-          return [[name, JSON.parse(value)]]
+          return [[name, name === 'note' ? value : JSON.parse(value)]]
         }),
       ),
     )
     return { file, options }
   } catch {
-    throw new AiError('PLAN_INVALID', '舞台摘要或确认答案格式有误，请重新打开上传窗口。')
+    throw new AiError('PLAN_INVALID', '舞台摘要、确认答案或注解格式有误；注解最多 2000 个字符。')
   }
 }
 

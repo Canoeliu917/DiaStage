@@ -4,6 +4,7 @@ import OpenAI from 'openai'
 import { zodTextFormat } from 'openai/helpers/zod'
 import { AVAILABLE_STAGE_ASSET_IDS, AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { buildRelevantSceneContext } from '../stage/relevant-context'
+import { SCENERY_ASSEMBLY_RULES } from '../stage/scenery-assembly-rules'
 import { AI_LIMITS, AiError } from './api'
 import type { ValidatedAudio } from './audio-validation'
 import { AI_TOKEN_LIMITS, THEATRE_TRANSCRIPTION_PROMPT } from './config'
@@ -40,7 +41,8 @@ source 必须等于请求 source，existingNodeId 只能引用 sceneContext 中�
 “一点/稍微/小幅”表示 small 语义，不固定成某个距离；没有明确对象、方向或幅度时先询问。明确单位的数值必须原样换算，不能被小幅参数替代。
 空间相对关系写入 relations；间距是两个外框间的净距，最终坐标由本地确定性计算，不要用任意偏移替代。
 仅生成此次输入涉及的变更，不复制整个场景，不删除旧内容，不自动执行。不能处理的请求返回简短澄清问题，不创造替代需求。
-语音和口令没有剧本文本证据，evidence 与 evidenceIds 应为空数组。没有内容的必需字段使用空数组或 null。`
+语音和口令没有剧本文本证据，evidence 与 evidenceIds 应为空数组。没有内容的必需字段使用空数组或 null。
+${SCENERY_ASSEMBLY_RULES}`
 
 export async function generateStagePlan(
   request: PlanRequest,

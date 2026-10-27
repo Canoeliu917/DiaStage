@@ -1,12 +1,13 @@
 import {
   type AnyNodeId,
-  type ItemNode,
   getNodeLock,
+  type ItemNode,
   sceneRegistry,
   useScene,
 } from '@pascal-app/core'
 import {
   type SceneContextSummary,
+  stageFoldGeometry,
   stageObjectsTouch,
   validateStagePlan,
 } from '@pascal-app/core/stage'
@@ -14,8 +15,8 @@ import { computeItemFoldBounds, limitItemFoldControls } from '@pascal-app/nodes/
 import type { DiaStageProposal } from '../rehearsal-intelligence/knowledge/stage-proposal'
 import { STAGE_PROP_MENU } from './prop-assets'
 import {
-  SpatialFoldConfigurationSchema,
   type SpatialFoldConfiguration,
+  SpatialFoldConfigurationSchema,
   type SpatialSolution,
   spatialConstraintsForProposal,
 } from './spatial-constraints'
@@ -119,41 +120,19 @@ export function solveStageSpatialProposal(
       }
       const patch = prepareSpatialFold(node, fold)
       if (!patch) continue
-      const dimensions = patch.asset.dimensions.map(
-        (value, index) => value * Math.abs(node.scale[index]!),
-      )
-      const center = patch.asset.boundsCenter!.map((value, index) => value * node.scale[index]!)
-      const [w, h, d] = dimensions
+      const shape = stageFoldGeometry(node.asset.id, patch.controls, node.scale)!
+      const [w, h, d] = shape.dimensions
+      const center = shape.boundsCenter
       if (original.transform.position.y + center[1]! - h! / 2 < -1e-6) continue
-      const vertices = [-1, 1].flatMap((x) =>
-        [-1, 1].flatMap((y) =>
-          [-1, 1].map((z): [number, number, number] => [
-            center[0]! + (x * w!) / 2,
-            center[1]! + (y * h!) / 2,
-            center[2]! + (z * d!) / 2,
-          ]),
-        ),
-      )
       const folded = {
         ...original,
         dimensionsMeters: { width: w!, height: h!, depth: d! },
-        collisionGeometry: [
-          {
-            vertices,
-            faces: [
-              [0, 1, 3, 2],
-              [4, 6, 7, 5],
-              [0, 4, 5, 1],
-              [2, 3, 7, 6],
-              [0, 2, 6, 4],
-              [1, 5, 7, 3],
-            ],
-          },
-        ],
+        collisionGeometry: shape.collisionGeometry,
       }
-      // V0.1 fails closed on anything within the folded envelope, including its hollow interior.
       if (
-        snapshot.objects.some((other) => other.id !== folded.id && stageObjectsTouch(folded, other))
+        snapshot.objects.some(
+          (other) => other.id !== folded.id && stageObjectsTouch(folded, other, true),
+        )
       )
         continue
       const checked = validateStagePlan(spatialCandidatePlan([folded], solution.warnings), snapshot)

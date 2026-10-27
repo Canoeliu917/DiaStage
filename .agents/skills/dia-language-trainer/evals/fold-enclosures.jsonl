@@ -1,0 +1,12 @@
+{"id":"two-original","source":"user-request","input":"请用二连给我生成一个3面包围式空间","asset":"SCN-FOLD-02","count":2}
+{"id":"two-explicit","source":"synthetic-positive","input":"用两组二帘组合搭一个三面围合空间，开口朝观众","asset":"SCN-FOLD-02","count":2}
+{"id":"three-room","source":"synthetic-positive","input":"用三联搭一个房间","asset":"SCN-FOLD-03","count":1}
+{"id":"three-explicit","source":"synthetic-positive","input":"用一组三帘景片生成一个三面包围式空间","asset":"SCN-FOLD-03","count":1}
+{"id":"two-paraphrase","source":"synthetic-paraphrase","input":"拿两联景片围出U型空间","asset":"SCN-FOLD-02","count":2}
+{"id":"quantity-not-faces","source":"synthetic-contrast","input":"给我3个二连","asset":"SCN-FOLD-02","count":3}
+{"id":"single-asset-not-room","source":"synthetic-contrast","input":"给我一个三帘组合","asset":"SCN-FOLD-03","count":1}
+{"id":"one-two-panel-cannot-enclose-three-sides","source":"synthetic-contrast","input":"用一组二连生成一个三面包围式空间","question":"fold-enclosure-count"}
+{"id":"which-folded-asset","source":"synthetic-ambiguity","input":"用折叠景片搭个房间","question":"fold-enclosure-material"}
+{"id":"different-size","source":"synthetic-contrast","input":"用二连搭一个三面包围式空间，宽3米深2米","question":"fold-enclosure-size"}
+{"id":"different-opening","source":"synthetic-contrast","input":"用三联搭个房间，开口朝台后","question":"fold-enclosure-modifiers"}
+{"id":"negation","source":"synthetic-contrast","input":"不要用二连生成三面包围式空间","question":"fold-enclosure-modifiers"}

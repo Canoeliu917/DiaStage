@@ -1,4 +1,8 @@
 import type { AssetInput } from '@pascal-app/core'
+import { stageFoldGeometry } from '@pascal-app/core/stage'
+
+const fold2 = stageFoldGeometry('SCN-FOLD-02')!
+const fold3 = stageFoldGeometry('SCN-FOLD-03')!
 
 export type CatalogItem = AssetInput & { tool?: string }
 
@@ -56,16 +60,8 @@ export const CATALOG_ITEMS: CatalogItem[] = [
       "遮挡",
       "改变通道"
     ],
-    "dimensions": [
-      0.92,
-      2.4,
-      0.92
-    ],
-    "boundsCenter": [
-      0.46,
-      1.2,
-      -0.44
-    ],
+    "dimensions": fold2.dimensions,
+    "boundsCenter": fold2.boundsCenter,
     "offset": [
       0,
       0,
@@ -95,16 +91,8 @@ export const CATALOG_ITEMS: CatalogItem[] = [
       "遮挡",
       "改变通道"
     ],
-    "dimensions": [
-      0.92,
-      2.4,
-      0.9400000000000002
-    ],
-    "boundsCenter": [
-      0.46,
-      1.2,
-      -0.45000000000000007
-    ],
+    "dimensions": fold3.dimensions,
+    "boundsCenter": fold3.boundsCenter,
     "offset": [
       0,
       0,
