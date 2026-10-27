@@ -23,14 +23,11 @@ function modelPlan() {
       {
         id: 'photo-cube',
         name: '方台',
-        kind: 'neutral-block',
         assetId: 'SCN-CUBE-045',
-        dimensions: { width: 0.45, height: 0.45, depth: 0.45 },
-        position: [1, 0, 1],
+        position: { x: 1, z: 1 },
+        support: { type: 'floor', objectId: null, bottomHeightMeters: null },
         rotation: [0, 0, 0],
         color: null,
-        stepCount: null,
-        profile: null,
         hingeAngles: null,
       },
     ],
@@ -71,7 +68,9 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
       expect(input.instructions).toContain('原点在舞台地面中心')
       expect(input.instructions).toContain('Z 正向为台前和观众方向')
       expect(input.instructions).toContain('X 正向为观众看照片的画面右侧')
-      expect(input.instructions).toContain('向台后升高的台阶应绕Y旋转π弧度')
+      expect(input.instructions).toContain('保留目录标准尺寸与原生比例')
+      expect(input.instructions).toContain('不把圆桌拉成椭圆')
+      expect(input.instructions).toContain('桌子落地不是桌高的一半')
       expect(input.instructions).toContain('弧度')
       expect(input.instructions).toContain('不可信')
       expect(input.instructions).toContain('不是照片可见性或实测尺寸的证据')
@@ -84,7 +83,101 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
   expect(plan.objects).toHaveLength(1)
   expect(plan.objects[0]!.assetId).toBe('SCN-CUBE-045')
   expect(plan.objects[0]).not.toHaveProperty('color')
-  expect(plan.uncertainties[0]).toContain('均为照片估算')
+  expect(plan.uncertainties.some((message) => message.includes('替身道具使用库内标准尺寸'))).toBe(
+    true,
+  )
+  expect(plan.objects[0]!.kind).toBe('neutral-block')
+  expect(plan.objects[0]!.dimensions).toEqual({ width: 0.45, height: 0.45, depth: 0.45 })
+  expect(plan.objects[0]!.position).toEqual([1, 0, 1])
+  expect(plan.objects[0]).not.toHaveProperty('support')
+})
+
+test('photo replacements keep all 21 native assets at standard dimensions through compilation', async () => {
+  const { compilePhotoStagePlan } = await import('./compile')
+  const source = {
+    ...modelPlan(),
+    stage: { width: 30, depth: 30 },
+    objects: AVAILABLE_STAGE_SCENERY.map(({ asset }, index) => ({
+      ...modelPlan().objects[0]!,
+      id: `prop-${index}`,
+      name: asset.id === 'SCN-DESK-120' ? '钢琴（替身：三屉桌）' : asset.name,
+      assetId: asset.id,
+      position: { x: (index % 6) * 3 - 8, z: Math.floor(index / 6) * 3 - 5 },
+    })),
+  }
+  const before = JSON.stringify(source)
+  const plan = await analyzePhotoStage(
+    { imageDataUrl },
+    new AbortController().signal,
+    async () => source,
+  )
+  const graph = compilePhotoStagePlan(plan)
+  const items = Object.values(graph.nodes).filter((node) => node.type === 'item')
+  expect(items).toHaveLength(21)
+  for (const { kind, asset } of AVAILABLE_STAGE_SCENERY) {
+    const object = plan.objects.find((entry) => entry.assetId === asset.id)!
+    expect(object.kind).toBe(kind)
+    expect(object.dimensions).toEqual({
+      width: asset.dimensions![0],
+      height: asset.dimensions![1],
+      depth: asset.dimensions![2],
+    })
+    expect(items.find((node) => node.asset.id === asset.id)!.scale).toEqual([1, 1, 1])
+  }
+  expect(JSON.stringify(source)).toBe(before)
+})
+
+test('places a table on its declared riser without converting the riser height to a centre height', async () => {
+  const source = {
+    ...modelPlan(),
+    objects: [
+      {
+        ...modelPlan().objects[0]!,
+        id: 'table',
+        name: '圆桌',
+        assetId: 'SCN-TABLE-090',
+        position: { x: 0, z: 0 },
+        support: { type: 'object', objectId: 'riser', bottomHeightMeters: null },
+      },
+      {
+        ...modelPlan().objects[0]!,
+        id: 'riser',
+        name: '台块',
+        assetId: 'SCN-RISER-01',
+        position: { x: 0, z: 0 },
+      },
+    ],
+  }
+  const plan = await analyzePhotoStage(
+    { imageDataUrl },
+    new AbortController().signal,
+    async () => source,
+  )
+  expect(plan.objects[1]!.position[1]).toBe(0)
+  expect(plan.objects[0]!.position[1]).toBeCloseTo(plan.objects[1]!.dimensions.height, 8)
+})
+
+test('uncertain support stops a photo proposal without another paid request', async () => {
+  let calls = 0
+  await expect(
+    analyzePhotoStage({ imageDataUrl }, new AbortController().signal, async () => {
+      calls++
+      return {
+        ...modelPlan(),
+        objects: [
+          {
+            ...modelPlan().objects[0]!,
+            support: { type: 'uncertain', objectId: null, bottomHeightMeters: null },
+          },
+        ],
+      }
+    }),
+  ).rejects.toMatchObject({
+    code: 'PLAN_INVALID',
+    status: 422,
+    message: expect.stringContaining('不确定'),
+  })
+  expect(calls).toBe(1)
 })
 
 test('notes are optional, omit whitespace and accept the trimmed 2000-character boundary', async () => {

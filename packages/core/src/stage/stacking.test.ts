@@ -2,7 +2,12 @@ import { expect, test } from 'bun:test'
 import { prepareStageCollision, stageObjectsTouch } from './collision'
 import { STAGE_OBJECT_CATEGORIES, STAGE_OBJECT_REGISTRY } from './object-registry'
 import type { SceneContextObject } from './schema'
-import { canStageStack, stageMagneticHeight, stageStackPosition } from './stacking'
+import {
+  canStageStack,
+  stageContactHeight,
+  stageMagneticHeight,
+  stageStackPosition,
+} from './stacking'
 
 const object = (
   id: string,
@@ -83,4 +88,27 @@ test('side contact is not support; magnetic tolerance is detection only', () => 
   expect(stageMagneticHeight(b, [a], 0.12)).toBeCloseTo(0.15, 14)
   b.transform.position.y = 1
   expect(stageMagneticHeight(b, [a], 0.12)).toBe(1)
+})
+
+test('explicit geometric contact supports a flat without widening manual stack permissions', () => {
+  const flat = object('flat', 'scenic-flat', 2.4)
+  const support = object('support', 'platform', 0.3)
+  expect(stageContactHeight(flat, support)).toBeCloseTo(0.3, 14)
+  expect(canStageStack(flat)).toBe(false)
+  expect(stageStackPosition(flat, [support])).toBeNull()
+  flat.transform.position.x = flat.dimensionsMeters.width
+  expect(stageContactHeight(flat, support)).toBeNull()
+})
+
+test('explicit contact retains rotated surfaces and the current bottom pivot', () => {
+  const item = object('item', 'scenic-flat', 2.4)
+  const support = object('support', 'platform', 0.5)
+  item.transform.position.y = 4
+  item.transform.rotationDegrees = { x: 20, y: 35, z: 15 }
+  support.transform.rotationDegrees = { x: 10, y: 12, z: 0 }
+  item.transform.position.y = stageContactHeight(item, support)!
+  expect(stageObjectsTouch(item, support)).toBe(true)
+  expect(stageObjectsTouch(item, support, true)).toBe(false)
+  item.transform.position.y += 0.00001
+  expect(stageObjectsTouch(item, support)).toBe(false)
 })

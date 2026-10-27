@@ -37,6 +37,36 @@ function contactLift(left: Part, right: Part): number | null {
   return Number.isFinite(high) ? high : null
 }
 
+function contactHeight(
+  moving: ReturnType<typeof prepareStageCollision>,
+  support: ReturnType<typeof prepareStageCollision>,
+  y: number,
+) {
+  if (
+    [0, 2].some(
+      (axis) =>
+        moving.bounds[axis]![1] <= support.bounds[axis]![0] ||
+        moving.bounds[axis]![0] >= support.bounds[axis]![1],
+    )
+  )
+    return null
+  const lifts = moving.parts.flatMap((a) =>
+    support.parts.flatMap((b) => {
+      const lift = contactLift(a, b)
+      return lift === null ? [] : [lift]
+    }),
+  )
+  return lifts.length ? y + Math.max(...lifts) : null
+}
+
+export function stageContactHeight(item: SceneContextObject, support: SceneContextObject) {
+  return contactHeight(
+    prepareStageCollision(item),
+    prepareStageCollision(support),
+    item.transform.position.y,
+  )
+}
+
 export function stageSupportPositions(
   item: SceneContextObject,
   objects: readonly SceneContextObject[],
@@ -49,22 +79,8 @@ export function stageSupportPositions(
   ]
   for (const other of objects) {
     if (other.id === item.id || !canStageStack(other)) continue
-    const support = prepareStageCollision(other)
-    if (
-      [0, 2].some(
-        (axis) =>
-          moving.bounds[axis]![1] <= support.bounds[axis]![0] ||
-          moving.bounds[axis]![0] >= support.bounds[axis]![1],
-      )
-    )
-      continue
-    const lifts = moving.parts.flatMap((a) =>
-      support.parts.flatMap((b) => {
-        const lift = contactLift(a, b)
-        return lift === null ? [] : [lift]
-      }),
-    )
-    if (lifts.length) positions.push({ y: y + Math.max(...lifts), supportId: other.id })
+    const height = contactHeight(moving, prepareStageCollision(other), y)
+    if (height !== null) positions.push({ y: height, supportId: other.id })
   }
   return positions
 }
