@@ -134,20 +134,6 @@
   .dia-panel:has(.dia-pinned-plan:not([hidden])) .dia-composer textarea { height:44px; min-height:44px; font-size:14px; }
   .dia-panel .dia-pinned-plan .stage-plan-drawing svg { max-height:32dvh; }
 }
-@media(max-width:999px) {
-  .dia-panel:has(.dia-pinned-plan:not([hidden])) { display:grid; grid-template-columns:42% minmax(0,1fr); grid-template-rows:auto auto minmax(0,1fr) auto; }
-  .dia-panel:has(.dia-pinned-plan:not([hidden])) .dia-panel-header { grid-column:1 / -1; grid-row:1; padding:4px 10px; }
-  .dia-panel:has(.dia-pinned-plan:not([hidden])) .dia-synthetic { grid-column:1 / -1; grid-row:2; padding:3px 10px; font-size:11px; }
-  .dia-panel .dia-pinned-plan { grid-column:1; grid-row:3; min-height:0; padding:6px; gap:4px; }
-  .dia-panel .dia-pinned-plan h2 { font-size:14px; }
-  .dia-panel .dia-pinned-plan .stage-plan-drawing svg { max-height:13dvh; }
-  .dia-panel .dia-pinned-plan figcaption { font-size:10px; }
-  .dia-panel:has(.dia-pinned-plan:not([hidden])) .dia-dialogue { grid-column:2; grid-row:3; padding:6px; }
-  .dia-panel:has(.dia-pinned-plan:not([hidden])) .dia-composer { grid-column:1 / -1; grid-row:4; padding:6px 10px; }
-  .dia-panel:has(.dia-pinned-plan:not([hidden])) .dia-shortcuts { display:flex; }
-  .dia-panel:has(.dia-pinned-plan:not([hidden])) .dia-composer textarea { height:44px; min-height:44px; }
-}
-
 .dia-shortcut-rows { display:grid; gap:6px; }
 .dia-shortcut-rows > section { display:grid; grid-template-columns:76px minmax(0,1fr); gap:6px; align-items:start; }
 .dia-shortcut-rows strong { font-size:13px; font-weight:500; }
