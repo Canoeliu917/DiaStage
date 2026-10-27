@@ -20,11 +20,16 @@ export async function runRealEval(count = 10) {
   const candidates = realEvalCases(count)
   if (!process.env.OPENAI_API_KEY?.trim())
     return { REAL_MODEL_EVAL: 'NOT_RUN', reason: 'OPENAI_API_KEY_NOT_CONFIGURED', attempted: 0 }
+  const userId = process.env.DIASTAGE_REAL_EVAL_USER_ID?.trim()
+  if (!userId)
+    return { REAL_MODEL_EVAL: 'NOT_RUN', reason: 'EVAL_USER_ID_NOT_CONFIGURED', attempted: 0 }
+  const { betaBudgetPolicy, ModelBudgetError } = await import('../ai/model-budget')
+  if (!betaBudgetPolicy().userIds.includes(userId))
+    return { REAL_MODEL_EVAL: 'NOT_RUN', reason: 'EVAL_USER_NOT_INVITED', attempted: 0 }
 
   // Match the app's working directory so evaluation shares its existing budget ledger.
   process.chdir(fileURLToPath(new URL('../../', import.meta.url)))
   const { AI_LIMITS, AiError, takeAiRateLimit, withAbort } = await import('../ai/api')
-  const { ModelBudgetError } = await import('../ai/model-budget')
   const { aiRequestContext, readAiUsage } = await import('../ai/usage')
   const { rehearsalModelVersion, requestRehearsalOutput } = await import('./openai-server')
   const runId = crypto.randomUUID()
@@ -49,7 +54,7 @@ export async function runRealEval(count = 10) {
     let modelVersion = rehearsalModelVersion()
     try {
       const signal = AbortSignal.timeout(AI_LIMITS.requestTimeoutMs)
-      const result = await aiRequestContext.run({ requestId }, () =>
+      const result = await aiRequestContext.run({ requestId, userId }, () =>
         withAbort(requestRehearsalOutput(input, signal), signal),
       )
       rawStructuredOutput = result.rawStructuredOutput
