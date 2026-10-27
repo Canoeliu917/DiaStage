@@ -1,3 +1,6 @@
+export const QWEN_TRIAL_MODEL = 'qwen3.7-flash-2026-07-15'
+export const QWEN_IMAGE_INPUT_TOKENS = 16_384
+
 export const MODEL_PRICING = {
   effectiveDate: '2026-09-10',
   source:
@@ -35,6 +38,18 @@ export function estimateTextCostCny(
     exchange <= 0
   )
     throw new Error('用量或汇率无效')
+  if (model === QWEN_TRIAL_MODEL) {
+    // Internal conservative limits; the official K/M units are not precisely defined.
+    if (input + output > 1_000_000) throw new Error('Qwen 请求超过内部上下文预算限制')
+    const price =
+      input <= 32_000
+        ? { input: 0.2, output: 0.8 }
+        : input <= 256_000
+          ? { input: 0.6, output: 2.4 }
+          : { input: 1.2, output: 4.8 }
+    // Trial accounting charges all input at the ordinary CNY rate, including cached input.
+    return (input * price.input + output * price.output) / 1_000_000
+  }
   const price =
     longContext && model === 'gpt-5.6-luna'
       ? MODEL_PRICING.lunaLong

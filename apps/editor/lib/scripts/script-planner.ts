@@ -13,6 +13,7 @@ import { z } from 'zod'
 import { AiError, withAbort } from '../ai/api'
 import { AI_TOKEN_LIMITS } from '../ai/config'
 import { budgetLimit, estimateCall, ModelBudgetError } from '../ai/model-budget'
+import { StageModelPlanSchema } from '../ai/stage-model-schema'
 import { aiRequestContext, trackAiCall } from '../ai/usage'
 import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { buildRelevantSceneContext } from '../stage/relevant-context'
@@ -41,6 +42,10 @@ export type ScriptModelPlanner = (
   request: ScriptModelRequest,
   signal: AbortSignal,
 ) => Promise<unknown>
+
+export function scriptModelFormat() {
+  return zodTextFormat(StageModelPlanSchema, 'script_stage_plan')
+}
 
 const emptyContext: SceneContextSummary = {
   documentVersion: 0,
@@ -87,13 +92,13 @@ const callModel: ScriptModelPlanner = async (request, signal) => {
               content: payload,
             },
           ],
-          text: { format: zodTextFormat(StagePlanSchema, 'script_stage_plan') },
+          text: { format: scriptModelFormat() },
         },
         { signal },
       ),
     (result) => result.usage,
     null,
-    instructions + payload + JSON.stringify(zodTextFormat(StagePlanSchema, 'script_stage_plan')),
+    instructions + payload + JSON.stringify(scriptModelFormat()),
   )
   if (response.status !== 'completed' || response.output_parsed === null)
     throw new AiError('PLAN_INVALID', '剧本舞台信息未能完整解析，请缩小导入范围后重试。', 422, true)
@@ -254,7 +259,7 @@ export async function planFromPassages(
               ),
               priorAnswers: answers,
             }) +
-            JSON.stringify(zodTextFormat(StagePlanSchema, 'script_stage_plan')),
+            JSON.stringify(scriptModelFormat()),
           null,
         ),
       0,

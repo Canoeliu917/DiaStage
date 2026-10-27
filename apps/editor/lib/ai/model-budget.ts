@@ -1,5 +1,11 @@
 import { AI_TOKEN_LIMITS } from './config'
-import { estimateAudioCostCny, estimateTextCostCny, usdCnyReference } from './model-pricing'
+import {
+  estimateAudioCostCny,
+  estimateTextCostCny,
+  QWEN_IMAGE_INPUT_TOKENS,
+  QWEN_TRIAL_MODEL,
+  usdCnyReference,
+} from './model-pricing'
 import { usageLedger } from './usage-ledger'
 
 export class ModelBudgetError extends Error {
@@ -44,6 +50,18 @@ export function estimateCall(
   }
   // Byte-based conservative preflight only; never reported as actual provider tokens.
   const estimatedInput = new TextEncoder().encode(payload).byteLength
+  if (model === QWEN_TRIAL_MODEL) {
+    // Text-only payload plus protocol allowance is an estimate, not a tokenizer guarantee.
+    // The single-image allowance requires vl_high_resolution_images:true; exclude image base64.
+    return estimateTextCostCny(
+      model,
+      estimatedInput + 1024 + (feature === 'photo-stage-plan' ? QWEN_IMAGE_INPUT_TOKENS : 0),
+      0,
+      (feature === 'script-stage-plan'
+        ? AI_TOKEN_LIMITS.scriptChunkOutput
+        : AI_TOKEN_LIMITS.commandOutput) + 10,
+    )
+  }
   return estimateTextCostCny(
     model,
     estimatedInput,

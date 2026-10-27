@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
 import { estimateCall, reserveModelCall } from './model-budget'
-import { estimateTextCostCny, usdCnyReference } from './model-pricing'
+import { estimateTextCostCny, QWEN_TRIAL_MODEL, usdCnyReference } from './model-pricing'
 import { usageLedger } from './usage-ledger'
 
 export interface AiUsageRecord {
@@ -133,7 +133,7 @@ export async function trackAiCall<T>(
         actual.input_tokens,
         actual.input_tokens_details?.cached_tokens ?? 0,
         actual.output_tokens,
-        usdCnyReference(),
+        model === QWEN_TRIAL_MODEL ? 1 : usdCnyReference(),
         actual.input_tokens > 272_000,
         record.cacheWriteTokens ?? actual.input_tokens - record.cachedInputTokens,
         record.cacheWrite12hTokens ?? 0,
