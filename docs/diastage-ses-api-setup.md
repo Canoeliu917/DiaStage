@@ -126,6 +126,6 @@ Gmail 两封均含 `INBOX`、`UNREAD`、`IMPORTANT`、`CATEGORY_PERSONAL` 标签
 - [x] 品牌联系链接完成源代码修改及 Biome/tsgo/定向 diff 检查；尚未部署，b57 Linux 构建早于这些联系页改动。
 - [x] 完成获准的两封独立 SES 实际 API 鉴权及 Gmail 投递验证，品牌 From/Reply-To、SPF/DKIM/DMARC 和收件箱状态均已核对；生产邮件仍关闭。
 - [x] 隔离生产 Next HTTP 的 8 组验收通过，覆盖注册、验证、限流、找回、失败处理、会话撤销、账号隔离及重启持久化；SES 传输模拟，实例与私有测试数据已清理。
-- [ ] 完成其他获准收件方及完整应用流程验收。Gmail 两封独立 SES 投递及隔离 HTTP 已通过；QQ、163、真实认证邮件令牌端到端及浏览器交互仍待验收，模拟 SES 传输不替代这些项目。
+- [ ] 完成其他获准收件方及完整应用流程验收。Gmail 两封独立 SES 投递及隔离 HTTP 已通过；QQ、163、真实认证邮件令牌端到端及公网浏览器交互仍待验收，模拟 SES 传输不替代这些项目。本机邮件关闭条件下的核心 UI 已通过，见[待办记录](diastage-release-todo.md)。
 
-此前完整本地复核：生产构建 6/6（生成 18 个页面）、真实 Better Auth + Node SQLite 认证集成 9/9、包含可选 Reply-To 的 Bun 相关测试 17/17（115 次断言）、类型检查 9/9、11 个文件的 Biome 检查通过；独立代码审阅无阻断项。最新 Linux 构建见第 4 节；独立 SES → Gmail 两封及隔离 HTTP 8 组已通过，正式启用、真实认证邮件令牌端到端及浏览器验收仍未完成。进度见[上线队列](diastage-release-todo.md)，运营待决事项见[发布待决事项](diastage-release-decisions.md)。
+此前完整本地复核：生产构建 6/6（生成 18 个页面）、真实 Better Auth + Node SQLite 认证集成 9/9、包含可选 Reply-To 的 Bun 相关测试 17/17（115 次断言）、类型检查 9/9、11 个文件的 Biome 检查通过；独立代码审阅无阻断项。独立 SES → Gmail 两封及隔离 HTTP 8 组已通过，正式启用、真实认证邮件令牌端到端及公网浏览器验收仍未完成；最新候选 Linux 构建与本机核心 UI 的不同范围见[上线队列](diastage-release-todo.md)，运营待决事项见[发布待决事项](diastage-release-decisions.md)。
