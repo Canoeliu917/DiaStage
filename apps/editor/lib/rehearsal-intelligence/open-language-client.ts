@@ -10,7 +10,7 @@ import {
 export const OpenGroundingResponseSchema = z.strictObject({
   requestId: z.string().uuid(),
   grounding: StructuredGroundingSchema,
-  provider: z.literal('openai'),
+  provider: z.enum(['openai', 'aliyun']),
   model: z.string().min(1),
   reply: z.string().max(2000).default(''),
 })

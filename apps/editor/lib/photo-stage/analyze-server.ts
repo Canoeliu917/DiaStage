@@ -4,7 +4,6 @@ import { zodTextFormat } from 'openai/helpers/zod'
 import { z } from 'zod'
 import { AiError } from '../ai/api'
 import { AI_TOKEN_LIMITS } from '../ai/config'
-import { trackAiCall } from '../ai/usage'
 import { AVAILABLE_STAGE_ASSET_IDS, AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { SCENERY_ASSEMBLY_RULES } from '../stage/scenery-assembly-rules'
 import { PhotoStageObjectSchema, type PhotoStagePlan, PhotoStagePlanSchema } from './plan'
@@ -113,30 +112,16 @@ type PhotoModelRequest = ReturnType<typeof modelRequest>
 type PhotoModel = (request: PhotoModelRequest, signal: AbortSignal) => Promise<unknown>
 
 const callModel: PhotoModel = async (request, signal) => {
-  if (!process.env.OPENAI_API_KEY)
-    throw new AiError(
-      'INTERNAL_ERROR',
-      '照片识别服务尚未配置。请由管理员设置 OPENAI_API_KEY 后重试；仍可使用示例方案和手动置景。',
-      503,
-    )
-  const { AI_MODELS, createOpenAIClient } = await import('../ai/openai-server')
-  const client = createOpenAIClient()
-  // High detail is capped at 2,500 patches × 1.2 for the priced Luna/Terra models.
-  // One extra token covers rounding; image bytes are never counted as language tokens.
-  const budgetPayload =
-    request.instructions +
-    request.input[0]!.content[0]!.text +
-    JSON.stringify(request.text) +
-    ' '.repeat(3001)
-  const response = await trackAiCall(
-    'photo-stage-plan',
-    AI_MODELS.command,
+  const { requestStructuredOutput } = await import('../ai/structured-server')
+  const response = await requestStructuredOutput({
+    feature: 'photo-stage-plan',
+    instructions: request.instructions,
+    inputText: request.input[0]!.content[0]!.text!,
+    imageDataUrl: request.input[0]!.content[1]!.image_url,
+    maxOutputTokens: request.max_output_tokens,
+    format: request.text.format,
     signal,
-    () => client.responses.parse({ ...request, model: AI_MODELS.command }, { signal }),
-    (result) => result.usage,
-    null,
-    budgetPayload,
-  ).catch((error: unknown) => {
+  }).catch((error: unknown) => {
     if (error instanceof OpenAI.RateLimitError)
       throw new AiError('RATE_LIMITED', '照片识别服务暂时繁忙，请稍候重试。', 429, true)
     if (
@@ -178,8 +163,8 @@ export async function analyzePhotoStage(
       throw new AiError(
         'INTERNAL_ERROR',
         error instanceof OpenAI.APIConnectionTimeoutError
-          ? '照片识别服务连接超时，请管理员检查服务器与 OpenAI 服务的网络连接后重试。'
-          : '无法连接照片识别服务，请管理员检查服务器与 OpenAI 服务的网络连接后重试。',
+          ? '照片识别服务连接超时，请管理员检查模型服务的网络连接后重试。'
+          : '无法连接照片识别服务，请管理员检查模型服务的网络连接后重试。',
         503,
         true,
       )

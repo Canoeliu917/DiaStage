@@ -10,21 +10,32 @@ test('real evaluation samples 10 categories, caps at 20 and never fakes a missin
   expect(new Set(realEvalCases(20).map((item) => item.caseId)).size).toBe(20)
   for (const count of [0, 9, 21, 10.5, NaN]) expect(() => realEvalCases(count)).toThrow()
   const key = process.env.OPENAI_API_KEY
+  const provider = process.env.DIASTAGE_AI_PROVIDER
   try {
+    process.env.DIASTAGE_AI_PROVIDER = 'openai'
     delete process.env.OPENAI_API_KEY
     expect(await runRealEval()).toEqual({
       REAL_MODEL_EVAL: 'NOT_RUN',
-      reason: 'OPENAI_API_KEY_NOT_CONFIGURED',
+      reason: 'AI_PROVIDER_NOT_CONFIGURED',
       attempted: 0,
     })
   } finally {
     if (key === undefined) delete process.env.OPENAI_API_KEY
     else process.env.OPENAI_API_KEY = key
+    if (provider === undefined) delete process.env.DIASTAGE_AI_PROVIDER
+    else process.env.DIASTAGE_AI_PROVIDER = provider
   }
 })
 
 test('missing or uninvited evaluation identity stops before changing cwd, writing or networking', async () => {
-  const names = ['OPENAI_API_KEY', 'DIASTAGE_REAL_EVAL_USER_ID', 'DIASTAGE_AI_BETA_USER_IDS']
+  const names = [
+    'OPENAI_API_KEY',
+    'DIASTAGE_AI_PROVIDER',
+    'DASHSCOPE_API_KEY',
+    'DASHSCOPE_BASE_URL',
+    'DIASTAGE_REAL_EVAL_USER_ID',
+    'DIASTAGE_AI_BETA_USER_IDS',
+  ]
   const previous = names.map((name) => process.env[name])
   const cwd = process.cwd()
   const originalFetch = globalThis.fetch
@@ -40,6 +51,9 @@ test('missing or uninvited evaluation identity stops before changing cwd, writin
   globalThis.fetch = fetch as typeof globalThis.fetch
   try {
     process.env.OPENAI_API_KEY = 'synthetic-eval-key'
+    process.env.DIASTAGE_AI_PROVIDER = 'aliyun'
+    process.env.DASHSCOPE_API_KEY = 'synthetic-aliyun-key'
+    delete process.env.DASHSCOPE_BASE_URL
     process.env.DIASTAGE_AI_BETA_USER_IDS = 'other-invited-user'
     for (const userId of [undefined, '', ' \t ']) {
       if (userId === undefined) delete process.env.DIASTAGE_REAL_EVAL_USER_ID
@@ -140,7 +154,8 @@ test('the exact trimmed invited identity reaches provider context without approv
         SystemRoot: process.env.SystemRoot,
         TEMP: tmpdir(),
         TMP: tmpdir(),
-        OPENAI_API_KEY: 'synthetic-eval-key',
+        DIASTAGE_AI_PROVIDER: 'aliyun',
+        DASHSCOPE_API_KEY: 'synthetic-aliyun-key',
         DIASTAGE_REAL_EVAL_USER_ID: '  evaluation-user \t',
         DIASTAGE_AI_BETA_USER_IDS: 'different-first-user,evaluation-user',
         DIASTAGE_AI_LEDGER_PATH: join(fixture, 'ai-usage.db'),

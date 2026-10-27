@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { HomeStageSpace } from '@/components/stage-entry/home-stage-space'
 import { StudioWordmark } from '@/components/studio-wordmark'
+import { isAiProviderConfigured } from '@/lib/ai/provider-config'
 import { getAuthMailEnabled, getSession } from '@/lib/auth/server'
 import '@/components/stage-entry/dia-home.css'
 
@@ -20,7 +21,7 @@ export default async function Home({
         initialEntry={entry}
         initiallyLit={lit === '1'}
         emailEnabled={getAuthMailEnabled()}
-        modelConfigured={Boolean(process.env.OPENAI_API_KEY?.trim())}
+        modelConfigured={isAiProviderConfigured()}
         user={
           session
             ? { id: session.user.id, email: session.user.email, name: session.user.name }

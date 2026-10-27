@@ -184,7 +184,7 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
             restoreCamera()
           }}
         >
-          {foldCornerCode(corner)}
+          <span aria-hidden="true">{foldCornerCode(corner)}</span>
         </button>
       </Html>
     </group>

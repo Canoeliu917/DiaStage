@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { AiError } from './api'
 import { type ValidatedAudio, validateAudio } from './audio-validation'
 import { ModelBudgetError } from './model-budget'
+import { getAiProviderConfig } from './provider-config'
 
 export type AudioTranscriber = (audio: ValidatedAudio, signal: AbortSignal) => Promise<unknown>
 
@@ -14,6 +15,8 @@ const responseSchema = z.object({
 })
 
 const callTranscriber: AudioTranscriber = async (audio, signal) => {
+  if (getAiProviderConfig()?.provider !== 'openai')
+    throw new AiError('INTERNAL_ERROR', '语音转写暂未启用，请输入文字或使用附件。', 503)
   const { transcribeAudio } = await import('./openai-server')
   return transcribeAudio(audio, signal)
 }

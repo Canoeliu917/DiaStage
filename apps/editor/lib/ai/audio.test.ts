@@ -327,3 +327,37 @@ test('cancellation aborts validation and discards an already running transcripti
     }),
   ).rejects.toMatchObject({ name: 'AbortError' })
 })
+
+test('Aliyun selection does not send hidden voice transcription through a leftover OpenAI key', async () => {
+  const names = [
+    'DIASTAGE_AI_PROVIDER',
+    'DASHSCOPE_API_KEY',
+    'DASHSCOPE_BASE_URL',
+    'OPENAI_API_KEY',
+  ]
+  const previous = names.map((name) => process.env[name])
+  const originalFetch = globalThis.fetch
+  let requests = 0
+  globalThis.fetch = (async () => {
+    requests++
+    throw new Error('Voice must not call a provider')
+  }) as unknown as typeof fetch
+  try {
+    process.env.DIASTAGE_AI_PROVIDER = 'aliyun'
+    process.env.DASHSCOPE_API_KEY = 'synthetic-aliyun-key'
+    process.env.OPENAI_API_KEY = 'synthetic-leftover-openai-key'
+    delete process.env.DASHSCOPE_BASE_URL
+    await expect(transcribeVoice(await recording('webm'), signal())).rejects.toMatchObject({
+      code: 'INTERNAL_ERROR',
+      status: 503,
+      message: '语音转写暂未启用，请输入文字或使用附件。',
+    })
+    expect(requests).toBe(0)
+  } finally {
+    globalThis.fetch = originalFetch
+    names.forEach((name, index) => {
+      if (previous[index] === undefined) delete process.env[name]
+      else process.env[name] = previous[index]
+    })
+  }
+})

@@ -43,7 +43,7 @@ export function foldControls(node: ItemNode): ItemFoldControls {
 
 export const foldCornerPosition = (corner: number) => (corner < 2 ? corner : corner - 2)
 export const foldCornerCode = (corner: number) =>
-  `${foldCornerPosition(corner) + 1}${corner < 2 ? 'L' : 'R'}`
+  `${foldCornerPosition(corner) + 1}${corner < 2 ? '左' : '右'}`
 export const foldCorners = (node: AnyNode | undefined) =>
   Array.from({ length: foldPositionCount(node) }, (_, i) => [i, i + 2]).flat()
 
@@ -220,7 +220,7 @@ export function previewFoldAngle(angle: number) {
 }
 
 export const foldCornerLabel = (corner: number) =>
-  `铰链${foldCornerPosition(corner) + 1}${corner < 2 ? '左侧' : '右侧'}折叠`
+  `第${foldCornerPosition(corner) + 1}折点：转动${corner < 2 ? '左侧' : '右侧'}景片组，${corner < 2 ? '右侧' : '左侧'}保持原位`
 
 export function foldCornerGeometry(node: ItemNode, corner: number, height = 0) {
   const root = sceneRegistry.nodes.get(node.id)

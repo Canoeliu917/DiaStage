@@ -37,7 +37,7 @@ function FoldAngleInput({
   useEffect(() => setText(String(Math.round(value * 100) / 100)), [value])
   return (
     <input
-      aria-label={`折叠位置${position + 1}打开角度`}
+      aria-label={`第${position + 1}折点打开角度`}
       type="number"
       min={range[0]}
       max={range[1]}
@@ -85,8 +85,8 @@ export function FoldingPanel({ nodeId }: { nodeId: string }) {
       {active && (
         <>
           <small>
-            拖动编号圆点调整对应关节，每格 {FOLD_ANGLE_STEP}°；按住 Shift 可自由调整。L
-            移动铰链左侧、R 移动右侧，其余一侧保持固定。允许合拢贴合，遇到穿模即停止。
+            数字是折点编号，“左／右”表示转动哪侧景片组，另一侧保持原位。左右按景片连接顺序区分，不随视角变化。
+            每格 {FOLD_ANGLE_STEP}°，按住 Shift 可自由调整；允许合拢贴合，遇到穿模即停止。
           </small>
           <div className="stage-fold-presets" role="group" aria-label="折叠活动侧">
             {(['left', 'right'] as const).map((side) => (
@@ -97,7 +97,7 @@ export function FoldingPanel({ nodeId }: { nodeId: string }) {
                 aria-pressed={folding.side === side}
                 onClick={() => useStageFolding.setState({ side })}
               >
-                {side === 'left' ? '移动左侧 L' : '移动右侧 R'}
+                {side === 'left' ? '转动左侧景片' : '转动右侧景片'}
               </button>
             ))}
           </div>
@@ -109,7 +109,7 @@ export function FoldingPanel({ nodeId }: { nodeId: string }) {
                 disabled={folding.dragging}
                 onClick={() => useStageFolding.setState({ position })}
               >
-                折叠位置{position + 1}
+                第{position + 1}折点
               </button>
               <label>
                 打开角度{' '}
@@ -134,7 +134,7 @@ export function FoldingPanel({ nodeId }: { nodeId: string }) {
                       type="button"
                       key={angle}
                       disabled={folding.dragging}
-                      aria-label={`折叠位置${position + 1}打开${angle}度`}
+                      aria-label={`第${position + 1}折点打开${angle}度`}
                       onClick={() => setFoldAngle(nodeId, position, angle, folding.side)}
                     >
                       {angle}°

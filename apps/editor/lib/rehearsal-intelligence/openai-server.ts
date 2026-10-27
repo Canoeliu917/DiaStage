@@ -1,9 +1,9 @@
 import 'server-only'
 import OpenAI from 'openai'
 import { zodTextFormat } from 'openai/helpers/zod'
-import { AI_LIMITS, AiError } from '../ai/api'
+import { AiError } from '../ai/api'
 import { AI_TOKEN_LIMITS } from '../ai/config'
-import { trackAiCall } from '../ai/usage'
+import { requestStructuredOutput, structuredModel } from '../ai/structured-server'
 import { createInteraction } from './proposal-generator'
 import { validateContext } from './proposal-validator'
 import { AgentOutputSchema } from './schema'
@@ -21,9 +21,7 @@ stand-near-object表示调整初始站位，不表示从当前位置走过去；
 evidence只引用script、intention或directorIntention的逐字原文。全部理由使用中文，说明依据和希望产生的效果。rationale区分事实与可能解释。不得执行或声称已修改、已采用方案。`
 
 export function rehearsalModelVersion() {
-  return (
-    process.env.DIASTAGE_REHEARSAL_MODEL || process.env.DIASTAGE_COMMAND_MODEL || 'gpt-5.6-luna'
-  )
+  return structuredModel('rehearsal-proposal')
 }
 
 export async function requestRehearsalOutput(raw: unknown, signal: AbortSignal) {
@@ -37,40 +35,17 @@ export async function requestRehearsalOutput(raw: unknown, signal: AbortSignal) 
       422,
     )
   }
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey)
-    throw new AiError(
-      'INTERNAL_ERROR',
-      'AI 排演伙伴尚未配置服务密钥。你可以继续添加人物、记录移动和手动排演。',
-      503,
-    )
-  const model = rehearsalModelVersion()
-  const client = new OpenAI({ apiKey, maxRetries: 0, timeout: AI_LIMITS.requestTimeoutMs })
   const format = zodTextFormat(AgentOutputSchema, 'rehearsal_possibilities')
   const payload = JSON.stringify(context)
   try {
-    const response = await trackAiCall(
-      'rehearsal-proposal',
-      model,
+    const response = await requestStructuredOutput({
+      feature: 'rehearsal-proposal',
+      instructions,
+      inputText: payload,
+      maxOutputTokens: AI_TOKEN_LIMITS.commandOutput,
+      format,
       signal,
-      () =>
-        client.responses.create(
-          {
-            model,
-            store: false,
-            max_output_tokens: AI_TOKEN_LIMITS.commandOutput,
-            input: [
-              { role: 'system', content: instructions },
-              { role: 'user', content: payload },
-            ],
-            text: { format },
-          },
-          { signal },
-        ),
-      (r) => r.usage,
-      null,
-      instructions + payload + JSON.stringify(format),
-    )
+    })
     signal.throwIfAborted()
     let rawStructuredOutput: unknown = response.output_text || null
     try {
@@ -78,7 +53,7 @@ export async function requestRehearsalOutput(raw: unknown, signal: AbortSignal) 
     } catch {
       // Keep invalid JSON available for private evaluation; adoption still requires validation.
     }
-    return { context, modelVersion: model, rawStructuredOutput, status: response.status }
+    return { context, modelVersion: response.model, rawStructuredOutput, status: response.status }
   } catch (error) {
     if (error instanceof OpenAI.RateLimitError)
       throw new AiError('RATE_LIMITED', '排演服务繁忙，请稍后重新生成。', 429, true)

@@ -1,6 +1,7 @@
 import { mkdir, rename, writeFile } from 'node:fs/promises'
 import { setTimeout as delay } from 'node:timers/promises'
 import { fileURLToPath } from 'node:url'
+import { isAiProviderConfigured } from '../ai/provider-config'
 import { ONTOLOGY_VERSION, PROMPT_VERSION } from './dimensions'
 import { type EvalResult, EvalResultSchema, evalContext, validateEvalOutput } from './eval'
 import { EVAL_CASES } from './eval-cases'
@@ -18,8 +19,8 @@ export function realEvalCases(count: number) {
 
 export async function runRealEval(count = 10) {
   const candidates = realEvalCases(count)
-  if (!process.env.OPENAI_API_KEY?.trim())
-    return { REAL_MODEL_EVAL: 'NOT_RUN', reason: 'OPENAI_API_KEY_NOT_CONFIGURED', attempted: 0 }
+  if (!isAiProviderConfigured())
+    return { REAL_MODEL_EVAL: 'NOT_RUN', reason: 'AI_PROVIDER_NOT_CONFIGURED', attempted: 0 }
   const userId = process.env.DIASTAGE_REAL_EVAL_USER_ID?.trim()
   if (!userId)
     return { REAL_MODEL_EVAL: 'NOT_RUN', reason: 'EVAL_USER_ID_NOT_CONFIGURED', attempted: 0 }

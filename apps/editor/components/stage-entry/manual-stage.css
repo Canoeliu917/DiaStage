@@ -62,7 +62,10 @@
 .stage-fold-presets button { flex:1; text-align:center; }
 .stage-fold-point,.stage-fold-angle-handle { display:grid; place-items:center; width:30px; height:30px; border:2px solid var(--dia-ivory); border-radius:50%; background:var(--dia-raised); color:var(--dia-text); font:600 14px var(--dia-font-ui); box-shadow:0 2px 8px color-mix(in srgb,var(--dia-ink) 65%,transparent); touch-action:none; user-select:none; pointer-events:auto; }
 .stage-fold-point[aria-pressed=true] { background:var(--dia-active); color:var(--dia-ink); }
-.stage-fold-angle-handle { background:var(--dia-active); color:var(--dia-ink); font-size:23px; cursor:ew-resize; }
+.stage-fold-angle-handle { padding:0; border:0; border-radius:0; background:transparent; color:var(--dia-ink); box-shadow:none; font-size:11px; cursor:ew-resize; }
+.stage-fold-angle-handle > span { display:grid; place-items:center; width:24px; height:24px; border:1px solid var(--dia-ivory); border-radius:50%; background:var(--dia-active); pointer-events:none; }
+.stage-fold-angle-handle:focus-visible { outline:none; }
+.stage-fold-angle-handle:focus-visible > span { outline:2px solid var(--dia-focus); outline-offset:2px; }
 .stage-fold-plan-pivot { fill:var(--dia-ink); stroke:var(--dia-ivory); stroke-width:1px; vector-effect:non-scaling-stroke; }
 .stage-fold-plan-handle { touch-action:none; cursor:grab; outline:none; }
 .stage-fold-plan-handle circle { fill:var(--dia-active); stroke:var(--dia-ink); stroke-width:1.5px; vector-effect:non-scaling-stroke; }

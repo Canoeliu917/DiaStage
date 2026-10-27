@@ -10,6 +10,7 @@ import type { ValidatedAudio } from './audio-validation'
 import { AI_TOKEN_LIMITS, THEATRE_TRANSCRIPTION_PROMPT } from './config'
 import { StageModelPlanSchema } from './stage-model-schema'
 import type { PlanRequest } from './stage-planner'
+import { requestStructuredOutput } from './structured-server'
 import { trackAiCall } from './usage'
 
 export const AI_MODELS = {
@@ -49,7 +50,6 @@ export async function generateStagePlan(
   signal: AbortSignal,
 ): Promise<unknown> {
   const context = buildRelevantSceneContext(request.sceneContext, request.input)
-  const client = createOpenAIClient()
   const payload = JSON.stringify({
     ...request,
     sceneContext: context,
@@ -63,39 +63,23 @@ export async function generateStagePlan(
       boundsCenter: asset.boundsCenter,
     })),
   })
-  const response = await trackAiCall(
-    'stage-command',
-    AI_MODELS.command,
+  const response = await requestStructuredOutput({
+    feature: 'stage-command',
+    instructions,
+    inputText: payload,
+    maxOutputTokens: AI_TOKEN_LIMITS.commandOutput,
+    format: zodTextFormat(StageModelPlanSchema, 'stage_plan'),
     signal,
-    () =>
-      client.responses
-        .parse(
-          {
-            model: AI_MODELS.command,
-            store: false,
-            max_output_tokens: AI_TOKEN_LIMITS.commandOutput,
-            input: [
-              { role: 'system', content: instructions },
-              { role: 'user', content: payload },
-            ],
-            text: { format: zodTextFormat(StageModelPlanSchema, 'stage_plan') },
-          },
-          { signal },
-        )
-        .catch((error: unknown) => {
-          if (error instanceof OpenAI.RateLimitError)
-            throw new AiError('RATE_LIMITED', '解析服务暂时繁忙，请稍候重试。', 429, true)
-          if (
-            error instanceof OpenAI.AuthenticationError ||
-            error instanceof OpenAI.PermissionDeniedError
-          )
-            throw new AiError('INTERNAL_ERROR', '解析服务的访问配置不可用，请联系网站管理员。', 503)
-          throw error
-        }),
-    (result) => result.usage,
-    null,
-    instructions + payload + JSON.stringify(zodTextFormat(StageModelPlanSchema, 'stage_plan')),
-  )
+  }).catch((error: unknown) => {
+    if (error instanceof OpenAI.RateLimitError)
+      throw new AiError('RATE_LIMITED', '解析服务暂时繁忙，请稍候重试。', 429, true)
+    if (
+      error instanceof OpenAI.AuthenticationError ||
+      error instanceof OpenAI.PermissionDeniedError
+    )
+      throw new AiError('INTERNAL_ERROR', '解析服务的访问配置不可用，请联系网站管理员。', 503)
+    throw error
+  })
   if (response.status !== 'completed' || response.output_parsed === null)
     throw new AiError('PLAN_INVALID', '服务未能完成这条口令，请调整描述后重试。', 422, true)
   return response.output_parsed

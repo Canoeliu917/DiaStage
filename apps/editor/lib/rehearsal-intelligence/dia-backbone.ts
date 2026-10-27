@@ -24,7 +24,10 @@ export const DiaBuildProposalSchema = z
     spatialSolution: SpatialSolutionSchema.optional(),
     structuredGrounding: StructuredGroundingSchema.optional(),
     groundingProvider: z
-      .strictObject({ provider: z.enum(['deterministic', 'openai']), model: z.string().nullable() })
+      .strictObject({
+        provider: z.enum(['deterministic', 'openai', 'aliyun']),
+        model: z.string().nullable(),
+      })
       .optional(),
     status: z.enum(['proposed', 'previewed', 'prepared', 'applied', 'rejected']),
     finalSceneVersion: z.string().nullable(),

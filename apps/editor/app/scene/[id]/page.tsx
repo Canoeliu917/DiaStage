@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ClientBootstrap } from '@/app/client-bootstrap'
 import { SceneLoader } from '@/components/scene-loader'
 import { SceneOwnerBoundary } from '@/components/scene-owner-boundary'
+import { isAiProviderConfigured } from '@/lib/ai/provider-config'
 import { getScenePageOperations } from '@/lib/scene-store-server'
 
 export const dynamic = 'force-dynamic'
@@ -53,11 +54,7 @@ export default async function ScenePage({
   return (
     <SceneOwnerBoundary ownerId={meta.ownerId!}>
       <ClientBootstrap>
-        <SceneLoader
-          initialScene={graph}
-          meta={meta}
-          modelConfigured={!!process.env.OPENAI_API_KEY}
-        />
+        <SceneLoader initialScene={graph} meta={meta} modelConfigured={isAiProviderConfigured()} />
       </ClientBootstrap>
     </SceneOwnerBoundary>
   )

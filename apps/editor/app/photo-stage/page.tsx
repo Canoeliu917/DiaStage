@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import Link from 'next/link'
 import { PhotoStageBuilder } from '@/components/photo-stage-builder'
+import { isAiProviderConfigured } from '@/lib/ai/provider-config'
 import { getScenePageOperations } from '@/lib/scene-store-server'
 import './photo-stage.css'
 
@@ -19,7 +20,7 @@ export default async function PhotoStagePage() {
         <h1>照片复原</h1>
         <p>将照片里的空间，搭成可以继续编辑的舞台。</p>
       </div>
-      <PhotoStageBuilder modelConfigured={Boolean(process.env.OPENAI_API_KEY?.trim())} />
+      <PhotoStageBuilder modelConfigured={isAiProviderConfigured()} />
     </main>
   )
 }

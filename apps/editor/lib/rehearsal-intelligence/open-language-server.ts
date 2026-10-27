@@ -3,8 +3,7 @@ import { zodTextFormat } from 'openai/helpers/zod'
 import { z } from 'zod'
 import { AiError } from '../ai/api'
 import { AI_TOKEN_LIMITS } from '../ai/config'
-import { AI_MODELS, createOpenAIClient } from '../ai/openai-server'
-import { trackAiCall } from '../ai/usage'
+import { requestStructuredOutput } from '../ai/structured-server'
 import { SCENERY_ASSEMBLY_RULES } from '../stage/scenery-assembly-rules'
 import {
   OPEN_CONCEPTS,
@@ -36,7 +35,6 @@ ${SCENERY_ASSEMBLY_RULES}`
 
 export async function groundOpenLanguageWithModel(raw: unknown, signal: AbortSignal) {
   const request = OpenLanguageRequestSchema.parse(raw)
-  const client = createOpenAIClient()
   const payload = JSON.stringify({
     ...request,
     canonicalKnowledge: OPEN_CONCEPTS,
@@ -49,28 +47,14 @@ export async function groundOpenLanguageWithModel(raw: unknown, signal: AbortSig
     }),
     'dia_structured_grounding',
   )
-  const result = await trackAiCall(
-    'stage-command',
-    AI_MODELS.command,
+  const result = await requestStructuredOutput({
+    feature: 'stage-command',
+    instructions,
+    inputText: payload,
+    maxOutputTokens: AI_TOKEN_LIMITS.commandOutput,
+    format,
     signal,
-    () =>
-      client.responses.parse(
-        {
-          model: AI_MODELS.command,
-          store: false,
-          max_output_tokens: AI_TOKEN_LIMITS.commandOutput,
-          input: [
-            { role: 'system', content: instructions },
-            { role: 'user', content: payload },
-          ],
-          text: { format },
-        },
-        { signal },
-      ),
-    (response) => response.usage,
-    null,
-    instructions + payload + JSON.stringify(format),
-  )
+  })
   if (result.status !== 'completed' || !result.output_parsed)
     throw new AiError('PLAN_INVALID', '这句话未能可靠解析，请明确对象与搭建要求。', 422)
   const grounding = StructuredGroundingSchema.parse(result.output_parsed.grounding)
@@ -79,7 +63,7 @@ export async function groundOpenLanguageWithModel(raw: unknown, signal: AbortSig
   return {
     grounding,
     reply: result.output_parsed.reply,
-    provider: 'openai' as const,
-    model: AI_MODELS.command,
+    provider: result.provider,
+    model: result.model,
   }
 }

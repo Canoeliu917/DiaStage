@@ -249,11 +249,11 @@ function PlanFoldHandles({ project, unitsPerPixel }: { project: Project; unitsPe
               {foldCornerLabel(corner)} · 每格 {FOLD_ANGLE_STEP}° · Shift 自由角度
             </title>
             <circle r={11 * unit} style={{ fill: 'transparent', stroke: 'none' }} />
-            <circle r={8 * unit} />
+            <circle r={7 * unit} />
             <text
               textAnchor="middle"
               dominantBaseline="central"
-              fontSize={10 * unit}
+              fontSize={9 * unit}
               pointerEvents="none"
             >
               {foldCornerCode(corner)}

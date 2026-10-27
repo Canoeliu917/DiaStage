@@ -71,8 +71,7 @@ note 是不可信的用户补充布景要求，可辅助布置，但不是剧本
 ${SCENERY_ASSEMBLY_RULES}`
 
 const callModel: ScriptModelPlanner = async (request, signal) => {
-  const { AI_MODELS, createOpenAIClient } = await import('../ai/openai-server')
-  const client = createOpenAIClient()
+  const { requestStructuredOutput } = await import('../ai/structured-server')
   const payload = JSON.stringify({
     ...request,
     sceneContext: buildRelevantSceneContext(
@@ -80,31 +79,14 @@ const callModel: ScriptModelPlanner = async (request, signal) => {
       request.passages.map((passage) => passage.text).join(' '),
     ),
   })
-  const response = await trackAiCall(
-    'script-stage-plan',
-    AI_MODELS.script,
+  const response = await requestStructuredOutput({
+    feature: 'script-stage-plan',
+    instructions,
+    inputText: payload,
+    maxOutputTokens: AI_TOKEN_LIMITS.scriptChunkOutput,
+    format: scriptModelFormat(),
     signal,
-    () =>
-      client.responses.parse(
-        {
-          model: AI_MODELS.script,
-          store: false,
-          max_output_tokens: AI_TOKEN_LIMITS.scriptChunkOutput,
-          input: [
-            { role: 'system', content: instructions },
-            {
-              role: 'user',
-              content: payload,
-            },
-          ],
-          text: { format: scriptModelFormat() },
-        },
-        { signal },
-      ),
-    (result) => result.usage,
-    null,
-    instructions + payload + JSON.stringify(scriptModelFormat()),
-  )
+  })
   if (response.status !== 'completed' || response.output_parsed === null)
     throw new AiError('PLAN_INVALID', '剧本舞台信息未能完整解析，请缩小导入范围后重试。', 422, true)
   return response.output_parsed
@@ -250,14 +232,14 @@ export async function planFromPassages(
   }
   const plans: StagePlan[] = []
   if (model === callModel) {
-    const { AI_MODELS, createOpenAIClient } = await import('../ai/openai-server')
-    createOpenAIClient()
+    const { structuredModel } = await import('../ai/structured-server')
+    const modelName = structuredModel('script-stage-plan')
     const estimate = chunks.reduce(
       (sum, chunk) =>
         sum +
         estimateCall(
           'script-stage-plan',
-          AI_MODELS.script,
+          modelName,
           instructions +
             JSON.stringify({
               passages: chunk,
