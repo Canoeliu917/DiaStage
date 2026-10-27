@@ -1,6 +1,9 @@
 import 'fake-indexeddb/auto'
-import { afterEach, describe, expect, test } from 'bun:test'
-import { deleteAsset, loadAssetUrl, releaseAssetUrl, saveAsset } from './asset-storage'
+import { afterEach, describe, expect, spyOn, test } from 'bun:test'
+import { deleteAsset, getAssetStorageScope, loadAssetUrl, readAssetBlob, releaseAssetUrl,
+  restoreAssetBlob, saveAsset, setAssetStorageScope } from './asset-storage'
+
+afterEach(() => setAssetStorageScope(null))
 
 function file(contents: string, name = 'test.txt'): File {
   return new File([contents], name, { type: 'text/plain' })
@@ -37,6 +40,58 @@ describe('saveAsset', () => {
     const loaded = await loadAssetUrl(url)
     expect(loaded).not.toBeNull()
   })
+})
+
+test('scopes isolate the same handle from each other and from legacy global blobs', async () => {
+  const url = 'asset://scope-isolation'
+  await restoreAssetBlob(url, file('legacy'))
+  setAssetStorageScope('asset-test-alice')
+  expect(await readAssetBlob(url)).toBeNull()
+  await restoreAssetBlob(url, file('alice'))
+  const revoke = spyOn(URL, 'revokeObjectURL')
+  try {
+    const first = await loadAssetUrl(url)
+    setAssetStorageScope('asset-test-bob')
+    expect(getAssetStorageScope()).toBe('asset-test-bob')
+    expect(revoke).toHaveBeenCalledWith(first!)
+    expect(await readAssetBlob(url)).toBeNull()
+    await restoreAssetBlob(url, file('bob'))
+    expect(await (await readAssetBlob(url))?.text()).toBe('bob')
+    expect(await loadAssetUrl(url)).not.toBe(first)
+    setAssetStorageScope('asset-test-alice')
+    expect(await (await readAssetBlob(url))?.text()).toBe('alice')
+    setAssetStorageScope(null)
+    expect(await (await readAssetBlob(url))?.text()).toBe('legacy')
+  } finally { revoke.mockRestore() }
+})
+
+test('restore never replaces an existing handle and account deletion cannot remove legacy data', async () => {
+  const url = 'asset://restore-immutable'
+  await restoreAssetBlob(url, file('global'))
+  setAssetStorageScope('asset-test-restore')
+  await restoreAssetBlob(url, file('original'))
+  await restoreAssetBlob(url, file('replacement'))
+  expect(await (await readAssetBlob(url))?.text()).toBe('original')
+  await deleteAsset(url)
+  expect(await readAssetBlob(url)).toBeNull()
+  setAssetStorageScope(null)
+  expect(await (await readAssetBlob(url))?.text()).toBe('global')
+})
+
+test('scope changes reject pending reads and cannot publish an object URL from the old scope', async () => {
+  setAssetStorageScope('asset-test-race-a')
+  const url = await saveAsset(file('old account'))
+  const read = readAssetBlob(url)
+  setAssetStorageScope('asset-test-race-b')
+  await expect(read).rejects.toThrow('scope changed')
+  setAssetStorageScope('asset-test-race-a')
+  const create = spyOn(URL, 'createObjectURL')
+  try {
+    const loading = loadAssetUrl(url)
+    setAssetStorageScope('asset-test-race-b')
+    expect(await loading).toBeNull()
+    expect(create).not.toHaveBeenCalled()
+  } finally { create.mockRestore() }
 })
 
 describe('loadAssetUrl', () => {

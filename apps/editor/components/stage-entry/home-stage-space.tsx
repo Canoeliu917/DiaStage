@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { type AccountUser, HomeAccountPanel } from '@/components/account-panel'
 import { DIASTAGE_BRAND } from '@/lib/brand'
+import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import { CoordinateField, type HomeSpaceAction } from './coordinate-field'
 import './stage-entry.css'
 
@@ -34,11 +35,13 @@ export function HomeStageSpace({
   initialEntry,
   initiallyLit = false,
   emailEnabled = false,
+  modelConfigured = false,
   user,
 }: {
   initialEntry?: string
   initiallyLit?: boolean
   emailEnabled?: boolean
+  modelConfigured?: boolean
   user: AccountUser | null
 }) {
   const [entry, setEntry] = useState<Entry | null>(null)
@@ -50,7 +53,7 @@ export function HomeStageSpace({
   useEffect(() => {
     if (
       initialEntry === 'dialogue' ||
-      initialEntry === 'voice' ||
+      (VOICE_INPUT_ENABLED && initialEntry === 'voice') ||
       initialEntry === 'script' ||
       initialEntry === 'manual'
     )
@@ -148,7 +151,11 @@ export function HomeStageSpace({
           ) : entry === 'manual' ? (
             <ManualStageEntry initiallyOpen />
           ) : (
-            <StageCommandInput initialText={draft} onTextChange={setDraft} />
+            <StageCommandInput
+              initialText={draft}
+              onTextChange={setDraft}
+              modelConfigured={modelConfigured}
+            />
           )}
         </dialog>
       )}

@@ -295,7 +295,7 @@ function EnabledPhoneVoiceLink({
       <div className="phone-voice-link__body">
         {!session ? (
           <>
-            <p>在手机和 Dia 一起排，校对语音、预演方案或上传扫描。舞台变化由你在电脑端确认。</p>
+            <p>在手机和 Dia 一起排，输入想法、预演方案或上传扫描。舞台变化由你在电脑端确认。</p>
             {!sceneId && <p>请先建立并保存舞台，再连接手机。</p>}
             <button
               type="button"
@@ -320,7 +320,7 @@ function EnabledPhoneVoiceLink({
             </label>
             {localOnly && (
               <p className="stage-entry-warning">
-                手机需使用可访问的 HTTPS 地址。当前地址尚未满足手机录音条件。
+                手机需使用可访问的 HTTPS 地址。请在电脑上确认连接地址。
               </p>
             )}
             <button type="button" disabled={busy} onClick={() => void disconnect()}>

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useRef, useState, useTransition } from 'react'
 import { DIASTAGE_BRAND } from '@/lib/brand'
 import { prepareSyntheticDemo } from '@/lib/rehearsal-intelligence/synthetic-demo-intention'
-import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
+import { isDeviceLinkEnabled, VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import type { VoiceState } from './command-input'
 
 const VoiceRecorder = dynamic(
@@ -82,14 +82,16 @@ export function DiaHomeEntry() {
         />
         <div className="dia-home-input-actions">
           <div>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => setVoice((value) => !value)}
-              aria-expanded={voice}
-            >
-              说一句
-            </button>
+            {VOICE_INPUT_ENABLED && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setVoice((value) => !value)}
+                aria-expanded={voice}
+              >
+                说一句
+              </button>
+            )}
             <button type="button" disabled={busy} onClick={() => input.current?.focus()}>
               输入文字
             </button>
@@ -98,7 +100,7 @@ export function DiaHomeEntry() {
             {opening ? '正在打开…' : draft.trim() ? '和 Dia 一起排' : '打开原创示例'}
           </button>
         </div>
-        {voice && (
+        {VOICE_INPUT_ENABLED && voice && (
           <VoiceRecorder
             state={voiceState}
             setState={setVoiceState}

@@ -51,6 +51,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const access = await getPrivateSceneAccess(request)
   if (access instanceof Response) return access
+  const expectedOwner = request.headers.get('x-diastage-asset-owner')
+  if (expectedOwner !== null && expectedOwner !== access.user.id)
+    return sceneApiJson(request, { error: 'asset_account_changed' }, { status: 409 })
 
   let body: unknown
   try {

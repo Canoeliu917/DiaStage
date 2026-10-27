@@ -20,6 +20,7 @@ export default async function Home({
         initialEntry={entry}
         initiallyLit={lit === '1'}
         emailEnabled={getAuthMailEnabled()}
+        modelConfigured={Boolean(process.env.OPENAI_API_KEY?.trim())}
         user={
           session
             ? { id: session.user.id, email: session.user.email, name: session.user.name }

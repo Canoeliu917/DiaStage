@@ -7,6 +7,24 @@
 .stage-entry-form :focus-visible,.stage-input :focus-visible,.stage-plan-review :focus-visible { outline:2px solid currentColor;outline-offset:3px; }
 .stage-entry-actions { display:flex;flex-wrap:wrap;gap:8px; }
 .stage-entry-actions button { flex:1; }
+.dia-attachment-drop,.dia-attachment-controls,.dia-attachment-panel { display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%; }
+.dia-attachment-controls p { font-size:13px;line-height:1.65;overflow-wrap:anywhere; }
+.dia-attachment-drop textarea,.dia-attachment-panel :is(input,textarea,select) { font-size:16px;min-width:0;max-width:100%; }
+.dia-attachment-controls button,.dia-attachment-panel button { min-height:44px;padding:10px 14px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer; }
+.dia-attachment-panel button:disabled { opacity:.45;cursor:not-allowed; }
+.dia-attachment-panel { margin-block:16px;padding-block:16px;border-block:1px solid #777;overflow-wrap:anywhere; }
+.dia-panel > .dia-attachment-panel { flex:1 1 auto;min-height:0;overflow:auto; }
+.dia-attachment-heading { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px; }
+.dia-attachment-heading p { min-width:0;overflow-wrap:anywhere; }
+.dia-attachment-panel .photo-stage-builder,.dia-attachment-panel .photo-stage-section { display:flex;flex-direction:column;gap:14px;min-width:0; }
+.dia-attachment-panel .photo-stage-number,.dia-attachment-panel .photo-stage-section > h2 { display:none; }
+.dia-attachment-panel .photo-stage-source { max-width:100%;max-height:240px;object-fit:contain; }
+.dia-attachment-panel .photo-stage-map svg { display:block;width:100%;max-height:260px; }
+.dia-attachment-panel .photo-stage-field { display:flex;flex-direction:column;gap:8px; }
+.dia-attachment-panel :is(input,select,summary) { min-height:44px; }
+.dia-attachment-panel :is(input,select) { border:1px solid #777;background:transparent;color:inherit;padding:8px; }
+.dia-attachment-panel :is(button,input,select,textarea):focus-visible { outline:2px solid currentColor;outline-offset:3px; }
+.dia-attachment-panel .stage-script-groups { grid-template-columns:1fr; }
 .stage-entry-metrics { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px; }
 .stage-plan-review fieldset,.stage-plan-review section { min-width:0; }
 .stage-plan-review { font-family:var(--dia-font-ui); }

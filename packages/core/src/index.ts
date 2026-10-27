@@ -79,7 +79,10 @@ export {
   type WallConstructionResolution,
 } from './hooks/spatial-grid/support-host-patch'
 export { useSpatialQuery } from './hooks/spatial-grid/use-spatial-query'
-export { deleteAsset, loadAssetUrl, releaseAssetUrl, saveAsset } from './lib/asset-storage'
+export {
+  deleteAsset, getAssetStorageScope, loadAssetUrl, readAssetBlob,
+  releaseAssetUrl, restoreAssetBlob, saveAsset, setAssetStorageScope,
+} from './lib/asset-storage'
 export {
   clampDoorOperationState,
   getDoorRenderOpenAmount,

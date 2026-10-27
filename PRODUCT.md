@@ -17,7 +17,7 @@ Dia 是贯穿其中的智能伙伴，把人的自然语言转化成可预演、�
 本阶段遵循 Core Closure / Freeze 及产品层级修正指令。核心产品过程固定为 Venue → Build → Rehearse → Remount（场地 → 搭台 → 排演 → 复台）。Venue 是其余过程共同依赖的空间基础；Dia 是贯穿全过程的统一智能入口。
 
 Version / History / Journal 是贯穿全过程的 Diary 基础设施，并为 Remount 提供历史来源，不是第五个用户阶段或工作区。Feedback、Human Authority、Scene Store、Scene Layers 同属横向基础设施。Project State / Constraints 保持 SCHEMA_ONLY。本轮只修正表达，不改写已验证数据链路。
-首页以“把戏说给 Dia。”及“从场地，到搭台，到排演，再到复台。”说明用途；原创示例明确标注为合成演示。语音先转写校对，再进入同一个 Dia。旧版搭台入口折叠保留，手动、剧本输入与复台仍可独立操作。
+首页以“把戏说给 Dia。”及“从场地，到搭台，到排演，再到复台。”说明用途；原创示例明确标注为合成演示。语音入口按 2026-10-27 用户决定暂时隐藏，底层实现保留，不作为当前首发前置。旧版搭台入口折叠保留，手动、剧本输入与复台仍可独立操作。
 一级工作区只有 SET / 置景、REHEARSE / 排演、REMOUNT / 复台。
 - 置景：舞台与场地、布景调整、舞台库、舞台镜头。搭台口令进入共享 Dia。
 - 排演：模拟排演；显示；观察与记录并排；排演版本固定最后。
@@ -57,6 +57,8 @@ Camera Rehearsal 属于 Rehearse 下的观察与记录，和人物、Blocking、
 - 不将未实现的语音、剧本输入或现场系统包装成可用功能。
 
 ## Evidence on Hand
+2026-10-27 用户补充：Dia 文字栏接收已有剧本 PDF、剧目照片及剧场照片，解析其场地、布景和台位并提供可修改的场景布置预览，不创作新剧本。文字型 PDF 提取与照片布景识别沿用现有流程，扫描剧本 OCR 未包含在本轮；缩略预览的标签避让只改变展示，不移动场景物件。优先完善文件导入与云端素材同步：按账号保存场景使用的图片、扫描模型和已采纳的剧本片段，不保存原始 PDF；原生扫描 App 暂不开发。旧浏览器中无法确定归属的素材不自动归入新账号、不上传或删除。
+
 当前 Closure 和冻结门禁见 DIASTAGE_PRODUCT_BACKBONE_FREEZE_REPORT.md。DIASTAGE_PRODUCT_BACKBONE_INTEGRATION_REPORT.md 为此前基线验收；连续对话见 DIA_CONVERSATION_LAYER.md，AI 排演见 REHEARSAL_INTELLIGENCE_V01.md，三入口见 THREE_ENTRY_IMPLEMENTATION.md；移除用户照明见 SIMPLIFIED_REHEARSAL.md。历史规划不覆盖本阶段要求。冻结后 PR #1 停止新增产品能力，进入独立主题的 Invite Beta 验证与发布准备。
 
 ## Non-goals

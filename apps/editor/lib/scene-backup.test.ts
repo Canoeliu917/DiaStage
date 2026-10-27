@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
 import { SceneMaterial } from '@pascal-app/core/schema'
+import { activateLocalAccount } from './auth/local-account'
 import { createSceneCopy, parseSceneBackup } from './scene-backup'
 import { createTheatreSceneGraph } from './theatre/new-production'
 import { THEATRE_METADATA_KEY } from './theatre/scene-adapter'
@@ -44,6 +45,7 @@ test('backup import validates the existing scene format and retains palette, col
 })
 
 test('recovery creates an independent scene and leaves its source intact on success or failure', async () => {
+  activateLocalAccount('backup-test-owner')
   const originalFetch = globalThis.fetch
   const graph = createTheatreSceneGraph('原剧目')
   const before = JSON.stringify(graph)
@@ -56,6 +58,7 @@ test('recovery creates an independent scene and leaves its source intact on succ
     expect(await createSceneCopy(graph, '恢复的副本')).toBe('/scene/recovered-scene')
     expect(calls[0]?.path).toBe('/api/scenes')
     expect(calls[0]?.init.method).toBe('POST')
+    expect(new Headers(calls[0]?.init.headers).get('x-diastage-asset-owner')).toBe('backup-test-owner')
     const submitted = JSON.parse(String(calls[0]?.init.body))
     expect(submitted.name).toBe('恢复的副本')
     expect(
@@ -69,6 +72,8 @@ test('recovery creates an independent scene and leaves its source intact on succ
     )
     globalThis.fetch = (async () => new Response(null, { status: 500 })) as typeof fetch
     await expect(createSceneCopy(graph, '失败的副本')).rejects.toThrow('本机记录仍保留')
+    globalThis.fetch = (async () => new Response(null, { status: 409 })) as typeof fetch
+    await expect(createSceneCopy(graph, '账号切换后的副本')).rejects.toThrow('账号已切换')
     expect(JSON.stringify(graph)).toBe(before)
   } finally {
     globalThis.fetch = originalFetch

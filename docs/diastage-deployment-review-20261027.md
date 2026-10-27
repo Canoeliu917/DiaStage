@@ -25,6 +25,7 @@ SSH stdout 在构建完成时断开，外层记录 `Broken pipe`；安装与构�
 ## 已准备的生产配置
 
 - [环境示例](../deploy/production.env.example)已固定上述完整 SHA；场景库为 `/home/ubuntu/diastage-data-v01/scenes.db`，AI 账本为同目录 `ai-usage.db`，认证库由程序放在同目录的 `auth.sqlite`。新目录尚未创建，旧数据保留不迁移。
+- 后续本机素材同步源码另新增同目录私有 `assets.db`，不在本稿固定的 `3c740c8` 构建中，尚未部署。包含素材的新版本须将场景库与素材库作为同一备份/恢复集合；具体要求见[后续运行安排](diastage-functional-validation-20261027.md#后续运行与回滚顺序)，既有场景快照不能冒充素材恢复验收。
 - [systemd 覆盖配置](../deploy/diastage.override.conf)已固定新发布目录，直接用 `/usr/bin/node` 运行 Next，仍只监听 `127.0.0.1:4329`。不再经过旧 `.env.defaults` 的 dotenv 启动包装。
 - 本次读取实际 unit：无 drop-in、无 `EnvironmentFile`；旧环境仅包含 `NODE_ENV`、`NEXT_TELEMETRY_DISABLED`、`PASCAL_DB_PATH`、`PATH`。因此采用单一 `/etc/diastage/production.env` 即可，无需额外合并多个环境文件。新环境文件会覆盖旧 unit 的同名数据库路径。
 - `/etc/diastage/production.env` 与 `/etc/systemd/system/diastage.service.d/production.conf` 当前均不存在，示例不能原样安装。正式配置须在服务器私有操作中填入至少 32 字符的随机稳定 `BETTER_AUTH_SECRET`，并在更新、重启及回滚时保留同一值；公开 origin 不会使用 `auth.secret` 文件回退。已有稳定值时禁止再次生成替换。

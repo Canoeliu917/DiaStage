@@ -1,6 +1,8 @@
 import { type AnyNode, type AnyNodeId, validateBuildJson } from '@pascal-app/core'
 import type { SceneGraph } from '@pascal-app/editor'
+import { getLocalAccountOwner } from './auth/local-account'
 import { apiGraphSchema } from './graph-schema'
+import { uploadSceneAssets } from './scene-assets-client'
 import { parseSnapshot, THEATRE_METADATA_KEY } from './theatre/scene-adapter'
 import { readStageDocument } from './theatre/simulation-store'
 
@@ -29,6 +31,8 @@ export function parseSceneBackup(text: string) {
 
 /** A new scene only: recovery never overwrites the source or the currently open scene. */
 export async function createSceneCopy(graph: SceneGraph, name: string) {
+  const ownerId = getLocalAccountOwner()
+  if (!ownerId) throw new Error('账号尚未准备好，请重新打开场景后恢复副本。')
   name = name.trim().slice(0, 200) || '恢复的剧目'
   const copy = structuredClone(graph)
   const nodes = copy.nodes as Record<string, AnyNode>
@@ -46,12 +50,14 @@ export async function createSceneCopy(graph: SceneGraph, name: string) {
   } catch {
     // Preserve unreadable legacy metadata in recovery copies, as normal saves do.
   }
+  await uploadSceneAssets(copy)
   const response = await fetch('/api/scenes', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-diastage-asset-owner': ownerId },
     body: JSON.stringify({ name, graph: copy }),
     signal: AbortSignal.timeout(20_000),
   })
+  if (response.status === 409) throw new Error('账号已切换，副本未保存；请重新登录原账号后重试。')
   if (!response.ok)
     throw new Error(`创建剧目副本失败（${response.status}），原场景和本机记录仍保留。`)
   const saved = (await response.json()) as { id?: string }

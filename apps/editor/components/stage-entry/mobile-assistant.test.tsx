@@ -38,7 +38,7 @@ test('mobile assistant starts with Dia and secondary tools without a Canvas; uns
   }
 })
 
-test('mobile Dia starts disconnected, keeps voice lazy, and never offers remote adopt', () => {
+test('mobile Dia starts disconnected, hides voice, and never offers remote adopt', () => {
   const markup = renderToStaticMarkup(
     <MobileDia
       session={{
@@ -51,7 +51,7 @@ test('mobile Dia starts disconnected, keeps voice lazy, and never offers remote 
     />,
   )
   expect(markup).toContain('当前预演状态尚未确认')
-  expect(markup).toContain('说一句')
+  expect(markup).not.toContain('说一句')
   expect(markup).toContain('发送给 Dia')
   expect(markup).not.toContain('正在打开录音')
   expect(markup).not.toContain('synthetic-token')

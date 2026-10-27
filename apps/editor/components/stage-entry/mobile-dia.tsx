@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
+import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import { type JoinedRemoteVoiceSession, readRemoteVoiceResponse } from '@/lib/remote-voice/client'
 import {
   type RemoteDiaCommandInput,
@@ -368,16 +369,18 @@ export function MobileDia({
           }}
         />
         <div className="mobile-dia__actions">
-          <button
-            type="button"
-            disabled={disabled && !showVoice}
-            onClick={() => {
-              setShowVoice(!showVoice)
-              setVoiceState('idle')
-            }}
-          >
-            {showVoice ? '收起录音' : '说一句'}
-          </button>
+          {VOICE_INPUT_ENABLED && (
+            <button
+              type="button"
+              disabled={disabled && !showVoice}
+              onClick={() => {
+                setShowVoice(!showVoice)
+                setVoiceState('idle')
+              }}
+            >
+              {showVoice ? '收起录音' : '说一句'}
+            </button>
+          )}
           <button
             type="button"
             className="mobile-dia__primary"
@@ -396,7 +399,7 @@ export function MobileDia({
             </button>
           )}
         </div>
-        {showVoice && (
+        {VOICE_INPUT_ENABLED && showVoice && (
           <div className="mobile-dia__voice">
             {!secureContext && <p>当前不是 HTTPS，麦克风不可用；可以输入文字。</p>}
             <VoiceRecorder

@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
+import { isDeviceLinkEnabled, VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import { createUUID } from '@/lib/uuid'
 import './coordinate-field.css'
 
@@ -182,7 +182,12 @@ export function CoordinateField({
   const options: SpaceNode[] = !revealed
     ? [light]
     : group
-      ? [light, ...HOME_SPACE_GROUPS[group].options]
+      ? [
+          light,
+          ...HOME_SPACE_GROUPS[group].options.filter(
+            (option) => VOICE_INPUT_ENABLED || option.action !== 'voice',
+          ),
+        ]
       : [
           ...HOME_SPACE_NODES,
           ...notes.map((note) => ({

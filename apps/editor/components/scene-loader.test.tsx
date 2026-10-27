@@ -19,6 +19,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const { BlockNode, SiteNode } = await import('@pascal-app/core/schema')
   const { createTheatreDocument } = await import('../lib/theatre/schema')
   const { sceneGraphSignature } = await import('../lib/scene-signature')
+  const { activateLocalAccount } = await import('../lib/auth/local-account')
+  activateLocalAccount('loader-test-owner')
   const { validateBuildJson } = await import('../../../packages/core/src/validation/validate-build-json')
   let displayedDocument: ReturnType<typeof createTheatreDocument> | null = null
   const site = SiteNode.parse({ id: 'site_save', name: '排演', metadata: { existing: 'retain' } })
@@ -170,6 +172,13 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   }))
   let recoveryPending = false
   let journalInstances = 0
+  let acknowledgements = 0
+  let uploadAssets: (graph: SceneGraph) => Promise<void> = async () => {}
+  let hydrateAssets: (graph: SceneGraph) => Promise<void> = async () => {}
+  mock.module('../lib/scene-assets-client', () => ({
+    uploadSceneAssets: (graph: SceneGraph) => uploadAssets(graph),
+    hydrateSceneAssets: (graph: SceneGraph) => hydrateAssets(graph),
+  }))
   const serverAccepts: { graph: SceneGraph; version: number }[] = []
   mock.module('../lib/scene-journal', () => ({
     SceneJournal: class {
@@ -180,7 +189,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
         return { graph, pending: recoveryPending, conflict: false }
       }
       async append() { if (!this.loaded) throw new Error('本机日志尚未加载') }
-      async acknowledge() {}
+      async acknowledge() { acknowledgements++ }
       async assertCurrent() {}
       async acceptServer(graph: SceneGraph, version: number) { serverAccepts.push({ graph, version }) }
     },
@@ -318,12 +327,16 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
       thumbnailUrl?: string | null
     }
   const matchVersion = (index: number) => new Headers(requests[index]?.init.headers).get('If-Match')
+  function resetHooks() {
+    for (const hook of hooks) (hook as { cleanup?: () => void } | undefined)?.cleanup?.()
+    hooks = []
+  }
 
   for (const [previousPanel, workspace, expectedPanel] of [
     ['remount', 'set', 'items'],
     ['items', 'remount', 'remount'],
   ] as const) {
-    hooks = []
+    resetHooks()
     workspaceQuery = `workspace=${workspace}`
     editorState.activeSidebarPanel = previousPanel
     const loading = render()
@@ -343,13 +356,13 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     render()
     assert.equal(render().navigation?.group, otherWorkspace, 'a consumed URL does not override later manual navigation')
   }
-  hooks = []
+  resetHooks()
   workspaceQuery = ''
   editorState.activeSidebarPanel = 'remount'
   render().props.onLoaderChange(false)
   render()
   assert.equal(render().navigation?.group, 'remount', 'entry without a workspace keeps the saved preference')
-  hooks = []
+  resetHooks()
   editorState.activeSidebarPanel = 'theatre-roles'
 
   await render().props.onLoad()
@@ -372,12 +385,12 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   render().props.onDirty()
   render().props.onLoaderChange(false)
   assert.equal(coverRequests.length, initialCovers, 'loading cannot capture unsaved edits')
-  hooks = []
+  resetHooks()
   recoveryPending = true
   await render().props.onLoad()
   render().props.onLoaderChange(false)
   assert.equal(coverRequests.length, initialCovers, 'recovered work waits for a successful save')
-  hooks = []
+  resetHooks()
   recoveryPending = false
   coverRequests.length = 0
   liveGraph = structuredClone(initialScene)
@@ -445,7 +458,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     'an identical acknowledged save also refreshes the cover',
   )
 
-  hooks = []
+  resetHooks()
   respond = async () =>
     Response.json({ error: 'version_conflict', currentVersion: 12 }, { status: 409 })
   await assert.rejects(saveAsEditor(liveGraph), /版本冲突/)
@@ -463,7 +476,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   assert.equal(exports, 1)
   assert.equal(requests.length, conflictRequest, 'reload never forces a conflicting write')
 
-  hooks = []
+  resetHooks()
   const requestsBeforeEmpty = requests.length
   await assert.rejects(saveAsEditor({ nodes: {}, rootNodeIds: [] }), /加载完成/)
   assert.equal(requests.length, requestsBeforeEmpty, 'unhydrated data cannot reach the server')
@@ -480,13 +493,14 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   )
   assert.equal(statuses.at(-1), 'error')
 
-  hooks = []
+  resetHooks()
   liveGraph = structuredClone(initialScene)
   render().props.onDirty()
   liveGraph.nodes[prop.id] = { ...prop, position: [4, 0, 4] }
   const dirtyGraph = structuredClone(liveGraph)
   const remoteGraph = structuredClone(initialScene)
   remoteGraph.nodes[prop.id] = { ...prop, position: [-4, 0, -4] }
+  render().props.onLoaderChange(false)
   sources.at(-1)!.scene(8, remoteGraph)
   assert.ok(proposalInvalidations > 0, 'foreign changes invalidate rehearsal previews')
   await assert.rejects(checkProposal(), /版本冲突/, 'a conflicted scene cannot adopt a proposal')
@@ -497,7 +511,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     true,
   )
 
-  hooks = []
+  resetHooks()
   liveGraph = structuredClone(initialScene)
   let completeSave: (response: Response) => void = () => {
     throw new Error('save did not start')
@@ -507,6 +521,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
       completeSave = resolve
     })
   const saving = render().props.onSave(liveGraph)
+  await flush()
+  render().props.onLoaderChange(false)
   liveGraph = structuredClone(dirtyGraph)
   render().props.onDirty()
   sources.at(-1)!.scene(8, initialScene)
@@ -541,9 +557,11 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     'refresh establishes the new server baseline',
   )
 
-  hooks = []
+  resetHooks()
   render()
+  render().props.onLoaderChange(false)
   sources.at(-1)!.scene(13, remoteGraph)
+  await flush()
   assert.deepEqual(applied, [remoteGraph], 'a clean editor still receives remote updates')
   assert.deepEqual(liveGraph, remoteGraph)
   assert.deepEqual(
@@ -555,6 +573,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     'clean remote updates also refresh the cover from the loaded graph',
   )
   sources.at(-1)!.scene(14, initialScene)
+  await flush()
   assert.deepEqual(
     applied,
     [remoteGraph, initialScene],
@@ -568,6 +587,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     'the exact remote graph is not echoed back to the server',
   )
   sources.at(-1)!.scene(15, initialScene)
+  await flush()
   liveGraph = structuredClone(dirtyGraph)
   render().props.onDirty()
   respond = async () => Response.json({ version: 16, nodeCount: 2 })
@@ -598,6 +618,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   )
 
   sources.at(-1)!.scene(17, remoteGraph)
+  await flush()
   liveGraph = structuredClone(dirtyGraph)
   render().props.onDirty()
   forceEffects = true
@@ -610,7 +631,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     'SSE cannot overwrite a user edit made immediately after the preceding SSE',
   )
   assert.deepEqual(liveGraph, dirtyGraph)
-  hooks = []
+  resetHooks()
   liveGraph = structuredClone(initialScene)
   const renamed = createTheatreDocument('夜航 · 第二稿')
   liveGraph.nodes[site.id] = {
@@ -650,9 +671,10 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     'invalid theatre metadata remains preserved for recovery',
   )
   assert.equal(render().navigation?.sceneName, '排演')
-  hooks = []
+  resetHooks()
   liveGraph = structuredClone(initialScene)
   await render().props.onLoad()
+  render().props.onLoaderChange(false)
   render().props.onDirty()
   sources.at(-1)!.scene(99, dirtyGraph)
   const beforeCancelled = requests.length
@@ -681,6 +703,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   await click('确认保留副本并使用服务器版本')
   assert.equal(requests[beforeRecovery]?.url, '/api/scenes')
   assert.equal(requests[beforeRecovery]?.init.method, 'POST')
+  assert.equal(new Headers(requests[beforeRecovery]?.init.headers).get('x-diastage-asset-owner'), 'loader-test-owner')
   assert.deepEqual(sentGraph(beforeRecovery).graph, initialScene, 'the local snapshot is saved as an independent scene first')
   assert.equal(serverAccepts.length, 1)
   assert.equal(serverAccepts[0]?.version, 99)
@@ -690,5 +713,94 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   await click('保留本机为新剧目')
   assert.equal(navigations.at(-1), '/scene/my-local-version')
   assert.equal(serverAccepts.length, 1, 'keeping the local copy does not alter the source journal')
+
+  resetHooks()
+  liveGraph = structuredClone(initialScene)
+  hydrateAssets = async () => { throw new Error('素材下载失败') }
+  await assert.rejects(render().props.onLoad(), /素材下载失败/, 'missing assets block editor hydration')
+  hydrateAssets = async () => {}
+  await render().props.onLoad()
+  render().props.onLoaderChange(false)
+  const beforeAssetFailure = requests.length
+  const beforeAcknowledgement = acknowledgements
+  uploadAssets = async () => { throw new Error('素材上传失败') }
+  await assert.rejects(saveAsEditor(liveGraph), /素材上传失败/)
+  assert.equal(requests.length, beforeAssetFailure, 'scene PUT waits for every asset upload')
+  assert.equal(acknowledgements, beforeAcknowledgement, 'failed assets cannot acknowledge the local journal')
+  const { createSceneCopy } = await import('../lib/scene-backup')
+  await assert.rejects(createSceneCopy(liveGraph, '失败副本'), /素材上传失败/)
+  assert.equal(requests.length, beforeAssetFailure, 'recovery copies also wait for assets before POST')
+  uploadAssets = async () => {}
+  respond = async () => Response.json({ version: 13, nodeCount: 2 })
+  await saveAsEditor(liveGraph)
+  assert.equal(acknowledgements, beforeAcknowledgement + 1, 'asset retry enables normal save acknowledgement')
+
+  hydrateAssets = async () => { throw new Error('素材下载失败') }
+  const beforeRemoteAssets = applied.length
+  sources.at(-1)!.scene(14, remoteGraph)
+  await flush()
+  assert.equal(applied.length, beforeRemoteAssets, 'failed remote assets leave the current stage intact')
+  assert.deepEqual(liveGraph, initialScene)
+  hydrateAssets = async () => {}
+  await click('重试同步素材')
+  await flush()
+  assert.deepEqual(liveGraph, remoteGraph, 'retry restores assets before applying the remote scene')
+
+  let finishDownload = () => {}
+  hydrateAssets = () => new Promise<void>((resolve) => { finishDownload = resolve })
+  sources.at(-1)!.scene(15, initialScene)
+  liveGraph = structuredClone(dirtyGraph)
+  render().props.onDirty()
+  finishDownload()
+  await flush()
+  assert.deepEqual(liveGraph, dirtyGraph, 'edits made during download cannot be overwritten')
+  assert.ok(render().nodes.some((node) => node.props?.children === '此场景已在其他窗口更新'))
+
+  resetHooks()
+  liveGraph = structuredClone(initialScene)
+  render()
+  render().props.onLoaderChange(false)
+  const downloads = new Map<SceneGraph, () => void>()
+  hydrateAssets = (graph) => new Promise<void>((resolve) => downloads.set(graph, resolve))
+  sources.at(-1)!.scene(16, remoteGraph)
+  sources.at(-1)!.scene(17, dirtyGraph)
+  const completions = [...downloads.values()]
+  completions[1]!()
+  await flush()
+  completions[0]!()
+  await flush()
+  assert.deepEqual(liveGraph, dirtyGraph, 'a late older download cannot replace the newer remote revision')
+  sources.at(-1)!.scene(18, initialScene)
+  const stoppedDownload = [...downloads.values()].at(-1)!
+  forceEffects = true
+  render()
+  forceEffects = false
+  stoppedDownload()
+  await flush()
+  assert.deepEqual(liveGraph, dirtyGraph, 'a disposed event stream cannot apply its late download')
+
+  resetHooks()
+  liveGraph = structuredClone(initialScene)
+  let finishInitialLoad = () => {}
+  let hydrateCalls = 0
+  hydrateAssets = async () => {
+    hydrateCalls++
+    if (hydrateCalls === 1) await new Promise<void>((resolve) => { finishInitialLoad = resolve })
+  }
+  const initialLoading = render().props.onLoad()
+  await flush()
+  const beforeInitialSse = applied.length
+  sources.at(-1)!.scene(19, remoteGraph)
+  await flush()
+  assert.equal(applied.length, beforeInitialSse, 'SSE waits until initial graph hydration finishes')
+  assert.equal(hydrateCalls, 1, 'the newer event is buffered during initial load')
+  finishInitialLoad()
+  liveGraph = await initialLoading
+  render().props.onLoaderChange(false)
+  await flush()
+  assert.deepEqual(liveGraph, remoteGraph, 'the buffered newer revision wins after the initial graph is installed')
+  const beforeInitialSave = requests.length
+  await render().props.onSave(liveGraph)
+  assert.equal(requests.length, beforeInitialSave, 'initial hydration cannot echo the stale graph over the newer revision')
   for (const source of sources) source.close()
 }

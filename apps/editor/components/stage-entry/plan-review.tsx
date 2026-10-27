@@ -29,8 +29,10 @@ import { stageVisibleFootprints } from '@/lib/stage/model-contact'
 import { useStagePlanPreview, withoutPlanTransforms } from '@/lib/stage/plan-preview'
 import { DIA_COLORS } from '@/lib/visual-system'
 import { useStagePlacement } from './manual-stage-panel'
+import { planPreviewEdges, planPreviewLabels } from './plan-preview-layout'
 import { StagePlanFoldHandles } from './stage-plan-fold-handles'
 import './stage-entry.css'
+import './plan-preview.css'
 
 export { useStagePlanPreview } from '@/lib/stage/plan-preview'
 export const EMPTY_STAGE_CONTEXT: SceneContextSummary = {
@@ -67,6 +69,7 @@ export function PlanDrawing({
   onCancel,
   disabled = false,
   live = false,
+  compact = false,
 }: {
   plan: StagePlan
   context: SceneContextSummary
@@ -74,6 +77,7 @@ export function PlanDrawing({
   onCancel?: () => void
   disabled?: boolean
   live?: boolean
+  compact?: boolean
 }) {
   const placement = useStagePlacement((state) => state.draft?.item)
   const gridStep = useEditor((state) => state.gridSnapStep)
@@ -82,6 +86,9 @@ export function PlanDrawing({
   const nodes = useScene((state) => state.nodes)
   const selectedIds = useViewer((state) => state.selection.selectedIds)
   const geometryRevision = useViewer((state) => state.geometryRevision)
+  const inspectedId = useStagePlanPreview((state) => state.inspectedId)
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [viewport, setViewport] = useState({ width: 330, height: 220 })
   const plan = useMemo(() => {
     if (!placement) return sourcePlan
     const original = sourcePlan.items.find((item) =>
@@ -147,6 +154,19 @@ export function PlanDrawing({
     [context, plan, geometryRevision],
   )
   const venue = plan.venue ?? context.venue
+  const hasVenue = !!venue
+  useLayoutEffect(() => {
+    if (!compact || !hasVenue || !svgRef.current) return
+    const measure = () => {
+      const { width, height } = svgRef.current!.getBoundingClientRect()
+      if (width > 0 && height > 0) setViewport({ width, height })
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(svgRef.current)
+    return () => observer.disconnect()
+  }, [compact, hasVenue])
   if (!venue) return <p className="stage-preview-empty">填写舞台宽深后，即可查看台位预览。</p>
   const w = venue.widthMeters,
     d = venue.depthMeters
@@ -157,6 +177,41 @@ export function PlanDrawing({
   const changed = new Set(
     plan.items.flatMap((item) => (item.existingNodeId ? [item.existingNodeId] : [])),
   )
+  const items = [
+    ...context.objects
+      .filter((item) => !changed.has(item.id))
+      .map((item) => existingProposal(item, contextDepthShift)),
+    ...plan.items,
+  ]
+  const unitsPerPixel = Math.max(
+    (w + horizontalMargin * 2) / viewport.width,
+    (d + verticalMargin * 2) / viewport.height,
+  )
+  const activeId = inspectedId ?? selectedIds[0]
+  const selectedItem = (item: StageItemProposal) =>
+    !disabled &&
+    ((!!item.existingNodeId && selectedIds.includes(item.existingNodeId)) ||
+      (compact && activeId === (item.existingNodeId ?? item.proposalId)))
+  const selectItem = (item: StageItemProposal) => {
+    if (disabled || (item.existingNodeId && getNodeLock(nodes, item.existingNodeId, true))) return
+    useStagePlanPreview.setState({ inspectedId: item.existingNodeId ?? item.proposalId })
+    if (item.existingNodeId && nodes[item.existingNodeId as AnyNodeId])
+      useViewer.getState().setSelection({ selectedIds: [item.existingNodeId] })
+  }
+  const labels = compact
+    ? planPreviewLabels(
+        items.map((item) => ({
+          id: item.existingNodeId ?? item.proposalId,
+          point: [-item.transform.position.x, d - item.transform.position.z] as const,
+        })),
+        [-w / 2, 0, w, d],
+        unitsPerPixel,
+        activeId,
+      )
+    : new Map<string, readonly [number, number]>()
+  const displayGridStep = compact
+    ? gridStep * Math.max(1, Math.ceil((10 * unitsPerPixel) / gridStep))
+    : gridStep
   const position = (svg: SVGSVGElement, event: PointerEvent) => {
     const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
       svg.getScreenCTM()!.inverse(),
@@ -169,8 +224,9 @@ export function PlanDrawing({
     onCancel?.()
   }
   return (
-    <figure className="stage-plan-drawing">
+    <figure className={`stage-plan-drawing${compact ? ' stage-plan-drawing--compact' : ''}`}>
       <svg
+        ref={svgRef}
         viewBox={[
           -w / 2 - horizontalMargin,
           -verticalMargin,
@@ -243,15 +299,15 @@ export function PlanDrawing({
               <pattern
                 id={gridId}
                 patternUnits="userSpaceOnUse"
-                width={gridStep}
-                height={gridStep}
+                width={displayGridStep}
+                height={displayGridStep}
                 y={d}
               >
                 <path
-                  d={`M ${gridStep} 0 H 0 V ${gridStep}`}
+                  d={`M ${displayGridStep} 0 H 0 V ${displayGridStep}`}
                   fill="none"
                   stroke={DIA_COLORS.ink}
-                  strokeOpacity={0.18}
+                  strokeOpacity={compact ? 0.09 : 0.18}
                   strokeWidth={0.5}
                   vectorEffect="non-scaling-stroke"
                 />
@@ -268,24 +324,13 @@ export function PlanDrawing({
             />
           </>
         )}
-        {[
-          ...context.objects
-            .filter((item) => !changed.has(item.id))
-            .map((item) => existingProposal(item, contextDepthShift)),
-          ...plan.items,
-        ].map((item) => {
+        {items.map((item) => {
           const itemDisabled =
             disabled || !!(item.existingNodeId && getNodeLock(nodes, item.existingNodeId, true))
           const unchanged =
             live || !plan.items.some((entry) => entry.proposalId === item.proposalId)
-          const selected =
-            !itemDisabled && !!item.existingNodeId && selectedIds.includes(item.existingNodeId)
-          const select = () => {
-            if (itemDisabled) return
-            useStagePlanPreview.setState({ inspectedId: item.existingNodeId ?? item.proposalId })
-            if (item.existingNodeId && nodes[item.existingNodeId as AnyNodeId])
-              useViewer.getState().setSelection({ selectedIds: [item.existingNodeId] })
-          }
+          const selected = !itemDisabled && selectedItem(item)
+          const select = () => selectItem(item)
           const p = item.transform.position,
             size = item.dimensionsMeters,
             invalid =
@@ -296,7 +341,7 @@ export function PlanDrawing({
           const outlines = stageVisibleFootprints({
             ...item,
             id: item.existingNodeId ?? item.proposalId,
-          }).map((part) => part.map(([x, z]) => [p.x - x, p.z - z]))
+          }).map((part) => part.map(([x, z]) => [p.x - x, p.z - z] as const))
           const appearance = {
             fill: invalid ? DIA_COLORS.error : unchanged ? DIA_COLORS.ink : DIA_COLORS.blue,
             fillOpacity: 0.35,
@@ -366,6 +411,7 @@ export function PlanDrawing({
                 )
               }}
             >
+              <title>{item.displayName}</title>
               <rect
                 transform={`rotate(${item.transform.rotationDegrees.y})`}
                 x={-size.width / 2}
@@ -374,7 +420,19 @@ export function PlanDrawing({
                 height={size.depth}
                 fill="transparent"
               />
+              {selected && compact && (
+                <path
+                  d={planPreviewEdges(outlines)}
+                  fill="none"
+                  stroke={DIA_COLORS.ink}
+                  strokeWidth={4}
+                  strokeOpacity={0.18}
+                  vectorEffect="non-scaling-stroke"
+                  pointerEvents="none"
+                />
+              )}
               {selected &&
+                !compact &&
                 outlines.map((outline, index) => (
                   <polygon
                     key={`selection:${index}`}
@@ -387,20 +445,41 @@ export function PlanDrawing({
                     pointerEvents="none"
                   />
                 ))}
-              {outlines.map((outline, index) => (
-                <polygon key={index} points={outline.join(' ')} {...appearance} />
-              ))}
-              <text
-                textAnchor="middle"
-                y={
-                  Math.min(...outlines.flatMap((outline) => outline.map((point) => point[1]!))) -
-                  unit * (selected ? 1 : 1 / 3)
-                }
-                fontSize={unit * 0.7}
-                fill={DIA_COLORS.ink}
-              >
-                {item.displayName}
-              </text>
+              {compact ? (
+                <>
+                  <g opacity={0.16} fill={appearance.fill}>
+                    {outlines.map((outline, index) => (
+                      <polygon key={index} points={outline.join(' ')} />
+                    ))}
+                  </g>
+                  <path
+                    d={planPreviewEdges(outlines)}
+                    fill="none"
+                    stroke={appearance.stroke}
+                    strokeWidth={selected ? 1.6 : 0.8}
+                    strokeOpacity={selected || invalid ? 1 : 0.6}
+                    strokeDasharray={appearance.strokeDasharray}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                </>
+              ) : (
+                outlines.map((outline, index) => (
+                  <polygon key={index} points={outline.join(' ')} {...appearance} />
+                ))
+              )}
+              {!compact && (
+                <text
+                  textAnchor="middle"
+                  y={
+                    Math.min(...outlines.flatMap((outline) => outline.map((point) => point[1]!))) -
+                    unit * (selected ? 1 : 1 / 3)
+                  }
+                  fontSize={unit * 0.7}
+                  fill={DIA_COLORS.ink}
+                >
+                  {item.displayName}
+                </text>
+              )}
             </g>
           )
         })}
@@ -420,11 +499,70 @@ export function PlanDrawing({
           台左
         </text>
         {live && !disabled && <StagePlanFoldHandles depthMeters={d} />}
+        {compact && (
+          <g pointerEvents="none" data-preview-labels="true">
+            {items.map((item, index) => {
+              const point = labels.get(item.existingNodeId ?? item.proposalId)
+              if (!point) return null
+              const selected = selectedItem(item)
+              return (
+                <g key={item.proposalId} transform={`translate(${point.join(',')})`}>
+                  <rect
+                    x={-11 * unitsPerPixel}
+                    y={-11 * unitsPerPixel}
+                    width={22 * unitsPerPixel}
+                    height={22 * unitsPerPixel}
+                    rx={3 * unitsPerPixel}
+                    fill={selected ? DIA_COLORS.ink : DIA_COLORS.ivory}
+                    stroke={DIA_COLORS.ink}
+                    strokeWidth={unitsPerPixel}
+                  />
+                  <text
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={11 * unitsPerPixel}
+                    fill={selected ? DIA_COLORS.ivory : DIA_COLORS.ink}
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </text>
+                </g>
+              )
+            })}
+          </g>
+        )}
       </svg>
       <figcaption>
-        {live
-          ? '点选布景，拖动整件；圆点调整折叠。红色表示穿模或边界问题，合法贴合不标红。'
-          : '拖动布景调整提案；红色表示穿模或边界问题，采用后才落位。'}
+        {compact && (
+          <ol className="stage-plan-legend" aria-label="预览布景图例">
+            {items.map((item, index) => (
+              <li key={item.proposalId}>
+                <button
+                  type="button"
+                  disabled={
+                    disabled ||
+                    !onMove ||
+                    !!(item.existingNodeId && getNodeLock(nodes, item.existingNodeId, true))
+                  }
+                  aria-pressed={selectedItem(item)}
+                  aria-label={`选中布景 ${index + 1}：${item.displayName}`}
+                  onClick={() => selectItem(item)}
+                >
+                  <span className="stage-plan-legend-number">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span>{item.displayName}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        )}
+        <p>
+          {compact
+            ? '编号对应完整图例；点选图例定位物件。红色表示穿模或边界问题。网格仅作简化显示。'
+            : live
+              ? '点选布景，拖动整件；圆点调整折叠。红色表示穿模或边界问题，合法贴合不标红。'
+              : '拖动布景调整提案；红色表示穿模或边界问题，采用后才落位。'}
+        </p>
       </figcaption>
     </figure>
   )
@@ -610,6 +748,7 @@ export function StagePlanReview({
         onMove={moveItem}
         onCancel={() => setDragPlan(null)}
         disabled={busy || !editable}
+        compact={compact}
       />
     </>
   )

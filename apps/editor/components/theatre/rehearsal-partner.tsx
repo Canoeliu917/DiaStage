@@ -18,8 +18,10 @@ import {
   saveTrainingConsent,
 } from '@/lib/rehearsal-intelligence/feedback'
 import { SuggestionSchema } from '@/lib/rehearsal-intelligence/schema'
+import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import type { CreatedRemoteVoiceSession } from '@/lib/remote-voice/client'
 import type { VoiceState } from '../stage-entry/command-input'
+import { useDiaAttachments } from '../stage-entry/dia-attachments'
 import { LiveStagePlan } from '../stage-entry/live-stage-plan'
 import { PhoneVoiceLink } from '../stage-entry/phone-voice-link'
 import { StagePlanReview } from '../stage-entry/plan-review'
@@ -154,9 +156,20 @@ export function RehearsalPartner({
       ),
     [sceneId],
   )
-  const state = useStore(controller.store)
+  const controllerState = useStore(controller.store)
   const professional = useSimulationSelection((s) => s.professional)
   const readOnly = useScene((s) => s.readOnly)
+  const attachments = useDiaAttachments({
+    sceneId,
+    modelConfigured,
+    disabled:
+      controllerState.busy ||
+      !controllerState.ready ||
+      readOnly ||
+      (!!(controller.buildProposal() || controllerState.interaction) &&
+        !['applied', 'rejected', 'stale'].includes(controllerState.thread?.status ?? 'idle')),
+  })
+  const state = { ...controllerState, busy: controllerState.busy || attachments.open }
   const ghostId = useProposalGhost((s) => s.proposalId)
   const [consent, setConsent] = useState(false)
   const [privateNotice, setPrivateNotice] = useState('')
@@ -167,7 +180,9 @@ export function RehearsalPartner({
   const [drawingContainer, setDrawingContainer] = useState<HTMLDivElement | null>(null)
   const [editingProposal, setEditingProposal] = useState(false)
   const voiceBusy =
-    voice && ['requesting-permission', 'recording', 'transcribing'].includes(voiceState)
+    VOICE_INPUT_ENABLED &&
+    voice &&
+    ['requesting-permission', 'recording', 'transcribing'].includes(voiceState)
   const build = controller.buildProposal()
   const proposal = controller.proposal()
   const currentProposals = useRef<HTMLDivElement>(null)
@@ -230,7 +245,9 @@ export function RehearsalPartner({
         <span className="dia-header-note">{state.synthetic ? '示例对话' : '舞台对话'}</span>
       </header>
       <details className="dia-stage-context">
-        <summary>舞台上下文 <span>当前布景与选中对象</span></summary>
+        <summary>
+          舞台上下文 <span>当前布景与选中对象</span>
+        </summary>
         <div
           ref={setDrawingContainer}
           className="dia-pinned-plan stage-plan-review stage-plan-compact"
@@ -938,7 +955,7 @@ export function RehearsalPartner({
         className="dia-composer"
         onSubmit={(e) => {
           e.preventDefault()
-          if (!voiceBusy) void controller.send()
+          if (!voiceBusy && !attachments.open) void controller.send()
         }}
       >
         <p role="status" aria-live="polite" data-dia-state={state.thread?.status ?? 'idle'}>
@@ -971,23 +988,26 @@ export function RehearsalPartner({
             ))}
           </div>
         </details>
-        <label>
-          <span className="sr-only">你想试什么？</span>
-          <textarea
-            aria-label="你想试什么？"
-            rows={2}
-            maxLength={2000}
-            value={state.draft}
-            placeholder="说说想放入的布景、位置或视图…"
-            onChange={(e) => controller.patch({ draft: e.target.value })}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                e.preventDefault()
-                if (!voiceBusy) void controller.send()
-              }
-            }}
-          />
-        </label>
+        <div {...attachments.dropProps} className="dia-attachment-drop">
+          <label>
+            <span className="sr-only">你想试什么？</span>
+            <textarea
+              aria-label="你想试什么？"
+              rows={2}
+              maxLength={2000}
+              value={state.draft}
+              placeholder="说说想放入的布景、位置或视图…"
+              onChange={(e) => controller.patch({ draft: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault()
+                  if (!voiceBusy && !attachments.open) void controller.send()
+                }
+              }}
+            />
+          </label>
+          {attachments.controls}
+        </div>
         <div className="dia-actions">
           <button
             className="dia-primary"
@@ -996,21 +1016,23 @@ export function RehearsalPartner({
           >
             发送
           </button>
-          <button
-            type="button"
-            disabled={state.busy}
-            aria-expanded={voice}
-            onClick={() => setVoice(!voice)}
-          >
-            {voice ? '收起录音' : '说一句'}
-          </button>
-          {state.busy && (
+          {VOICE_INPUT_ENABLED && (
+            <button
+              type="button"
+              disabled={state.busy}
+              aria-expanded={voice}
+              onClick={() => setVoice(!voice)}
+            >
+              {voice ? '收起录音' : '说一句'}
+            </button>
+          )}
+          {controllerState.busy && (
             <button type="button" onClick={() => controller.cancel()}>
               停止
             </button>
           )}
         </div>
-        {voice && (
+        {VOICE_INPUT_ENABLED && voice && (
           <div>
             <VoiceRecorder
               state={voiceState}
@@ -1026,7 +1048,8 @@ export function RehearsalPartner({
           </div>
         )}
       </form>
-      <DiaRemoteBridge session={session} controller={controller} />
+      {attachments.panel}
+      {!attachments.open && <DiaRemoteBridge session={session} controller={controller} />}
     </section>
   )
 }

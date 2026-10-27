@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
+import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import './stage-entry.css'
 
 const StageCommandInput = dynamic(
@@ -22,12 +23,12 @@ export function VoiceStageEntry() {
   return (
     <>
       <button type="button" disabled={!ready} onClick={() => setOpen(true)}>
-        开始说话 / 输入文字
+        {VOICE_INPUT_ENABLED ? '开始说话 / 输入文字' : '输入舞台想法'}
       </button>
       {open && (
         <dialog ref={dialog} className="stage-entry-dialog" onCancel={() => setOpen(false)}>
           <header>
-            <h1>语音构台</h1>
+            <h1>{VOICE_INPUT_ENABLED ? '语音构台' : '和 Dia 构思'}</h1>
             <button type="button" aria-label="关闭舞台口令" onClick={() => setOpen(false)}>
               关闭
             </button>

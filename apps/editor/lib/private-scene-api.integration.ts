@@ -227,6 +227,36 @@ test('cookie-auth mutations reject another localhost origin, unrelated websites 
   )
 })
 
+test('copy creation checks an expected account before reading JSON and still assigns ownership from the session', async () => {
+  const id = 'expected-owner-copy'
+  const body = { id, name: 'Private copy', graph, ownerId: alice.id }
+  const changed = request('/api/scenes', 'POST', body, bob.cookie, {
+    'x-diastage-asset-owner': alice.id,
+  })
+  const rejected = await create(changed)
+  assert.equal(rejected.status, 409)
+  assert.equal((await rejected.json()).error, 'asset_account_changed')
+  assert.equal(changed.bodyUsed, false)
+  assert.equal(await store.load(id), null)
+  const created = await create(
+    request('/api/scenes', 'POST', body, bob.cookie, {
+      'x-diastage-asset-owner': bob.id,
+    }),
+  )
+  assert.equal(created.status, 201)
+  assert.equal((await created.json()).ownerId, bob.id)
+  assert.equal((await GET(request(`/api/scenes/${id}`), params(id))).status, 404)
+  assert.equal(
+    (await GET(request(`/api/scenes/${id}`, 'GET', undefined, bob.cookie), params(id))).status,
+    200,
+  )
+  assert.equal(
+    (await DELETE(request(`/api/scenes/${id}`, 'DELETE', undefined, bob.cookie), params(id)))
+      .status,
+    204,
+  )
+})
+
 test('the configured HTTPS website works behind a loopback proxy without trusting spoofed host headers', async () => {
   const previous = process.env.BETTER_AUTH_URL
   process.env.BETTER_AUTH_URL = 'https://PUBLIC.example/'

@@ -8,6 +8,7 @@ import { PHOTO_STAGE_EXAMPLE } from '@/lib/photo-stage/example'
 import { type PhotoCrop, preparePhoto } from '@/lib/photo-stage/image'
 import { type PhotoStagePlan, PhotoStagePlanSchema } from '@/lib/photo-stage/plan'
 import { AVAILABLE_STAGE_SCENERY } from '@/lib/stage/prop-assets'
+import { scheduleAttachmentParse } from './stage-entry/attachment-files'
 
 function PlacementPreview({ plan }: { plan: PhotoStagePlan }) {
   const width = plan.stage.width
@@ -72,7 +73,17 @@ function PlacementPreview({ plan }: { plan: PhotoStagePlan }) {
   )
 }
 
-export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolean }) {
+export function PhotoStageBuilder({
+  modelConfigured,
+  initialFile,
+  embedded = false,
+  onBusyChange,
+}: {
+  modelConfigured: boolean
+  initialFile?: File
+  embedded?: boolean
+  onBusyChange?: (busy: boolean) => void
+}) {
   const router = useRouter()
   const [file, setFile] = useState<File | null>(null)
   const [crop, setCrop] = useState<PhotoCrop>('full')
@@ -86,9 +97,19 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
   const request = useRef<AbortController | null>(null)
   const generation = useRef(0)
 
-  useEffect(() => () => request.current?.abort(), [])
+  useEffect(
+    () => () => {
+      generation.current++
+      request.current?.abort()
+    },
+    [],
+  )
+  useEffect(() => {
+    onBusyChange?.(busy || preparing)
+    return () => onBusyChange?.(false)
+  }, [busy, preparing, onBusyChange])
 
-  const changePhoto = async (nextFile: File, nextCrop: PhotoCrop) => {
+  const changePhoto = async (nextFile: File, nextCrop: PhotoCrop, automatic = false) => {
     const current = ++generation.current
     request.current?.abort()
     setBusy(false)
@@ -101,7 +122,10 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
     setCrop(nextCrop)
     try {
       const prepared = await preparePhoto(nextFile, nextCrop)
-      if (generation.current === current) setPhoto(prepared)
+      if (generation.current === current) {
+        setPhoto(prepared)
+        if (automatic && modelConfigured) await analyze(prepared, nextFile, current)
+      }
     } catch (reason) {
       if (generation.current === current)
         setError(reason instanceof Error ? reason.message : '照片无法读取。')
@@ -110,9 +134,8 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
     }
   }
 
-  const analyze = async () => {
-    if (!photo || busy || preparing) return
-    const current = generation.current
+  const analyze = async (prepared = photo, selectedFile = file, current = generation.current) => {
+    if (!prepared || busy) return
     const controller = new AbortController()
     request.current = controller
     setBusy(true)
@@ -123,9 +146,9 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imageDataUrl: photo.imageDataUrl,
+          imageDataUrl: prepared.imageDataUrl,
           name:
-            file?.name
+            selectedFile?.name
               .replace(/\.[^.]+$/, '')
               .trim()
               .slice(0, 120) || undefined,
@@ -139,7 +162,7 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
       if (generation.current !== current) return
       setPlan(parsed)
       setSource('vision')
-      setStatus('草稿已生成。确认物件后，建立独立剧目继续三维编辑。')
+      setStatus('场景布置已解析。请检查物件；确认后新建独立场景，不覆盖当前舞台。')
     } catch (reason) {
       if (!controller.signal.aborted) {
         setError(reason instanceof Error ? reason.message : '照片识别失败。')
@@ -153,11 +176,25 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
     }
   }
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Attachment changes alone start the initial parse.
+  useEffect(() => {
+    if (!initialFile) return
+    const cancel = scheduleAttachmentParse(() => {
+      void changePhoto(initialFile, 'full', true)
+    })
+    return () => {
+      cancel()
+      generation.current++
+      request.current?.abort()
+    }
+  }, [initialFile])
+
   const create = async () => {
     if (!plan || busy || preparing) return
+    const current = generation.current
     setBusy(true)
     setError('')
-    setStatus('正在建立独立复原剧目…')
+    setStatus('正在保存独立布置场景…')
     try {
       const graph = compilePhotoStagePlan(plan, photo?.sourceImage)
       const response = await fetch('/api/scenes', {
@@ -167,8 +204,10 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
       })
       if (!response.ok) throw new Error(`复原剧目未保存（${response.status}），请重试。`)
       const meta = (await response.json()) as { id: string }
+      if (generation.current !== current) return
       router.push(`/scene/${encodeURIComponent(meta.id)}?workspace=set`)
     } catch (reason) {
+      if (generation.current !== current) return
       setError(reason instanceof Error ? reason.message : '复原剧目未保存。')
       setStatus('')
       setBusy(false)
@@ -225,19 +264,21 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
       <section className="photo-stage-section" aria-labelledby="photo-source-title">
         <span className="photo-stage-number">01 / 原图</span>
         <h2 id="photo-source-title">留下你看到的这一幕</h2>
-        <label className="photo-stage-upload">
-          <span>{file ? '更换照片' : '选择舞台照片'}</span>
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            disabled={busy}
-            onChange={(event) => {
-              const selected = event.target.files?.[0]
-              if (selected) void changePhoto(selected, 'full')
-              event.target.value = ''
-            }}
-          />
-        </label>
+        {!embedded && (
+          <label className="photo-stage-upload">
+            <span>{file ? '更换照片' : '选择舞台照片'}</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={busy}
+              onChange={(event) => {
+                const selected = event.target.files?.[0]
+                if (selected) void changePhoto(selected, 'full')
+                event.target.value = ''
+              }}
+            />
+          </label>
+        )}
         <p className="photo-stage-hint">
           JPG、PNG、WebP · 最大 12 MB。选定区域会作为对照照片随剧目保存。
         </p>
@@ -292,12 +333,16 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
             取消识别
           </button>
         )}
-        <button type="button" disabled={busy || preparing} onClick={() => void openExample()}>
-          打开本图复原示例 · 花开庭院
-        </button>
-        <p className="photo-stage-hint">
-          示例根据本次讨论中的下半张舞台人工搭建，含弧形高台、左侧台阶、背墙、家具与前区花卉。
-        </p>
+        {!embedded && (
+          <>
+            <button type="button" disabled={busy || preparing} onClick={() => void openExample()}>
+              打开本图复原示例 · 花开庭院
+            </button>
+            <p className="photo-stage-hint">
+              示例根据本次讨论中的下半张舞台人工搭建，含弧形高台、左侧台阶、背墙、家具与前区花卉。
+            </p>
+          </>
+        )}
       </section>
 
       <section className="photo-stage-section" aria-labelledby="photo-plan-title">
@@ -369,7 +414,7 @@ export function PhotoStageBuilder({ modelConfigured }: { modelConfigured: boolea
               disabled={busy || preparing || !plan.name.trim()}
               onClick={() => void create()}
             >
-              确认复原，新建剧目
+              确认布置并新建场景
             </button>
             <p className="photo-stage-hint">
               保存为独立剧目，使用现有三维、平面、移动、旋转、缩放、折叠及撤销工具继续搭建。

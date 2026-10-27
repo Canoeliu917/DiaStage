@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
+import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import {
   JoinedRemoteVoiceResponseSchema,
   type JoinedRemoteVoiceSession,
@@ -287,7 +288,7 @@ export function RemoteVoiceController() {
       {!session && tab === 'dia' && (
         <div className="mobile-dia-welcome">
           <h2>今天想怎么搭台？</h2>
-          <p>说一句，或输入文字。连接舞台后，和 Dia 看同一个舞台，试试布景位置，再由你决定。</p>
+          <p>输入你的想法。连接舞台后，和 Dia 看同一个舞台，试试布景位置，再由你决定。</p>
         </div>
       )}
       <details className="mobile-assistant-tools">
@@ -357,7 +358,7 @@ export function RemoteVoiceController() {
           </p>
           {tab === 'scan' ? (
             <ScanTransfer session={session} />
-          ) : (
+          ) : VOICE_INPUT_ENABLED ? (
             <>
               <h2>语音构台</h2>
               <p>台左、台右以演员面向观众为准。发送后先在电脑预览，再确认落位。</p>
@@ -417,7 +418,7 @@ export function RemoteVoiceController() {
                 </div>
               )}
             </>
-          )}
+          ) : null}
         </>
       ) : null}
       {error && <p role="alert">{error}</p>}

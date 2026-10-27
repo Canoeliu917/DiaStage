@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import { formatCostCny } from '@/lib/ai/model-pricing'
+import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import { waitForLocalScene } from '@/lib/scene-journal'
 import {
   aiCommandContext,
@@ -37,6 +38,7 @@ import { createManualStageGraph } from '@/lib/stage/initial-stage'
 import { AVAILABLE_STAGE_ASSET_IDS } from '@/lib/stage/prop-assets'
 import { createUUID } from '../../lib/uuid'
 import { CreationModeControl, requestCreationPermission } from './creation-mode'
+import { useDiaAttachments } from './dia-attachments'
 import { PhoneVoiceLink, type RemoteVoiceReport } from './phone-voice-link'
 import { EMPTY_STAGE_CONTEXT, StagePlanReview, useStagePlanPreview } from './plan-review'
 import { VoiceRecorder } from './voice-recorder'
@@ -119,10 +121,12 @@ export function StageCommandInput({
   sceneId,
   initialText = '',
   onTextChange,
+  modelConfigured = false,
 }: {
   sceneId?: string
   initialText?: string
   onTextChange?: (text: string) => void
+  modelConfigured?: boolean
 }) {
   const router = useRouter()
   const [text, setText] = useState(initialText)
@@ -134,6 +138,16 @@ export function StageCommandInput({
   const [answers, setAnswers] = useState<ClarificationAnswer[]>([])
   const [context, setContext] = useState(EMPTY_STAGE_CONTEXT)
   const [deletion, setDeletion] = useState<StageCommand[] | null>(null)
+  const attachments = useDiaAttachments({
+    sceneId,
+    modelConfigured,
+    disabled:
+      !!plan ||
+      !!deletion ||
+      ['requesting-permission', 'recording', 'transcribing', 'planning', 'applying'].includes(
+        state,
+      ),
+  })
   const [lease, setLease] = useState<CreationLease | null>(null)
   const [usageDetail, setUsageDetail] = useState('')
   const draft = useRef<{ plan: StagePlan; context: SceneContextSummary } | null>(null)
@@ -175,13 +189,10 @@ export function StageCommandInput({
       useStagePlanPreview.setState({ plan: null })
     }
   }, [])
-  const busy = [
-    'requesting-permission',
-    'recording',
-    'transcribing',
-    'planning',
-    'applying',
-  ].includes(state)
+  const busy =
+    ['requesting-permission', 'recording', 'transcribing', 'planning', 'applying'].includes(
+      state,
+    ) || attachments.open
   const handleControl = (input: string) => {
     const control = localControl(input)
     if (!control) return false
@@ -472,30 +483,35 @@ export function StageCommandInput({
       />
       {!plan && (
         <>
-          <VoiceRecorder
-            state={state}
-            setState={setState}
-            onError={setError}
-            onTranscript={(transcript) => {
-              if (handleControl(transcript)) return
-              setText(transcript)
-              setSource('voice')
-              setAnswers([])
-            }}
-          />
-          <label>
-            {source === 'voice' ? '我听到的内容 · 可修改' : '舞台口令'}
-            <textarea
-              maxLength={10000}
-              placeholder={sceneId ? '例如：把选中的布景向台后移半米。' : STAGE_EXAMPLE}
-              value={text}
-              disabled={state === 'applying'}
-              onChange={(event) => {
-                setText(event.target.value)
+          {VOICE_INPUT_ENABLED && (
+            <VoiceRecorder
+              state={state}
+              setState={setState}
+              onError={setError}
+              onTranscript={(transcript) => {
+                if (handleControl(transcript)) return
+                setText(transcript)
+                setSource('voice')
                 setAnswers([])
               }}
             />
-          </label>
+          )}
+          <div {...attachments.dropProps} className="dia-attachment-drop">
+            <label>
+              {source === 'voice' ? '我听到的内容 · 可修改' : '舞台口令'}
+              <textarea
+                maxLength={10000}
+                placeholder={sceneId ? '例如：把选中的布景向台后移半米。' : STAGE_EXAMPLE}
+                value={text}
+                disabled={state === 'applying'}
+                onChange={(event) => {
+                  setText(event.target.value)
+                  setAnswers([])
+                }}
+              />
+            </label>
+            {attachments.controls}
+          </div>
           <div className="stage-entry-actions">
             <button
               type="button"
@@ -518,6 +534,7 @@ export function StageCommandInput({
           </div>
         </>
       )}
+      {attachments.panel}
       {plan && (
         <>
           {draft.current && (

@@ -107,6 +107,7 @@ export const LiveStagePlan = memo(function LiveStagePlan() {
         onCancel={cancel}
         disabled={readOnly || !editing}
         live
+        compact
       />
     </>
   )

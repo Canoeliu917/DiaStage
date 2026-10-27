@@ -17,10 +17,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BETA_EXPERT_MEDIA_ENABLED, BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
-import { archiveLegacyLighting } from '@/lib/legacy-lighting'
 import { apiGraphSchema } from '@/lib/graph-schema'
-import { createSceneCopy } from '@/lib/scene-backup'
+import { archiveLegacyLighting } from '@/lib/legacy-lighting'
 import { bindRehearsalScene, clearProposalGhost } from '@/lib/rehearsal-intelligence/authority'
+import { hydrateSceneAssets, uploadSceneAssets } from '@/lib/scene-assets-client'
+import { createSceneCopy } from '@/lib/scene-backup'
 import { SceneJournal } from '@/lib/scene-journal'
 import { type PersistedSceneGraph, sceneGraphSignature } from '@/lib/scene-signature'
 import { THEATRE_METADATA_KEY } from '@/lib/theatre/scene-adapter'
@@ -204,8 +205,10 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   const applyingRemoteRef = useRef(false)
   const [conflict, setConflict] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [assetLoadError, setAssetLoadError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [stageReady, setStageReady] = useState(false)
+  const stageReadyRef = useRef(false)
   useEffect(() => {
     // The editor restores its persisted sidebar during load; the explicit URL wins afterward.
     if (!stageReady || loadedMetaKeyRef.current !== `${meta.id}:${meta.version}`) return
@@ -224,7 +227,9 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   })
   const handleLoaderChange = useCallback(
     (visible: boolean) => {
+      stageReadyRef.current = !visible
       setStageReady(!visible)
+      if (!visible) window.dispatchEvent(new Event('scene:assets-ready'))
       if (!visible && !localDirtyRef.current && !needsRecoverySync.current && !syncConflict.current)
         // Hydration migrates legacy materials, so capture against the actual loaded graph.
         scheduleCover({
@@ -298,6 +303,8 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
     setConflict(false)
     setServerRecoveryRequested(false)
     setSaveError(null)
+    setAssetLoadError(null)
+    stageReadyRef.current = false
     setStageReady(false)
   }, [sceneLoadKey, meta.version, meta.nodeCount])
 
@@ -318,6 +325,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
       }
     }
     const recovered = await journal.recover(graph, meta.version)
+    await hydrateSceneAssets(recovered.graph)
     localDirtyRef.current = recovered.pending
     needsRecoverySync.current = recovered.pending
     syncConflict.current = recovered.conflict
@@ -392,6 +400,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
             /* Preserve unrecognized legacy metadata. */
           }
         }
+        await uploadSceneAssets(graph)
         submittedGraphRef.current = graphJson
         const response = await fetch(`/api/scenes/${meta.id}`, {
           method: 'PUT',
@@ -466,22 +475,24 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
 
   useEffect(() => {
     const source = new EventSource(`/api/scenes/${meta.id}/events`)
+    const controller = new AbortController()
+    let pending: LiveSceneEvent | null = null
+    let latestVersion = 0
 
-    source.addEventListener('scene', (event) => {
-      if (recovering.current) return
-      let payload: LiveSceneEvent
-      try {
-        payload = JSON.parse((event as MessageEvent<string>).data) as LiveSceneEvent
-      } catch {
-        return
-      }
+    const receive = async (payload: LiveSceneEvent) => {
+      if (recovering.current || controller.signal.aborted) return
       if (payload.sceneId !== meta.id) return
-      if (payload.version <= versionRef.current) return
+      if (payload.version <= versionRef.current || payload.version < latestVersion) return
+      latestVersion = payload.version
+      pending = payload
+      if (!stageReadyRef.current) return
 
       const remoteSignature = sceneGraphSignature(payload.graph)
       if (remoteSignature === submittedGraphRef.current) {
         versionRef.current = payload.version
         serverNodeCountRef.current = countGraphNodes(payload.graph)
+        pending = null
+        setAssetLoadError(null)
         return
       }
       clearProposalGhost()
@@ -491,6 +502,34 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
         return
       }
 
+      const localSignature = sceneGraphSignature(useScene.getState())
+      try {
+        await hydrateSceneAssets(payload.graph, controller.signal)
+      } catch (reason) {
+        if (!controller.signal.aborted && payload.version === latestVersion)
+          setAssetLoadError(
+            `场景素材尚未同步：${reason instanceof Error ? reason.message : '请检查连接后重试'}。当前舞台仍保留。`,
+          )
+        return
+      }
+      if (
+        controller.signal.aborted ||
+        payload.version !== latestVersion ||
+        payload.version <= versionRef.current
+      )
+        return
+      if (
+        recovering.current ||
+        localDirtyRef.current ||
+        sceneGraphSignature(useScene.getState()) !== localSignature
+      ) {
+        setConflict(true)
+        syncConflict.current = true
+        return
+      }
+      pending = null
+      setAssetLoadError(null)
+      submittedGraphRef.current = null
       versionRef.current = payload.version
       serverNodeCountRef.current = countGraphNodes(payload.graph)
       lastRemoteGraphJsonRef.current = sceneGraphSignature(archiveLegacyLighting(payload.graph))
@@ -506,7 +545,21 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
         version: payload.version,
         signature: sceneGraphSignature(useScene.getState()),
       })
+    }
+    source.addEventListener('scene', (event) => {
+      let payload: LiveSceneEvent
+      try {
+        payload = JSON.parse((event as MessageEvent<string>).data) as LiveSceneEvent
+      } catch {
+        return
+      }
+      void receive(payload)
     })
+    const retryAssets = () => {
+      if (pending) void receive(pending)
+    }
+    window.addEventListener('scene:retry-assets', retryAssets)
+    window.addEventListener('scene:assets-ready', retryAssets)
 
     source.addEventListener('error', () => {
       if (source.readyState === EventSource.CLOSED) {
@@ -514,7 +567,12 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
       }
     })
 
-    return () => source.close()
+    return () => {
+      controller.abort()
+      window.removeEventListener('scene:retry-assets', retryAssets)
+      window.removeEventListener('scene:assets-ready', retryAssets)
+      source.close()
+    }
   }, [meta.id, scheduleCover])
 
   return (
@@ -594,6 +652,21 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          {assetLoadError && !conflict && (
+            <div
+              role="alert"
+              className="studio-save-notice shrink-0 border-b border-border bg-background p-3"
+            >
+              <p className="text-xs">{assetLoadError}</p>
+              <button
+                type="button"
+                className="mt-2 border px-3 py-1 text-xs"
+                onClick={() => window.dispatchEvent(new Event('scene:retry-assets'))}
+              >
+                重试同步素材
+              </button>
             </div>
           )}
           {saveError && !conflict && (
