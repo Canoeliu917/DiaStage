@@ -1,5 +1,7 @@
 # DiaStage 部署与 HTTPS 维护阶段审阅稿
 
+本稿保留执行前的审阅状态。用户随后已同意 HTTPS 维护阶段，证书、443、外部 HTTPS 与续期演练已完成；浏览器及应用验收仍待完成，最新结果见[HTTPS 执行记录](diastage-https-validation-20261027.md)。
+
 日期：2026-10-27（北京时间）。本轮完成最新 Linux 候选构建和配置检查，尚未安装生产环境文件、启动新实例、接受 CA 协议、申请证书、修改云防火墙或 reload Nginx。后续按[待办队列](diastage-release-todo.md)接续；[10 月 26 日审阅稿](diastage-deployment-preflight-20261026.md)保留为历史证据。
 
 ## 已完成的候选构建
