@@ -71,75 +71,89 @@
     {
       "id": "A1",
       "section": "A",
-      "status": "todo",
+      "status": "done",
       "do": "主舞台桌面宽≥55%",
       "touch": [
         "theatre/studio layout",
         "theatre.css"
       ],
-      "verify": "截图量主舞台≥55%视口宽"
+      "verify": "截图量主舞台≥55%视口宽",
+      "evidence": "evidence/measurements.json：1440宽舞台840(58.3%)；1280宽716.8125(56.0%)",
+      "implementation": "complete"
     },
     {
       "id": "A2",
       "section": "A",
-      "status": "todo",
+      "status": "done",
       "do": "工具轨/chrome默认降对比，悬停展开才实显",
       "touch": [
         "theatre.css"
       ],
-      "verify": "眯眼焦点在舞台"
+      "verify": "眯眼焦点在舞台",
+      "evidence": "evidence/desktop-day.jpg；evidence/desktop-night.jpg：主舞台优先，灰阶工具区",
+      "implementation": "complete"
     },
     {
       "id": "A3",
       "section": "A",
-      "status": "todo",
+      "status": "done",
       "do": "选中属性默认仅2-4项",
       "touch": [
         "inspector/selection panel"
       ],
-      "verify": "默认字段≤4"
+      "verify": "默认字段≤4",
+      "evidence": "manual-stage-panel.test.tsx；浏览器名称/位置/朝向/可见四组，缩放会打开嵌套高级项",
+      "implementation": "complete"
     },
     {
       "id": "B1",
       "section": "B",
-      "status": "todo",
+      "status": "done",
       "do": "日场浅/夜场深灰一键切换可跟随系统",
       "touch": [
         "globals.css",
         "theme"
       ],
-      "verify": "电脑屏幕日场可读，夜场非纯黑；投影验收暂缓"
+      "verify": "电脑屏幕日场可读，夜场非纯黑；投影验收暂缓",
+      "evidence": "evidence/desktop-day.jpg；evidence/desktop-night.jpg；手动切换与跟随系统实测；投影暂缓",
+      "implementation": "complete"
     },
     {
       "id": "B2",
       "section": "B",
-      "status": "todo",
+      "status": "done",
       "do": "正文对比≥4.5:1；图标线框≥3:1",
       "touch": [
         "design tokens"
       ],
-      "verify": "WebAIM截图过关"
+      "verify": "WebAIM截图过关",
+      "evidence": "evidence/webaim-*.jpg；正文6.36/6.79:1，控件3.56/3.32:1；stage-theme.test.ts及实际继承色检查",
+      "implementation": "complete"
     },
     {
       "id": "B3",
       "section": "B",
-      "status": "todo",
+      "status": "done",
       "do": "正文14-15px 线高1.5-1.8；Courier+思源",
       "touch": [
         "globals.css"
       ],
-      "verify": "DevTools字号字体"
+      "verify": "DevTools字号字体",
+      "evidence": "evidence/measurements.json：正文14px/23.1px(Courier New+sourceHanSans)，输入16px",
+      "implementation": "complete"
     },
     {
       "id": "B4",
       "section": "B",
-      "status": "todo",
+      "status": "done",
       "do": "强调色仅1个追光色",
       "touch": [
         "DESIGN tokens",
         "primary CTA"
       ],
-      "verify": "首屏高饱和强调色≤1"
+      "verify": "首屏高饱和强调色≤1",
+      "evidence": "日夜截图：单色行动/选择态，无多色高饱和UI强调",
+      "implementation": "complete"
     },
     {
       "id": "C1",
@@ -149,12 +163,14 @@
       "touch": [
         "studio-navigation"
       ],
-      "verify": "盲测指认当前区"
+      "verify": "盲测指认当前区",
+      "evidence": "实现及清晰当前态已核实；盲测指认当前区待真实生手",
+      "implementation": "complete"
     },
     {
       "id": "C2",
       "section": "C",
-      "status": "todo",
+      "status": "done",
       "do": "仅21件标准道具；删除SCN-FLAT-090目录项/模型/缩略图/知识推荐，保留用户历史记录",
       "touch": [
         "theatre-catalog",
@@ -164,28 +180,34 @@
         "tests"
       ],
       "verify": "面板===21且无排除id文件/缩略图请求",
-      "note": "原文件标done但实查磁盘为22件；经用户确认删除单帘，重新验收后才能done。"
+      "note": "原文件标done但实查磁盘为22件；经用户确认删除单帘，重新验收后才能done。",
+      "evidence": "prop-assets.test.ts；磁盘21 GLB+21个256缩略图+21个512缩略图；删除单帘；未声称清空用户旧浏览器缓存",
+      "implementation": "complete"
     },
     {
       "id": "C3",
       "section": "C",
-      "status": "todo",
+      "status": "done",
       "do": "Tab仅布景/家具/道具；芯片≤8或收入搜索",
       "touch": [
         "items-panel"
       ],
-      "verify": "首屏滤镜不呈墙"
+      "verify": "首屏滤镜不呈墙",
+      "evidence": "evidence/measurements.json：布景6/家具10/道具5；搜索覆盖21件",
+      "implementation": "complete"
     },
     {
       "id": "D1",
       "section": "D",
-      "status": "todo",
+      "status": "done",
       "do": "首页或空舞台3-5张戏剧任务卡",
       "touch": [
         "empty state",
         "home"
       ],
-      "verify": "新号首次进入截图"
+      "verify": "新号首次进入截图",
+      "evidence": "evidence/desktop-day.jpg：独立新场景空对话有3个置景任务卡",
+      "implementation": "complete"
     },
     {
       "id": "D2",
@@ -195,58 +217,70 @@
       "touch": [
         "onboarding overlay"
       ],
-      "verify": "生手无讲解说得出三步"
+      "verify": "生手无讲解说得出三步",
+      "evidence": "stage-first-visit.test.tsx及浏览器三步条可达；无讲解复述待真实生手",
+      "implementation": "complete"
     },
     {
       "id": "D3",
       "section": "D",
-      "status": "todo",
+      "status": "done",
       "do": "卡文案动词开头；无Prompt技术腔",
       "touch": [
         "task card copy"
       ],
-      "verify": "无Prompt/Token/Agent黑话"
+      "verify": "无Prompt/Token/Agent黑话",
+      "evidence": "stage-first-visit.test.tsx；浏览器任务卡动词开头，无默认Prompt/Token/Agent文案",
+      "implementation": "complete"
     },
     {
       "id": "E1",
       "section": "E",
-      "status": "todo",
+      "status": "done",
       "do": "输入区安静；图片/PDF收进+，语音保持隐藏",
       "touch": [
         "command-input"
       ],
-      "verify": "底栏常驻图标≤3"
+      "verify": "底栏常驻图标≤3",
+      "evidence": "日夜截图：+附件与发送；语音保持隐藏",
+      "implementation": "complete"
     },
     {
       "id": "E2",
       "section": "E",
-      "status": "todo",
+      "status": "done",
       "do": "审阅脚注样式；确认前舞台不变；可取消",
       "touch": [
         "plan-review"
       ],
-      "verify": "取消无写节点"
+      "verify": "取消无写节点",
+      "evidence": "plan-review.test.tsx；scope-reduction.test.ts：preview/adopt/reject不改变正式节点，rejected状态；未发付费调用",
+      "implementation": "complete"
     },
     {
       "id": "E3",
       "section": "E",
-      "status": "todo",
+      "status": "done",
       "do": "生成中可停止；失败保留输入并重试",
       "touch": [
         "streaming controls"
       ],
-      "verify": "失败路径输入仍在"
+      "verify": "失败路径输入仍在",
+      "evidence": "open-dialogue.test.ts：失败留草稿/提案/ghost/无写入/重试；conversation-controller.test.ts：取消后busy=false且晚到提案不呈现",
+      "implementation": "complete"
     },
     {
       "id": "F1",
       "section": "F",
-      "status": "todo",
+      "status": "done",
       "do": "默认简化置景，放景/调整/保存可达；高级工具进更多，主操作≤8",
       "touch": [
         "simplified rehearsal",
         "toolbar"
       ],
-      "verify": "首屏主操作≤8"
+      "verify": "首屏主操作≤8",
+      "evidence": "桌面默认4道具操作+更多工具+视图选择+网格+指南针=8；高级功能展开可达",
+      "implementation": "complete"
     },
     {
       "id": "F2",
@@ -256,29 +290,35 @@
       "touch": [
         "placement"
       ],
-      "verify": "新用户一次成功落位"
+      "verify": "新用户一次成功落位",
+      "evidence": "浏览器单击硬椅→点台落位、旋转改名、保存刷新保留；Esc取消无新增；真实新手一次成功待验收",
+      "implementation": "complete"
     },
     {
       "id": "F3",
       "section": "F",
-      "status": "todo",
+      "status": "done",
       "do": "工程手势藏进更多；首访不提DCC/UE",
       "touch": [
         "gesture hints",
         "onboarding copy"
       ],
-      "verify": "首访文案无DCC词"
+      "verify": "首访文案无DCC词",
+      "evidence": "桌面更多工具默认闭合；工程手势帮助在展开项内",
+      "implementation": "complete"
     },
     {
       "id": "G1",
       "section": "G",
       "status": "todo",
-      "do": "热区≥44x44 CSS px",
+      "do": "电脑网页热区≥44x44 CSS px",
       "touch": [
         "theatre.css",
         "stage-entry"
       ],
-      "verify": "电脑网页按钮和侧栏操作热区≥44；不据此宣称移动端通过"
+      "verify": "电脑网页按钮和侧栏操作热区≥44；不据此宣称移动端通过",
+      "evidence": "桌面常用按钮/输入/侧栏已扩大；1440宽品牌返回、其他提案、详情设置高44px，但收藏提案仍33.09375px，尚未全覆盖；不作为移动端验收",
+      "implementation": "partial"
     },
     {
       "id": "G2",
@@ -289,7 +329,9 @@
         "responsive"
       ],
       "verify": "375宽走通置景一步",
-      "note": "用户明确暂缓手机和平板，未实施和验收，不计done。"
+      "note": "用户明确暂缓手机和平板，未实施和验收，不计done。",
+      "evidence": "用户确认手机/平板暂缓，撤回新增适配，保留既有行为",
+      "implementation": "deferred_by_user"
     },
     {
       "id": "G3",
@@ -300,7 +342,9 @@
         "gesture zones"
       ],
       "verify": "真机误触可接受",
-      "note": "用户明确暂缓手机和平板，未实施和验收，不计done。"
+      "note": "用户明确暂缓手机和平板，未实施和验收，不计done。",
+      "evidence": "用户确认手机/平板暂缓；无新增手势实现或真机验收",
+      "implementation": "deferred_by_user"
     },
     {
       "id": "H1",
@@ -310,27 +354,33 @@
       "touch": [
         "globals.css"
       ],
-      "verify": "减少动态后瞬间切"
+      "verify": "减少动态后瞬间切",
+      "evidence": "工作室160ms/首页240ms ease-out，reduced-motion CSS已实现且解析通过；操作系统开启减少动态后的实测待补",
+      "implementation": "complete"
     },
     {
       "id": "H2",
       "section": "H",
-      "status": "todo",
+      "status": "done",
       "do": "砍边框墙用间距分组",
       "touch": [
         "panel styles"
       ],
-      "verify": "眯眼无铁窗感"
+      "verify": "眯眼无铁窗感",
+      "evidence": "日夜截图：简化属性、三组筛选、间距分组；装饰分隔与必要控件边框分开",
+      "implementation": "complete"
     },
     {
       "id": "H3",
       "section": "H",
-      "status": "todo",
+      "status": "done",
       "do": "轻量toast/status；保存成功无modal",
       "touch": [
         "toast/status"
       ],
-      "verify": "保存无modal"
+      "verify": "保存无modal",
+      "evidence": "新场景保存和刷新恢复实测；保存状态行，无成功modal；scene-loader.test.tsx",
+      "implementation": "complete"
     }
   ],
   "gate": [
@@ -346,11 +396,12 @@
     "UE5/Blender density as default teaching path"
   ],
   "gate_results": {
-    "all_25_done": "not_passed: G2/G3 deferred; do not claim original 25-item gate passed",
-    "novice_5min": "pending",
-    "day_night_screenshots": "pending",
+    "all_25_done": "not_passed: 18 done, 5 pending, 2 deferred",
+    "novice_5min": "pending_real_person; agent functional run is not novice evidence",
+    "day_night_screenshots": "passed_desktop_screen_only",
     "projector_readability": "deferred_by_user",
     "real_touch_device": "deferred_by_user",
-    "weighted_score": "not_evaluated"
-  }
+    "weighted_score": "not_evaluated; no >=9.0 claim"
+  },
+  "verified_source": "43c4cf5f18a9442be9bf76b01112dfbba4cacb7b"
 }

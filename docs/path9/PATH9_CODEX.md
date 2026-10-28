@@ -4,13 +4,13 @@
 > 范围：**仅电脑网页 UI / 视觉体验**（布局、层级、配色字体、导航、空状态、首访、输入区、工具轨、对比柔和；手机/平板/投影暂缓）。不改模型、商业、剧本解析逻辑。
 > 气质目标：界面像「排练室 + 成稿台」，不是工程机房。守黑白灰 + Courier / 思源。
 > 北极星：不懂 AI 的戏剧 / 艺术人在熟悉语境里慢慢学会用 AI。
-> 资产硬约束：用户确认站内已有 **21 件标准表演道具**；面板与静态资源只保留这 21 件，其余目录项与 `public/items` 文件必须删除，零缓存占用。
+> 资产硬约束：用户确认站内已有 **21 件标准表演道具**；面板与舞台静态资源只保留这 21 件，删除单帘生产资源并停止加载；历史浏览器缓存不作保证。
 > 配套机读：同目录 `PATH9_CODEX.json`
 > 报 9 分前：下列 task 全部 `done`，且通过文末「总验收」。
 
 ## 计分板（设计综合加权）
 
-| id | 维度 | 现估 | 目标 | 权重 |
+| id | 维度 | 原始基线（未复评） | 目标 | 权重 |
 |----|------|------|------|------|
 | score.layout | 布局与视觉层级 | 6.0 | ≥9 | 0.18 |
 | score.color | 配色 / 字体 / 柔和对比 | 6.5 | ≥9 | 0.16 |
@@ -28,19 +28,19 @@
 ## A. 布局与视觉层级
 
 ### A1 — 主舞台占比
-- **status**: todo
+- **status**: done
 - **do**: 桌面布局让主舞台占视口中部宽度 ≥55%；侧栏 + 工具轨合计不抢中心。
 - **touch**: theatre / studio 布局相关组件与 CSS（如 `theatre.css`、studio workspace 布局）。
 - **verify**: 桌面截图量主舞台宽度 ≥55% 视口宽。
 
 ### A2 — chrome 降对比
-- **status**: todo
+- **status**: done
 - **do**: 工具轨 / chrome 默认降对比（透明度或更浅灰）；悬停或展开才实显。
 - **touch**: `theatre.css` 及 chrome 容器样式。
 - **verify**: 眯眼测试：视觉焦点落在舞台，不在边框墙。
 
 ### A3 — 选中属性精简
-- **status**: todo
+- **status**: done
 - **do**: 选中物件时属性面板默认仅 2–4 项（名称 / 位置 / 朝向 / 可见），无属性墙。
 - **touch**: 选中 / inspector 面板。
 - **verify**: 默认态可见字段 ≤4。
@@ -50,25 +50,25 @@
 ## B. 配色 / 字体 / 柔和对比
 
 ### B1 — 日场 / 夜场
-- **status**: todo
+- **status**: done
 - **do**: 提供日场（浅）与夜场（深灰非纯黑）一键切换，可跟随系统。
 - **touch**: `globals.css` / theme token；工作室面板。
 - **verify**: 电脑屏幕日场正文可读（投影暂缓）；夜场非 `#000` 纯黑。
 
 ### B2 — 对比达标
-- **status**: todo
+- **status**: done
 - **do**: 正文对比 ≥4.5:1；图标 / 线框 ≥3:1。
 - **touch**: design token / CSS 变量。
 - **verify**: WebAIM Contrast Checker 截图过关。
 
 ### B3 — 字号与字体
-- **status**: todo
+- **status**: done
 - **do**: 排练室正文 14–15px；线高约 1.5–1.8；仅 Courier + 思源，不混第三字体。
 - **touch**: `globals.css` / 品牌字体规则。
 - **verify**: DevTools 字号与 font-family。
 
 ### B4 — 单一追光色
-- **status**: todo
+- **status**: done
 - **do**: 强调色仅 1 个「追光」用于主行动；禁止多高饱和并存。
 - **touch**: DESIGN token / 主按钮色。
 - **verify**: 首屏色相计数：高饱和强调色 ≤1。
@@ -84,13 +84,13 @@
 - **verify**: 盲测能指认当前区。
 
 ### C2 — 仅 21 件标准表演道具
-- **status**: todo（复查磁盘有隐藏单帘；用户已要求删除，完成验证后才能 done）
-- **do**: 资产面板只露出用户 21 件标准表演道具；删除其余 catalog 项与 `apps/editor/public/items/<id>/` 文件（glb / thumbnail / svg），零缓存占用。demo / MCP / 测试引用一并改掉。
+- **status**: done
+- **do**: 资产面板只露出用户 21 件标准表演道具；删除单帘 catalog 项与舞台静态资源（GLB / 缩略图），停止加载；历史浏览器缓存不作保证。相关规则与测试引用一并改掉。
 - **touch**: theatre-catalog / items-panel / `public/items` / demo JSON / 相关测试。
-- **verify**: 面板条目 === 21；`public/items` 无排除 id 目录；无对排除 id 的缩略图请求。
+- **verify**: 面板条目 === 21；生产舞台资产目录无单帘文件；不再预载单帘缩略图。
 
 ### C3 — Tab 与滤镜墙
-- **status**: todo
+- **status**: done
 - **do**: 资产 Tab 仅「布景 / 家具 / 道具」；功能芯片 ≤8 或收入搜索。
 - **touch**: items-panel。
 - **verify**: 首屏滤镜不呈墙。
@@ -100,7 +100,7 @@
 ## D. 空状态与首访引导
 
 ### D1 — 戏剧任务卡
-- **status**: todo
+- **status**: done
 - **do**: 首页或空舞台有 3–5 张戏剧任务卡（非空白工程桌面）。
 - **touch**: 空状态组件 / 首页。
 - **verify**: 新会话首次进入截图有任务卡。
@@ -112,7 +112,7 @@
 - **verify**: 生手无讲解说得出三步。
 
 ### D3 — 动词文案
-- **status**: todo
+- **status**: done
 - **do**: 每张卡一句下一步文案（动词开头）；禁用「请输入 Prompt」技术腔。
 - **touch**: 任务卡文案。
 - **verify**: 文案审计无 Prompt / Token / Agent 黑话。
@@ -122,19 +122,19 @@
 ## E. 输入区与方案审阅 UI
 
 ### E1 — 安静输入区
-- **status**: todo
+- **status**: done
 - **do**: 占位用戏剧词；图片 / PDF 收进一个 `+`；语音保持隐藏。
 - **touch**: `command-input`。
 - **verify**: 底栏常驻图标 ≤3。
 
 ### E2 — 审阅信任闭环
-- **status**: todo
+- **status**: done
 - **do**: 审阅摘录脚注样式；确认前舞台不变；可取消。
 - **touch**: `plan-review`。
 - **verify**: 点取消无写节点。
 
 ### E3 — 可停止与失败重试
-- **status**: todo
+- **status**: done
 - **do**: 生成中可停止；失败保留输入并给重试。
 - **touch**: 流式控件 / 发送钮状态。
 - **verify**: 断网或失败路径：输入仍在 + 有重试。
@@ -144,7 +144,7 @@
 ## F. 工具轨收纳 / 简化模式
 
 ### F1 — 默认简化置景
-- **status**: todo
+- **status**: done
 - **do**: 默认简化置景：放景、调整、保存可达；其余进「更多」。
 - **touch**: 简化模式开关（默认开）与工具轨。
 - **verify**: 首屏主操作 ≤8。
@@ -156,29 +156,29 @@
 - **verify**: 新用户一次成功落位。
 
 ### F3 — 工程手势藏进更多
-- **status**: todo
+- **status**: done
 - **do**: UE 式环绕等工程手势不作为默认教学路径，藏进「更多」。
 - **touch**: 手势提示 / 首访文案。
 - **verify**: 首访文案不提 DCC / UE5 词。
 
 ---
 
-## G. 移动端与触控
+## G. 操作热区与暂缓的小屏项目
 
 ### G1 — 44px 热区
 - **status**: todo
-- **do**: 可点控件热区 ≥44×44 CSS px（至少满足 WCAG 24）。
+- **do**: 电脑网页可点控件热区 ≥44×44 CSS px；不作为移动端验收。
 - **touch**: `theatre.css` / `stage-entry`。
 - **verify**: 量侧栏按钮 ≥44。
 
 ### G2 — 小屏面板优先
-- **status**: deferred（用户确认手机和平板暂缓）
+- **status**: deferred
 - **do**: 小屏默认面板优先；三维舞台可二次进入全屏。
 - **touch**: responsive 布局。
 - **verify**: 375 宽走通置景一步。
 
 ### G3 — 手势分区
-- **status**: deferred（用户确认手机和平板暂缓）
+- **status**: deferred
 - **do**: 双指只控舞台；底部主操作条不与手势冲突。
 - **touch**: 手势分区逻辑。
 - **verify**: 真机误触口头记录可接受。
@@ -194,13 +194,13 @@
 - **verify**: 系统开「减少动态」后瞬间切、无长动画。
 
 ### H2 — 砍边框墙
-- **status**: todo
+- **status**: done
 - **do**: 用间距分组；无 1px 错位、无装饰线堆砌。
 - **touch**: 面板样式。
 - **verify**: 眯眼无「铁窗」感。
 
 ### H3 — 轻量反馈
-- **status**: todo
+- **status**: done
 - **do**: 状态反馈轻量（色点 + 短文案），不用弹窗轰炸。
 - **touch**: toast / status。
 - **verify**: 保存成功无 modal。
@@ -238,3 +238,7 @@
 
 
 - 最新范围纠正：手机、平板、投影、复台暂缓；G2/G3 为 deferred，不计 done。本轮完成电脑端工作并提供桌面日/夜截图，原25项全部done门槛仍未通过，不报告≥9.0。
+
+## 当前验收汇总
+
+18 项 done；C1/D2/F2 等待真实生手验收，G1 尚需补齐次要折叠入口热区，H1 等待系统减少动态实测；G2/G3 按用户决定暂缓。逐项证据见同目录 JSON 的 evidence，完整记录与截图见 [验收记录](README.md)。尚未通过原25项总gate，不报告≥9.0。

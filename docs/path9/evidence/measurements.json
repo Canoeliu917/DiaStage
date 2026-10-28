@@ -1,0 +1,51 @@
+{
+  "commit": "625227eef00c5a9445fe4c7ddfa3077f78a91733",
+  "screenshotsCommit": "43c4cf5f18a9442be9bf76b01112dfbba4cacb7b",
+  "finalDesktopClickTargetCheck": {
+    "commit": "43c4cf5f18a9442be9bf76b01112dfbba4cacb7b",
+    "viewport": [1440, 900],
+    "brandHeight": 44,
+    "otherProposalsHeight": 44,
+    "settingsHeight": 44,
+    "favoritesHeight": 33.09375,
+    "allTargetsPassed": false
+  },
+  "dayMeasure": {
+    "bodyFont": "\"Courier New\", sourceHanSans, monospace",
+    "bodyLineHeight": "23.1px",
+    "bodySize": "14px",
+    "diaWidth": 300,
+    "sidebarWidth": 300,
+    "stageWidth": 840,
+    "theme": "day",
+    "viewport": [
+      1440,
+      900
+    ]
+  },
+  "nightMeasure": {
+    "background": "rgb(41, 41, 41)",
+    "color": "rgb(240, 240, 240)",
+    "theme": "night"
+  },
+  "laptopMeasure": {
+    "documentWidth": 1280,
+    "stageWidth": 716.8125,
+    "viewport": [
+      1280,
+      800
+    ]
+  },
+  "catalogCounts": {
+    "布景": 6,
+    "家具": 10,
+    "道具": 5
+  },
+  "noviceGate": "pending_real_person",
+  "deferred": [
+    "mobile",
+    "tablet",
+    "projection",
+    "remount"
+  ]
+}
