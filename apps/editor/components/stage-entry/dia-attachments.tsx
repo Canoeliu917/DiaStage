@@ -122,23 +122,25 @@ export function useDiaAttachments({
             <Plus size={20} aria-hidden="true" />
           </button>
         )}
-        <p className="dia-attachment-hint">
-          <span>
-            {submission
-              ? '确认采用后，才会保存布景。'
-              : attachment
-                ? '可补充要求，发送后生成布景预览。'
-                : '拖入图片或 PDF，发送生成布景。'}
-          </span>
-          <span role={error ? 'alert' : undefined}>
-            {error ||
-              (attachment?.kind === 'photo'
-                ? modelConfigured
-                  ? '图片将交由 AI 识别，尺寸为估算。'
-                  : '照片 AI 尚未启用，暂时无法生成。'
-                : '仅保存采纳片段，不保存原 PDF。')}
-          </span>
-        </p>
+        {(attachment || error) && (
+          <p className="dia-attachment-hint">
+            <span>
+              {submission
+                ? '确认采用后，才会保存布景。'
+                : attachment
+                  ? '可补充要求，发送后生成布景预览。'
+                  : '拖入图片或 PDF，发送生成布景。'}
+            </span>
+            <span role={error ? 'alert' : undefined}>
+              {error ||
+                (attachment?.kind === 'photo'
+                  ? modelConfigured
+                    ? '图片将交由 AI 识别，尺寸为估算。'
+                    : '照片 AI 尚未启用，暂时无法生成。'
+                  : '仅保存采纳片段，不保存原 PDF。')}
+            </span>
+          </p>
+        )}
       </div>
     ),
     panel: attachment && submission && (

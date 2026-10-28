@@ -481,7 +481,8 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   )
 
   useEffect(() => {
-    const source = new EventSource(`/api/scenes/${meta.id}/events`)
+    let source: EventSource | null = null
+    let lastEventId = 0
     const controller = new AbortController()
     let pending: LiveSceneEvent | null = null
     let latestVersion = 0
@@ -553,32 +554,51 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
         signature: sceneGraphSignature(useScene.getState()),
       })
     }
-    source.addEventListener('scene', (event) => {
-      let payload: LiveSceneEvent
-      try {
-        payload = JSON.parse((event as MessageEvent<string>).data) as LiveSceneEvent
-      } catch {
-        return
-      }
-      void receive(payload)
-    })
     const retryAssets = () => {
       if (pending) void receive(pending)
     }
     window.addEventListener('scene:retry-assets', retryAssets)
     window.addEventListener('scene:assets-ready', retryAssets)
 
-    source.addEventListener('error', () => {
-      if (source.readyState === EventSource.CLOSED) {
-        setSaveError('场景实时连接已断开，请刷新页面重新连接。')
+    const syncVisibility = () => {
+      // Hidden tabs must release HTTP/1.1 connection slots for scene saves.
+      if (window.document.hidden) {
+        source?.close()
+        source = null
+        return
       }
-    })
+      if (source) return
+      const next = new EventSource(
+        `/api/scenes/${meta.id}/events${lastEventId ? `?after=${lastEventId}` : ''}`,
+      )
+      source = next
+      next.addEventListener('scene', (event) => {
+        if (source !== next || controller.signal.aborted) return
+        let payload: LiveSceneEvent
+        try {
+          payload = JSON.parse((event as MessageEvent<string>).data) as LiveSceneEvent
+        } catch {
+          return
+        }
+        if (payload.sceneId !== meta.id) return
+        if (Number.isSafeInteger(payload.eventId)) lastEventId = Math.max(lastEventId, payload.eventId)
+        void receive(payload)
+      })
+      next.addEventListener('error', () => {
+        if (source === next && !window.document.hidden && next.readyState === EventSource.CLOSED) {
+          setSaveError('场景实时连接已断开，请刷新页面重新连接。')
+        }
+      })
+    }
+    window.document.addEventListener('visibilitychange', syncVisibility)
+    syncVisibility()
 
     return () => {
       controller.abort()
+      window.document.removeEventListener('visibilitychange', syncVisibility)
       window.removeEventListener('scene:retry-assets', retryAssets)
       window.removeEventListener('scene:assets-ready', retryAssets)
-      source.close()
+      source?.close()
     }
   }, [meta.id, scheduleCover])
 

@@ -1010,13 +1010,19 @@ export function RehearsalPartner({
           send()
         }}
       >
-        {!attachments.open && (
-          <p role="status" aria-live="polite" data-dia-state={state.thread?.status ?? 'idle'}>
-            {state.notice || '说说你想怎么调整。'}
+        {!attachments.open && state.notice && (
+          <p
+            className="dia-composer-status"
+            role="status"
+            aria-live="polite"
+            data-dia-state={state.thread?.status ?? 'idle'}
+            title={state.notice}
+          >
+            {state.notice.startsWith('已恢复这场对话。') ? '对话已恢复 · 预览待确认' : state.notice}
           </p>
         )}
         <GhostFeedbackError />
-        <div {...attachments.dropProps} className="dia-attachment-drop">
+        <div {...attachments.dropProps} className="dia-attachment-drop dia-composer-box">
           <label>
             <span className="sr-only">你想试什么？</span>
             <textarea
@@ -1038,40 +1044,42 @@ export function RehearsalPartner({
               }}
             />
           </label>
-          {attachments.controls}
-        </div>
-        <div className="dia-actions">
-          {controllerState.busy || attachments.busy ? (
-            <button
-              className="dia-primary"
-              type="button"
-              onClick={() => {
-                if (attachments.busy) attachments.stop()
-                else controller.cancel()
-              }}
-            >
-              停止
-            </button>
-          ) : (
-            <button className="dia-primary" type="submit" disabled={sendDisabled}>
-              {attachments.pending
-                ? '发送生成'
-                : state.thread?.status === 'failed' ||
-                    state.notice === SERVICE_REQUEST_FAILURE_NOTICE
-                  ? '重试'
-                  : '发送'}
-            </button>
-          )}
-          {VOICE_INPUT_ENABLED && (
-            <button
-              type="button"
-              disabled={state.busy}
-              aria-expanded={voice}
-              onClick={() => setVoice(!voice)}
-            >
-              {voice ? '收起录音' : '说一句'}
-            </button>
-          )}
+          <div className="dia-composer-actions">
+            {attachments.controls}
+            <div className="dia-actions">
+              {controllerState.busy || attachments.busy ? (
+                <button
+                  className="dia-primary"
+                  type="button"
+                  onClick={() => {
+                    if (attachments.busy) attachments.stop()
+                    else controller.cancel()
+                  }}
+                >
+                  停止
+                </button>
+              ) : (
+                <button className="dia-primary" type="submit" disabled={sendDisabled}>
+                  {attachments.pending
+                    ? '发送生成'
+                    : state.thread?.status === 'failed' ||
+                        state.notice === SERVICE_REQUEST_FAILURE_NOTICE
+                      ? '重试'
+                      : '发送'}
+                </button>
+              )}
+              {VOICE_INPUT_ENABLED && (
+                <button
+                  type="button"
+                  disabled={state.busy}
+                  aria-expanded={voice}
+                  onClick={() => setVoice(!voice)}
+                >
+                  {voice ? '收起录音' : '说一句'}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         {VOICE_INPUT_ENABLED && voice && (
           <div>
