@@ -555,7 +555,9 @@ export function StageCommandInput({
                 ? '发送生成'
                 : state === 'planning'
                   ? '正在理解台位…'
-                  : '生成舞台方案'}
+                  : state === 'error'
+                    ? '重试生成'
+                    : '生成舞台方案'}
             </button>
           </div>
         </>

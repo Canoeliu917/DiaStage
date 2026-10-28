@@ -1,5 +1,6 @@
 'use client'
 
+import { Plus, X } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { type DragEvent, useRef, useState } from 'react'
 import { classifyDiaAttachment } from './attachment-files'
@@ -67,6 +68,9 @@ export function useDiaAttachments({
     open: attachment !== null,
     pending: attachment !== null && submission === null,
     busy,
+    pick: () => {
+      if (!disabled && !attachment) input.current?.click()
+    },
     send: (note: string) => {
       if (disabled || !attachment || submission || busy) return
       if (note.trim().length > 2000) {
@@ -98,12 +102,19 @@ export function useDiaAttachments({
           <div className="dia-attachment-file">
             <span title={attachment.file.name}>{attachment.file.name}</span>
             <button type="button" disabled={busy} onClick={remove} aria-label="移除附件">
-              ×
+              <X size={18} aria-hidden="true" />
             </button>
           </div>
         ) : (
-          <button type="button" disabled={disabled} onClick={() => input.current?.click()}>
-            添加图片 / PDF
+          <button
+            type="button"
+            className="dia-attachment-add"
+            aria-label="添加图片或 PDF"
+            title="添加图片或 PDF"
+            disabled={disabled}
+            onClick={() => input.current?.click()}
+          >
+            <Plus size={20} aria-hidden="true" />
           </button>
         )}
         <p className="dia-attachment-hint">

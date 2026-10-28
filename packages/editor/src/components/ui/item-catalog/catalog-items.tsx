@@ -6,47 +6,8 @@ const fold3 = stageFoldGeometry('SCN-FOLD-03')!
 
 export type CatalogItem = AssetInput & { tool?: string }
 
-/** The 22 supplied stage models; normalization matches the source manifest. */
+/** The 21 supplied stage models; normalization matches the source manifest. */
 export const CATALOG_ITEMS: CatalogItem[] = [
-  {
-    "id": "SCN-FLAT-090",
-    "name": "单帘景片",
-    "category": "scenery",
-    "source": "library",
-    "src": "/stage-library/models/SCN-FLAT-090.glb",
-    "thumbnail": "/stage-library/thumbnails/256/SCN-FLAT-090.png",
-    "tags": [
-      "scenic-flat",
-      "分隔",
-      "遮挡",
-      "出入口组织"
-    ],
-    "dimensions": [
-      0.9,
-      2.4,
-      0.04
-    ],
-    "boundsCenter": [
-      0,
-      1.2,
-      0
-    ],
-    "offset": [
-      0,
-      0,
-      0
-    ],
-    "rotation": [
-      0,
-      0,
-      0
-    ],
-    "scale": [
-      1,
-      1,
-      1
-    ]
-  },
   {
     "id": "SCN-FOLD-02",
     "name": "二帘组合",

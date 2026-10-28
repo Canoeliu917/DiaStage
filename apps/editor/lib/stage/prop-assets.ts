@@ -9,12 +9,7 @@ import {
 import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import manifest from '../../public/stage-library/prop-menu-manifest.json'
 
-const selectableAssets = manifest.assets.filter((asset) => asset.id !== 'SCN-FLAT-090')
-export const STAGE_PROP_MENU = {
-  ...manifest,
-  asset_count: selectableAssets.length,
-  assets: selectableAssets,
-}
+export const STAGE_PROP_MENU = manifest
 
 export function stagePropAssetUrl(relativePath: string): string {
   return `/stage-library/${relativePath}`

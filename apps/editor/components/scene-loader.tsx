@@ -38,6 +38,7 @@ import { DiaDock } from './dia-dock'
 import { PhotoStageReference } from './photo-stage-reference'
 import { SceneBackupControls } from './scene-backup-controls'
 import { StageCommandRuntime } from './stage-entry/runtime'
+import { StageFirstVisit } from './stage-entry/stage-first-visit'
 import { useAudienceCover } from './use-audience-cover'
 
 const StagePlacementRuntime = dynamic(
@@ -718,6 +719,13 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                     }[saveStatus]
                   }
                 </span>
+                <button
+                  type="button"
+                  disabled={!stageReady || recoveryBusy || !!conflict}
+                  onClick={() => window.dispatchEvent(new Event('scene:retry-save'))}
+                >
+                  保存
+                </button>
                 <SceneBackupControls
                   sceneName={document?.production.name ?? meta.name}
                   onExport={exportBackup}
@@ -726,6 +734,9 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
               </>
             }
           />
+          {!immersive && (
+            <StageFirstVisit ready={stageReady} readOnly={recoveryBusy || !!conflict} />
+          )}
           {stageReady && !immersive && <PhotoStageReference key={meta.id} sceneId={meta.id} />}
           <div className="dia-stage-layout">
             <div className="dia-editor">

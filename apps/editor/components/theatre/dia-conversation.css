@@ -61,7 +61,7 @@
 .dia-proposal { padding:18px 0; border-top:1px solid var(--dia-border); }
 .dia-proposal h3 { font-size:16px; font-weight:600; margin-bottom:8px; }
 .dia-proposal ul { list-style:disc; padding-left:18px; margin-top:8px; }
-.dia-proposal blockquote { margin-block:8px; color:var(--dia-muted); }
+.dia-proposal blockquote { margin-block:8px; padding-top:8px; border-top:1px solid var(--dia-border); color:var(--dia-muted); font-size:14px; line-height:1.6; }
 .dia-proposal > button { width:100%; }
 .dia-decision { margin-top:24px; border-block:1px solid var(--dia-border); padding-block:16px; }
 .dia-decision h3 { font-size:18px; }
@@ -99,7 +99,7 @@
 .dia-dialogue .dia-primary:hover:not(:disabled) { background:color-mix(in srgb,var(--dia-ink) 87%,var(--dia-ivory)); }
 .dia-dialogue :focus-visible { outline-color:var(--dia-focus); }
 .dia-dialogue .dia-proposals { margin-top:8px; }
-.dia-dialogue .dia-proposal { border-top:0; border-left:2px solid var(--dia-blue); padding:8px 10px; background:var(--dia-proposal-surface); }
+.dia-dialogue .dia-proposal { border:0; padding:12px 0; background:transparent; }
 .dia-dialogue .dia-proposal[hidden] { display:none; }
 .dia-secondary { font-size:12px; }
 .dia-secondary > summary,.dia-context > summary,.dia-proposal summary { color:var(--dia-muted); }

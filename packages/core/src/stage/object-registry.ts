@@ -46,16 +46,6 @@ type SpecRow = [
 // Folded bounds come from the supplied catalog/GLB pose, not panel width multiplied by count.
 const rows: SpecRow[] = [
   [
-    'SCN-FLAT-090',
-    '单帘景片',
-    ['单帘', '单片景片', '景片', '景墙'],
-    '空间围合',
-    'scenic-flat',
-    [0.9, 2.4, 0.04],
-    '宽0.90m',
-    '深0.04m，高2.40m',
-  ],
-  [
     'SCN-FOLD-02',
     '二帘组合',
     [
@@ -333,6 +323,8 @@ export function resolveStageObjectSpecs(name: string): StageObjectSpec[] {
   const normalized = name.trim().toLocaleLowerCase()
   return STAGE_OBJECT_REGISTRY.filter(
     (spec) =>
+      (['景片', '景墙'].includes(normalized) &&
+        ['scenic-flat', 'door-flat', 'window-flat'].includes(spec.kind)) ||
       spec.canonicalId.toLocaleLowerCase() === normalized ||
       spec.aliases.some((alias) => alias.toLocaleLowerCase() === normalized),
   )

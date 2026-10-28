@@ -1,0 +1,218 @@
+:root {
+  --dia-font-ui: "Courier New", var(--font-source-han-sans), monospace;
+  --dia-type-ui: 14px;
+  --dia-type-body: 15px;
+  --dia-line-body: 1.65;
+  --dia-surface: #f4f4f4;
+  --dia-panel: #ededed;
+  --dia-raised: #ffffff;
+  --dia-text: #252525;
+  --dia-muted: #555555;
+  --dia-border: #7c7c7c;
+  --dia-divider: #d0d0d0;
+  --dia-hover: #dedede;
+  --dia-active: #252525;
+  --dia-on-active: #ffffff;
+  --dia-focus: #252525;
+}
+
+html[data-stage-theme="night"] {
+  --dia-surface: #222222;
+  --dia-panel: #292929;
+  --dia-raised: #333333;
+  --dia-text: #f0f0f0;
+  --dia-muted: #bebebe;
+  --dia-border: #939393;
+  --dia-divider: #4b4b4b;
+  --dia-hover: #414141;
+  --dia-active: #eeeeee;
+  --dia-on-active: #222222;
+  --dia-focus: #eeeeee;
+}
+
+html[data-stage-theme] body {
+  --dia-paper: var(--dia-raised);
+  --dia-paper-text: var(--dia-text);
+  --dia-paper-muted: var(--dia-muted);
+  --dia-paper-border: var(--dia-border);
+  --dia-proposal-surface: var(--dia-panel);
+  --dia-error-surface: var(--dia-panel);
+  --dia-shadow: 0 4px 16px #17181920;
+}
+
+html[data-stage-theme] .studio-workspace {
+  --primary-foreground: var(--dia-on-active);
+  --sidebar-primary-foreground: var(--dia-on-active);
+  color-scheme: light;
+}
+
+html[data-stage-theme="night"] .studio-workspace {
+  color-scheme: dark;
+}
+
+body .ds-library.dia-home,
+body .dia-home-simplified,
+body .studio-brand-en {
+  font-family: "Courier New", var(--font-source-han-sans), monospace;
+  --dia-font-ui: "Courier New", var(--font-source-han-sans), monospace;
+}
+
+html[data-stage-theme] .studio-workspace :is(.studio-navigation, .dia-dialogue) {
+  background-image: none;
+}
+
+html[data-stage-theme] .studio-workspace .studio-navigation {
+  color: var(--dia-text);
+  background-color: var(--dia-panel);
+  border-color: var(--dia-divider);
+}
+
+html[data-stage-theme] .studio-navigation :is(.studio-project-name, .studio-slogan, .studio-save-status) {
+  color: var(--dia-muted);
+}
+
+html[data-stage-theme] .studio-navigation .studio-navigation-actions > :is(a, button),
+html[data-stage-theme] .studio-navigation .studio-workspaces button {
+  color: var(--dia-text);
+}
+
+html[data-stage-theme] .studio-workspace :is(.studio-workspaces, .studio-property-tabs, .diastage-tool-rail, .diastage-mobile-tabs, .diastage-viewer-toolbar, .stage-manual) button[aria-pressed="true"],
+html[data-stage-theme] .studio-workspace .stage-library-preview > .stage-library-use,
+html[data-stage-theme] .studio-workspace .dia-panel .dia-primary {
+  color: var(--dia-on-active);
+  background: var(--dia-active);
+  border-color: var(--dia-active);
+}
+
+html[data-stage-theme] .studio-workspace .stage-library-grid button[aria-pressed="true"] {
+  background: var(--dia-hover);
+  color: var(--dia-text);
+  border-color: var(--dia-text);
+}
+
+html[data-stage-theme] .studio-workspace .stage-library-grid button[aria-pressed="true"] small {
+  color: var(--dia-muted);
+}
+
+html[data-stage-theme] .studio-navigation .studio-workspaces button:hover:not(:disabled):not([aria-pressed="true"]),
+html[data-stage-theme] .studio-navigation .studio-navigation-actions > :is(a, button):hover,
+html[data-stage-theme] .studio-workspace .stage-library-preview > .stage-library-use:hover:not(:disabled),
+html[data-stage-theme] .studio-workspace .dia-panel .dia-primary:hover:not(:disabled) {
+  background: var(--dia-hover);
+  color: var(--dia-text);
+}
+
+html[data-stage-theme] .studio-workspace .dia-dialogue {
+  --dia-hover: var(--dia-panel);
+  --dia-focus: var(--dia-paper-text);
+}
+
+html[data-stage-theme] .studio-workspace .dia-dialogue .dia-proposal {
+  border-left: 0;
+  padding: 12px;
+}
+
+html[data-stage-theme] .studio-workspace .dia-panel .dia-message {
+  border-color: var(--dia-divider);
+}
+
+html[data-stage-theme] .studio-workspace :is(.dia-dock, .dia-panel-header, .dia-composer, .dia-stage-context, .studio-property-tabs, .stage-display-toolbar, .stage-transform-toolbar) {
+  border-color: var(--dia-divider);
+}
+
+html[data-stage-theme] .studio-workspace :is(.diastage-tool-rail, .stage-display-toolbar, .stage-transform-toolbar) {
+  background: var(--dia-panel);
+  color: var(--dia-muted);
+}
+
+html[data-stage-theme] .studio-workspace :is(.diastage-tool-rail, .stage-display-toolbar, .stage-transform-toolbar):is(:hover, :focus-within) {
+  background: var(--dia-raised);
+  color: var(--dia-text);
+}
+
+html[data-stage-theme] .studio-workspace :is(.studio-mobile-menu[open] > div, .stage-controls-help > div) {
+  background: var(--dia-raised);
+  color: var(--dia-text);
+  border-color: var(--dia-border);
+}
+
+html[data-stage-theme] .studio-workspace :is(.theatre-panel, .stage-manual, .stage-overview, .dia-panel, .stage-library-grid strong, .stage-library-preview > div > strong, .stage-presets > summary, .stage-library-grid small, .stage-library-preview small, .dia-secondary, .dia-input-examples, .dia-message-system-state, .stage-controls-help > div) {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+html[data-stage-theme] .studio-workspace :is(input, textarea) {
+  font-size: 16px;
+  caret-color: currentColor;
+}
+
+html[data-stage-theme] .studio-workspace :is(input, textarea)::placeholder {
+  color: var(--dia-muted);
+  opacity: 1;
+}
+
+html[data-stage-theme] .studio-workspace :is(button, a, input, textarea, select, summary):focus-visible {
+  outline: 2px solid var(--dia-focus);
+  outline-offset: 3px;
+}
+
+html[data-stage-theme] .studio-workspace ::selection {
+  background: var(--dia-active);
+  color: var(--dia-on-active);
+}
+
+.stage-theme-control {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+
+.studio-navigation .stage-theme-control button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px;
+  border: 0;
+  border-radius: 4px;
+  color: var(--dia-muted);
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.studio-navigation .stage-theme-control button:hover,
+.studio-navigation .stage-theme-control button[aria-pressed="true"] {
+  color: var(--dia-text);
+  background: var(--dia-hover);
+}
+
+.studio-workspace :is(button, a, summary, input, textarea, select) {
+  transition: color 160ms ease-out, background-color 160ms ease-out, border-color 160ms ease-out;
+}
+
+html .dia-home :is(.dia-space-brand, .dia-home-space, .dia-space-tagline, .dia-coordinate-field, .dia-coordinate-welcome, .dia-coordinate-world, .dia-coordinate-floor, .dia-coordinate-wall, .dia-coordinate-node-label, .dia-coordinate-hint),
+html .dia-home .dia-coordinate-field :is(.dia-coordinate-node, .dia-coordinate-node:hover) {
+  transition-duration: 240ms;
+  transition-timing-function: ease-out;
+  animation-duration: 240ms;
+  animation-timing-function: ease-out;
+  animation-delay: 0ms;
+}
+
+html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html :is(.studio-workspace, .dia-home) *,
+  html :is(.studio-workspace, .dia-home) *::before,
+  html :is(.studio-workspace, .dia-home) *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

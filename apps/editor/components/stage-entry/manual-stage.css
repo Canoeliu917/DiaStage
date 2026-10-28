@@ -1,8 +1,8 @@
-.stage-manual { display:flex; flex-direction:column; gap:12px; padding:16px 14px 20px; height:100%; overflow:auto; color:var(--dia-text); background:var(--dia-panel); font-size:12px; }
+.stage-manual { display:flex; flex-direction:column; gap:12px; padding:16px 14px 20px; height:100%; overflow:auto; color:var(--dia-text); background:var(--dia-panel); font-size:14px; line-height:1.6; }
 .stage-manual h2 { font-size:15px; font-weight:600; letter-spacing:.02em; }
 .stage-manual p { line-height:1.65; color:var(--muted-foreground); }
 .stage-manual button,.stage-manual input,.stage-manual select { font:inherit; }
-.stage-manual button { min-height:36px; padding:8px; border:1px solid var(--dia-border); border-radius:4px; background:transparent; text-align:left; cursor:pointer; }
+.stage-manual button { min-width:44px; min-height:44px; padding:8px; border:1px solid var(--dia-border); border-radius:4px; background:transparent; text-align:left; cursor:pointer; }
 .stage-manual button:hover { background:var(--dia-hover); }
 .stage-manual button[aria-pressed=true] { background:var(--dia-active); color:var(--dia-ink); border-color:var(--dia-active); }
 .stage-manual button:focus-visible,.stage-manual input:focus-visible,.stage-manual select:focus-visible { outline:2px solid currentColor; outline-offset:2px; }
@@ -11,6 +11,7 @@
 .stage-category-grid button { text-align:center; }
 .stage-library-heading { display:flex; align-items:center; justify-content:space-between; }
 .stage-library-heading > span { color:var(--dia-muted); font-size:11px; }
+.stage-library-hint { margin:8px 0; }
 .stage-library-snaps { flex-shrink:0; }
 .stage-presets { flex-shrink:0; }
 .stage-presets > button { display:flex; flex-direction:column; gap:3px; width:100%; margin-top:5px; }
@@ -26,14 +27,12 @@
 .stage-library-grid small { color:var(--dia-muted); font-size:11px; }
 .stage-library-grid button[aria-pressed=true] small { color:var(--dia-ink); }
 .stage-library-grid .stage-library-check { position:absolute; top:8px; right:8px; display:grid; place-items:center; width:18px; height:18px; border-radius:50%; background:var(--dia-ink); color:var(--dia-ivory); font-size:12px; }
-.stage-library-preview { display:grid; grid-template-columns:40px minmax(0,1fr) auto; gap:8px; align-items:center; flex-shrink:0; padding:6px; border:1px solid var(--dia-border); border-radius:4px; background:var(--dia-raised); }
+.stage-library-preview { display:grid; grid-template-columns:44px minmax(0,1fr); gap:8px; align-items:center; flex-shrink:0; padding:6px; background:var(--dia-raised); }
 .stage-library-preview > button { padding:0; }
 .stage-library-preview img { display:block; width:100%; height:auto; aspect-ratio:1; object-fit:contain; background:var(--dia-ivory); }
 .stage-library-preview > div { display:flex; flex-direction:column; gap:6px; min-width:0; }
 .stage-library-preview > div > strong,.stage-library-preview > div > small { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .stage-library-preview small { color:var(--muted-foreground); }
-.stage-library-preview > .stage-library-use { min-height:44px; padding:8px; text-align:center; background:var(--dia-active); color:var(--dia-ink); border-color:var(--dia-active); font-size:15px; font-weight:700; }
-.stage-library-preview > .stage-library-use:hover:not(:disabled) { background:color-mix(in srgb,var(--dia-ivory) 88%,var(--dia-ink)); }
 .stage-library-dialog { margin:auto; width:min(560px,92vw); max-height:92dvh; overflow:auto; padding:16px; border:1px solid var(--border); background:var(--background); color:var(--foreground); }
 .stage-library-dialog::backdrop { background:color-mix(in srgb,var(--dia-ink) 65%,transparent); }
 .stage-library-dialog img { display:block; width:100%; height:auto; aspect-ratio:1; object-fit:contain; background:var(--dia-ivory); }
@@ -41,15 +40,20 @@
 .stage-library-dialog button { flex-shrink:0; }
 .stage-manual-snaps { display:flex; flex-direction:column; gap:10px; }
 .stage-manual label { display:flex; align-items:center; gap:7px; line-height:1.5; }
-.stage-manual input:not([type=checkbox]),.stage-manual select { min-height:36px; width:100%; min-width:0; background:var(--background); color:inherit; padding:6px; border:1px solid var(--border); }
+.stage-manual input:not([type=checkbox]),.stage-manual select { min-height:44px; width:100%; min-width:0; background:var(--background); color:inherit; padding:6px; border:1px solid var(--border); }
 .stage-manual input[type=checkbox] { width:16px; height:16px; accent-color:var(--foreground); flex-shrink:0; }
 .stage-manual select { flex:1; }
 .stage-placement-readout { display:flex; flex-direction:column; gap:8px; padding:12px; border:1px dashed currentColor; }
 .stage-notice { min-height:20px; }
 .stage-manual-actions { display:flex; flex-wrap:wrap; gap:6px; }
 .stage-manual-actions button { text-align:center; flex:1; }
-.stage-object { display:flex; flex-direction:column; gap:12px; margin-top:4px; padding-top:16px; border-top:1px solid var(--border); min-width:0; }
+.stage-object { display:flex; flex-direction:column; gap:16px; margin-top:4px; padding-top:16px; min-width:0; }
 .stage-object legend { font-size:14px; padding-right:10px; }
+.stage-object-position { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.stage-object-visibility { min-height:44px; }
+.stage-object-more > summary,.stage-object-more [data-stage-dimensions] > summary { min-height:44px; padding:10px 0; cursor:pointer; }
+.stage-object-more > :not(summary) { margin-top:12px; }
+.stage-object-more > label { min-height:44px; }
 .stage-object-transform { display:flex; flex-direction:column; gap:12px; min-width:0; }
 .stage-object-transform:disabled { opacity:.55; }
 .stage-fold-panel { display:flex; flex-direction:column; gap:8px; min-width:0; }
@@ -80,7 +84,7 @@
 .stage-prop-rotation { display:flex; flex-direction:column; gap:5px; }
 .stage-prop-rotation > div { display:flex; align-items:center; gap:6px; }
 .stage-prop-rotation span { flex:1; }
-.stage-prop-rotation button { width:40px; min-height:34px; text-align:center; padding:4px; }
+.stage-prop-rotation button { width:44px; min-height:44px; text-align:center; padding:4px; }
 .stage-prop-rotation > button { width:100%; }
 .stage-ghost-label { pointer-events:none; white-space:nowrap; color:var(--dia-text); background:var(--dia-panel); padding:5px 9px; font-size:12px; }
 .stage-selection-content { height:auto; min-height:0; overflow:auto; }

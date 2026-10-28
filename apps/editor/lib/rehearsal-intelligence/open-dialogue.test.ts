@@ -90,12 +90,16 @@ test('provider failures explain service recovery and retain the existing proposa
   await journal.recover(useScene.getState(), 1)
   const unbind = bindRehearsalScene(sceneId, () => journal.assertCurrent())
   const dia = new DiaConversation(sceneId, () => null, undefined, false)
-  let commits = 0
+  let commits = 0,
+    requests = 0
   const stop = subscribeSceneCommits(() => commits++)
   let respond: () => Promise<Response> = async () => {
     throw new TypeError('offline')
   }
-  globalThis.fetch = (async () => respond()) as typeof fetch
+  globalThis.fetch = (async () => {
+    requests++
+    return respond()
+  }) as typeof fetch
   const failure = (status: number, code: string, message: string) => async () =>
     Response.json(
       { requestId: crypto.randomUUID(), error: { code, message, retryable: status !== 503 } },
@@ -140,6 +144,7 @@ test('provider failures explain service recovery and retain the existing proposa
       const message = dia.store.getState().thread!.messages.at(-1)!.content
       expect(message).toContain(expected)
       expect(message.includes('需要澄清')).toBe(clarification)
+      expect(dia.store.getState().draft).toBe('你好，你能帮我做什么？')
       expect(dia.buildProposal()).toBe(previewed)
       expect(useStagePlanPreview.getState().plan).toBe(ghost)
       expect(dia.store.getState().thread!.status).toBe('waiting-human')
@@ -150,6 +155,10 @@ test('provider failures explain service recovery and retain the existing proposa
     respond = failure(503, 'INTERNAL_ERROR', 'Dia 语义服务尚未配置，请联系网站管理员。')
     await dia.send('你好，你能帮我做什么？')
     expect(dia.store.getState().notice).toContain('服务请求未完成')
+    const beforeRetry = requests
+    await dia.send()
+    expect(requests).toBe(beforeRetry + 1)
+    expect(dia.store.getState().draft).toBe('你好，你能帮我做什么？')
     await dia.send('切换到俯视图')
     expect(dia.store.getState().thread!.messages.at(-1)!.content).toBe(
       '已调整观察视角，舞台物品保持原位。',

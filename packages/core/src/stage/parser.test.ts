@@ -42,6 +42,70 @@ const sample =
 const transaction = { transactionId: 'test', issuedAt: '2026-09-10T00:00:00Z' }
 
 describe('deterministic Chinese stage input', () => {
+  const sceneryContext: SceneContextSummary = {
+    ...context,
+    objects: [
+      {
+        ...context.objects[0]!,
+        id: 'fold-2',
+        name: '二帘组合',
+        kind: 'scenic-flat',
+      },
+      {
+        ...context.objects[1]!,
+        id: 'fold-3',
+        name: '三帘组合',
+        kind: 'scenic-flat',
+      },
+      context.objects[0]!,
+    ],
+    selectedObjectIds: ['fold-2'],
+  }
+  for (const [phrase, selectedId, axis, delta] of [
+    ['把这个景片向台右移动30厘米', 'fold-2', 'x', 0.3],
+    ['把这个景墙向台左移动30厘米', 'fold-3', 'x', -0.3],
+    ['把这块景片向台后移半米', 'fold-2', 'z', 0.5],
+  ] as const)
+    test(`generic scenery reference resolves the selected existing prop: ${phrase}`, () => {
+      const scene = { ...sceneryContext, selectedObjectIds: [selectedId] }
+      const before = structuredClone(scene)
+      const result = parseStageText(phrase, scene)!
+      const original = scene.objects.find((item) => item.id === selectedId)!
+      expect(result.questions).toEqual([])
+      expect(result.items).toHaveLength(1)
+      expect(result.items[0]!.existingNodeId).toBe(selectedId)
+      expect(result.items[0]!.transform.position[axis]).toBeCloseTo(
+        original.transform.position[axis] + delta,
+      )
+      expect(result.items[0]!.dimensionsMeters).toEqual(original.dimensionsMeters)
+      expect(scene).toEqual(before)
+    })
+  test('a selected chair is not treated as scenery by a qualified pronoun', () => {
+    const result = parseStageText('把这个景片向台右移动30厘米', {
+      ...sceneryContext,
+      selectedObjectIds: ['chair-1'],
+    })!
+    expect(result.items).toEqual([])
+    expect(result.questions).toHaveLength(1)
+  })
+  test('generic scenery creation asks for a real catalogue type instead of selecting one', () => {
+    const result = parseStageText('添加景片', sceneryContext)!
+    expect(result.items).toEqual([])
+    expect(result.questions).toHaveLength(1)
+    expect(result.questions[0]!.options).toContain('二帘组合')
+    expect(result.questions[0]!.options).toContain('三帘组合')
+    expect(parseStageText('添加单帘景片', sceneryContext)).toBeNull()
+  })
+  test('an unqualified scenery reference keeps multiple existing props ambiguous', () => {
+    const result = parseStageText('把景片向台右移动30厘米', {
+      ...sceneryContext,
+      selectedObjectIds: [],
+    })!
+    expect(result.items).toEqual([])
+    expect(result.questions).toHaveLength(1)
+    expect(result.questions[0]!.options).toEqual(['二帘组合（fold-2）', '三帘组合（fold-3）'])
+    expect(compileStagePlan(result, sceneryContext, transaction).commands).toEqual([])
+  })
   test('unspecified clearances are zero while explicit distances remain exact', () => {
     const plan = parseStageText('一张圆桌，两把硬椅', { ...context, objects: [] })!
     expect(plan.relations.every((relation) => relation.gapMeters === 0)).toBe(true)

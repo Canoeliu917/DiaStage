@@ -1,8 +1,13 @@
 import { afterEach, expect, test } from 'bun:test'
-import { useScene } from '@pascal-app/core'
+import { ItemNode, useScene } from '@pascal-app/core'
 import { STAGE_OBJECT_CATEGORIES, STAGE_OBJECT_REGISTRY } from '@pascal-app/core/stage'
+import { useViewer } from '@pascal-app/viewer'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { STAGE_PROP_MENU, stagePropAssetUrl } from '@/lib/stage/prop-assets'
+import {
+  AVAILABLE_STAGE_SCENERY,
+  STAGE_PROP_MENU,
+  stagePropAssetUrl,
+} from '@/lib/stage/prop-assets'
 import { createTheatreSceneGraph } from '@/lib/theatre/new-production'
 import {
   cancelStagePlacement,
@@ -20,10 +25,9 @@ afterEach(() => {
   useScene.setState({ readOnly: false })
 })
 
-test('the library exposes 21 selectable object definitions in their six categories', () => {
+test('the library groups all 21 selectable object definitions into scenery, furniture and props', () => {
   expect(STAGE_LIBRARY.map(({ spec }) => spec.canonicalId)).toEqual(
     [...STAGE_OBJECT_REGISTRY]
-      .filter((spec) => spec.canonicalId !== 'SCN-FLAT-090')
       .sort(
         (a, b) =>
           STAGE_OBJECT_CATEGORIES.indexOf(a.category) - STAGE_OBJECT_CATEGORIES.indexOf(b.category),
@@ -36,20 +40,13 @@ test('the library exposes 21 selectable object definitions in their six categori
       (category) => STAGE_LIBRARY.filter(({ spec }) => spec.category === category).length,
     ),
   ).toEqual([2, 5, 4, 2, 4, 4])
-  expect(STAGE_LIBRARY_CATEGORIES.map(({ label }) => label)).toEqual([
-    '全部',
-    '空间围合/景片',
-    '台块与支撑',
-    '门窗',
-    '沙发',
-    '桌',
-    '椅凳',
-  ])
-  expect(
-    STAGE_LIBRARY_CATEGORIES.filter(({ source }) => source !== null).map(
-      ({ source }) => STAGE_LIBRARY.filter(({ menu }) => menu.category === source).length,
-    ),
-  ).toEqual([2, 5, 4, 2, 4, 4])
+  expect(STAGE_LIBRARY_CATEGORIES.map(({ label }) => label)).toEqual(['布景', '家具', '道具'])
+  const groups = STAGE_LIBRARY_CATEGORIES.map(({ sources }) =>
+    STAGE_LIBRARY.filter(({ menu }) => sources.some((source) => menu.category === source)),
+  )
+  expect(groups.map((group) => group.length)).toEqual([6, 10, 5])
+  expect(new Set(groups.flat().map(({ spec }) => spec.canonicalId)).size).toBe(21)
+  expect(groups[0]!.filter(({ menu }) => menu.category === '门窗')).toHaveLength(4)
 })
 
 test('official models link by canonical ID while browsing loads only their supplied PNGs', () => {
@@ -61,19 +58,17 @@ test('official models link by canonical ID while browsing loads only their suppl
   useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
   const before = useScene.getState().nodes
   const html = renderToStaticMarkup(<StageLibraryPanel />)
-  expect((html.match(/data-model-ready="true"/g) ?? []).length).toBe(21)
-  expect((html.match(/draggable="true"/g) ?? []).length).toBe(21)
+  expect((html.match(/data-model-ready="true"/g) ?? []).length).toBe(6)
+  expect((html.match(/draggable="true"/g) ?? []).length).toBe(6)
   expect((html.match(/单片宽 90 cm/g) ?? []).length).toBe(4)
   expect(html).toContain(stagePropAssetUrl('thumbnails/256/SCN-FOLD-02.png'))
   expect(html).toContain(stagePropAssetUrl('thumbnails/512/SCN-FOLD-02.png'))
-  expect(html).toContain('搜索道具名称或编号')
+  expect(html).toContain('搜索全部 21 件道具')
   expect(html).toContain('aria-label="道具预览"')
   expect(html).toContain('class="stage-library-copy"')
-  expect(html).toMatch(/class="stage-library-use"[^>]*><strong>选用<\/strong>/)
+  expect(html).toContain('点选道具，再点舞台放置；Esc 取消。')
   expect(html).toContain('景片边缘贴合')
   expect(html).toContain('10 厘米')
-  expect(html).not.toContain('SCN-FLAT-090')
-  expect(html).not.toContain('单帘景片')
   expect(html).toContain('21 件')
   expect(html).toContain('aria-label="放大二帘组合预览"')
   expect(html).not.toContain('.glb')
@@ -118,4 +113,45 @@ test('new platforms and sleeper stand on their long edge; existing placements an
     expect(useStagePlacement.getState().draft!.item.transform).toEqual(existing.transform)
   }
   expect(useScene.getState().nodes).toBe(nodes)
+})
+
+test('selected prop keeps name, position, heading and visibility primary with advanced controls collapsed', () => {
+  const graph = createTheatreSceneGraph()
+  const level = Object.values(graph.nodes).find((node) => node.type === 'level')!
+  const node = ItemNode.parse({
+    parentId: level.id,
+    asset: AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === 'SCN-CHAIR-045')!.asset,
+  })
+  graph.nodes[node.id] = node
+  level.children.push(node.id)
+  useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
+  const before = useScene.getState().nodes
+  const serverSnapshot = useScene.getInitialState()
+  const serverNodes = serverSnapshot.nodes
+  serverSnapshot.nodes = graph.nodes
+  const viewerSnapshot = useViewer.getInitialState()
+  const loadFailures = viewerSnapshot.itemLoadFailures
+  let html: string
+  try {
+    html = renderToStaticMarkup(<StageObjectPanel nodeId={node.id} />)
+    viewerSnapshot.itemLoadFailures = { [node.id]: '/missing-model.glb' }
+    expect(renderToStaticMarkup(<StageObjectPanel nodeId={node.id} />)).toContain(
+      '模型资源缺失，原台位已保留。',
+    )
+  } finally {
+    serverSnapshot.nodes = serverNodes
+    viewerSnapshot.itemLoadFailures = loadFailures
+  }
+  const primary = html.split('<details class="stage-object-more">')[0]!
+  for (const label of ['名称', '位置', '朝向', '在舞台中显示']) expect(primary).toContain(label)
+  for (const label of ['锁定位置与属性', '形状初始化', '尺寸与精确位置', '复制后落位', '删除']) {
+    expect(primary).not.toContain(label)
+    expect(html).toContain(label)
+  }
+  expect(html).not.toMatch(/<details[^>]* open/)
+  expect(html).toContain('向左转30°')
+  expect(html).toContain('向右转30°')
+  expect(html).toContain('前后倾转')
+  expect(html).toContain('左右侧转')
+  expect(useScene.getState().nodes).toBe(before)
 })

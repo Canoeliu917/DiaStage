@@ -23,6 +23,7 @@ Parsing never assigns an unstated distance. Parse explicit units using the exist
 Reference resolution is separate. Reuse the asset catalog and current scene context. Exact names or IDs win; ambiguous nouns require one selected matching object or clarification. Never fabricate a subject ID.
 Unqualified left/right remains frame=unspecified. The action mapper must require an explicit stage/audience frame from context before resolving it; it must never guess from camera orientation.
 Users can qualify a full utterance with “按舞台方向” or “按观众方向”; this resolves the frame without converting a relative move into region placement.
+Generic “景片／景墙” refers to the installed folding, door and window scenery family. A qualified pronoun must match the selected prop's family; a selected chair is not a scenery panel. Bare family names with multiple existing matches require clarification. Creating “景片” also requires choosing a catalogue type; it never restores a retired single-panel asset or silently chooses a folding unit. The six contrast cases in `packages/core/src/stage/parser.test.ts` cover this reference boundary.
 Negation, alternatives and multi-action prose are clarification-only in V0.1. Do not execute the first recognized substring.
 
 ## Independent StageAction mapping

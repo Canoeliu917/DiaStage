@@ -59,7 +59,6 @@ describe('item display presentation', () => {
 
   test('scenic enclosure controls include doors and windows but preserve furniture', () => {
     for (const id of [
-      'SCN-FLAT-090',
       'SCN-FOLD-02',
       'SCN-FOLD-03',
       'SCN-WIN-130',

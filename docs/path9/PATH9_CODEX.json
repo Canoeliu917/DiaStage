@@ -1,0 +1,356 @@
+{
+  "meta": {
+    "title": "DiaStage website design path to ≥9.0",
+    "repo": "https://github.com/Canoeliu917/DiaStage",
+    "scope": "desktop website UI/UX/visual only; mobile/tablet/projection/remount deferred",
+    "north_star": "排练室辅助置景；AI置景、照片置景、剧本置景；不懂AI的戏剧艺术人渐进学会AI",
+    "brand": "B&W + Courier/思源；一盏追光色",
+    "assets_constraint": "只保留21件标准道具；删除隐藏单帘SCN-FLAT-090及推荐规则；不删除用户历史场景",
+    "assets_baseline_confirmed": "2026-10-28",
+    "pass_rule": "all tasks done AND gate checklist passed",
+    "companion_md": "PATH9_CODEX.md",
+    "scope_decisions": [
+      "保持置景主线，隐藏排演/复台和语音；流程改为放景→调整→保存。",
+      "用户明确要求删除单帘，不保留隐藏兼容资源。",
+      "用户再次确认：平板、手机、投影和复台暂缓。本轮撤回新增移动端适配，只验收电脑屏幕。"
+    ],
+    "score_state": "原始评分仅为用户提供的基线；本轮尚未评分，不代表当前验收结果。"
+  },
+  "scoreboard": [
+    {
+      "id": "score.layout",
+      "name": "布局与视觉层级",
+      "current": 6.0,
+      "target": 9.0,
+      "weight": 0.18
+    },
+    {
+      "id": "score.color",
+      "name": "配色/字体/柔和对比",
+      "current": 6.5,
+      "target": 9.0,
+      "weight": 0.16
+    },
+    {
+      "id": "score.nav",
+      "name": "导航与信息分区",
+      "current": 7.5,
+      "target": 9.0,
+      "weight": 0.14
+    },
+    {
+      "id": "score.empty",
+      "name": "空状态与首访引导",
+      "current": 5.0,
+      "target": 9.0,
+      "weight": 0.14
+    },
+    {
+      "id": "score.input",
+      "name": "输入区与方案审阅UI",
+      "current": 7.0,
+      "target": 9.0,
+      "weight": 0.12
+    },
+    {
+      "id": "score.tools",
+      "name": "工具轨收纳/简化模式",
+      "current": 5.5,
+      "target": 9.0,
+      "weight": 0.14
+    },
+    {
+      "id": "score.mobile",
+      "name": "移动端与触控",
+      "current": 5.5,
+      "target": 9.0,
+      "weight": 0.12
+    }
+  ],
+  "tasks": [
+    {
+      "id": "A1",
+      "section": "A",
+      "status": "todo",
+      "do": "主舞台桌面宽≥55%",
+      "touch": [
+        "theatre/studio layout",
+        "theatre.css"
+      ],
+      "verify": "截图量主舞台≥55%视口宽"
+    },
+    {
+      "id": "A2",
+      "section": "A",
+      "status": "todo",
+      "do": "工具轨/chrome默认降对比，悬停展开才实显",
+      "touch": [
+        "theatre.css"
+      ],
+      "verify": "眯眼焦点在舞台"
+    },
+    {
+      "id": "A3",
+      "section": "A",
+      "status": "todo",
+      "do": "选中属性默认仅2-4项",
+      "touch": [
+        "inspector/selection panel"
+      ],
+      "verify": "默认字段≤4"
+    },
+    {
+      "id": "B1",
+      "section": "B",
+      "status": "todo",
+      "do": "日场浅/夜场深灰一键切换可跟随系统",
+      "touch": [
+        "globals.css",
+        "theme"
+      ],
+      "verify": "电脑屏幕日场可读，夜场非纯黑；投影验收暂缓"
+    },
+    {
+      "id": "B2",
+      "section": "B",
+      "status": "todo",
+      "do": "正文对比≥4.5:1；图标线框≥3:1",
+      "touch": [
+        "design tokens"
+      ],
+      "verify": "WebAIM截图过关"
+    },
+    {
+      "id": "B3",
+      "section": "B",
+      "status": "todo",
+      "do": "正文14-15px 线高1.5-1.8；Courier+思源",
+      "touch": [
+        "globals.css"
+      ],
+      "verify": "DevTools字号字体"
+    },
+    {
+      "id": "B4",
+      "section": "B",
+      "status": "todo",
+      "do": "强调色仅1个追光色",
+      "touch": [
+        "DESIGN tokens",
+        "primary CTA"
+      ],
+      "verify": "首屏高饱和强调色≤1"
+    },
+    {
+      "id": "C1",
+      "section": "C",
+      "status": "todo",
+      "do": "一级聚焦置景，保持排演/复台隐藏，当前态清晰",
+      "touch": [
+        "studio-navigation"
+      ],
+      "verify": "盲测指认当前区"
+    },
+    {
+      "id": "C2",
+      "section": "C",
+      "status": "todo",
+      "do": "仅21件标准道具；删除SCN-FLAT-090目录项/模型/缩略图/知识推荐，保留用户历史记录",
+      "touch": [
+        "theatre-catalog",
+        "items-panel",
+        "apps/editor/public/items",
+        "demos",
+        "tests"
+      ],
+      "verify": "面板===21且无排除id文件/缩略图请求",
+      "note": "原文件标done但实查磁盘为22件；经用户确认删除单帘，重新验收后才能done。"
+    },
+    {
+      "id": "C3",
+      "section": "C",
+      "status": "todo",
+      "do": "Tab仅布景/家具/道具；芯片≤8或收入搜索",
+      "touch": [
+        "items-panel"
+      ],
+      "verify": "首屏滤镜不呈墙"
+    },
+    {
+      "id": "D1",
+      "section": "D",
+      "status": "todo",
+      "do": "首页或空舞台3-5张戏剧任务卡",
+      "touch": [
+        "empty state",
+        "home"
+      ],
+      "verify": "新号首次进入截图"
+    },
+    {
+      "id": "D2",
+      "section": "D",
+      "status": "todo",
+      "do": "场内首访放景→调整→保存；可关且不挡舞台中心",
+      "touch": [
+        "onboarding overlay"
+      ],
+      "verify": "生手无讲解说得出三步"
+    },
+    {
+      "id": "D3",
+      "section": "D",
+      "status": "todo",
+      "do": "卡文案动词开头；无Prompt技术腔",
+      "touch": [
+        "task card copy"
+      ],
+      "verify": "无Prompt/Token/Agent黑话"
+    },
+    {
+      "id": "E1",
+      "section": "E",
+      "status": "todo",
+      "do": "输入区安静；图片/PDF收进+，语音保持隐藏",
+      "touch": [
+        "command-input"
+      ],
+      "verify": "底栏常驻图标≤3"
+    },
+    {
+      "id": "E2",
+      "section": "E",
+      "status": "todo",
+      "do": "审阅脚注样式；确认前舞台不变；可取消",
+      "touch": [
+        "plan-review"
+      ],
+      "verify": "取消无写节点"
+    },
+    {
+      "id": "E3",
+      "section": "E",
+      "status": "todo",
+      "do": "生成中可停止；失败保留输入并重试",
+      "touch": [
+        "streaming controls"
+      ],
+      "verify": "失败路径输入仍在"
+    },
+    {
+      "id": "F1",
+      "section": "F",
+      "status": "todo",
+      "do": "默认简化置景，放景/调整/保存可达；高级工具进更多，主操作≤8",
+      "touch": [
+        "simplified rehearsal",
+        "toolbar"
+      ],
+      "verify": "首屏主操作≤8"
+    },
+    {
+      "id": "F2",
+      "section": "F",
+      "status": "todo",
+      "do": "点资产幽灵跟手→点台落下；Esc取消",
+      "touch": [
+        "placement"
+      ],
+      "verify": "新用户一次成功落位"
+    },
+    {
+      "id": "F3",
+      "section": "F",
+      "status": "todo",
+      "do": "工程手势藏进更多；首访不提DCC/UE",
+      "touch": [
+        "gesture hints",
+        "onboarding copy"
+      ],
+      "verify": "首访文案无DCC词"
+    },
+    {
+      "id": "G1",
+      "section": "G",
+      "status": "todo",
+      "do": "热区≥44x44 CSS px",
+      "touch": [
+        "theatre.css",
+        "stage-entry"
+      ],
+      "verify": "电脑网页按钮和侧栏操作热区≥44；不据此宣称移动端通过"
+    },
+    {
+      "id": "G2",
+      "section": "G",
+      "status": "deferred",
+      "do": "小屏面板优先；舞台可二次全屏",
+      "touch": [
+        "responsive"
+      ],
+      "verify": "375宽走通置景一步",
+      "note": "用户明确暂缓手机和平板，未实施和验收，不计done。"
+    },
+    {
+      "id": "G3",
+      "section": "G",
+      "status": "deferred",
+      "do": "双指只控舞台；底栏不与手势冲突",
+      "touch": [
+        "gesture zones"
+      ],
+      "verify": "真机误触可接受",
+      "note": "用户明确暂缓手机和平板，未实施和验收，不计done。"
+    },
+    {
+      "id": "H1",
+      "section": "H",
+      "status": "todo",
+      "do": "动效100-400ms ease-out；尊重prefers-reduced-motion",
+      "touch": [
+        "globals.css"
+      ],
+      "verify": "减少动态后瞬间切"
+    },
+    {
+      "id": "H2",
+      "section": "H",
+      "status": "todo",
+      "do": "砍边框墙用间距分组",
+      "touch": [
+        "panel styles"
+      ],
+      "verify": "眯眼无铁窗感"
+    },
+    {
+      "id": "H3",
+      "section": "H",
+      "status": "todo",
+      "do": "轻量toast/status；保存成功无modal",
+      "touch": [
+        "toast/status"
+      ],
+      "verify": "保存无modal"
+    }
+  ],
+  "gate": [
+    "all tasks status=done",
+    "novice_5min: open → place one prop → adjust → save, unaided real novice",
+    "screenshots: day-mode + night-mode readable, focus on stage",
+    "self_score_weighted >= 9.0 with evidence"
+  ],
+  "out_of_scope": [
+    "model selection / API keys / dramaturgy parser core",
+    "neon/cyber default theme",
+    "keeping non-theatre leftover assets",
+    "UE5/Blender density as default teaching path"
+  ],
+  "gate_results": {
+    "all_25_done": "not_passed: G2/G3 deferred; do not claim original 25-item gate passed",
+    "novice_5min": "pending",
+    "day_night_screenshots": "pending",
+    "projector_readability": "deferred_by_user",
+    "real_touch_device": "deferred_by_user",
+    "weighted_score": "not_evaluated"
+  }
+}

@@ -1,7 +1,7 @@
 {
   "schema_version": "1.1",
   "name": "DiaStage 道具菜单预览",
-  "asset_count": 22,
+  "asset_count": 21,
   "style_id": "diastage-neutral-matte-v1",
   "source": {
     "filename": "景图示意图总集(1).ppt",
@@ -42,52 +42,6 @@
     "椅凳"
   ],
   "assets": [
-    {
-      "id": "SCN-FLAT-090",
-      "name": "单帘景片",
-      "category": "空间围合",
-      "kind": "flat",
-      "dimensions_m": {
-        "width": 0.9,
-        "depth": 0.04,
-        "height": 2.4
-      },
-      "source_dimensions_m": {
-        "width": 0.9
-      },
-      "assumed_fields": [
-        "depth",
-        "height"
-      ],
-      "source_pages": [
-        4,
-        6,
-        7
-      ],
-      "bounds_m": [
-        [
-          -0.45,
-          -0.02,
-          0.0
-        ],
-        [
-          0.45,
-          0.02,
-          2.4
-        ]
-      ],
-      "pivot": "floor_center",
-      "thumbnail": "thumbnails/256/SCN-FLAT-090.png",
-      "preview": "thumbnails/512/SCN-FLAT-090.png",
-      "model": "models/SCN-FLAT-090.glb",
-      "dimension_label": "宽 90 cm",
-      "model_sha256": "29be2f163c23bfd92ca04e8128d0d9f5e4c03b039ea5b3bdbf09c1f3b2089aa3",
-      "tags": [
-        "分隔",
-        "遮挡",
-        "出入口组织"
-      ]
-    },
     {
       "id": "SCN-FOLD-02",
       "name": "二帘组合",

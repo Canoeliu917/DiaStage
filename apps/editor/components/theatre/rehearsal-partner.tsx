@@ -7,7 +7,10 @@ import { useStore } from 'zustand'
 import { localAccountStorageKey } from '@/lib/auth/local-account'
 import { BETA_REHEARSAL_ENABLED, BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
-import { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
+import {
+  DiaConversation,
+  SERVICE_REQUEST_FAILURE_NOTICE,
+} from '@/lib/rehearsal-intelligence/conversation-controller'
 import {
   readConversation,
   readProductEvents,
@@ -25,6 +28,7 @@ import { useDiaAttachments } from '../stage-entry/dia-attachments'
 import { LiveStagePlan } from '../stage-entry/live-stage-plan'
 import { PhoneVoiceLink } from '../stage-entry/phone-voice-link'
 import { StagePlanReview } from '../stage-entry/plan-review'
+import { StageTaskCards } from '../stage-entry/stage-first-visit'
 import { openStudioPanel } from '../studio-navigation'
 import { DiaRecords } from './dia-records'
 import { DiaRemoteBridge } from './dia-remote-bridge'
@@ -188,6 +192,7 @@ export function RehearsalPartner({
   const currentProposals = useRef<HTMLDivElement>(null)
   const decision = useRef<HTMLElement>(null)
   const dialogue = useRef<HTMLDivElement>(null)
+  const composerInput = useRef<HTMLTextAreaElement>(null)
   // biome-ignore lint/correctness/useExhaustiveDependencies: A different proposal starts with its editor closed.
   useEffect(() => setEditingProposal(false), [state.thread?.selectedProposalId])
   useEffect(() => {
@@ -272,32 +277,39 @@ export function RehearsalPartner({
       <div ref={dialogue} className="dia-dialogue" role="region" aria-label="本场对话记录">
         {!state.thread?.messages.length && (
           <div className="dia-welcome">
-            <h3>你想试什么？</h3>
-            <p>说说想放入或调整的布景。我们先在舞台上试，再由你决定。</p>
+            <h3>从一件布景开始</h3>
+            <p>先摆一遍，再决定怎样排。</p>
+            <StageTaskCards
+              disabled={!state.ready || state.busy || readOnly}
+              onPlace={() => openStudioPanel('items')}
+              onDescribe={() => {
+                controller.patch({ draft: '一张圆桌，两把硬椅' })
+                composerInput.current?.focus()
+              }}
+              onImport={attachments.pick}
+            />
           </div>
         )}
         <DiaRecords sceneId={sceneId} controller={controller} />
         {build && (
           <section className="dia-proposals" aria-label="Dia预演确认">
-            <p className="dia-section-label">
-              <span className="dia-notation">PROPOSAL</span> 当前提案
-            </p>
+            <p className="dia-section-label">当前布景提案</p>
             {build.knowledgeProposal && (
-              <article className="dia-proposal" aria-label="Knowledge Stage Proposal">
+              <article className="dia-proposal" aria-label="布景提案依据">
                 <p>{build.knowledgeProposal.rationale}</p>
                 <p>
-                  Concepts：
+                  参考概念：
                   {build.knowledgeProposal.resolvedConcepts
                     .map((concept) => concept.canonicalLabel)
                     .join(' · ')}
                 </p>
                 <p>
-                  Actions：
+                  操作：
                   {build.knowledgeProposal.actions.map((action) => action.type).join(' · ')}
                 </p>
                 {build.knowledgeProposal.constraints.length > 0 && (
                   <p>
-                    Constraints：
+                    空间要求：
                     {build.knowledgeProposal.constraints
                       .map((constraint) => constraint.type)
                       .join(' · ')}
@@ -309,7 +321,7 @@ export function RehearsalPartner({
                   </p>
                 ))}
                 <details className="dia-secondary">
-                  <summary>Knowledge 来源</summary>
+                  <summary>参考来源</summary>
                   <p>
                     {build.knowledgeProposal.knowledgeRefs
                       .map((reference) => `${reference.conceptId} · ${reference.sourceId}`)
@@ -320,7 +332,7 @@ export function RehearsalPartner({
               </article>
             )}
             {build.spatialSolution && (
-              <div aria-label="空间候选方案">
+              <div role="group" aria-label="空间候选方案">
                 {build.spatialSolution.warnings.map((warning) => (
                   <p key={warning}>{warning}</p>
                 ))}
@@ -1008,6 +1020,7 @@ export function RehearsalPartner({
           <label>
             <span className="sr-only">你想试什么？</span>
             <textarea
+              ref={composerInput}
               aria-label="你想试什么？"
               rows={2}
               maxLength={2000}
@@ -1029,7 +1042,11 @@ export function RehearsalPartner({
         </div>
         <div className="dia-actions">
           <button className="dia-primary" type="submit" disabled={sendDisabled}>
-            {attachments.pending ? '发送生成' : '发送'}
+            {attachments.pending
+              ? '发送生成'
+              : state.thread?.status === 'failed' || state.notice === SERVICE_REQUEST_FAILURE_NOTICE
+                ? '重试'
+                : '发送'}
           </button>
           {VOICE_INPUT_ENABLED && (
             <button

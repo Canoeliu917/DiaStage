@@ -14,7 +14,13 @@ import { type RotationAxis, rigidRotation } from '@/lib/stage/rigid-rotation'
 import { useStagePlacement } from './manual-stage-panel'
 import './manual-stage.css'
 
-export function PropRotationControls({ nodeId }: { nodeId: string }) {
+export function PropRotationControls({
+  nodeId,
+  compact = false,
+}: {
+  nodeId: string
+  compact?: boolean
+}) {
   const node = useScene((s) => s.nodes[nodeId as AnyNodeId])
   const readOnly = useScene((s) => s.readOnly)
   const locked = useScene((s) => !!getNodeLock(s.nodes, nodeId, true))
@@ -56,29 +62,31 @@ export function PropRotationControls({ nodeId }: { nodeId: string }) {
   }
   return (
     <fieldset
-      data-stage-rotation=""
+      data-stage-rotation={compact ? undefined : ''}
       tabIndex={-1}
       className="stage-prop-rotation"
       disabled={readOnly || locked}
-      aria-label="整件旋转"
+      aria-label={compact ? '朝向' : '整件旋转'}
     >
-      <label>
-        整件旋转{' '}
-        <select
-          aria-label="旋转步幅"
-          value={step}
-          onChange={(e) => setStep(Number(e.target.value))}
-        >
-          <option value={30}>每次 30°</option>
-          <option value={90}>转面 90°</option>
-        </select>
-      </label>
-      {(['y', 'x', 'z'] as const).map((axis, i) => (
+      {!compact && (
+        <label>
+          整件旋转{' '}
+          <select
+            aria-label="旋转步幅"
+            value={step}
+            onChange={(e) => setStep(Number(e.target.value))}
+          >
+            <option value={30}>每次 30°</option>
+            <option value={90}>转面 90°</option>
+          </select>
+        </label>
+      )}
+      {(compact ? (['y'] as const) : (['y', 'x', 'z'] as const)).map((axis, i) => (
         <div key={axis}>
-          <span>{['左右转向', '前后倾转', '左右侧转'][i]}</span>
+          <span>{compact ? '朝向 · 每次 30°' : ['左右转向', '前后倾转', '左右侧转'][i]}</span>
           <button
             type="button"
-            aria-label={`${axis}轴反向旋转`}
+            aria-label={compact ? '向左转30°' : `${axis}轴反向旋转`}
             disabled={node.type === 'stair' && axis !== 'y'}
             onClick={() => rotate(axis, -step)}
           >
@@ -86,7 +94,7 @@ export function PropRotationControls({ nodeId }: { nodeId: string }) {
           </button>
           <button
             type="button"
-            aria-label={`${axis}轴正向旋转`}
+            aria-label={compact ? '向右转30°' : `${axis}轴正向旋转`}
             disabled={node.type === 'stair' && axis !== 'y'}
             onClick={() => rotate(axis, step)}
           >
@@ -94,16 +102,20 @@ export function PropRotationControls({ nodeId }: { nodeId: string }) {
           </button>
         </div>
       ))}
-      {node.type === 'stair' && <small>台阶保持踏面水平。</small>}
-      <p role="status">{feedback.message}</p>
-      <button
-        type="button"
-        onClick={() => useStageContactFeedback.setState({ acknowledged: feedback.signature })}
-      >
-        {feedback.acknowledged === feedback.signature
-          ? '已确认当前布局（几何校验仍有效）'
-          : '确认当前摆放'}
-      </button>
+      {!compact && (
+        <>
+          {node.type === 'stair' && <small>台阶保持踏面水平。</small>}
+          <p role="status">{feedback.message}</p>
+          <button
+            type="button"
+            onClick={() => useStageContactFeedback.setState({ acknowledged: feedback.signature })}
+          >
+            {feedback.acknowledged === feedback.signature
+              ? '已确认当前布局（几何校验仍有效）'
+              : '确认当前摆放'}
+          </button>
+        </>
+      )}
     </fieldset>
   )
 }

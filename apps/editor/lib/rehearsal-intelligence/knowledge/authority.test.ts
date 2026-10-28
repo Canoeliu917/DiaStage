@@ -7,7 +7,7 @@ const concept = (id: string) => DIA_KNOWLEDGE.concepts.find((item) => item.id ==
 describe('Theatre Terminology Authority Review', () => {
   test('catalog passes structural and authority semantic validation', () => {
     expect(validateKnowledgeCatalog()).toBeDefined()
-    expect(DIA_KNOWLEDGE.concepts).toHaveLength(124)
+    expect(DIA_KNOWLEDGE.concepts).toHaveLength(123)
     expect(DIA_KNOWLEDGE.sources).toHaveLength(6)
   })
 

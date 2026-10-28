@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { ItemNode } from '@pascal-app/core'
 import {
@@ -74,51 +74,49 @@ test('selectable menu maps 21 canonical models and 42 correctly sized PNGs witho
   }
 })
 
-test('retired single flat remains readable with collision bounds but cannot be newly placed or generated', async () => {
-  const asset = CATALOG_ITEMS.find((item) => item.id === 'SCN-FLAT-090')!
-  expect(CATALOG_ITEMS).toHaveLength(22)
-  expect(ItemNode.parse(JSON.parse(JSON.stringify(ItemNode.parse({ asset })))).asset).toEqual(asset)
-  expect(AVAILABLE_STAGE_ASSET_IDS).not.toContain(asset.id)
-  expect(STAGE_PROP_MENU.assets.some((item) => item.id === asset.id)).toBe(false)
-  const parsed = parseStageText('添加单帘景片', context)!
-  const proposal = parsed.items[0]!
-  expect(stagePropCollisionGeometry(asset.id, proposal.dimensionsMeters)).toBeDefined()
-  expect(groundStageAssets(parsed).items).toEqual([])
-  const serverPlan = await planStageRequest(
-    { source: 'typed-command', input: '添加单帘景片', sceneContext: context, priorAnswers: [] },
-    new AbortController().signal,
-    async () => {
-      throw new Error('retired local asset must not call a model')
-    },
-  )
-  expect(serverPlan.items).toEqual([])
-  expect(serverPlan.questions).toHaveLength(1)
-  expect(serverPlan.questions[0]!.message).toContain('当前不在可选舞台库')
+test('catalogue and shipped model/thumbnail directories contain exactly the same 21 assets', () => {
+  expect(CATALOG_ITEMS).toHaveLength(21)
+  const ids = AVAILABLE_STAGE_ASSET_IDS.toSorted()
+  expect(CATALOG_ITEMS.map((asset) => asset.id).toSorted()).toEqual(ids)
+  for (const [directory, extension] of [
+    ['models', '.glb'],
+    ['thumbnails/256', '.png'],
+    ['thumbnails/512', '.png'],
+  ] as const) {
+    const files = readdirSync(resolve(import.meta.dir, '../../public/stage-library', directory))
+    expect(files.toSorted()).toEqual(ids.map((id) => id + extension))
+  }
+})
+
+test('unknown assets cannot be silently substituted or placed', () => {
+  const proposal = parseStageText('添加窗景片', context)!
+  proposal.items[0]!.libraryAssetId = 'unknown-stage-asset'
+  expect(groundStageAssets(proposal).items).toEqual([])
+  const item = proposal.items[0]!
+  expect(stagePropCollisionGeometry(item.libraryAssetId, item.dimensionsMeters)).toBeUndefined()
   expect(() =>
     makeScenery(
       {
         type: 'AddScenery',
         meta: {
-          commandId: 'retired:0',
-          transactionId: 'retired',
+          commandId: 'missing:0',
+          transactionId: 'missing',
           source: 'manual',
-          issuedAt: '2026-10-23T00:00:00Z',
+          issuedAt: '2026-10-28T00:00:00Z',
           expectedDocumentVersion: 0,
         },
-        nodeId: 'retired:proposal',
-        name: proposal.displayName,
-        kind: proposal.kind,
-        libraryAssetId: asset.id,
-        dimensionsMeters: proposal.dimensionsMeters,
-        transform: proposal.transform,
+        nodeId: 'missing:proposal',
+        name: item.displayName,
+        kind: item.kind,
+        libraryAssetId: item.libraryAssetId,
+        dimensionsMeters: item.dimensionsMeters,
+        transform: item.transform,
       },
       'level_test',
       [0, 0, 0],
       [0, 0, 0],
     ),
   ).toThrow('所选舞台库布景不存在')
-  proposal.existingNodeId = 'existing-flat'
-  expect(groundStageAssets(parsed).items).toHaveLength(1)
 })
 
 for (const prop of STAGE_PROP_MENU.assets) {

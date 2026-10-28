@@ -40,7 +40,7 @@ describe('photo stage compilation', () => {
       PhotoStageObjectSchema.safeParse({
         ...object,
         kind: 'scenic-flat',
-        assetId: 'SCN-FLAT-090',
+        assetId: 'unknown-stage-asset',
         profile: undefined,
       }).success,
     ).toBe(false)
@@ -53,7 +53,7 @@ describe('photo stage compilation', () => {
       { kind: 'camera' },
       { assetId: 'https://example.com/model.glb' },
       { assetId: 'SCN-SOFA-175' },
-      { assetId: 'SCN-FLAT-090', kind: 'scenic-flat' },
+      { assetId: 'unknown-stage-asset', kind: 'scenic-flat' },
       { color: 'url(https://example.com)' },
       { stepCount: 3 },
       { hingeAngles: [90] },
@@ -106,7 +106,7 @@ describe('photo stage compilation', () => {
     expect(apiGraphSchema.safeParse(graph).success).toBe(true)
     const items = Object.values(graph.nodes).filter((node) => node.type === 'item')
     expect(items).toHaveLength(21)
-    expect(items.some((item) => item.asset.id === 'SCN-FLAT-090')).toBe(false)
+    expect(items.some((item) => item.asset.id === 'unknown-stage-asset')).toBe(false)
     for (const item of items) {
       const asset = SCENERY_LIBRARY.find((entry) => entry.asset.id === item.asset.id)!.asset
       expect(item.id.startsWith('item_')).toBe(true)
@@ -204,12 +204,12 @@ describe('photo stage compilation', () => {
 
   test('example faces the native +Z audience and stairs rise toward the left rear', () => {
     const graph = compilePhotoStagePlan(PHOTO_STAGE_EXAMPLE)
-    expect(PHOTO_STAGE_EXAMPLE.objects.some((object) => object.assetId === 'SCN-FLAT-090')).toBe(
+    expect(PHOTO_STAGE_EXAMPLE.objects.some((object) => object.assetId === 'unknown-stage-asset')).toBe(
       false,
     )
     expect(
       Object.values(graph.nodes).some(
-        (node) => node.type === 'item' && node.asset.id === 'SCN-FLAT-090',
+        (node) => node.type === 'item' && node.asset.id === 'unknown-stage-asset',
       ),
     ).toBe(false)
     const find = (id: string) => PHOTO_STAGE_EXAMPLE.objects.find((entry) => entry.id === id)!

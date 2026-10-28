@@ -89,7 +89,7 @@ import {
   syntheticConversationOutput,
 } from './synthetic-demo'
 
-const SERVICE_REQUEST_FAILURE_NOTICE = '服务请求未完成；已有提案保持原样，可继续手动置景。'
+export const SERVICE_REQUEST_FAILURE_NOTICE = '服务请求未完成；已有提案保持原样，可继续手动置景。'
 
 export type DiaView = {
   thread: RehearsalThread | null
@@ -470,7 +470,8 @@ export class DiaConversation {
       ...(remountUnavailable ? {} : { placementProposal: null }),
     })
     const viewOnly =
-      remountUnavailable || groundLanguage(text.trim(), currentStageContext())?.capability === 'view'
+      remountUnavailable ||
+      groundLanguage(text.trim(), currentStageContext())?.capability === 'view'
     if (!viewOnly) {
       clearProposalGhost()
       if (!this.buildProposal()) useStagePlanPreview.setState({ plan: null })
@@ -1104,10 +1105,10 @@ export class DiaConversation {
             !!previous && ['proposed', 'previewed'].includes(previous.status),
             context.performers.map((performer) => performer.name),
           )
-    const reply = async (content: string, viewOnly = false) => {
+    const reply = async (content: string, viewOnly = false, retainDraft = false) => {
       if (viewOnly)
         this.store.setState((state) => ({
-          draft: '',
+          draft: retainDraft ? state.draft : '',
           notice: state.notice === SERVICE_REQUEST_FAILURE_NOTICE ? '' : state.notice,
         }))
       else {
@@ -1300,6 +1301,7 @@ export class DiaConversation {
         await reply(
           `${requestFailed ? '' : '需要澄清：'}${error instanceof Error ? error.message : '这句话没有通过语义验证。'} 正式舞台未改变。`,
           true,
+          true,
         )
         this.status(
           parent?.status === 'previewed' ? 'waiting-human' : 'idle',
@@ -1454,9 +1456,7 @@ export class DiaConversation {
     }
     if (intent !== 'build') {
       if (this.rehearsalEnabled) return false
-      await reply(
-        '请描述布景的名称、方向与幅度，或查看版本、调整视图。当前不生成排演提案。',
-      )
+      await reply('请描述布景的名称、方向与幅度，或查看版本、调整视图。当前不生成排演提案。')
       return true
     }
     const formal = currentStageContext()

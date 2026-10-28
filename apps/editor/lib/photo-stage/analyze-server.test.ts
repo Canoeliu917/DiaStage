@@ -59,8 +59,8 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
       expect(context.name).toBe('此次照片')
       expect(context.note).toBe('台右保留一米通道。')
       expect(context.availableSceneryLibrary).toHaveLength(21)
-      expect(JSON.stringify(context.availableSceneryLibrary)).not.toContain('SCN-FLAT-090')
-      expect(JSON.stringify(input.text.format)).not.toContain('SCN-FLAT-090')
+      expect(JSON.stringify(context.availableSceneryLibrary)).not.toContain('unknown-stage-asset')
+      expect(JSON.stringify(input.text.format)).not.toContain('unknown-stage-asset')
       expect(
         context.availableSceneryLibrary.map((asset: { assetId: string }) => asset.assetId),
       ).toEqual(AVAILABLE_STAGE_SCENERY.map(({ asset }) => asset.id))
@@ -354,7 +354,7 @@ test('rejects hallucinated assets, kind conflicts, impossible transforms and arb
     { ...modelPlan(), objects: [{ ...modelPlan().objects[0], assetId: 'invented-asset' }] },
     {
       ...modelPlan(),
-      objects: [{ ...modelPlan().objects[0], assetId: 'SCN-FLAT-090', kind: 'scenic-flat' }],
+      objects: [{ ...modelPlan().objects[0], assetId: 'unknown-stage-asset', kind: 'scenic-flat' }],
     },
     { ...modelPlan(), objects: [{ ...modelPlan().objects[0], kind: 'chair' }] },
     { ...modelPlan(), objects: [{ ...modelPlan().objects[0], position: [0, -1, 0] }] },

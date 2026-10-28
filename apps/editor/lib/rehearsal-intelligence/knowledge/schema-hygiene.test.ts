@@ -22,10 +22,10 @@ function distribution(
 }
 
 describe('Dia Knowledge Schema Hygiene V0.1', () => {
-  test('reclassifies all 124 concepts without changing the inventory', () => {
-    expect(DIA_KNOWLEDGE.concepts).toHaveLength(124)
+  test('classifies all 123 current concepts', () => {
+    expect(DIA_KNOWLEDGE.concepts).toHaveLength(123)
     expect(distribution('conceptKind')).toEqual({
-      asset: 18,
+      asset: 17,
       historical_entity: 1,
       operation: 7,
       spatial_relation: 13,
@@ -34,10 +34,29 @@ describe('Dia Knowledge Schema Hygiene V0.1', () => {
     })
   })
 
+  test('retired single flats expose no aliases, relationships or placement intent', () => {
+    expect(concept('single-flat')).toBeUndefined()
+    expect(lookupAlias('单片景片').kind).toBe('not_found')
+    expect(lookupAlias('单联景片').kind).toBe('not_found')
+    expect(getExecutableIntents('single-flat')).toEqual([])
+    for (const item of DIA_KNOWLEDGE.concepts) {
+      expect(item.relations.some((relation) => relation.targetId === 'single-flat')).toBe(false)
+      expect(item.executableIntents).not.toContain('place_single_flat')
+    }
+    for (const id of [
+      'scenic-flat',
+      'door-flat',
+      'window-flat',
+      'double-fold-flat',
+      'triple-fold-flat',
+    ])
+      expect(getExecutableIntents(id).length).toBeGreaterThan(0)
+  })
+
   test('uses heuristic only for the actual stage-zone analysis rule', () => {
     expect(distribution('definitionStatus')).toEqual({
       canonical: 6,
-      descriptive: 77,
+      descriptive: 76,
       heuristic: 1,
       operational: 26,
       tradition_specific: 9,
@@ -62,11 +81,11 @@ describe('Dia Knowledge Schema Hygiene V0.1', () => {
 
   test('keeps authority and activation independent', () => {
     expect(distribution('authorityTier')).toEqual({
-      exam_notes: 114,
+      exam_notes: 113,
       institutional_teaching: 9,
       peer_reviewed: 1,
     })
-    expect(distribution('status')).toEqual({ ACTIVE: 50, FUTURE: 33, OBSERVE: 41 })
+    expect(distribution('status')).toEqual({ ACTIVE: 49, FUTURE: 33, OBSERVE: 41 })
     expect(
       DIA_KNOWLEDGE.concepts.some(
         (item) => item.status === 'ACTIVE' && item.authorityTier === 'exam_notes',
@@ -80,7 +99,7 @@ describe('Dia Knowledge Schema Hygiene V0.1', () => {
 
   test('gates execution independently from concept status and authority', () => {
     expect(distribution('executionEligibility')).toEqual({
-      allowed: 44,
+      allowed: 43,
       knowledge_only: 34,
       proposal_only: 46,
     })

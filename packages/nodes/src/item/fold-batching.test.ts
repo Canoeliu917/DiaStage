@@ -10,8 +10,8 @@ test('folding scenery retains its joint tree instead of becoming a static merged
   const item = ItemNode.parse({
     parentId: level.id,
     asset: {
-      id: 'SCN-FLAT-090',
-      name: '单帘景片',
+      id: 'test-unarticulated',
+      name: '静态测试模型',
       category: 'scenery',
       thumbnail: '/flat.png',
       src: '/flat.glb',

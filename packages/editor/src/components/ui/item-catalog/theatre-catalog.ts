@@ -7,7 +7,6 @@ export function theatreCatalogItems(items: CatalogItem[]): CatalogItem[] {
   return items.filter(
     (item) =>
       STAGE_ASSET_IDS.has(item.id) &&
-      item.id !== 'SCN-FLAT-090' &&
       (!item.tool || item.tool === 'item'),
   )
 }

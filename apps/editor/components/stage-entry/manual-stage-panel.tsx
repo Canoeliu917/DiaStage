@@ -75,13 +75,9 @@ STAGE_LIBRARY.sort(
     STAGE_OBJECT_CATEGORIES.indexOf(b.spec.category),
 )
 export const STAGE_LIBRARY_CATEGORIES = [
-  { label: '全部', source: null },
-  { label: '空间围合/景片', source: '空间围合' },
-  { label: '台块与支撑', source: '台块与支撑' },
-  { label: '门窗', source: '门窗' },
-  { label: '沙发', source: '沙发' },
-  { label: '桌', source: '桌' },
-  { label: '椅凳', source: '椅凳' },
+  { label: '布景', sources: ['空间围合', '门窗'] },
+  { label: '家具', sources: ['沙发', '桌', '椅凳'] },
+  { label: '道具', sources: ['台块与支撑'] },
 ] as const
 type PlacementDraft = { item: StageItemProposal; version: number; duplicateOf?: string }
 export const useStagePlacement = create<{
@@ -367,7 +363,7 @@ export function StageLibraryPanel() {
   const visible = STAGE_LIBRARY.filter(({ menu }) =>
     search
       ? `${menu.name} ${menu.id}`.toLocaleLowerCase().includes(search)
-      : category === 0 || menu.category === STAGE_LIBRARY_CATEGORIES[category]?.source,
+      : STAGE_LIBRARY_CATEGORIES[category]!.sources.some((source) => menu.category === source),
   )
   const state = useStagePlacement()
   const readOnly = useScene((s) => s.readOnly)
@@ -381,34 +377,35 @@ export function StageLibraryPanel() {
           <span>{STAGE_LIBRARY.length} 件</span>
         </header>
         <StagePresets />
-        <label className="stage-library-category">
-          资产分类
-          <select
-            value={category}
-            onChange={(event) => {
-              const index = Number(event.target.value)
-              const source = STAGE_LIBRARY_CATEGORIES[index]?.source
-              setCategory(index)
-              setQuery('')
-              setSelectedId(
-                STAGE_LIBRARY.find(({ menu }) => !source || menu.category === source)!.menu.id,
-              )
-            }}
-          >
-            {STAGE_LIBRARY_CATEGORIES.map(({ label }, index) => (
-              <option key={label} value={index}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="stage-category-grid" role="group" aria-label="道具分类">
+          {STAGE_LIBRARY_CATEGORIES.map(({ label, sources }, index) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={category === index && !search}
+              onClick={() => {
+                cancelStagePlacement()
+                setCategory(index)
+                setQuery('')
+                setSelectedId(
+                  STAGE_LIBRARY.find(({ menu }) =>
+                    sources.some((source) => menu.category === source),
+                  )!.menu.id,
+                )
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <input
           type="search"
           aria-label="搜索道具名称或编号"
-          placeholder="搜索名称或编号"
+          placeholder="搜索全部 21 件道具"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
+        <p className="stage-library-hint">点选道具，再点舞台放置；Esc 取消。</p>
         <div className="stage-library-grid">
           {visible.map(({ menu, entry }) => (
             <button
@@ -418,8 +415,12 @@ export function StageLibraryPanel() {
               data-model-ready={entry !== null}
               draggable={!readOnly && !!entry}
               aria-pressed={selectedId === menu.id}
-              onClick={() => setSelectedId(menu.id)}
-              onDoubleClick={() => !readOnly && entry && startStagePlacement(entry)}
+              onClick={() => {
+                setSelectedId(menu.id)
+                if (!readOnly && entry) {
+                  startStagePlacement(entry)
+                }
+              }}
               onDragStart={(event) => {
                 if (readOnly || !entry) {
                   event.preventDefault()
@@ -535,14 +536,6 @@ export function StageLibraryPanel() {
             <strong>{selected.menu.name}</strong>
             <small>{selected.menu.dimension_label}</small>
           </div>
-          <button
-            type="button"
-            className="stage-library-use"
-            disabled={readOnly || !selected.entry}
-            onClick={() => selected.entry && startStagePlacement(selected.entry)}
-          >
-            <strong>{selected.entry ? '选用' : '待接入模型'}</strong>
-          </button>
           <dialog
             ref={previewDialog}
             className="stage-library-dialog"
@@ -627,6 +620,7 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
   const nodes = useScene((s) => s.nodes)
   const readOnly = useScene((s) => s.readOnly)
   const id = nodeId ?? (selected.length === 1 ? selected[0] : undefined)
+  const modelMissing = useViewer((state) => !!(id && state.itemLoadFailures[id]))
   const object = useMemo(() => {
     if (!id) return null
     const found = currentStageContext().objects.find((item) => item.id === id)
@@ -730,6 +724,7 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
   return (
     <fieldset className="stage-object" disabled={readOnly} aria-label="布景属性">
       <legend>选中布景</legend>
+      {modelMissing && <p role="alert">模型资源缺失，原台位已保留。</p>}
       <label>
         名称
         <input
@@ -748,111 +743,120 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
           }}
         />
       </label>
-      <label>
-        <input
-          type="checkbox"
-          checked={locked}
-          disabled={locked && node?.metadata.stageLocked !== true}
-          onChange={(event) => run({ type: 'SetObjectLock', locked: event.target.checked })}
-        />
-        锁定位置与属性
-      </label>
-      <button
-        type="button"
-        className="stage-shape-reset"
-        disabled={locked}
-        onClick={() =>
-          useStagePlacement.setState({ notice: resetStageObjectShape(object.id).message })
-        }
-      >
-        形状初始化
-      </button>
-      <FoldingPanel nodeId={object.id} />
       <fieldset className="stage-object-transform" disabled={locked || foldingId === object.id}>
-        <PropRotationControls nodeId={object.id} />
-        <details data-stage-dimensions>
-          <summary>尺寸与精确位置</summary>
-          <div className="stage-property-grid" data-stage-position-fields>
-            {(['x', 'y', 'z'] as const).map((axis, i) => (
-              <NumberInput
-                key={axis}
-                label={['台右位置 / 厘米', '高度 / 厘米', '距台口 / 厘米'][i]!}
-                value={object.transform.position[axis] * 100}
-                integer
-                onCommit={(value) =>
-                  run({
-                    type: 'MoveObject',
-                    position: { ...object.transform.position, [axis]: value / 100 },
-                  })
-                }
-              />
-            ))}
-          </div>
-          <div className="stage-property-grid" data-stage-size-fields>
-            {(['width', 'height', 'depth'] as const).map((axis, i) => (
-              <NumberInput
-                key={axis}
-                min={0.01}
-                label={['宽 / 米', '高 / 米', '深 / 米'][i]!}
-                value={object.dimensionsMeters[axis]}
-                onCommit={(value) =>
-                  run({
-                    type: 'ResizeObject',
-                    dimensionsMeters: { ...object.dimensionsMeters, [axis]: value },
-                  })
-                }
-              />
-            ))}
-          </div>
-        </details>
-        {node?.type === 'block' && (
-          <label>
-            布景表面
-            <select
-              aria-label="布景表面"
-              value={
-                finish === 'library:preset-white'
-                  ? 'white'
-                  : finish === 'library:preset-nearblack'
-                    ? 'dark'
-                    : 'neutral'
-              }
-              onChange={(event) => run({ type: 'SetScenicFinish', finish: event.target.value })}
-            >
-              <option value="neutral">中性灰</option>
-              <option value="white">哑光白</option>
-              <option value="dark">炭黑</option>
-            </select>
-          </label>
-        )}
-        <label>
-          <input
-            type="checkbox"
-            checked={node?.visible === false}
-            onChange={(event) =>
-              run({ type: 'SetObjectVisibility', visible: !event.target.checked })
-            }
-          />
-          隐藏
-        </label>
-        <div className="stage-manual-actions">
+        <div className="stage-object-position">
+          <span>位置</span>
           <button type="button" onClick={() => startStagePlacement(entry, object)}>
             移动落位
           </button>
-          <button type="button" onClick={() => startStagePlacement(entry, object, true)}>
-            复制后落位
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm(`删除「${object.name}」？删除后可以撤销。`))
-                run({ type: 'RemoveObject' })
-            }}
-          >
-            删除
-          </button>
         </div>
+        <PropRotationControls nodeId={object.id} compact />
+        <label className="stage-object-visibility">
+          <input
+            type="checkbox"
+            checked={node?.visible !== false}
+            onChange={(event) =>
+              run({ type: 'SetObjectVisibility', visible: event.target.checked })
+            }
+          />
+          在舞台中显示
+        </label>
       </fieldset>
+      <details className="stage-object-more">
+        <summary>更多调整</summary>
+        <label>
+          <input
+            type="checkbox"
+            checked={locked}
+            disabled={locked && node?.metadata.stageLocked !== true}
+            onChange={(event) => run({ type: 'SetObjectLock', locked: event.target.checked })}
+          />
+          锁定位置与属性
+        </label>
+        <button
+          type="button"
+          className="stage-shape-reset"
+          disabled={locked}
+          onClick={() =>
+            useStagePlacement.setState({ notice: resetStageObjectShape(object.id).message })
+          }
+        >
+          形状初始化
+        </button>
+        <FoldingPanel nodeId={object.id} />
+        <fieldset className="stage-object-transform" disabled={locked || foldingId === object.id}>
+          <PropRotationControls nodeId={object.id} />
+          <details data-stage-dimensions>
+            <summary>尺寸与精确位置</summary>
+            <div className="stage-property-grid" data-stage-position-fields>
+              {(['x', 'y', 'z'] as const).map((axis, i) => (
+                <NumberInput
+                  key={axis}
+                  label={['台右位置 / 厘米', '高度 / 厘米', '距台口 / 厘米'][i]!}
+                  value={object.transform.position[axis] * 100}
+                  integer
+                  onCommit={(value) =>
+                    run({
+                      type: 'MoveObject',
+                      position: { ...object.transform.position, [axis]: value / 100 },
+                    })
+                  }
+                />
+              ))}
+            </div>
+            <div className="stage-property-grid" data-stage-size-fields>
+              {(['width', 'height', 'depth'] as const).map((axis, i) => (
+                <NumberInput
+                  key={axis}
+                  min={0.01}
+                  label={['宽 / 米', '高 / 米', '深 / 米'][i]!}
+                  value={object.dimensionsMeters[axis]}
+                  onCommit={(value) =>
+                    run({
+                      type: 'ResizeObject',
+                      dimensionsMeters: { ...object.dimensionsMeters, [axis]: value },
+                    })
+                  }
+                />
+              ))}
+            </div>
+          </details>
+          {node?.type === 'block' && (
+            <label>
+              布景表面
+              <select
+                aria-label="布景表面"
+                value={
+                  finish === 'library:preset-white'
+                    ? 'white'
+                    : finish === 'library:preset-nearblack'
+                      ? 'dark'
+                      : 'neutral'
+                }
+                onChange={(event) => run({ type: 'SetScenicFinish', finish: event.target.value })}
+              >
+                <option value="neutral">中性灰</option>
+                <option value="white">哑光白</option>
+                <option value="dark">炭黑</option>
+              </select>
+            </label>
+          )}
+          <div className="stage-manual-actions">
+            <button type="button" onClick={() => startStagePlacement(entry, object, true)}>
+              复制后落位
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`删除「${object.name}」？删除后可以撤销。`))
+                  run({ type: 'RemoveObject' })
+              }}
+            >
+              删除
+            </button>
+          </div>
+        </fieldset>
+      </details>
     </fieldset>
   )
 }

@@ -24,7 +24,7 @@ for (const id of removed) delete graph.nodes[id as string]
 for (const node of Object.values(graph.nodes) as any[])
   if (node.children) node.children = node.children.filter((id: string) => !removed.has(id))
 const level = Object.values(graph.nodes).find((node: any) => node.type === 'level') as any
-const source = AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === 'SCN-FLAT-090')!
+const source = AVAILABLE_STAGE_SCENERY.find((entry) => entry.asset.id === 'SCN-WIN-130')!
 const ids: string[] = []
 for (const [name, position] of [
   ['景片甲', [-1.7, 0, 0]],
