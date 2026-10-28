@@ -57,7 +57,7 @@ test('floor means the native bottom pivot, not half the table height, without mu
   const result = groundPhotoSupports(input, { table: floor() })
   expect(result.objects[0]!.position).toEqual([0, 0, 0])
   expect(result.objects[0]!.dimensions).toEqual(input.objects[0]!.dimensions)
-  expect(result.uncertainties[0]).toContain('按明确支撑关系推导')
+  expect(result.uncertainties[0]).toBe('请核对落地与叠放高度。')
   expect(JSON.stringify(input)).toBe(before)
 })
 
@@ -93,7 +93,7 @@ test('a scenic flat can explicitly stand on a platform and elevated geometry ret
     { flat: on('base'), hanging: elevated(1.7), base: floor() },
   )
   expect(result.objects.map((item) => item.position[1])).toEqual([0.3, 1.7, 0])
-  expect(result.uncertainties.some((text) => text.includes('未验证挂装结构'))).toBe(true)
+  expect(result.uncertainties).toContain('离地高度为估算，请核实挂装支撑。')
   expect(
     groundPhotoSupports(plan(object('tiny')), { tiny: elevated(1e-10) }).objects[0]!.position[1],
   ).toBe(1e-10)

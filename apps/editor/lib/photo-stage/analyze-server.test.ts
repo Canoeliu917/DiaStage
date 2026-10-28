@@ -83,9 +83,7 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
   expect(plan.objects).toHaveLength(1)
   expect(plan.objects[0]!.assetId).toBe('SCN-CUBE-045')
   expect(plan.objects[0]).not.toHaveProperty('color')
-  expect(plan.uncertainties.some((message) => message.includes('替身道具使用库内标准尺寸'))).toBe(
-    true,
-  )
+  expect(plan.uncertainties).toContain('场地为估算，请核对尺寸与摆位。')
   expect(plan.objects[0]!.kind).toBe('neutral-block')
   expect(plan.objects[0]!.dimensions).toEqual({ width: 0.45, height: 0.45, depth: 0.45 })
   expect(plan.objects[0]!.position).toEqual([1, 0, 1])

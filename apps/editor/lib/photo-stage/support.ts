@@ -132,8 +132,8 @@ export function groundPhotoSupports(
   }
   plan.objects.forEach(resolve)
   plan.uncertainties = [
-    ...(derived ? ['落地及叠放高度已按明确支撑关系推导，位置与尺寸仍须人工确认。'] : []),
-    ...(elevated ? ['离地或挂装物件采用明确的估计底部高度，未验证挂装结构，须人工确认。'] : []),
+    ...(derived ? ['请核对落地与叠放高度。'] : []),
+    ...(elevated ? ['离地高度为估算，请核实挂装支撑。'] : []),
     ...plan.uncertainties,
   ].slice(0, 30)
   const checked = PhotoStagePlanSchema.safeParse(plan)

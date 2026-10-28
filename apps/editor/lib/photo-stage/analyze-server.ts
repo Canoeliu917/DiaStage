@@ -23,6 +23,7 @@ note 是用户补充的布景要求，可用于调整可见布景的方案，但
 只重建照片可见的大型舞台布景及其位置、尺寸、方向、颜色。不要生成照明、人物、摄影机、音响、室内装修，也不要将它们伪装成布景。不得套用固定示例或添加照片不存在的物件。
 只从 availableSceneryLibrary 选择真实 assetId，保留目录标准尺寸与原生比例。不得输出尺寸、缩放或自由形体，不把圆桌拉成椭圆，不把普通台块扭成楔形。目录 dimensions 顺序为宽、高、深，不能把单片尺寸当整体外框。没有同款时按排练用途和轮廓选择最接近的库内替身，在 name 标清“原道具名称（替身：库内名称）”，并在 uncertainties 说明差异；例如钢琴可用桌类替身，扶手座椅可用短沙发。不得新增库外模型。大面积台面可用标准台块接边组合；不得用单件拉伸填满整个台面。
 照片没有已知实测尺寸。stage.width/depth 和平面位置是结合标准道具尺寸估算的排练布局，不是写实扫描；在 summary 和 uncertainties 中明确替代关系、遮挡和无法确定的部分，禁止宣称与照片完全一致或精确测量。宁可保留不确定性，不臆造隐藏结构。若照片无法识别舞台布景，objects 为空并说明原因。
+summary 只用一句概括；uncertainties 每项只写一个具体待核对事项，用短句并合并重复，不重复系统已提供的通用估算或高度提示，不写过程、API 或测试记录；不得省略必要的替代、遮挡、支撑或通行问题。
 坐标单位米，原点在舞台地面中心，X 正向为观众看照片的画面右侧（演员面向观众时的台左），Y 向上，Z 正向为台前和观众方向，负Z为台后。台口 z=stage.depth/2，台后 z=-stage.depth/2；按照照片透视理解前后，不把二维图像纵坐标直接当空间深度。
 position 只填写物件原生支点的 x/z 平面坐标，不填写高度。目录 boundsCenter 是模型外框中心相对原生支点的偏移，摆位时保留此偏移，不把外框中心当支点。
 support 声明摆放关系，由程序用实际几何计算高度：floor 表示站在舞台地面，objectId/bottomHeightMeters 均为null；object 表示放在本方案某一台块/支撑物上，objectId必须引用其id，bottomHeightMeters为null。桌子落地不是桌高的一半，桌子站在台块上也不是高度清零；依次先让台块接地，再让桌子底面接触台块顶面。不要循环引用、凭空引用或选旁边没有横向接触的物件作支撑，不默认以桌椅作承重台。
@@ -161,10 +162,10 @@ export async function analyzePhotoStage(
     )
   const result = PhotoStagePlanSchema.safeParse({
     ...structured.data,
-    uncertainties: [
-      '舞台宽深及位置按照片估算；替身道具使用库内标准尺寸，不代表照片原物实测尺寸。',
-      ...structured.data.uncertainties,
-    ].slice(0, 30),
+    uncertainties: ['场地为估算，请核对尺寸与摆位。', ...structured.data.uncertainties].slice(
+      0,
+      30,
+    ),
     objects: structured.data.objects.map(
       ({ color, hingeAngles, position, support: _, ...object }) => {
         const { kind, asset } = AVAILABLE_STAGE_SCENERY.find(

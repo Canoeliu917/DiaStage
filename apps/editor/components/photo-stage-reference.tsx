@@ -51,8 +51,7 @@ export function PhotoStageReference({ sceneId }: { sceneId: string }) {
           <h2>{plan.name}</h2>
           <p>{plan.summary}</p>
           <p className="photo-stage-reference-estimate">
-            照片初始估算：宽 {plan.stage.width} m × 深 {plan.stage.depth}{' '}
-            m。尺寸来自照片推测，请按实测校准。
+            场地暂按 {plan.stage.width} × {plan.stage.depth} 米，请按实测校准。
           </p>
           {plan.uncertainties.length > 0 && (
             <div>
