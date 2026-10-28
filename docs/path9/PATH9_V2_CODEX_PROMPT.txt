@@ -1,0 +1,25 @@
+从 PR #4 的 c2691e6（codex/path9-desktop-ui）继续。
+只做 PATH9-V2 清单里的 15 条（FONT1…GATE），系统整体抬到电脑六维均≥9、加权≥9。
+字体硬锁：Courier + 汇文明朝 + 思源黑体，禁止换 Inter/Geist。
+移动/平板/投影/remount 暂缓。做完在 PR 里写 verify 结果。
+附：PATH9_V2_CODEX.json + PATH9_V2_CODEX.md
+
+你正在修改 GitHub 仓库 https://github.com/Canoeliu917/DiaStage 。
+
+【基线】从 PR #4 最新提交继续：`c2691e6f506fd7a3e006c312f879d65c9ebfa132`（分支 `codex/path9-desktop-ui`）。当前设计综合约 7.6，目标每维 ≥9、加权 ≥9.0。
+
+【范围】只改网站 UI / 视觉 / 交互体验（智能化·便捷化·简洁化的界面层）。不改模型选型、密钥流程、剧本解析内核、付费 API。手机/平板/投影/复台仍暂缓，但桌面必须冲过 9。
+
+【字体硬锁 — 禁止换字体】
+沿用现有个性字体栈，禁止引入 Inter / Roboto / system-ui 作为 UI 主字体，禁止删除或替换下列变量与文件：
+- CSS：`--dia-font-ui: var(--font-dia-latin), var(--font-huiwen-mincho), var(--font-source-han-sans), "Microsoft YaHei", serif;`（见 `apps/editor/app/design-tokens.css`）
+- 拉丁 / 英文气质：Courier New / `--font-dia-latin`（DESIGN.md：英文 Courier New）
+- 中文：汇文明朝 `--font-huiwen-mincho` + 思源黑体 `--font-source-han-sans`（`apps/editor/app/fonts/huiwen-mincho/`、`apps/editor/app/fonts/source-han-sans/`）
+- `layout.tsx` 中 `sourceHanSans` localFont 保留
+任何 PR 若改动 font-family 主栈或新增第三品牌字体 → 视为失败。
+
+【产品气质】排练室 + 成稿台；黑白灰 + 一盏追光色；界面像热门 AI 搜索/功能站（Perplexity 安静阅读栏 + 脚注、ChatGPT 底栏 Composer/+菜单/停止、Claude 侧栏成稿、豆包场景卡、Kimi 低密度首屏），但文案用戏剧词，禁止 Prompt/Token/Agent/Inference 默认文案。
+
+【机读任务表】同目录 `PATH9_V2_CODEX.json`。按 id 顺序实现；每完成一项把 `status` 改为 `done` 并写 `evidence`。
+
+【验收】全部 status=done 且 gate 通过后，才能在 PR 描述自估加权 ≥9.0。用 Draft PR 提交，列出关闭的 task id。
