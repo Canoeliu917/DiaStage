@@ -12,7 +12,8 @@
     "scope_decisions": [
       "保持置景主线，隐藏排演/复台和语音；流程改为放景→调整→保存。",
       "用户明确要求删除单帘，不保留隐藏兼容资源。",
-      "用户再次确认：平板、手机、投影和复台暂缓。本轮撤回新增移动端适配，只验收电脑屏幕。"
+      "用户再次确认：平板、手机、投影和复台暂缓。本轮撤回新增移动端适配，只验收电脑屏幕。",
+      "2026-10-28 后续要求收窄全站留白并缩小字体：B3 改为鼠标桌面正文/输入13px，G1 改为常用32px紧凑控件及误点人工验收。"
     ],
     "score_state": "原始评分仅为用户提供的基线；本轮尚未评分，不代表当前验收结果。"
   },
@@ -134,12 +135,12 @@
       "id": "B3",
       "section": "B",
       "status": "done",
-      "do": "正文14-15px 线高1.5-1.8；Courier+思源",
+      "do": "鼠标桌面正文/输入13px 线高1.45，辅助12px/1.4；Courier+思源",
       "touch": [
         "globals.css"
       ],
       "verify": "DevTools字号字体",
-      "evidence": "evidence/measurements.json：正文14px/23.1px(Courier New+sourceHanSans)，输入16px",
+      "evidence": "compact-desktop.md：正文与输入13px/18.85px(Courier New+sourceHanSans)，日夜截图已更新",
       "implementation": "complete"
     },
     {
@@ -311,14 +312,14 @@
       "id": "G1",
       "section": "G",
       "status": "todo",
-      "do": "电脑网页热区≥44x44 CSS px",
+      "do": "电脑鼠标常用控件最小32px，工具轨40px；减少留白且保留焦点，不使用全页缩放",
       "touch": [
         "theatre.css",
         "stage-entry"
       ],
-      "verify": "电脑网页按钮和侧栏操作热区≥44；不据此宣称移动端通过",
-      "evidence": "桌面常用按钮/输入/侧栏已扩大；1440宽品牌返回、其他提案、详情设置高44px，但收藏提案仍33.09375px，尚未全覆盖；不作为移动端验收",
-      "implementation": "partial"
+      "verify": "计算尺寸与日夜截图；真实使用者确认可读且鼠标无明显误点，不据此宣称触屏通过",
+      "evidence": "compact-desktop.md：附件32x32，侧栏标题36，总览行36.20；真实使用者误点验收待做",
+      "implementation": "complete"
     },
     {
       "id": "G2",
@@ -403,5 +404,5 @@
     "real_touch_device": "deferred_by_user",
     "weighted_score": "not_evaluated; no >=9.0 claim"
   },
-  "verified_source": "43c4cf5f18a9442be9bf76b01112dfbba4cacb7b"
+  "verified_source": "5cd2ac167fbae6b2654545bd35e47c3bad614a64"
 }
