@@ -112,7 +112,7 @@ export function StageContactSystem({ enabled }: { enabled: boolean }) {
       penetrationMessage = below.length
         ? `${below.map((object) => object.name).join('、')}：物体底部低于舞台面。`
         : overlaps.length
-          ? `与「${overlaps.map((object) => object.name).join('、')}」存在实际几何重叠。`
+          ? `和「${overlaps.map((object) => object.name).join('、')}」叠在一起了。`
           : '与当前预演方案存在几何重叠；可取消预演后检查。'
     }
     const previous = useStageContactFeedback.getState()
@@ -127,7 +127,7 @@ export function StageContactSystem({ enabled }: { enabled: boolean }) {
       signature,
       contactKey,
       message: penetrating
-        ? `${penetrationMessage}确认布局不会消除此提示。`
+        ? penetrationMessage
         : touching
           ? `${mates.length ? mates.map((object) => object.name).join('、') : '舞台地面'}：已贴合 · 间距 0（数值容差内）`
           : objects.length

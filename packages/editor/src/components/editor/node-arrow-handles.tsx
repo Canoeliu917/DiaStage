@@ -164,7 +164,9 @@ function formatDimension(value: number, unit: 'metric' | 'imperial'): string {
     if (inches === 12) return `${wholeFeet + 1}'0"`
     return `${wholeFeet}'${inches}"`
   }
-  return `${Number.parseFloat(value.toFixed(2))}m`
+  const centimetres = Math.round(value * 100)
+  if (centimetres % 100 === 0) return `${centimetres / 100} 米`
+  return `${centimetres} 厘米`
 }
 
 // In-world dimension chip rendered next to a resize arrow during hover

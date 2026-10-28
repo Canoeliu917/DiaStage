@@ -515,7 +515,9 @@ function MeasurementLabel({
         style={{
           color: compact ? `var(--dia-text, ${color})` : color,
           backgroundColor: compact ? `var(--dia-panel, ${shadowColor})` : undefined,
-          textShadow: compact ? undefined : `-1.5px -1.5px 0 ${shadowColor}, 1.5px -1.5px 0 ${shadowColor}, -1.5px 1.5px 0 ${shadowColor}, 1.5px 1.5px 0 ${shadowColor}, 0 0 4px ${shadowColor}, 0 0 4px ${shadowColor}`,
+          textShadow: compact
+            ? undefined
+            : `-1.5px -1.5px 0 ${shadowColor}, 1.5px -1.5px 0 ${shadowColor}, -1.5px 1.5px 0 ${shadowColor}, 1.5px 1.5px 0 ${shadowColor}, 0 0 4px ${shadowColor}, 0 0 4px ${shadowColor}`,
         }}
       >
         {label}
@@ -533,8 +535,6 @@ function SelectedMeasurementAnnotation({ node }: { node: WallNode | ItemNode }) 
 }
 
 function ItemMeasurementAnnotation({ node }: { node: ItemNode }) {
-  const unit = useViewer((state) => state.unit)
-  const metricNotation = useViewer((state) => state.metricNotation)
   const isNight = useViewer((state) => getSceneTheme(state.sceneTheme).appearance === 'dark')
   const color = isNight ? '#ffffff' : '#111111'
   const shadowColor = isNight ? '#111111' : '#ffffff'
@@ -545,15 +545,17 @@ function ItemMeasurementAnnotation({ node }: { node: ItemNode }) {
     { name: '深', size: d },
     { name: '高', size: h },
   ]
+  const spoken = (meters: number) => {
+    const centimetres = Math.round(Math.abs(meters) * 100)
+    return centimetres % 100 === 0 ? `${centimetres / 100} 米` : `${centimetres} 厘米`
+  }
   return (
     <group name="item-measurement-guides">
       <MeasurementLabel
         compact
         color={color}
         shadowColor={shadowColor}
-        label={dimensions
-          .map(({ name, size }) => `${name} ${formatLinearMeasurement(size, unit, metricNotation)}`)
-          .join(' · ')}
+        label={dimensions.map(({ name, size }) => `${name} ${spoken(size)}`).join(' · ')}
         position={[x, y + h / 2 + 0.18, z]}
       />
     </group>

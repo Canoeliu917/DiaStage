@@ -27,6 +27,7 @@ import { stageContactIds } from '@/lib/stage/contacts'
 import { stageKindLabels } from '@/lib/stage/labels'
 import { stageVisibleFootprints } from '@/lib/stage/model-contact'
 import { useStagePlanPreview, withoutPlanTransforms } from '@/lib/stage/plan-preview'
+import { describeStagePoint } from '@/lib/stage/rehearsal-measure'
 import { DIA_COLORS } from '@/lib/visual-system'
 import { useStagePlacement } from './manual-stage-panel'
 import { planPreviewEdges, planPreviewLabels } from './plan-preview-layout'
@@ -572,26 +573,29 @@ function Metric({
   label,
   value,
   update,
-  min = 0.01,
+  min = 1,
+  centimeters = false,
 }: {
   label: string
   value: number
   update: (value: number) => void
   min?: number
+  centimeters?: boolean
 }) {
+  const shown = Math.round(centimeters ? value * 100 : value)
   return (
     <label>
       {label}
       <input
         type="number"
-        inputMode="decimal"
-        step="any"
+        inputMode="numeric"
+        step={1}
         min={min}
-        max={1000}
-        value={Number(value.toFixed(3))}
+        max={centimeters ? 100000 : 1000}
+        value={shown}
         onChange={(event) => {
           if (event.target.value !== '' && event.currentTarget.validity.valid)
-            update(Number(event.target.value))
+            update(centimeters ? Number(event.target.value) / 100 : Number(event.target.value))
         }}
       />
     </label>
@@ -806,7 +810,7 @@ export function StagePlanReview({
                 type="number"
                 min={1}
                 max={1000}
-                step=".1"
+                step="1"
                 placeholder="尚未测量"
                 value={venue?.heightMeters ?? ''}
                 onChange={(event) => {
@@ -862,14 +866,14 @@ export function StagePlanReview({
                       <small>类型：{stageKindLabels[item.kind]}</small>
                       <p>
                         {stagePositionLabel(item.transform.position, venue?.depthMeters ?? 6)} ·
-                        距中心线 {Math.abs(item.transform.position.x).toFixed(2)} 米 · 距台口{' '}
-                        {item.transform.position.z.toFixed(2)} 米
+                        {describeStagePoint(item.transform.position, venue?.depthMeters ?? 6)}
                       </p>
                       <div className="stage-entry-metrics">
                         {(['width', 'depth', 'height'] as const).map((key, i) => (
                           <Metric
                             key={key}
-                            label={['宽 / 米', '深 / 米', '高 / 米'][i]!}
+                            label={['宽 / 厘米', '深 / 厘米', '高 / 厘米'][i]!}
+                            centimeters
                             value={item.dimensionsMeters[key]}
                             update={(value) =>
                               updateItem(item.proposalId, {
@@ -885,8 +889,9 @@ export function StagePlanReview({
                           {(['x', 'y', 'z'] as const).map((axis, i) => (
                             <Metric
                               key={axis}
-                              label={['台右位置 / 米', '高度 / 米', '距台口 / 米'][i]!}
-                              min={axis === 'y' ? 0 : -1000}
+                              label={['台右位置 / 厘米', '高度 / 厘米', '距台口 / 厘米'][i]!}
+                              min={axis === 'y' ? 0 : -100000}
+                              centimeters
                               value={item.transform.position[axis]}
                               update={(value) =>
                                 updateItem(

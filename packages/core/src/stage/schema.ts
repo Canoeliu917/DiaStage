@@ -197,6 +197,8 @@ export const StageCommandSchema = z.discriminatedUnion('type', [
     libraryAssetId: IdSchema.nullable(),
     dimensionsMeters: StageDimensionsSchema,
     stepCount: z.number().int().min(1).max(200).optional(),
+    // Straight-wall drops. Omitted placements keep the authored 90° fold.
+    foldAngles: z.array(z.number().finite().min(0).max(360)).min(1).max(2).optional(),
     transform: StageTransformSchema,
   }),
   z.strictObject({ type: z.literal('MoveObject'), ...node, position: StagePointSchema }),
