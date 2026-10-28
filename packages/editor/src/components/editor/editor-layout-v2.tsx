@@ -354,7 +354,7 @@ function LeftColumn({
       style={{
         width: toolsHidden && overviewHidden ? 160 : RAIL_WIDTH + width,
         transition: isDragging ? 'none' : 'width 150ms ease',
-        gridTemplateRows: `${toolsHidden ? '48px' : `minmax(0, ${overviewHidden ? 1 : topRatio}fr)`} ${splitVisible ? SPLIT_HANDLE_HEIGHT : 0}px ${overviewHidden ? '48px' : `minmax(0, ${toolsHidden ? 1 : 1 - topRatio}fr)`}`,
+        gridTemplateRows: `${toolsHidden ? 'var(--editor-pane-header-height, 48px)' : `minmax(0, ${overviewHidden ? 1 : topRatio}fr)`} ${splitVisible ? SPLIT_HANDLE_HEIGHT : 0}px ${overviewHidden ? 'var(--editor-pane-header-height, 48px)' : `minmax(0, ${toolsHidden ? 1 : 1 - topRatio}fr)`}`,
         alignContent: toolsHidden && overviewHidden ? 'start' : undefined,
       }}
     >

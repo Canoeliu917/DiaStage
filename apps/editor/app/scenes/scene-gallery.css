@@ -30,3 +30,31 @@
 .dia-gallery-cover-pending > span { font-size: 20px; }
 .dia-gallery-cover-pending p { margin-top: 15px; font-size: 12px; }
 .dia-scene-gallery .ds-library-footer { padding-block: 30px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .dia-scene-gallery .ds-library-header { gap: 16px; padding: 12px 24px; }
+  .dia-scene-gallery .ds-library-actions a { gap: 6px; padding-block: 6px; }
+  .dia-scene-gallery .dia-account-menu { gap: 8px; }
+  .dia-scene-gallery .ds-library-main { padding: 24px 24px 16px; }
+  .dia-scene-gallery .ds-library-heading { gap: 16px; padding-bottom: 20px; }
+  .dia-scene-gallery .dia-gallery-kicker { margin-bottom: 8px; font-size: 12px; }
+  .dia-scene-gallery .ds-library-heading h1 { margin-bottom: 8px; font-size: 24px; }
+  .dia-scene-gallery :is(.ds-library-heading, .ds-library-empty) button { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+  .dia-scene-gallery .ds-library-count { padding: 8px 0; }
+  .dia-scene-gallery .ds-scene-entry { padding: 20px 0; }
+  .dia-scene-gallery .ds-scene-image { padding: 8px; }
+  .dia-scene-gallery .ds-scene-info { margin-top: 12px; }
+  .dia-scene-gallery .dia-gallery-title-row { gap: 12px; }
+  .dia-scene-gallery .ds-scene-info h2 { font-size: 18px; }
+  .dia-scene-gallery .ds-scene-open { gap: 8px; }
+  .dia-scene-gallery .ds-scene-meta { margin-top: 10px; }
+  .dia-scene-gallery .dia-gallery-medium { margin-top: 6px; font-size: 12px; }
+  .dia-scene-gallery .dia-gallery-dimensions { gap: 6px 12px; margin-top: 8px; }
+  .dia-scene-gallery .dia-gallery-cover-pending { padding: 20px; }
+  .dia-scene-gallery .dia-gallery-cover-pending > span { font-size: 18px; }
+  .dia-scene-gallery .dia-gallery-cover-pending p { margin-top: 8px; }
+  .dia-scene-gallery .ds-library-empty { min-height: 260px; gap: 12px; }
+  .dia-scene-gallery .ds-library-empty h2 { font-size: 20px; }
+  .dia-scene-gallery .ds-library-empty p { font-size: 13px; }
+  .dia-scene-gallery .ds-library-footer { padding-block: 16px; }
+}

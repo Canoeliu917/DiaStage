@@ -265,6 +265,119 @@ html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
   }
 }
 
+@media (hover: hover) and (pointer: fine) {
+  html[data-stage-theme] .studio-workspace {
+    --dia-type-ui: 13px;
+    --dia-type-body: 13px;
+    --dia-line-body: 1.45;
+    --editor-pane-header-height: 36px;
+  }
+
+  html[data-stage-theme] .studio-workspace :is(.theatre-panel, .stage-manual, .stage-overview, .dia-panel, .stage-library-grid strong, .stage-library-preview > div > strong, .stage-presets > summary, .dia-secondary, .dia-input-examples, .stage-controls-help > div) {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  html[data-stage-theme] .studio-workspace :is(.stage-library-grid small, .stage-library-preview small, .dia-message-system-state, .dia-attachment-hint, .stage-task-cards span, .stage-plan-review p, .stage-plan-review li, .stage-plan-review figcaption) {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  html[data-stage-theme] .studio-workspace :is(.studio-navigation, .stage-manual, .theatre-panel, .stage-overview, .dia-panel, .studio-property-tabs, .diastage-viewer-toolbar, .stage-first-visit, .stage-grid-popover) :is(button, select, summary):not(.stage-fold-point, .stage-fold-angle-handle) {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px 6px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  html[data-stage-theme] .studio-workspace :is(input, textarea, select) {
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  html[data-stage-theme] .studio-workspace input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]),
+  html[data-stage-theme] .studio-workspace .stage-manual select {
+    min-height: 32px;
+    padding: 4px 6px;
+  }
+
+  html[data-stage-theme] .studio-workspace .studio-navigation {
+    min-height: 44px;
+    padding: 4px 10px !important;
+    gap: 8px !important;
+  }
+
+  html[data-stage-theme] .studio-navigation :is(.studio-identity, .studio-navigation-actions, .studio-workspaces) { gap: 4px; }
+  html[data-stage-theme] .studio-navigation .studio-identity > img { width: 24px; height: 24px; }
+  html[data-stage-theme] .studio-workspace .studio-navigation a.studio-wordmark { min-height: 32px; font-size: 22px; }
+  html[data-stage-theme] .studio-workspace .studio-navigation .studio-brand-cn { font-size: 20px; }
+  html[data-stage-theme] .studio-navigation .studio-navigation-actions > a { min-height: 32px; padding: 4px 6px; font-size: 12px; }
+  html[data-stage-theme] .studio-navigation .studio-mobile-menu[open] > div { top: 40px; gap: 4px; padding: 8px; }
+
+  html[data-stage-theme] .studio-workspace .editor-pane-controls { height: var(--editor-pane-header-height); min-height: var(--editor-pane-header-height); padding-inline: 6px; }
+  html[data-stage-theme] .studio-workspace .editor-pane-controls button { width: 32px; height: 32px; padding: 0; }
+  html[data-stage-theme] .studio-workspace .diastage-tool-rail { width: 44px; padding: 4px 2px; gap: 2px; }
+  html[data-stage-theme] .studio-workspace .diastage-tool-rail button { width: 40px; min-height: 40px; padding: 4px 2px; }
+  html[data-stage-theme] .studio-workspace .diastage-tool-rail button > span:last-child { font-size: 11px; }
+  html[data-stage-theme] .studio-workspace .diastage-viewer-toolbar { inset: 8px 8px auto; gap: 6px; }
+  html[data-stage-theme] .studio-workspace :is(.stage-edit-toolbar, .diastage-viewer-toolbar > div) { gap: 4px; }
+  html[data-stage-theme] .studio-workspace .diastage-viewer-column button[aria-label="视图朝北"] { width: 32px; height: 32px; min-width: 32px; min-height: 32px; }
+  html[data-stage-theme] .studio-workspace .stage-grid-controls { left: 52px; bottom: 12px; }
+  html[data-stage-theme] .studio-workspace .stage-grid-controls > summary { min-height: 32px; padding: 4px 6px; }
+  html[data-stage-theme] .studio-workspace :is(.stage-grid-popover, .stage-display-toolbar) { gap: 4px; padding: 6px; }
+
+  html[data-stage-theme] .studio-workspace :is(.stage-manual, .theatre-panel) { padding: 8px; gap: 6px; }
+  html[data-stage-theme] .studio-workspace .theatre-panel header { padding-bottom: 8px; margin-bottom: 8px; }
+  html[data-stage-theme] .studio-workspace :is(.stage-manual, .theatre-panel) h2 { font-size: 14px; }
+  html[data-stage-theme] .studio-workspace :is(.theatre-panel fieldset, .th-card form, .stage-object, .stage-object-transform, .stage-manual-snaps) { gap: 8px; }
+  html[data-stage-theme] .studio-workspace .theatre-panel > :is(label, button, details) { margin-block: 4px; }
+  html[data-stage-theme] .studio-workspace .th-card { padding: 8px; }
+  html[data-stage-theme] .studio-workspace .studio-assets-dock > .studio-venue { padding: 4px 8px; }
+  html[data-stage-theme] .studio-workspace .studio-property-tabs { padding: 4px 6px; }
+  html[data-stage-theme] .studio-workspace .stage-library-grid { gap: 4px; }
+  html[data-stage-theme] .studio-workspace .stage-library-grid button { grid-template-columns: 40px minmax(0, 1fr); min-height: 54px; gap: 6px; padding: 6px; }
+  html[data-stage-theme] .studio-workspace .stage-library-copy { gap: 2px; }
+  html[data-stage-theme] .studio-workspace .stage-library-hint { margin: 4px 0; }
+  html[data-stage-theme] .studio-workspace .stage-library-preview { grid-template-columns: 28px minmax(0, 1fr) auto; padding: 4px; }
+  html[data-stage-theme] .studio-workspace .stage-object { margin-top: 2px; padding-top: 8px; }
+  html[data-stage-theme] .studio-workspace :is(.stage-object-visibility, .stage-object-more > label) { min-height: 32px; }
+  html[data-stage-theme] .studio-workspace .stage-object-more > :not(summary) { margin-top: 6px; }
+
+  html[data-stage-theme] .studio-workspace .stage-overview-heading { padding: 4px 6px; }
+  html[data-stage-theme] .studio-workspace .stage-overview-search { padding: 0 4px; gap: 4px; }
+  html[data-stage-theme] .studio-workspace .stage-overview table { min-width: 210px; }
+  html[data-stage-theme] .studio-workspace :is(.stage-overview-state-column, .stage-overview-action-column) { width: 32px; }
+  html[data-stage-theme] .studio-workspace .stage-overview th { height: 28px; }
+  html[data-stage-theme] .studio-workspace .stage-overview td { height: 36px; padding-block: 0; }
+  html[data-stage-theme] .studio-workspace .stage-overview td > button { padding: 0; }
+  html[data-stage-theme] .studio-workspace .stage-overview-footer { padding: 4px 6px; gap: 4px; }
+
+  html[data-stage-theme] .studio-workspace .dia-dock-controls { top: 4px; right: 6px; gap: 4px; }
+  html[data-stage-theme] .studio-workspace :is(.dia-dock-controls button, .dia-restore-tab) { min-width: 32px; min-height: 32px; }
+  html[data-stage-theme] .studio-workspace .dia-dock .dia-panel .dia-panel-header { min-height: 40px; padding: 4px 80px 4px 8px; gap: 6px; }
+  html[data-stage-theme] .studio-workspace .dia-panel-header h2 { font-size: 16px; }
+  html[data-stage-theme] .studio-workspace .dia-stage-context > summary { padding: 4px 8px; }
+  html[data-stage-theme] .studio-workspace .dia-panel .dia-dialogue { padding: 8px; }
+  html[data-stage-theme] .studio-workspace .dia-welcome h3 { font-size: 15px; margin-bottom: 4px; }
+  html[data-stage-theme] .studio-workspace .stage-task-cards { gap: 4px; margin-top: 8px; }
+  html[data-stage-theme] .studio-workspace .dia-panel .stage-task-cards button { min-height: 48px; padding: 6px 8px; gap: 2px; }
+  html[data-stage-theme] .studio-workspace .stage-task-cards strong { font-size: 13px; }
+  html[data-stage-theme] .studio-workspace .dia-panel .dia-proposals { margin-top: 8px; padding-top: 6px; }
+  html[data-stage-theme] .studio-workspace .dia-dialogue .dia-proposal { padding: 6px; }
+  html[data-stage-theme] .studio-workspace .dia-panel .dia-message { padding-block: 6px; }
+  html[data-stage-theme] .studio-workspace .dia-panel label { gap: 4px; margin-block: 4px; }
+  html[data-stage-theme] .studio-workspace .dia-panel .dia-composer { padding: 6px 8px; }
+  html[data-stage-theme] .studio-workspace .dia-panel .dia-composer textarea { height: 52px; min-height: 52px; padding: 6px; font-size: 13px; }
+  html[data-stage-theme] .studio-workspace .dia-composer [role="status"] { margin-bottom: 4px; }
+  html[data-stage-theme] .studio-workspace .dia-attachment-controls { grid-template-columns: 32px minmax(0, 1fr); gap: 6px; }
+  html[data-stage-theme] .studio-workspace .dia-attachment-controls .dia-attachment-add { width: 32px; height: 32px; padding: 0; }
+  html[data-stage-theme] .studio-workspace :is(.dia-attachment-drop, .dia-attachment-panel, .stage-plan-review, .stage-plan-groups, .stage-entry-metrics) { gap: 6px; }
+  html[data-stage-theme] .studio-workspace .dia-attachment-panel { margin-block: 8px; padding-block: 8px; }
+  html[data-stage-theme] .studio-workspace .stage-first-visit { padding-inline: 10px; gap: 6px; font-size: 12px; }
+  html[data-stage-theme] .studio-workspace .stage-first-visit ol { gap: 8px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html :is(.studio-workspace, .dia-home) *,
   html :is(.studio-workspace, .dia-home) *::before,
