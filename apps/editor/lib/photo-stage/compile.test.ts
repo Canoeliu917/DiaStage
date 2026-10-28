@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'bun:test'
+import { readFileSync } from 'node:fs'
 import {
   AnyNode,
+  deriveSlotId,
   getBlockFaceNormal,
   inspectBlockTopology,
   SiteNode,
@@ -128,6 +130,44 @@ describe('photo stage compilation', () => {
       fold_angle_2_deg: 90,
     })
     expect(JSON.stringify(SCENERY_LIBRARY)).toBe(before)
+  })
+
+  test('photo colors preserve the authored translucent opening in both catalogue windows', () => {
+    for (const assetId of ['SCN-WIN-130', 'SCN-WIN-160']) {
+      const { kind, asset } = SCENERY_LIBRARY.find((entry) => entry.asset.id === assetId)!
+      const [width, height, depth] = asset.dimensions!
+      const graph = compilePhotoStagePlan({
+        ...plan,
+        objects: [
+          {
+            id: 'window',
+            name: '窗景片',
+            kind,
+            assetId,
+            dimensions: { width, height, depth },
+            position: [0, 0, 0],
+            rotation: [0, 0, 0],
+            color: '#b9a29c',
+          },
+        ],
+      })
+      const item = Object.values(graph.nodes).find((node) => node.type === 'item')!
+      expect(item.slots?.opening).toBeUndefined()
+      expect(item.slots?.frame?.startsWith('scene:')).toBe(true)
+      expect(item.asset.src).toBe(asset.src)
+      expect(item.scale).toEqual([1, 1, 1])
+      const bytes = readFileSync(new URL(`../../public${asset.src}`, import.meta.url))
+      const gltf = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString()) as {
+        materials: {
+          name: string
+          alphaMode?: string
+          pbrMetallicRoughness: { baseColorFactor: number[] }
+        }[]
+      }
+      const opening = gltf.materials.find((material) => deriveSlotId(material.name) === 'opening')!
+      expect(opening.alphaMode).toBe('BLEND')
+      expect(opening.pbrMetallicRoughness.baseColorFactor[3]).toBeLessThan(1)
+    }
   })
 
   test('rounded and cylindrical blocks have closed topology, outward faces and editable dimensions', () => {

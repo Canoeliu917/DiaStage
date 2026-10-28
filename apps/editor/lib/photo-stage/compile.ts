@@ -25,7 +25,6 @@ const ITEM_COLOR_SLOTS = [
   'metal',
   'handle',
   'platform',
-  'opening',
   'floor',
 ]
 
