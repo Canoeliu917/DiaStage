@@ -26,7 +26,7 @@ function modelPlan() {
         assetId: 'SCN-CUBE-045',
         position: { x: 1, z: 1 },
         support: { type: 'floor', objectId: null, bottomHeightMeters: null },
-        rotation: [0, 0, 0],
+        yawDegrees: 0,
         color: null,
         hingeAngles: null,
       },
@@ -71,7 +71,11 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
       expect(input.instructions).toContain('保留目录标准尺寸与原生比例')
       expect(input.instructions).toContain('不把圆桌拉成椭圆')
       expect(input.instructions).toContain('桌子落地不是桌高的一半')
-      expect(input.instructions).toContain('弧度')
+      expect(input.instructions).toContain('yawDegrees仅表示绕世界竖直Y轴')
+      expect(input.instructions).toContain('台后半区 -stage.depth/2<z<0')
+      expect(input.instructions).toContain('台前半区 0<z<stage.depth/2')
+      expect(input.instructions).toContain('每个模块独立输出')
+      expect(input.instructions).toContain('组合台面中引用其下方确有接触的模块')
       expect(input.instructions).toContain('不可信')
       expect(input.instructions).toContain('不是照片可见性或实测尺寸的证据')
       expect(input.instructions).toContain(SCENERY_ASSEMBLY_RULES)
@@ -88,7 +92,75 @@ test('passes the uploaded image to vision with 21 selectable assets and strict s
   expect(plan.objects[0]!.dimensions).toEqual({ width: 0.45, height: 0.45, depth: 0.45 })
   expect(plan.objects[0]!.position).toEqual([1, 0, 1])
   expect(plan.objects[0]).not.toHaveProperty('support')
+  expect(plan.objects[0]).not.toHaveProperty('yawDegrees')
 })
+
+for (const fixture of [
+  {
+    name: 'positive: a rear window stays behind the centred origin',
+    patch: { assetId: 'SCN-WIN-130', position: { x: -1, z: -2 }, yawDegrees: 0 },
+    position: [-1, 0, -2],
+    yaw: 0,
+  },
+  {
+    name: 'positive: a front chair turns around Y instead of rolling sideways',
+    patch: { assetId: 'SCN-CHAIR-045', position: { x: 1, z: 2 }, yawDegrees: 90 },
+    position: [1, 0, 2],
+    yaw: Math.PI / 2,
+  },
+  {
+    name: 'contrast: a legacy Euler roll is not a new model heading',
+    patch: { rotation: [0, 0, Math.PI / 2] },
+    error: '格式无效',
+  },
+  {
+    name: 'contrast: stage-front-origin coordinates do not fit the centred stage',
+    patch: { position: { x: 0, z: 4.5 } },
+    error: '不可用',
+  },
+  {
+    name: 'paraphrase: turning toward image-left preserves position and native size',
+    patch: { position: { x: 0.5, z: -1 }, yawDegrees: -90 },
+    position: [0.5, 0, -1],
+    yaw: -Math.PI / 2,
+  },
+  {
+    name: 'ambiguous: hidden support requires clarification instead of a second request',
+    patch: { support: { type: 'uncertain', objectId: null, bottomHeightMeters: null } },
+    error: '不确定',
+  },
+])
+  test(`photo placement semantics: ${fixture.name}`, async () => {
+    const source = {
+      ...modelPlan(),
+      objects: [{ ...modelPlan().objects[0]!, ...fixture.patch }],
+    }
+    const before = JSON.stringify(source)
+    let calls = 0
+    const result = analyzePhotoStage({ imageDataUrl }, new AbortController().signal, async () => {
+      calls++
+      return source
+    })
+    if (typeof fixture.error === 'string') {
+      await expect(result).rejects.toMatchObject({
+        code: 'PLAN_INVALID',
+        status: 422,
+        message: expect.stringContaining(fixture.error),
+      })
+    } else {
+      const plan = await result
+      expect(plan.objects[0]!.position).toEqual(fixture.position)
+      expect(plan.objects[0]!.rotation).toEqual([0, fixture.yaw, 0])
+      const { compilePhotoStagePlan } = await import('./compile')
+      const item = Object.values(compilePhotoStagePlan(plan).nodes).find(
+        (node) => node.type === 'item',
+      )!
+      expect(item.scale).toEqual([1, 1, 1])
+      expect(item.rotation).toEqual([0, fixture.yaw, 0])
+    }
+    expect(calls).toBe(1)
+    expect(JSON.stringify(source)).toBe(before)
+  })
 
 test('photo replacements keep all 21 native assets at standard dimensions through compilation', async () => {
   const { compilePhotoStagePlan } = await import('./compile')
@@ -155,6 +227,59 @@ test('places a table on its declared riser without converting the riser height t
   expect(plan.objects[0]!.position[1]).toBeCloseTo(plan.objects[1]!.dimensions.height, 8)
 })
 
+test('separate standard riser modules meet at edges and support only their named furniture', async () => {
+  const source = {
+    ...modelPlan(),
+    objects: [-0.9, 0.9].flatMap((x, i) => [
+      {
+        ...modelPlan().objects[0]!,
+        id: `riser-${i}`,
+        assetId: 'SCN-RISER-01',
+        position: { x, z: 0 },
+      },
+      {
+        ...modelPlan().objects[0]!,
+        id: `sofa-${i}`,
+        assetId: 'SCN-SOFA-090',
+        position: { x, z: 0 },
+        support: { type: 'object', objectId: `riser-${i}`, bottomHeightMeters: null },
+      },
+    ]),
+  }
+  const before = JSON.stringify(source)
+  const plan = await analyzePhotoStage(
+    { imageDataUrl },
+    new AbortController().signal,
+    async () => source,
+  )
+  expect(plan.objects).toHaveLength(4)
+  for (const i of [0, 2]) {
+    expect(plan.objects[i]!.position).toEqual([source.objects[i]!.position.x, 0, 0])
+    expect(plan.objects[i + 1]!.position[1]).toBeCloseTo(plan.objects[i]!.dimensions.height, 8)
+  }
+  expect(JSON.stringify(source)).toBe(before)
+})
+
+test('analysis rejects legal-schema geometry that overruns the stage or overlaps, without retry or mutation', async () => {
+  const cube = { ...modelPlan().objects[0]!, position: { x: 0, z: 0 } }
+  for (const objects of [
+    [{ ...cube, position: { x: 3.9, z: 0 } }],
+    [cube, { ...cube, id: 'overlap', position: { x: 0.2, z: 0 } }],
+  ]) {
+    const source = { ...modelPlan(), objects }
+    const before = JSON.stringify(source)
+    let calls = 0
+    await expect(
+      analyzePhotoStage({ imageDataUrl }, new AbortController().signal, async () => {
+        calls++
+        return source
+      }),
+    ).rejects.toMatchObject({ code: 'PLAN_INVALID', status: 422, retryable: true })
+    expect(calls).toBe(1)
+    expect(JSON.stringify(source)).toBe(before)
+  }
+})
+
 test('uncertain support stops a photo proposal without another paid request', async () => {
   let calls = 0
   await expect(
@@ -181,7 +306,7 @@ test('uncertain support stops a photo proposal without another paid request', as
 test('notes are optional, omit whitespace and accept the trimmed 2000-character boundary', async () => {
   for (const note of [undefined, ' \n ', `  ${'注'.repeat(2000)}  `]) {
     await analyzePhotoStage({ imageDataUrl, note }, new AbortController().signal, async (input) => {
-      const context = JSON.parse(input.input[0]!.content[0]!.text)
+      const context = JSON.parse(input.input[0]!.content[0]!.text!)
       if (note?.trim()) expect(context.note).toBe(note.trim())
       else expect(context).not.toHaveProperty('note')
       return modelPlan()

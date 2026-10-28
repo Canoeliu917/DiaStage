@@ -12,20 +12,22 @@ const common = {
   name: PhotoStageObjectSchema.shape.name.describe('可说明原物与替代关系，如“钢琴替身·三屉桌”。'),
   position: z
     .strictObject({
-      x: coordinate.describe('单位米；舞台地面中心为零，正向为照片画面右侧、演员台左。'),
-      z: coordinate.describe('单位米；舞台地面中心为零，正向为台前观众方向，负向为台后。'),
+      x: coordinate.describe(
+        '单位米；舞台地面中心为0，正向为照片画面右侧、演员台左。左右边界为±stage.width/2，需为旋转后的完整道具外框留空间。',
+      ),
+      z: coordinate.describe(
+        '单位米；舞台地面中心为0，台后为负、台前观众方向为正。台后边界-stage.depth/2，台口+stage.depth/2；不是从台口起算的0..depth。',
+      ),
     })
     .describe('仅估算模型原点的水平位置；不输出 y，高度由支撑关系确定，不更改 GLB 支点。'),
-  rotation: z
-    .array(
-      z
-        .number()
-        .finite()
-        .min(-Math.PI * 2)
-        .max(Math.PI * 2),
-    )
-    .length(3)
-    .describe('弧度 [x,y,z]，不是角度；保持目录 GLB 的原生尺寸、形状和支点。'),
+  yawDegrees: z
+    .number()
+    .finite()
+    .min(-180)
+    .max(180)
+    .describe(
+      '仅绕世界竖直Y轴的平面朝向，单位度；0保持GLB原生朝向，+90把局部+Z转向世界+X，-90反向。不是Euler数组，不侧翻或俯仰。',
+    ),
   color: PhotoStageObjectSchema.shape.color.unwrap().nullable(),
   hingeAngles: z.null(),
   support: z

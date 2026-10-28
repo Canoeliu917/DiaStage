@@ -8,7 +8,7 @@ const object = {
   name: '方台',
   assetId: 'SCN-CUBE-045',
   position: { x: 0, z: 0 },
-  rotation: [0, 0, 0],
+  yawDegrees: 0,
   color: null,
   hingeAngles: null,
   support: { type: 'floor', objectId: null, bottomHeightMeters: null },
@@ -31,7 +31,7 @@ test('real SDK emits three strict catalogue branches without unsupported schema 
   }
   expect(schema.properties.objects.items.anyOf).toHaveLength(3)
   for (const branch of schema.properties.objects.items.anyOf) {
-    for (const field of ['kind', 'dimensions', 'profile', 'stepCount'])
+    for (const field of ['kind', 'dimensions', 'profile', 'stepCount', 'rotation'])
       expect(branch.properties).not.toHaveProperty(field)
   }
   const unsupported = new Set([
@@ -122,6 +122,14 @@ test('horizontal coordinates, support fields and numerical bounds are strict', (
     { support: { type: 'elevated', objectId: null, bottomHeightMeters: 101 } },
     { support: { type: 'floor', objectId: null, bottomHeightMeters: null, y: 0 } },
     { rotation: [0, 90, 0] },
+    { rotation: [0, 0, Math.PI / 2] },
+    { yawDegrees: undefined },
+    { yawDegrees: -181 },
+    { yawDegrees: 181 },
+    { yawDegrees: NaN },
+    { yawDegrees: Infinity },
+    { yawDegrees: [0, 90, 0] },
+    { yawDegrees: '90' },
     { color: 'red' },
     { color: '#12345' },
     { color: 'url(https://example.invalid/image)' },
@@ -138,6 +146,18 @@ test('horizontal coordinates, support fields and numerical bounds are strict', (
       ]),
     ).success,
   ).toBe(true)
+})
+
+test('heading accepts only a bounded yaw scalar, leaving native hinges independent', () => {
+  const format = zodTextFormat(PhotoModelPlanSchema, 'photo_stage_plan')
+  for (const yawDegrees of [-180, -90, 0, 90, 180]) {
+    const value = plan([{ ...object, assetId: 'SCN-FOLD-03', yawDegrees, hingeAngles: [135, 225] }])
+    expect(format.$parseRaw(JSON.stringify(value))).toEqual(value)
+  }
+  const { yawDegrees: _, ...legacy } = object
+  expect(
+    PhotoModelPlanSchema.safeParse(plan([{ ...legacy, rotation: [0, 0, Math.PI / 2] }])).success,
+  ).toBe(false)
 })
 
 for (const fixture of [

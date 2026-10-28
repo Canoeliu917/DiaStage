@@ -2,6 +2,7 @@ import {
   prepareStageCollision,
   type SceneContextObject,
   stageCollisionGeometry,
+  stageCollisionsTouch,
   stageContactHeight,
   stageFoldGeometry,
 } from '@pascal-app/core/stage'
@@ -68,6 +69,43 @@ function requireContactGeometry(object: PhotoStageObject) {
     (object.kind === 'stairs' || (object.profile && object.profile !== 'box'))
   )
     invalid(`「${object.name}」的特殊轮廓暂不能可靠计算支撑接触，请改用标准库道具或明确离地高度。`)
+}
+
+export function assertPhotoLayout(plan: PhotoStagePlan): void {
+  const prepared = plan.objects.map((object) => prepareStageCollision(collisionObject(object)))
+  const epsilon = 1e-7
+  for (let i = 0; i < prepared.length; i++) {
+    const geometry = prepared[i]!
+    const name = plan.objects[i]!.name
+    if (
+      geometry.bounds[0]![0] < -plan.stage.width / 2 - epsilon ||
+      geometry.bounds[0]![1] > plan.stage.width / 2 + epsilon ||
+      geometry.bounds[2]![0] < -plan.stage.depth / 2 - epsilon ||
+      geometry.bounds[2]![1] > plan.stage.depth / 2 + epsilon
+    )
+      invalid(`「${name}」超出场地，请调整摆位或场地尺寸。`)
+    if (geometry.bounds[1]![0] < -epsilon) invalid(`「${name}」低于地面，请确认支撑高度。`)
+    if (['SCN-FOLD-02', 'SCN-FOLD-03'].includes(plan.objects[i]!.assetId ?? '')) {
+      for (let a = 0; a < geometry.parts.length; a++) {
+        for (let b = 0; b < a; b++) {
+          const left = geometry.parts[a]!
+          const right = geometry.parts[b]!
+          if (
+            stageCollisionsTouch(
+              { parts: [left], bounds: left.bounds },
+              { parts: [right], bounds: right.bounds },
+              true,
+            )
+          )
+            invalid(`「${name}」的景片自身重叠，请调整折叠角度。`)
+        }
+      }
+    }
+    for (let j = 0; j < i; j++) {
+      if (stageCollisionsTouch(geometry, prepared[j]!, true))
+        invalid(`「${name}」与「${plan.objects[j]!.name}」外框重叠，请调整摆位。`)
+    }
+  }
 }
 
 export function groundPhotoSupports(

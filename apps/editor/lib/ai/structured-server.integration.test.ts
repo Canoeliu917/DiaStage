@@ -151,7 +151,7 @@ if (process.env.DIASTAGE_STRUCTURED_TEST_CHILD !== '1') {
         assetId: 'SCN-CUBE-045',
         position: { x: 0, z: 0 },
         support: { type: 'floor', objectId: null, bottomHeightMeters: null },
-        rotation: [0, 0, 0],
+        yawDegrees: 0,
         color: null,
         hingeAngles: null,
       },
