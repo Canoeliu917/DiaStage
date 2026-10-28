@@ -1,6 +1,7 @@
 export const BETA_EXPERT_MEDIA_ENABLED = false
 export const BETA_LIGHTING_PRODUCTION_ENABLED = false
 export const BETA_REHEARSAL_ENABLED = false
+export const BETA_REMOUNT_ENABLED = false
 
 export function betaCapabilityNotice(text: string): string | null {
   if (
@@ -14,6 +15,6 @@ export function betaCapabilityNotice(text: string): string | null {
     !BETA_LIGHTING_PRODUCTION_ENABLED &&
     /灯光|灯具|照明|光束|调灯|灯位|lighting|\bcue\b/i.test(text)
   )
-    return '0.1 暂未开放灯光制作。可以继续置景、查看版本与复台预览。'
+    return '当前暂未开放灯光制作。可以继续置景与查看版本。'
   return null
 }

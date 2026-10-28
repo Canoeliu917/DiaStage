@@ -2,6 +2,7 @@ import { useScene } from '@pascal-app/core'
 import { useEditor } from '@pascal-app/editor'
 import { useViewer } from '@pascal-app/viewer'
 import { useStageTransform } from '@/components/stage-entry/transform-mode'
+import { BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { type DiaAppContext, DiaAppContextSchema } from './open-language'
 
 export const DIASTAGE_CAPABILITIES: DiaAppContext['capabilities'] = [
@@ -47,7 +48,9 @@ export const DIASTAGE_CAPABILITIES: DiaAppContext['capabilities'] = [
     authority: 'proposal_only',
   },
   { id: 'history', label: '撤销、重做及查看版本与历史', authority: 'manual_only' },
-  { id: 'remount', label: '复台映射与预览', authority: 'manual_only' },
+  ...(BETA_REMOUNT_ENABLED
+    ? [{ id: 'remount', label: '复台映射与预览', authority: 'manual_only' as const }]
+    : []),
 ]
 
 export function currentDiaAppContext(): DiaAppContext {

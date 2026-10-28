@@ -334,7 +334,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
 
   for (const [previousPanel, workspace, expectedPanel] of [
     ['remount', 'set', 'items'],
-    ['items', 'remount', 'remount'],
+    ['items', 'remount', 'items'],
   ] as const) {
     resetHooks()
     workspaceQuery = `workspace=${workspace}`
@@ -348,20 +348,23 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     panelOpeningAllowed = true
     render()
     const ready = render()
-    assert.equal(ready.navigation?.group, workspace, 'the URL workspace wins after layout hydration')
-    assert.equal(editorState.activeSidebarPanel, expectedPanel, 'the sidebar opens the requested workspace')
-    const otherWorkspace = workspace === 'set' ? 'remount' : 'set'
+    assert.equal(ready.navigation?.group, 'set', 'disabled workspaces normalize to Set after hydration')
+    assert.equal(editorState.activeSidebarPanel, expectedPanel, 'the sidebar opens the available workspace')
     const changeGroup = ready.navigation?.onGroupChange as (group: string) => void
-    changeGroup(otherWorkspace)
+    changeGroup('remount')
     render()
-    assert.equal(render().navigation?.group, otherWorkspace, 'a consumed URL does not override later manual navigation')
+    assert.equal(render().navigation?.group, 'set', 'a stale action cannot reopen Remount')
+    editorState.activeSidebarPanel = 'versions'
+    render()
+    assert.equal(editorState.activeSidebarPanel, 'versions', 'the normalized URL is consumed and does not override later navigation')
   }
   resetHooks()
   workspaceQuery = ''
   editorState.activeSidebarPanel = 'remount'
   render().props.onLoaderChange(false)
   render()
-  assert.equal(render().navigation?.group, 'remount', 'entry without a workspace keeps the saved preference')
+  assert.equal(render().navigation?.group, 'set', 'a saved Remount preference falls back to Set')
+  assert.equal(editorState.activeSidebarPanel, 'items')
   resetHooks()
   editorState.activeSidebarPanel = 'theatre-roles'
 

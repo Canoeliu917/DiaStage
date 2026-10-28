@@ -6,7 +6,7 @@ import { isDeviceLinkEnabled } from '@/lib/remote-voice/availability'
 
 export const metadata: Metadata = {
   title: '舞台助手 · 咫台 DiaStage',
-  description: '手机 Dia 对话、手动置景、剧本搭台、复台与扫描上传。',
+  description: '手机 Dia 对话、手动置景、剧本搭台与扫描上传。',
 }
 
 export default function RemoteVoicePage() {

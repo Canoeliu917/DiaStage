@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from 'zustand'
 import { localAccountStorageKey } from '@/lib/auth/local-account'
-import { BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
+import { BETA_REHEARSAL_ENABLED, BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
 import { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
 import {
@@ -815,7 +815,7 @@ export function RehearsalPartner({
           )}
           {state.synthetic && <p role="note">演示数据 · 非真实模型输出</p>}
           {state.ready && !state.synthetic && !modelConfigured && !attachments.open && (
-            <p role="note">本机置景、版本、复台预览与视图口令可用。</p>
+            <p role="note">本机置景、版本与视图口令可用。</p>
           )}
           {BETA_REHEARSAL_ENABLED && (
             <details className="dia-context">
@@ -844,13 +844,15 @@ export function RehearsalPartner({
             </details>
           )}
           {BETA_REHEARSAL_ENABLED && professional && <SceneLayersPanel />}
-          <nav className="dia-actions" aria-label="舞台版本与复台">
+          <nav className="dia-actions" aria-label="舞台版本">
             <button type="button" onClick={() => openStudioPanel('versions')}>
               查看与保留版本
             </button>
-            <button type="button" onClick={() => openStudioPanel('remount')}>
-              查看复台映射预览
-            </button>
+            {BETA_REMOUNT_ENABLED && (
+              <button type="button" onClick={() => openStudioPanel('remount')}>
+                查看复台映射预览
+              </button>
+            )}
           </nav>
           {state.synthetic && (
             <nav className="dia-demo-actions" aria-label="示例与自己的排演">
@@ -861,7 +863,7 @@ export function RehearsalPartner({
           )}
           <PhoneVoiceLink
             sceneId={sceneId}
-            sceneLabel="Dia · 搭台到复台"
+            sceneLabel="Dia · 一起置景"
             storageKey={`dia:${sceneId}`}
             canLoad={false}
             onSessionChange={setSession}

@@ -43,6 +43,7 @@ test('Dia reads the current client settings without gaining scene authority', ()
     'proposal_only',
   )
   expect(DIASTAGE_CAPABILITIES.some((item) => item.authority === 'manual_only')).toBe(true)
+  expect(DIASTAGE_CAPABILITIES.some((item) => item.id === 'remount')).toBe(false)
 
   useEditor.setState(editorBefore)
   useViewer.setState(viewerBefore)

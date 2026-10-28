@@ -5,6 +5,7 @@ import { Hammer, History, Layers, Redo2, ScanLine, Undo2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { migrateStudioPanel, type StudioGroup } from '@/lib/studio-workspaces'
 import { useCameraStudio } from './camera-studio/store'
 import { StudioWordmark } from './studio-wordmark'
@@ -71,13 +72,13 @@ export function StudioNavigation({
         />
         <div>
           <StudioWordmark />
-          <span className="studio-slogan">Stage Build &amp; Remount Preview</span>
+          <span className="studio-slogan">AI Stage Set</span>
         </div>
       </div>
       <nav className="studio-workspaces" aria-label="工作区">
         {[
           { id: 'set' as const, label: '置景', icon: Hammer },
-          { id: 'remount' as const, label: '复台', icon: ScanLine },
+          ...(BETA_REMOUNT_ENABLED ? [{ id: 'remount' as const, label: '复台', icon: ScanLine }] : []),
         ].map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -112,7 +113,7 @@ export function StudioNavigation({
           <details className="studio-mobile-menu">
             <summary>更多</summary>
             <div>
-              <p>舞台置景与复台预览</p>
+              <p>AI 置景 · 照片置景 · 剧本置景</p>
               <button type="button" onClick={() => useEditor.getState().setViewMode('3d')}>
                 三维舞台
               </button>

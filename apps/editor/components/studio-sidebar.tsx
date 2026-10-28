@@ -4,6 +4,7 @@ import { type SidebarTab, useEditor, useIsMobile } from '@pascal-app/editor'
 import { Layers, Package, SlidersHorizontal } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useState } from 'react'
+import { BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { observeRehearsalFeedback } from '@/lib/rehearsal-intelligence/authority'
 import { migrateStudioGroup, migrateStudioPanel, type StudioGroup } from '@/lib/studio-workspaces'
 import { StageOverviewPanel } from './stage-overview-panel'
@@ -52,7 +53,7 @@ export function useStudioSidebar(sceneId: string) {
     { id: 'versions', label: '版本 / 历史', hidden: true, component: () => <VersionsPanel sceneId={sceneId} /> },
     { id: 'view', label: '视图', hidden: true, component: () => <ViewPanel sceneId={sceneId} /> },
     { id: 'display', label: '显示', hidden: true, component: DisplayPanel },
-    { id: 'remount', label: '映射预览', hidden: true, component: () => <RemountPanel sceneId={sceneId} /> },
+    ...(BETA_REMOUNT_ENABLED ? [{ id: 'remount', label: '映射预览', hidden: true, component: () => <RemountPanel sceneId={sceneId} /> }] : []),
   ].map((entry) => ({
     ...entry,
     mobileIcon: 'icon' in entry ? entry.icon : undefined,

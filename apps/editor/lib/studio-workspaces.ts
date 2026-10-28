@@ -1,6 +1,8 @@
+import { BETA_REMOUNT_ENABLED } from './beta-capabilities'
+
 export type StudioGroup = 'set' | 'rehearse' | 'remount'
 export function migrateStudioGroup(value: unknown): StudioGroup {
-  return value === 'remount' ? 'remount' : 'set'
+  return BETA_REMOUNT_ENABLED && value === 'remount' ? 'remount' : 'set'
 }
 export function migrateStudioPanel(panel: string): string {
   const aliases: Record<string, string> = {
@@ -20,6 +22,7 @@ export function migrateStudioPanel(panel: string): string {
     'stage-command': 'items',
   }
   const next = aliases[panel] ?? panel
+  if (!BETA_REMOUNT_ENABLED && next === 'remount') return 'items'
   return [
     'items',
     'build',

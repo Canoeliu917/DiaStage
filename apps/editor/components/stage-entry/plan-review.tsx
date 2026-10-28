@@ -823,7 +823,7 @@ export function StagePlanReview({
               采用 8 × 6 米舞台
             </button>
           )}
-          {venue?.heightMeters === null && <p>高度未测量，暂按 4 米显示；正式复台前需补齐测量。</p>}
+          {venue?.heightMeters === null && <p>高度未测量，暂按 4 米显示；高度校验需补齐实测值。</p>}
         </fieldset>
       )}
       <div className={plan.source === 'script' ? 'stage-script-groups' : 'stage-plan-groups'}>

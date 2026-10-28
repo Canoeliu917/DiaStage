@@ -2,8 +2,9 @@ import 'fake-indexeddb/auto'
 import { afterEach, expect, test } from 'bun:test'
 import { clearSceneHistory, useScene } from '@pascal-app/core'
 import { diaRemoteSnapshot } from '../../components/theatre/dia-remote-bridge'
-import { BETA_REHEARSAL_ENABLED } from '../beta-capabilities'
+import { BETA_REHEARSAL_ENABLED, BETA_REMOUNT_ENABLED } from '../beta-capabilities'
 import { SceneJournal } from '../scene-journal'
+import { useStagePlanPreview } from '../stage/plan-preview'
 import { migrateStudioGroup, migrateStudioPanel } from '../studio-workspaces'
 import { bindRehearsalScene, clearProposalGhost, useProposalGhost } from './authority'
 import { DiaConversation } from './conversation-controller'
@@ -19,7 +20,10 @@ afterEach(() => {
   clearSceneHistory()
 })
 
-async function setup(rehearsalEnabled = BETA_REHEARSAL_ENABLED) {
+async function setup(
+  rehearsalEnabled = BETA_REHEARSAL_ENABLED,
+  navigate?: (panel: 'versions' | 'remount' | 'items') => void,
+) {
   const graph = createSyntheticDemoScene()
   const sceneId = crypto.randomUUID()
   useScene.getState().setReadOnly(false)
@@ -27,7 +31,7 @@ async function setup(rehearsalEnabled = BETA_REHEARSAL_ENABLED) {
   const journal = new SceneJournal(sceneId)
   await journal.recover(useScene.getState(), 1)
   disposers.push(bindRehearsalScene(sceneId, () => journal.assertCurrent()))
-  const controller = new DiaConversation(sceneId, () => null, undefined, rehearsalEnabled)
+  const controller = new DiaConversation(sceneId, () => null, navigate, rehearsalEnabled)
   disposers.push(() => controller.dispose())
   await controller.load()
   expect(controller.store.getState().ready).toBe(true)
@@ -36,14 +40,50 @@ async function setup(rehearsalEnabled = BETA_REHEARSAL_ENABLED) {
 
 test('0.1 maps historical workspaces and hidden panels to Build or basic View', () => {
   expect(BETA_REHEARSAL_ENABLED).toBe(false)
-  for (const value of ['rehearse', 'director', 'lighting', 'timeline', 'video'])
+  expect(BETA_REMOUNT_ENABLED).toBe(false)
+  for (const value of ['rehearse', 'remount', 'director', 'lighting', 'timeline', 'video'])
     expect(migrateStudioGroup(value)).toBe('set')
-  for (const value of ['simulation', 'theatre-roles', 'theatre-paths', 'lighting', 'sequencer'])
+  for (const value of ['simulation', 'remount', 'theatre-roles', 'theatre-paths', 'lighting', 'sequencer'])
     expect(migrateStudioPanel(value)).toBe('items')
   for (const value of ['camera-studio', 'camera-rehearsal', 'record', 'observe'])
     expect(migrateStudioPanel(value)).toBe('view')
   expect(migrateStudioPanel('versions')).toBe('versions')
-  expect(migrateStudioGroup('remount')).toBe('remount')
+})
+
+test('disabled Remount refuses before any model request and preserves the pending set preview', async () => {
+  const navigations: string[] = []
+  const { controller } = await setup(false, (panel) => navigations.push(panel))
+  const originalFetch = globalThis.fetch
+  let requests = 0
+  globalThis.fetch = (async () => {
+    requests++
+    throw new Error('disabled Remount must not request a model')
+  }) as typeof fetch
+  try {
+    await controller.send('一张圆桌，两把硬椅')
+    await controller.preview()
+    const proposal = controller.buildProposal()
+    const preview = useStagePlanPreview.getState().plan
+    const status = controller.store.getState().thread!.status
+    const nodes = useScene.getState().nodes
+    expect(proposal?.status).toBe('previewed')
+    expect(preview).not.toBeNull()
+    navigations.length = 0
+    for (const command of ['打开复台', '把第1版搬到新场地', '换一个场地', 'Open Remount']) {
+      await controller.send(command)
+      expect(controller.store.getState().thread!.messages.at(-1)!.content).toBe(
+        '复台暂未开放。可以继续 AI 置景、照片置景或剧本置景。',
+      )
+      expect(controller.store.getState().thread!.status).toBe(status)
+      expect(controller.buildProposal()).toBe(proposal)
+      expect(useStagePlanPreview.getState().plan).toBe(preview)
+      expect(useScene.getState().nodes).toBe(nodes)
+    }
+    expect(requests).toBe(0)
+    expect(navigations).toEqual([])
+  } finally {
+    globalThis.fetch = originalFetch
+  }
 })
 
 test('0.1 Dia refuses rehearsal, lighting and production commands without scene writes', async () => {

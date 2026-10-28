@@ -246,7 +246,7 @@ export function VenuePanel({ initialExpanded = false }: { initialExpanded?: bool
                   </p>
                 </details>
               )}
-              {!heightMeasured && <p>净高未测量，可继续置景；进入复台预览前必须补齐实测净高。</p>}
+              {!heightMeasured && <p>净高未测量，可继续置景；高度校验需补齐实测净高。</p>}
             </>
           )}
         </fieldset>
@@ -280,7 +280,7 @@ export function SceneLayersPanel() {
           {label}
         </label>
       ))}
-      <p>仅调整显示，不修改或删除舞台内容。原版本与新场地对比在“复台”中设置。</p>
+      <p>仅调整显示，不修改或删除舞台内容。</p>
     </fieldset>
   )
 }

@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
+import { BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import {
   JoinedRemoteVoiceResponseSchema,
@@ -292,7 +293,7 @@ export function RemoteVoiceController() {
         </div>
       )}
       <details className="mobile-assistant-tools">
-        <summary>舞台与复台</summary>
+        <summary>舞台工具</summary>
         <nav aria-label="舞台工具">
           <a
             href={
@@ -303,15 +304,17 @@ export function RemoteVoiceController() {
           >
             手动置景
           </a>
-          <a
-            href={
-              session?.sceneId
-                ? `/scene/${encodeURIComponent(session.sceneId)}?workspace=remount&versions=1`
-                : '/scenes'
-            }
-          >
-            复台
-          </a>
+          {BETA_REMOUNT_ENABLED && (
+            <a
+              href={
+                session?.sceneId
+                  ? `/scene/${encodeURIComponent(session.sceneId)}?workspace=remount&versions=1`
+                  : '/scenes'
+              }
+            >
+              复台
+            </a>
+          )}
         </nav>
       </details>
       {!session ? (

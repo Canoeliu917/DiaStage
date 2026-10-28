@@ -11,7 +11,7 @@ import { useEditor } from '@pascal-app/editor'
 import { useViewer, ViewerErrorBoundary } from '@pascal-app/viewer'
 import { useEffect, useState } from 'react'
 import { z } from 'zod'
-import { BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
+import { BETA_REHEARSAL_ENABLED, BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
 import { buildDiaContext } from '@/lib/rehearsal-intelligence/context'
 import { sceneFactsVersion } from '@/lib/rehearsal-intelligence/conversation'
@@ -265,7 +265,7 @@ export function VersionsPanel({ sceneId }: { sceneId: string }) {
   return (
     <section className="theatre-panel" aria-label="版本 / 历史">
       <h2>版本 / 历史</h2>
-      <p>版本保留当前舞台快照。可以只读查看、明确恢复，或带入目标场地做映射预览。</p>
+      <p>版本保留当前舞台快照。可以只读查看或明确恢复。</p>
       <fieldset disabled={readOnly}>
         <label>
           版本名称
@@ -329,18 +329,20 @@ export function VersionsPanel({ sceneId }: { sceneId: string }) {
             {preview.sourceVersion && <p>来源版本 {preview.sourceVersion}</p>}
           </details>
           <div className="th-buttons">
-            <button
-              type="button"
-              disabled={readOnly}
-              onClick={() =>
-                run(() => {
-                  prepareVersionRemount(sceneId, preview.id)
-                  useEditor.getState().setActiveSidebarPanel('remount')
-                })
-              }
-            >
-              以此版本复台
-            </button>
+            {BETA_REMOUNT_ENABLED && (
+              <button
+                type="button"
+                disabled={readOnly}
+                onClick={() =>
+                  run(() => {
+                    prepareVersionRemount(sceneId, preview.id)
+                    useEditor.getState().setActiveSidebarPanel('remount')
+                  })
+                }
+              >
+                以此版本复台
+              </button>
+            )}
             <button
               type="button"
               disabled={readOnly}

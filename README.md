@@ -1,17 +1,21 @@
 # 咫台 DiaStage
 
 **DiaStage: Theatre Rehearsal & Stage Previs**\
-**戏剧排演与舞台复现**
+**AI辅助的戏剧置景与排练空间预览**
 
-DiaStage 是一个以真实舞台空间为基础，从搭台、排演到复台持续工作的戏剧创作系统。Dia 是贯穿全过程的统一智能入口，把人的自然语言转化成可预演、可修改、可保留的舞台方案。
+DiaStage 咫台以21件标准道具为基础，把文字想法、剧场照片和已有剧本中的场景布置转成可预览、可调整、可保存的三维排练方案。Dia 是统一入口，结合真实模型理解、资产约束和几何检查，先预览，再由人确认采用。
 
-**把戏说给 Dia。** 核心产品过程为 **Venue → Build → Rehearse → Remount（场地 → 搭台 → 排演 → 复台）**，用户只有置景、排演、复台三个工作区。
+**把戏说给 Dia。** 11月1日版聚焦 **AI置景、照片置景、剧本置景**，复台与语音入口隐藏；已有复台代码与数据保留。长期方向仍为 **Venue → Build → Rehearse → Remount（场地 → 搭台 → 排演 → 复台）**，不把长期结构当作当前全部开放的功能。
+
+完整[网站定位](docs/diastage-product-positioning.md)、[产品约束](PRODUCT.md)与[最新验收及剩余待办](docs/diastage-release-todo.md)分别记录产品用途、实现边界和当前状态。源码在GitHub、本机已运行，不等于正式域名已部署。
 
 **Version / History / Journal 贯穿全过程，并为 Remount 提供历史来源。** 它们是 Diary 基础设施，不是额外的用户工作区；Feedback、Human Authority、Scene Store 同样贯穿各阶段。
 
 Dialogue / Diagonal / Diagram / Diary 是品牌解释，不是 Product Backbone、工程模块或 Agent。完整映射见 [PRODUCT.md](PRODUCT.md)，当前验收与冻结门禁见 [Freeze Report](DIASTAGE_PRODUCT_BACKBONE_FREEZE_REPORT.md)。
 
 ## 工作区
+
+以下为长期产品结构；当前首发聚焦置景，排演维持既有未开放范围，复台入口按用户决定隐藏。
 
 | 工作区 | 要完成的事 |
 | --- | --- |
@@ -44,14 +48,14 @@ bun dev
 
 ## 最小排演流程
 
-1. 手动输入宽深新建舞台，或用语音、文字、PDF / DOCX 形成方案，检查并确认布景。
+1. 手动输入宽深新建舞台，或从Dia文字栏输入文字、图片或文字型PDF形成布景方案，检查并确认。语音入口当前隐藏。
 2. 进入排演，添加人物标记、设置位置与朝向。
 3. 点击记录移动，在舞台上依次选择位置，再设置时长。
 4. 播放、暂停、回到开始或循环，检查人物移动。
 5. 从显示切换视图，从观察切换视点；记录中输出无声视频。
 6. 保存排演版本，或进入复台检查另一场地的落位。
 
-当前约束见 [PRODUCT.md](PRODUCT.md)，本轮审计与验收见 [SIMPLIFIED_REHEARSAL.md](SIMPLIFIED_REHEARSAL.md)。排演版本与输出视频不同。
+第2–6步保留为既有排演/复台流程说明，不是11月1日版的开放承诺。当前约束见 [PRODUCT.md](PRODUCT.md)，历史审计见 [SIMPLIFIED_REHEARSAL.md](SIMPLIFIED_REHEARSAL.md)。排演版本与输出视频不同。
 
 ## 数据与兼容
 
@@ -63,23 +67,24 @@ bun dev
 
 ## 本次范围与后续
 
-三入口共用舞台方案、确定性坐标与命令执行器。手动拖放和点击落位可用；语音转写与复杂文本解析需要服务端配置。剧本只读取文本型 PDF / DOCX，保留可核对的原文出处，确认前不改舞台。实施与验收记录见 [THREE_ENTRY_IMPLEMENTATION.md](THREE_ENTRY_IMPLEMENTATION.md)。
+当前文字、照片与剧本输入围绕置景提案及人工确认组织。照片新方案仅用21件目录资产的原尺寸和比例，具体物件可用相似道具替代；不生成专业模型或把圆桌拉成椭圆。剧本提取已有场景布置，不创作新剧本；Dia附件入口支持文字型PDF，历史独立剧本解析也保留DOCX。文件导入和私有素材同步已有实现，真实照片自动摆位、完整文字动作、剧本与跨设备恢复仍待验。历史实施记录见 [THREE_ENTRY_IMPLEMENTATION.md](THREE_ENTRY_IMPLEMENTATION.md)，当前结果见最新待办。
 摄影机可与布景共同复台；有独立物件运动或未纳入的跟随主体时明确阻止不完整映射。真实扫描、OCR 与 AR 不在本轮范围。
 此前 A–F 的剧情分析与提示本规划已取消；旧交付记录只作历史资料。
 
 已有观察和复台能力见 [CAMERA_STUDIO.md](CAMERA_STUDIO.md) 和 [REMOUNT.md](REMOUNT.md)。
 
-## 语音与剧本配置
+## AI配置与附件范围
 
-在服务端根目录 `.env.local` 中设置后重启；不要使用 `NEXT_PUBLIC_` 前缀，不把密钥提交到 Git：
+当前本机验收使用阿里云百炼北京固定 `qwen3.7-flash-2026-07-15`。通用本地开发可在服务端根目录 `.env.local` 中设置后重启；不要使用 `NEXT_PUBLIC_` 前缀，不把密钥提交到Git。当前专用验收启动脚本使用已有私有配置并拒绝自动加载的env文件，不要另外创建.env.local来覆盖它。
 
 ```dotenv
-OPENAI_API_KEY=你的服务端密钥
-DIASTAGE_COMMAND_MODEL=gpt-5.6-luna
-DIASTAGE_TRANSCRIBE_MODEL=gpt-transcribe
+DIASTAGE_AI_PROVIDER=aliyun
+DASHSCOPE_API_KEY=你的服务端密钥
+DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+DIASTAGE_AI_BETA_USER_IDS=已核对的受邀账号用户ID
 ```
 
-不配置密钥也可以手动置景、使用确定性文字示例。转写失败保留本页录音供重试，离开页面即释放；复杂剧本无模型服务时明确报错。录音最多 90 秒 / 12 MB，优先使用设备支持的 MP4；上传剧本最多 20 MB、300 页、300,000 字符，处理超时 60 秒。生产录音需要 HTTPS。
+不配置密钥也可以手动置景、使用确定性文字示例；AI名单按真实用户ID核验，注册不会自动取得资格。选择百炼但缺少密钥时不会借用旧OpenAI配置。首轮最多20名受邀账号，每账号1元/日且5元/月，全站100元/月；属于应用内预算，非供应商最终账单或商业套餐。旧OpenAI路线保留，语音入口隐藏、百炼配置下旧转写路径不启用。上传剧本最多20MB、300页、300,000字符，处理超时60秒；扫描PDF的OCR未包含。
 
 新舞台高度可以暂不填写，但复台前必须补测。原始音频和剧本不写入项目；项目只保存确认后选用的证据摘录与默认值。
 

@@ -8,6 +8,7 @@ import {
 } from '@pascal-app/core/stage'
 import { createStore } from 'zustand/vanilla'
 import { localAccountStorageKey } from '../auth/local-account'
+import { BETA_REMOUNT_ENABLED } from '../beta-capabilities'
 import { waitForLocalScene } from '../scene-journal'
 import { sceneContentVersion } from '../scene-signature'
 import { executeStageCommands } from '../stage/command-executor'
@@ -461,8 +462,15 @@ export class DiaConversation {
     const request = new AbortController(),
       epoch = ++this.epoch
     this.request = request
-    this.store.setState({ busy: true, draft: text.trim(), placementProposal: null })
-    const viewOnly = groundLanguage(text.trim(), currentStageContext())?.capability === 'view'
+    const remountUnavailable =
+      !BETA_REMOUNT_ENABLED && (diaIntent(text) === 'remount' || /\bremount\b/i.test(text))
+    this.store.setState({
+      busy: true,
+      draft: text.trim(),
+      ...(remountUnavailable ? {} : { placementProposal: null }),
+    })
+    const viewOnly =
+      remountUnavailable || groundLanguage(text.trim(), currentStageContext())?.capability === 'view'
     if (!viewOnly) {
       clearProposalGhost()
       if (!this.buildProposal()) useStagePlanPreview.setState({ plan: null })
@@ -478,6 +486,16 @@ export class DiaConversation {
       request.signal.throwIfAborted()
       await this.event('dia_message_sent')
       request.signal.throwIfAborted()
+      if (remountUnavailable) {
+        this.message(
+          'dia',
+          '复台暂未开放。可以继续 AI 置景、照片置景或剧本置景。',
+          context.sceneVersion ?? '',
+        )
+        this.store.setState({ draft: '' })
+        await this.persist()
+        return
+      }
       if (await this.routeBackbone(text.trim(), request.signal)) return
       request.signal.throwIfAborted()
       const current = this.store.getState()
@@ -1299,7 +1317,7 @@ export class DiaConversation {
         text,
       )
     ) {
-      await reply('0.1 只开放置景、版本、复台预览与视图。请描述要调整的布景、场地或观察方向。')
+      await reply('请描述要调整的布景、场地或观察方向，也可以导入照片或剧本置景。')
       return true
     }
     if (/^(?:不对|不是|纠正|我说的不是|我是想)/.test(text) && typeof localStorage !== 'undefined') {
@@ -1437,7 +1455,7 @@ export class DiaConversation {
     if (intent !== 'build') {
       if (this.rehearsalEnabled) return false
       await reply(
-        '请描述布景的名称、方向与幅度，或查看版本、准备复台预览、调整视图。0.1 不生成排演提案。',
+        '请描述布景的名称、方向与幅度，或查看版本、调整视图。当前不生成排演提案。',
       )
       return true
     }

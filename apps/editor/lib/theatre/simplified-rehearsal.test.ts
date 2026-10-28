@@ -47,7 +47,8 @@ afterEach(() => {
 test('workspace and panel IDs migrate without reviving cancelled entries', () => {
   expect(migrateStudioGroup('space')).toBe('set')
   expect(migrateStudioGroup('director')).toBe('set')
-  expect(migrateStudioGroup('remount')).toBe('remount')
+  expect(migrateStudioGroup('remount')).toBe('set')
+  expect(migrateStudioPanel('remount')).toBe('items')
   expect(migrateStudioPanel('theatre-scenes')).toBe('items')
   expect(migrateStudioPanel('theatre-props')).toBe('items')
   expect(migrateStudioPanel('camera-studio')).toBe('view')

@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { isDeviceLinkEnabled, VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import { createUUID } from '@/lib/uuid'
 import './coordinate-field.css'
@@ -74,14 +75,9 @@ export const HOME_SPACE_GROUPS: Record<
     english: 'Diagram',
     options: [
       { title: '观众视角', label: 'Audience view', href: '/scenes', x: 33, y: 60, z: 40 },
-      {
-        title: '复台预览',
-        label: 'Remount',
-        href: '/scenes?workspace=remount',
-        x: 67,
-        y: 34,
-        z: 5,
-      },
+      ...(BETA_REMOUNT_ENABLED
+        ? [{ title: '复台预览', label: 'Remount', href: '/scenes?workspace=remount', x: 67, y: 34, z: 5 }]
+        : []),
     ],
   },
   diary: {

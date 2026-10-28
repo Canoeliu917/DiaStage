@@ -15,7 +15,11 @@ import { NeutralRenderEnvironment, StableRenderMode, ViewerErrorBoundary } from 
 import dynamic from 'next/dynamic'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { BETA_EXPERT_MEDIA_ENABLED, BETA_REHEARSAL_ENABLED } from '@/lib/beta-capabilities'
+import {
+  BETA_EXPERT_MEDIA_ENABLED,
+  BETA_REHEARSAL_ENABLED,
+  BETA_REMOUNT_ENABLED,
+} from '@/lib/beta-capabilities'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { apiGraphSchema } from '@/lib/graph-schema'
 import { archiveLegacyLighting } from '@/lib/legacy-lighting'
@@ -24,6 +28,7 @@ import { hydrateSceneAssets, uploadSceneAssets } from '@/lib/scene-assets-client
 import { createSceneCopy } from '@/lib/scene-backup'
 import { SceneJournal } from '@/lib/scene-journal'
 import { type PersistedSceneGraph, sceneGraphSignature } from '@/lib/scene-signature'
+import { migrateStudioGroup } from '@/lib/studio-workspaces'
 import { THEATRE_METADATA_KEY } from '@/lib/theatre/scene-adapter'
 import { migrateStageDocument } from '@/lib/theatre/simulation'
 import { cn } from '@/lib/utils'
@@ -215,8 +220,9 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
     const key = JSON.stringify([meta.id, workspace])
     if (appliedWorkspace.current === key) return
     if (workspace === 'remount' || workspace === 'set' || workspace === 'rehearse') {
-      onGroupChange(workspace)
-      if (useEditor.getState().activeSidebarPanel !== (workspace === 'remount' ? 'remount' : 'items'))
+      const nextGroup = migrateStudioGroup(workspace)
+      onGroupChange(nextGroup)
+      if (useEditor.getState().activeSidebarPanel !== (nextGroup === 'remount' ? 'remount' : 'items'))
         return
     }
     appliedWorkspace.current = key
@@ -750,7 +756,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 }
                 viewerSceneSlot={
                   <>
-                    {group === 'remount' && (
+                    {BETA_REMOUNT_ENABLED && group === 'remount' && (
                       <ViewerErrorBoundary fallback={null} scope="remount-preview">
                         <RemountPreviewSystem sceneId={meta.id} />
                       </ViewerErrorBoundary>
@@ -805,7 +811,7 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                             /* Session choice still applies. */
                           }
                         }}
-                        title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据与复台计算"
+                        title="稳定模式限制帧率与分辨率，关闭后期和阴影；不改变舞台数据"
                         type="button"
                       >
                         稳定模式

@@ -112,7 +112,7 @@ export async function reserveModelCall(
     if (error instanceof Error && /BUDGET_EXCEEDED/.test(error.message))
       throw new ModelBudgetError(
         'BUDGET_EXCEEDED',
-        '本账号今日、当月、单次任务或网站当月 AI 额度不足，已停止新的付费调用；仍可使用本地口令、手动置景和复台。',
+        '本账号今日、当月、单次任务或网站当月 AI 额度不足，已停止新的付费调用；仍可使用本地口令和手动置景。',
         estimate,
       )
     throw error

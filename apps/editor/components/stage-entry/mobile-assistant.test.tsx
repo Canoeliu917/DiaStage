@@ -7,8 +7,8 @@ import { ScanTransfer } from './scan-transfer'
 
 test('mobile assistant starts with Dia and secondary tools without a Canvas; unsaved scenes cannot pair', () => {
   const markup = renderToStaticMarkup(<RemoteVoiceController />)
-  for (const label of ['手动置景', '复台', '8 位配对码']) expect(markup).toContain(label)
-  for (const label of ['语音构台', '剧本搭台', '扫描上传', '排演'])
+  for (const label of ['手动置景', '8 位配对码']) expect(markup).toContain(label)
+  for (const label of ['语音构台', '剧本搭台', '扫描上传', '排演', '复台', 'workspace=remount'])
     expect(markup).not.toContain(label)
   expect(markup).not.toContain('<canvas')
   expect(markup).toContain('今天想怎么搭台？')

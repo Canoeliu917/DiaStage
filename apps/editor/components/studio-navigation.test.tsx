@@ -15,7 +15,10 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
   })
 } else {
   const { mock } = await import('bun:test')
-  mock.module('@/lib/beta-capabilities', () => ({ BETA_EXPERT_MEDIA_ENABLED: true }))
+  mock.module('@/lib/beta-capabilities', () => ({
+    BETA_EXPERT_MEDIA_ENABLED: true,
+    BETA_REMOUNT_ENABLED: false,
+  }))
   const React = await import('react')
   const { useCameraStudio: store } = await import('./camera-studio/store')
   const effects: Array<() => undefined | (() => void)> = []
@@ -180,7 +183,6 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
 
   for (const [label, group, panel] of [
     ['置景', 'set', 'items'],
-    ['复台', 'remount', 'remount'],
   ]) {
     collapsed = true
     editor.isPreviewMode = true
@@ -211,10 +213,11 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     assert.equal(renderNavigation().filter((node) => node.props?.['aria-pressed']).length, 1)
     await Promise.resolve()
   }
-  assert.equal(renderNavigation().filter((node) => 'aria-pressed' in (node.props ?? {})).length, 2, 'only Build and Remount workspaces')
+  assert.equal(renderNavigation().filter((node) => 'aria-pressed' in (node.props ?? {})).length, 1, 'only the Set workspace is available')
+  assert.equal(renderNavigation().some((node) => [node.props?.children].flat().includes('复台')), false)
+  assert.equal(renderSidebar('navigation-test').sidebarTabs.some((tab) => tab.id === 'remount'), false)
   for (const [label, expected, group] of [
     ['置景', ['build', 'view', 'display', 'versions'], 'set'],
-    ['复台', ['versions', 'remount', 'build'], 'remount'],
   ] as const) {
     button(label).onClick()
     assert.deepEqual(
@@ -257,13 +260,14 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     ['lighting', 'items'],
     ['timeline', 'items'],
     ['record', 'view'],
+    ['remount', 'items'],
   ]) {
     assert.equal(openStudioPanel(legacy!), true)
     assert.equal(editor.activeSidebarPanel, expected)
     assert.equal(renderSidebar('navigation-test').group, 'set')
   }
   isMobile = true
-  for (const label of ['置景', '复台']) {
+  for (const label of ['置景']) {
     button(label).onClick()
     const sidebar = renderSidebar('navigation-test')
     assert.equal(sidebar.sidebarTopSlot, undefined, 'no simultaneous overview panel')
@@ -284,13 +288,13 @@ if (!process.env.STUDIO_NAVIGATION_TEST) {
     assert.equal(editor.activeSidebarPanel, previousPanel)
     assert.equal(editor.workspaceMode, previousWorkspace)
     assert.equal(editor.mode, previousMode)
-    for (const label of ['置景', '复台']) assert.equal(button(label).disabled, true)
+    for (const label of ['置景']) assert.equal(button(label).disabled, true)
     assert.equal(button('退出取景').disabled, undefined)
     button('退出取景').onClick()
     assert.equal(editor.isFirstPersonMode, false)
     assert.equal(editor.isCaptureMode, false)
     assert.equal(editor.workspaceMode, previousWorkspace)
-    for (const label of ['置景', '复台']) assert.equal(button(label).disabled, false)
+    for (const label of ['置景']) assert.equal(button(label).disabled, false)
     assert.equal(
       renderNavigation().some((node) => node.props?.children === '退出取景'),
       false,
