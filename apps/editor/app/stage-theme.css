@@ -1,5 +1,4 @@
 :root {
-  --dia-font-ui: "Courier New", var(--font-source-han-sans), monospace;
   --dia-type-ui: 14px;
   --dia-type-body: 15px;
   --dia-line-body: 1.65;
@@ -95,8 +94,7 @@ html[data-stage-theme] .studio-workspace :is(.stage-more-tools, .stage-controls-
 body .ds-library.dia-home,
 body .dia-home-simplified,
 body .studio-brand-en {
-  font-family: "Courier New", var(--font-source-han-sans), monospace;
-  --dia-font-ui: "Courier New", var(--font-source-han-sans), monospace;
+  font-family: var(--dia-font-ui);
 }
 
 html[data-stage-theme] .studio-workspace :is(.studio-navigation, .dia-dialogue) {
@@ -174,6 +172,27 @@ html[data-stage-theme] .studio-workspace :is(.diastage-tool-rail, .stage-display
 html[data-stage-theme] .studio-workspace :is(.diastage-tool-rail, .stage-display-toolbar, .stage-transform-toolbar):is(:hover, :focus-within) {
   background: var(--dia-raised);
   color: var(--dia-text);
+}
+
+html[data-stage-theme] .studio-workspace :is(.editor-sidebar-split, .dia-dock, .stage-transform-toolbar) {
+  border-color: var(--dia-divider);
+}
+
+html[data-stage-theme] .studio-workspace :is(.editor-pane-controls, .diastage-tool-rail, .dia-panel-header) {
+  background: var(--dia-surface);
+  color: var(--dia-muted);
+  border-color: var(--dia-divider);
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+}
+
+html[data-stage-theme] .studio-workspace :is(.editor-sidebar-split, .dia-dock, .stage-transform-toolbar):is(:hover, :focus-within) {
+  border-color: var(--dia-border);
+}
+
+html[data-stage-theme] .studio-workspace :is(.editor-pane-controls, .diastage-tool-rail, .dia-panel-header):is(:hover, :focus-within) {
+  background: var(--dia-panel);
+  color: var(--dia-text);
+  border-color: var(--dia-border);
 }
 
 html[data-stage-theme] .studio-workspace :is(.studio-mobile-menu[open] > div, .stage-controls-help > div) {
@@ -267,18 +286,18 @@ html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
 
 @media (hover: hover) and (pointer: fine) {
   html[data-stage-theme] .studio-workspace {
-    --dia-type-ui: 13px;
-    --dia-type-body: 13px;
-    --dia-line-body: 1.45;
+    --dia-type-ui: 14px;
+    --dia-type-body: 14px;
+    --dia-line-body: 1.5;
     --editor-pane-header-height: 36px;
   }
 
   html[data-stage-theme] .studio-workspace :is(.theatre-panel, .stage-manual, .stage-overview, .dia-panel, .stage-library-grid strong, .stage-library-preview > div > strong, .stage-presets > summary, .dia-secondary, .dia-input-examples, .stage-controls-help > div) {
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
-  html[data-stage-theme] .studio-workspace :is(.stage-library-grid small, .stage-library-preview small, .dia-message-system-state, .dia-attachment-hint, .stage-task-cards span, .stage-plan-review p, .stage-plan-review li, .stage-plan-review figcaption) {
+  html[data-stage-theme] .studio-workspace :is(.stage-library-grid small, .stage-library-preview small, .dia-message-system-state, .dia-attachment-hint, .stage-task-cards span, .stage-plan-review figcaption) {
     font-size: 12px;
     line-height: 1.4;
   }
@@ -287,13 +306,13 @@ html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
     min-width: 32px;
     min-height: 32px;
     padding: 4px 6px;
-    font-size: 13px;
-    line-height: 1.4;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
   html[data-stage-theme] .studio-workspace :is(input, textarea, select) {
-    font-size: 13px;
-    line-height: 1.45;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
   html[data-stage-theme] .studio-workspace input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]),
@@ -337,7 +356,7 @@ html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
   html[data-stage-theme] .studio-workspace .studio-assets-dock > .studio-venue { padding: 4px 8px; }
   html[data-stage-theme] .studio-workspace .studio-property-tabs { padding: 4px 6px; }
   html[data-stage-theme] .studio-workspace .stage-library-grid { gap: 4px; }
-  html[data-stage-theme] .studio-workspace .stage-library-grid button { grid-template-columns: 40px minmax(0, 1fr); min-height: 54px; gap: 6px; padding: 6px; }
+  html[data-stage-theme] .studio-workspace .stage-library-grid button { grid-template-columns: 48px minmax(0, 1fr); min-height: 72px; gap: 8px; padding: 6px; }
   html[data-stage-theme] .studio-workspace .stage-library-copy { gap: 2px; }
   html[data-stage-theme] .studio-workspace .stage-library-hint { margin: 4px 0; }
   html[data-stage-theme] .studio-workspace .stage-library-preview { grid-template-columns: 28px minmax(0, 1fr) auto; padding: 4px; }
@@ -363,13 +382,13 @@ html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
   html[data-stage-theme] .studio-workspace .dia-welcome h3 { font-size: 15px; margin-bottom: 4px; }
   html[data-stage-theme] .studio-workspace .stage-task-cards { gap: 4px; margin-top: 8px; }
   html[data-stage-theme] .studio-workspace .dia-panel .stage-task-cards button { min-height: 48px; padding: 6px 8px; gap: 2px; }
-  html[data-stage-theme] .studio-workspace .stage-task-cards strong { font-size: 13px; }
+  html[data-stage-theme] .studio-workspace .stage-task-cards strong { font-size: 14px; }
   html[data-stage-theme] .studio-workspace .dia-panel .dia-proposals { margin-top: 8px; padding-top: 6px; }
   html[data-stage-theme] .studio-workspace .dia-dialogue .dia-proposal { padding: 6px; }
   html[data-stage-theme] .studio-workspace .dia-panel .dia-message { padding-block: 6px; }
   html[data-stage-theme] .studio-workspace .dia-panel label { gap: 4px; margin-block: 4px; }
   html[data-stage-theme] .studio-workspace .dia-panel .dia-composer { padding: 6px 8px; }
-  html[data-stage-theme] .studio-workspace .dia-panel .dia-composer textarea { height: 52px; min-height: 52px; padding: 6px; font-size: 13px; }
+  html[data-stage-theme] .studio-workspace .dia-panel .dia-composer textarea { height: 52px; min-height: 52px; padding: 6px; font-size: 14px; }
   html[data-stage-theme] .studio-workspace .dia-composer [role="status"] { margin-bottom: 4px; }
   html[data-stage-theme] .studio-workspace .dia-attachment-controls { grid-template-columns: 32px minmax(0, 1fr); gap: 6px; }
   html[data-stage-theme] .studio-workspace .dia-attachment-controls .dia-attachment-add { width: 32px; height: 32px; padding: 0; }

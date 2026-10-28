@@ -1,5 +1,5 @@
 html:has(.dia-home) { overflow-y: auto; scroll-behavior: smooth; }
-.ds-library.dia-home { --dia-font-ui: var(--font-huiwen-mincho), var(--font-source-han-sans), "Microsoft YaHei", serif; position: relative; min-height: 100dvh; overflow-x: clip; font-family: var(--dia-font-ui); background-color: #191b18; color: #e8e5da; caret-color: #e8e5da; color-scheme: dark; }
+.ds-library.dia-home { position: relative; min-height: 100dvh; overflow-x: clip; font-family: var(--dia-font-ui); background-color: #191b18; color: #e8e5da; caret-color: #e8e5da; color-scheme: dark; }
 .dia-home ::selection { background: #e8e5da; color: #111212; }
 .dia-space-brand { position: absolute; z-index: 6; top: 24px; left: 36px; opacity: 0; visibility: hidden; transition: color 550ms ease, opacity 550ms ease, visibility 550ms; }
 .dia-space-brand :is(.studio-brand-cn,.studio-brand-en) { height: auto; color: inherit; background: transparent; }
@@ -13,7 +13,7 @@ html:has(.dia-home) { overflow-y: auto; scroll-behavior: smooth; }
 .dia-home button:disabled { cursor: not-allowed; opacity: .5; }
 .dia-home :is(button,input,textarea,select) { font: inherit; }
 .dia-home :is(a,button,input,textarea,select):focus-visible { outline: 2px solid currentColor; outline-offset: 5px; }
-.dia-home-simplified { font-family: var(--font-source-han-sans), "Microsoft YaHei", sans-serif; }
+.dia-home-simplified { font-family: var(--dia-font-ui); }
 .dia-home-space { --space-muted: #aaa99e; --space-rule: #42443e; background: #191b18; color: #e8e5da; transition: background-color 550ms ease, color 550ms ease; }
 .dia-home-space[data-illuminated=true] { --space-muted: #676b5f; --space-rule: #c6c6b9; background: #edeadd; color: #252820; color-scheme: light; }
 .dia-space-tagline { position: absolute; z-index: 6; top: 36px; right: 36px; margin: 0; font-size: 14px; line-height: 24px; letter-spacing: .08em; pointer-events: none; animation: dia-coordinate-enter 550ms ease both; }
@@ -57,26 +57,26 @@ html:has(.dia-home) { overflow-y: auto; scroll-behavior: smooth; }
   .dia-home .dia-coordinate-field .dia-coordinate-toggle button:hover { min-height: 32px; padding: 4px; font-size: 12px; }
   .dia-home .dia-space-footer h2 { height: 48px; font-size: 13px; }
   .dia-home .dia-space-details { padding: 16px max(20px, 4vw) 20px; }
-  .dia-home .dia-space-companion { margin-bottom: 16px; font-size: 13px; line-height: 1.5; }
+  .dia-home .dia-space-companion { margin-bottom: 16px; font-size: 14px; line-height: 1.5; }
   .dia-home .dia-space-footer dl { gap: 16px; }
   .dia-home .dia-space-footer dt { font-size: 16px; }
   .dia-home .dia-space-footer dd { margin-top: 8px; font-size: 12px; line-height: 1.5; }
   .dia-home .dia-space-introduction { gap: 24px; margin-top: 16px; padding-top: 12px; }
-  .dia-home .dia-space-introduction p { font-size: 13px; line-height: 1.5; }
+  .dia-home .dia-space-introduction p { font-size: 14px; line-height: 1.5; }
   .dia-home .dia-space-footer .dia-space-motto { margin-top: 16px; font-size: 12px; }
   .dia-home .dia-space-registration { padding-block: 8px; font-size: 12px; }
   .dia-home .dia-space-registration a,
   .dia-home .dia-space-about a { min-height: 32px; }
-  .dia-home .dia-space-dialog { width: min(800px, calc(100% - 32px)); padding: 20px; font-size: 13px; }
+  .dia-home .dia-space-dialog { width: min(800px, calc(100% - 32px)); padding: 20px; font-size: 14px; line-height: 1.5; }
   .dia-home .stage-entry-dialog header { gap: 12px; margin-bottom: 16px; }
   .dia-home .stage-entry-dialog header button { min-width: 32px; min-height: 32px; }
   .dia-home .dia-space-dialog h2 { font-size: 20px; }
-  .dia-home .dia-space-dialog > p { margin-bottom: 12px; line-height: 1.5; }
-  .dia-home .dia-space-about > p { margin-block: 12px; font-size: 13px; line-height: 1.5; }
-  .dia-home :is(.stage-entry-form, .stage-input, .stage-plan-review) { gap: 10px; font-size: 13px; }
+  .dia-home .dia-space-dialog > p { margin-bottom: 12px; font-size: 14px; line-height: 1.5; }
+  .dia-home .dia-space-about > p { margin-block: 12px; font-size: 14px; line-height: 1.5; }
+  .dia-home :is(.stage-entry-form, .stage-input, .stage-plan-review) { gap: 10px; font-size: 14px; }
   .dia-home :is(.stage-entry-form, .stage-input, .stage-plan-review) label { gap: 4px; }
-  .dia-home :is(.stage-entry-form, .stage-input, .stage-plan-review) :is(input:not([type=checkbox]), select, button) { min-height: 32px; padding: 4px 8px; font-size: 13px; }
-  .dia-home .stage-input textarea { min-height: 96px; padding: 6px 8px; font-size: 13px; line-height: 1.5; }
+  .dia-home :is(.stage-entry-form, .stage-input, .stage-plan-review) :is(input:not([type=checkbox]), select, button) { min-height: 32px; padding: 4px 8px; font-size: 14px; }
+  .dia-home .stage-input textarea { min-height: 96px; padding: 6px 8px; font-size: 14px; line-height: 1.5; }
   .dia-home .stage-entry-actions { gap: 6px; }
   .dia-home .stage-entry-metrics { gap: 8px; }
   .dia-home .stage-script-dropzone { gap: 8px; padding: 12px; }

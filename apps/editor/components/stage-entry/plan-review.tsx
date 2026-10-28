@@ -1002,6 +1002,25 @@ export function StagePlanReview({
         </details>
       )}
       {error && <p role="alert">{error}</p>}
+      <aside className="stage-plan-evidence" aria-label="方案依据">
+        <p>
+          <span>[1]</span>{' '}
+          {plan.source === 'script'
+            ? '剧本明确写出'
+            : plan.source === 'manual'
+              ? '已提供的布景'
+              : '描述已给出'}{' '}
+          · {included.items.filter((item) => item.certainty === 'stated').length} 件
+        </p>
+        <p>
+          <span>[2]</span> 系统推测 ·{' '}
+          {included.items.filter((item) => item.certainty === 'inferred').length} 件
+        </p>
+        <p>
+          <span>[3]</span> 需要确认 ·{' '}
+          {plan.questions.length ? `${plan.questions.length} 项` : '采用前核对台位'}
+        </p>
+      </aside>
       <div className="stage-entry-actions">
         {onPreview && (!compact || !previewMatches) && (
           <button

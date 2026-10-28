@@ -306,7 +306,7 @@ function StageTransformToolbar() {
         aria-keyshortcuts="V"
       >
         <MousePointer2 size={14} />
-        选择 <kbd>V</kbd>
+        选择
       </button>
       <button
         type="button"
@@ -319,7 +319,7 @@ function StageTransformToolbar() {
         aria-keyshortcuts="G"
       >
         <Hand size={14} />
-        移动 <kbd>G</kbd>
+        移动
       </button>
       <button
         type="button"
@@ -332,7 +332,7 @@ function StageTransformToolbar() {
         aria-keyshortcuts="T"
       >
         <RotateCw size={14} />
-        旋转 <kbd>T</kbd>
+        旋转
       </button>
       <button
         type="button"
@@ -344,7 +344,7 @@ function StageTransformToolbar() {
         aria-keyshortcuts="R"
       >
         <Maximize2 size={14} />
-        缩放 <kbd>R</kbd>
+        缩放
       </button>
       <StagePlanNavigationRuntime />
     </div>

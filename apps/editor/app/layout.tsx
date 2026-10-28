@@ -29,6 +29,15 @@ const sourceHanSans = localFont({
   adjustFontFallback: false,
 })
 
+const huiwenMincho = localFont({
+  src: './fonts/huiwen-mincho/HuiwenMinchoGBK-Regular.woff2',
+  variable: '--font-huiwen-mincho',
+  weight: '500',
+  display: 'swap',
+  preload: false,
+  adjustFontFallback: false,
+})
+
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -40,7 +49,7 @@ export default async function RootLayout({
 
   return (
     <html
-      className={sourceHanSans.variable}
+      className={`${sourceHanSans.variable} ${huiwenMincho.variable}`}
       lang="zh-CN"
       style={DIA_CSS_VARIABLES as CSSProperties}
       suppressHydrationWarning

@@ -1,5 +1,6 @@
 'use client'
 
+import { useViewer } from '@pascal-app/viewer'
 import { Monitor, Moon, Sun } from 'lucide-react'
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
 import {
@@ -49,6 +50,7 @@ export function StageThemeProvider({ children }: { children: ReactNode }) {
     if (ready) {
       document.documentElement.dataset.stageTheme = theme
       document.documentElement.classList.toggle('dark', theme === 'night')
+      useViewer.getState().setSceneTheme(theme === 'night' ? 'night' : 'studio')
     }
   }, [ready, theme])
 
@@ -64,29 +66,34 @@ export function StageThemeProvider({ children }: { children: ReactNode }) {
   return <StageThemeContext value={{ preference, theme, choose }}>{children}</StageThemeContext>
 }
 
-export function StageThemeControl() {
+export function StageThemeControl({ systemOnly = false }: { systemOnly?: boolean } = {}) {
   const { preference, theme, choose } = useContext(StageThemeContext)
   const day = theme === 'day'
   return (
     <div aria-label="界面明暗" className="stage-theme-control" role="group">
-      <button
-        aria-label={day ? '切换到夜场' : '切换到日场'}
-        onClick={() => choose(day ? 'night' : 'day')}
-        title={day ? '当前日场，切换到夜场' : '当前夜场，切换到日场'}
-        type="button"
-      >
-        {day ? <Sun aria-hidden="true" size={16} /> : <Moon aria-hidden="true" size={16} />}
-        <span>{day ? '日场' : '夜场'}</span>
-      </button>
-      <button
-        aria-label="跟随系统明暗"
-        aria-pressed={preference === 'system'}
-        onClick={() => choose(preference === 'system' ? theme : 'system')}
-        title={preference === 'system' ? '正在跟随系统，点击固定当前明暗' : '跟随系统明暗'}
-        type="button"
-      >
-        <Monitor aria-hidden="true" size={16} />
-      </button>
+      {!systemOnly && (
+        <button
+          aria-label={day ? '切换到夜场' : '切换到日场'}
+          onClick={() => choose(day ? 'night' : 'day')}
+          title={day ? '当前日场，切换到夜场' : '当前夜场，切换到日场'}
+          type="button"
+        >
+          {day ? <Sun aria-hidden="true" size={16} /> : <Moon aria-hidden="true" size={16} />}
+          <span>{day ? '日场' : '夜场'}</span>
+        </button>
+      )}
+      {systemOnly && (
+        <button
+          aria-label="跟随系统明暗"
+          aria-pressed={preference === 'system'}
+          onClick={() => choose(preference === 'system' ? theme : 'system')}
+          title={preference === 'system' ? '正在跟随系统，点击固定当前明暗' : '跟随系统明暗'}
+          type="button"
+        >
+          <Monitor aria-hidden="true" size={16} />
+          跟随系统明暗
+        </button>
+      )}
     </div>
   )
 }

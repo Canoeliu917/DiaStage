@@ -92,6 +92,10 @@ function ThemeLights() {
   const sceneTheme = useViewer((state) => state.sceneTheme)
   const theme = getSceneTheme(sceneTheme)
   const shadows = useViewer((state) => state.shadows)
+  const reducedMotion = useMemo(
+    () => typeof window === 'undefined' ? null : window.matchMedia('(prefers-reduced-motion: reduce)'),
+    [],
+  )
 
   const lightRefs = useRef<Array<DirectionalLight | null>>([])
   const shadowCamera = useRef<OrthographicCamera>(null)
@@ -124,7 +128,7 @@ function ThemeLights() {
 
   useFrame((state, delta) => {
     // clamp delta to avoid huge jumps on tab switch
-    const dt = Math.min(delta, 0.1) * 4
+    const dt = reducedMotion?.matches ? 1 : 1 - Math.exp(-Math.min(delta, 0.1) * 20)
 
     // Fit each shadow-casting light's frustum to the BUILDING geometry rather
     // than the camera. We refresh the union bounds on an interval (cheap enough,

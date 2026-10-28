@@ -22,7 +22,7 @@
 .dia-scene-gallery .ds-scene-meta { display: block; margin-top: 20px; color: #33352f; }
 .dia-gallery-modified { display: flex; flex-wrap: wrap; align-items: baseline; gap: 7px 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .dia-gallery-modified > span, .dia-gallery-modified small { color: #66695f; font-size: 11px; }
-.dia-scene-gallery .dia-gallery-modified :is(time,small), .dia-scene-gallery .dia-gallery-dimensions em { font-family: var(--font-dia-latin), monospace; font-size: 13px; font-weight: 400; font-style: normal; line-height: 1.6; letter-spacing: 0; }
+.dia-scene-gallery .dia-gallery-modified :is(time,small), .dia-scene-gallery .dia-gallery-dimensions em { font-family: var(--dia-font-ui); font-size: 13px; font-weight: 400; font-style: normal; line-height: 1.6; letter-spacing: 0; }
 .dia-gallery-medium { margin-top: 11px; font-size: 13px; line-height: 1.6; }
 .dia-gallery-dimensions { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px; margin-top: 16px; }
 .dia-gallery-dimensions > span { color: #777a71; font-size: 11px; }

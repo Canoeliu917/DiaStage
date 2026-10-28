@@ -446,6 +446,17 @@ export function StageCommandInput({
           查看我的 AI 额度
         </button>
         {usageDetail && <p role="status">{usageDetail}</p>}
+        <button
+          type="button"
+          onClick={() => {
+            setText(STAGE_EXAMPLE)
+            setSource('typed-command')
+            setAnswers([])
+          }}
+          disabled={busy}
+        >
+          试用示例
+        </button>
       </details>
       {sceneId && (
         <CreationModeControl
@@ -539,26 +550,25 @@ export function StageCommandInput({
             {attachments.controls}
           </div>
           <div className="stage-entry-actions">
-            <button
-              type="button"
-              onClick={() => {
-                setText(STAGE_EXAMPLE)
-                setSource('typed-command')
-                setAnswers([])
-              }}
-              disabled={busy}
-            >
-              试用示例
-            </button>
-            <button type="button" onClick={send} disabled={sendDisabled}>
-              {attachments.pending
-                ? '发送生成'
-                : state === 'planning'
-                  ? '正在理解台位…'
-                  : state === 'error'
-                    ? '重试生成'
-                    : '生成舞台方案'}
-            </button>
+            {state === 'planning' || attachments.busy ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (attachments.busy) attachments.stop()
+                  else {
+                    rejectRemote()
+                    abort.current?.abort()
+                    setState('idle')
+                  }
+                }}
+              >
+                停止
+              </button>
+            ) : (
+              <button type="button" onClick={send} disabled={sendDisabled}>
+                {attachments.pending ? '发送生成' : state === 'error' ? '重试生成' : '发送'}
+              </button>
+            )}
           </div>
         </>
       )}
@@ -661,7 +671,7 @@ export function StageCommandInput({
           </button>
         </section>
       )}
-      {['planning', 'applying'].includes(state) && (
+      {plan && ['planning', 'applying'].includes(state) && (
         <button
           type="button"
           onClick={() => {

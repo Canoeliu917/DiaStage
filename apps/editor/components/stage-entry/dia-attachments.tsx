@@ -68,6 +68,11 @@ export function useDiaAttachments({
     open: attachment !== null,
     pending: attachment !== null && submission === null,
     busy,
+    stop: () => {
+      // Unmounting the preview aborts its request; keep the attachment and draft for retry.
+      setSubmission(null)
+      setBusy(false)
+    },
     pick: () => {
       if (!disabled && !attachment) input.current?.click()
     },

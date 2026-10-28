@@ -5,7 +5,7 @@
 .dia-dock-controls button:hover:not(:disabled), .dia-restore-tab:hover { background: var(--dia-hover); }
 .dia-dock-controls button:disabled { opacity: .35; cursor: default; }
 .dia-stage-layout .dia-dock.dia-resizable-dock .dia-panel .dia-panel-header { padding-right: 108px; }
-.dia-restore-tab { position: absolute; top: 8px; right: 10px; z-index: 110; padding: 6px 10px; box-shadow: 0 2px 10px color-mix(in srgb, var(--dia-ink) 27%, transparent); }
+.dia-restore-tab { position: absolute; top: 54px; right: 10px; z-index: 110; padding: 6px 10px; box-shadow: 0 2px 10px color-mix(in srgb, var(--dia-ink) 27%, transparent); }
 .dia-dock-resizer { position: absolute; top: 0; bottom: 0; left: -8px; z-index: 100; display: flex; align-items: center; justify-content: center; width: 16px; cursor: col-resize; touch-action: none; }
 .dia-dock-resizer span { width: 4px; height: 32px; border-radius: 4px; background: var(--dia-muted); }
 .dia-dock-resizer[aria-disabled=true] { cursor: default; }

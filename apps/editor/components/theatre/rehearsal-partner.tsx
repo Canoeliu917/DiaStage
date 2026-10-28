@@ -281,12 +281,10 @@ export function RehearsalPartner({
             <p>先摆一遍，再决定怎样排。</p>
             <StageTaskCards
               disabled={!state.ready || state.busy || readOnly}
-              onPlace={() => openStudioPanel('items')}
-              onDescribe={() => {
-                controller.patch({ draft: '一张圆桌，两把硬椅' })
+              onPrefill={(draft) => {
+                controller.patch({ draft })
                 composerInput.current?.focus()
               }}
-              onImport={attachments.pick}
             />
           </div>
         )}
@@ -808,6 +806,34 @@ export function RehearsalPartner({
           )}
         <details className="dia-secondary dia-settings">
           <summary>详情与设置</summary>
+          <details className="dia-input-examples">
+            <summary>试着这样说</summary>
+            <div className="dia-shortcut-rows">
+              {SHORTCUTS.map(({ label, items }) => (
+                <section key={label}>
+                  <strong>{label}</strong>
+                  <div className="dia-shortcuts">
+                    {items.map((text) => (
+                      <button
+                        key={text}
+                        type="button"
+                        disabled={state.busy}
+                        onClick={() => {
+                          if (text === '我自己来') controller.cancel('好的，继续手动置景。')
+                          else {
+                            controller.patch({ draft: text })
+                            composerInput.current?.focus()
+                          }
+                        }}
+                      >
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </details>
           {BETA_REHEARSAL_ENABLED && (
             <label>
               对话信息密度
@@ -990,32 +1016,6 @@ export function RehearsalPartner({
           </p>
         )}
         <GhostFeedbackError />
-        <details className="dia-input-examples">
-          <summary>试着这样说</summary>
-          <div className="dia-shortcut-rows">
-            {SHORTCUTS.map(({ label, items }) => (
-              <section key={label}>
-                <strong>{label}</strong>
-                <div className="dia-shortcuts">
-                  {items.map((text) => (
-                    <button
-                      key={text}
-                      type="button"
-                      disabled={state.busy}
-                      onClick={() =>
-                        text === '我自己来'
-                          ? controller.cancel('好的，继续手动置景。')
-                          : controller.patch({ draft: text })
-                      }
-                    >
-                      {text}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </details>
         <div {...attachments.dropProps} className="dia-attachment-drop">
           <label>
             <span className="sr-only">你想试什么？</span>
@@ -1041,13 +1041,27 @@ export function RehearsalPartner({
           {attachments.controls}
         </div>
         <div className="dia-actions">
-          <button className="dia-primary" type="submit" disabled={sendDisabled}>
-            {attachments.pending
-              ? '发送生成'
-              : state.thread?.status === 'failed' || state.notice === SERVICE_REQUEST_FAILURE_NOTICE
-                ? '重试'
-                : '发送'}
-          </button>
+          {controllerState.busy || attachments.busy ? (
+            <button
+              className="dia-primary"
+              type="button"
+              onClick={() => {
+                if (attachments.busy) attachments.stop()
+                else controller.cancel()
+              }}
+            >
+              停止
+            </button>
+          ) : (
+            <button className="dia-primary" type="submit" disabled={sendDisabled}>
+              {attachments.pending
+                ? '发送生成'
+                : state.thread?.status === 'failed' ||
+                    state.notice === SERVICE_REQUEST_FAILURE_NOTICE
+                  ? '重试'
+                  : '发送'}
+            </button>
+          )}
           {VOICE_INPUT_ENABLED && (
             <button
               type="button"
@@ -1056,11 +1070,6 @@ export function RehearsalPartner({
               onClick={() => setVoice(!voice)}
             >
               {voice ? '收起录音' : '说一句'}
-            </button>
-          )}
-          {controllerState.busy && (
-            <button type="button" onClick={() => controller.cancel()}>
-              停止
             </button>
           )}
         </div>

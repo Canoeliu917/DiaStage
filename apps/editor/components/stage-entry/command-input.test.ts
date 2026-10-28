@@ -24,12 +24,14 @@ test('typed and voice local drafts reject the retired asset before confirmation 
     throw new Error('retired plans must not create scenes')
   }) as typeof fetch
   for (const source of ['typed-command', 'voice'] as const) {
-    const parsed = parseStageText('添加单帘景片', context, [], source)!
-    const local = groundStageAssets(parsed)
-    expect(local.items).toEqual([])
-    expect(local.questions[0]!.message).toContain('当前不在可选舞台库')
+    expect(parseStageText('添加单帘景片', context, [], source)).toBeNull()
+    const parsed = parseStageText('添加圆桌', context, [], source)!
+    const retired = {
+      ...parsed,
+      items: parsed.items.map((item) => ({ ...item, libraryAssetId: 'SCN-FLAT-090' })),
+    }
     await expect(
-      applyReviewedPlan({ ...parsed, venue: context.venue }, context, 'retired'),
+      applyReviewedPlan({ ...retired, venue: context.venue }, context, 'retired'),
     ).rejects.toThrow('当前不可选')
   }
   expect(requests).toBe(0)

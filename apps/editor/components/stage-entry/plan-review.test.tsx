@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import type { SceneContextSummary, StagePlan } from '@pascal-app/core/stage'
+import { parseStageText, type SceneContextSummary, type StagePlan } from '@pascal-app/core/stage'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { DIA_COLORS } from '@/lib/visual-system'
 import { existingProposal, PlanDrawing, StagePlanReview, useStagePlanPreview } from './plan-review'
@@ -39,6 +39,55 @@ test('existing scenery previews keep their world position when the proposed stag
   expect(markup).toContain('data-existing="true"')
   expect(markup).toContain('data-proposal-id="chair"')
   expect(context.objects[0]?.transform.position.z).toBe(4.5)
+})
+
+test('review footnotes distinguish explicit script evidence, inference and confirmation without asserting typed text came from a script', () => {
+  const context: SceneContextSummary = {
+    documentVersion: 1,
+    venue: { type: 'proscenium', widthMeters: 8, depthMeters: 6, heightMeters: 4 },
+    selectedObjectIds: [],
+    objects: [],
+  }
+  const base = parseStageText('添加圆桌', context)!
+  const plan: StagePlan = {
+    ...base,
+    source: 'script',
+    items: [
+      { ...base.items[0]!, certainty: 'stated' },
+      {
+        ...base.items[0]!,
+        proposalId: 'inferred-chair',
+        certainty: 'inferred',
+        transform: {
+          ...base.items[0]!.transform,
+          position: { x: 2, y: 0, z: 3 },
+        },
+      },
+    ],
+  }
+  const render = (value: StagePlan) =>
+    renderToStaticMarkup(
+      <StagePlanReview
+        plan={value}
+        context={context}
+        compact
+        busy={false}
+        onChange={() => {}}
+        onBack={() => {}}
+        onConfirm={() => {}}
+        onPreview={() => {}}
+      />,
+    )
+  const before = JSON.stringify(plan)
+  const markup = render(plan)
+  expect(markup).toContain('aria-label="方案依据"')
+  expect(markup).toContain('剧本明确写出 · 1 件')
+  expect(markup).toContain('系统推测 · 1 件')
+  expect(markup).toContain('需要确认 · 采用前核对台位')
+  const typed = render({ ...plan, source: 'typed-command' })
+  expect(typed).toContain('描述已给出 · 1 件')
+  expect(typed).not.toContain('剧本明确写出')
+  expect(JSON.stringify(plan)).toBe(before)
 })
 
 test('the live stage remains neutral while a pending proposal uses Dia blue', () => {

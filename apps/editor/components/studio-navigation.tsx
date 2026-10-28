@@ -1,7 +1,7 @@
 'use client'
 
 import { runRedo, runUndo, useEditor, useIsMobile, useSidebarStore } from '@pascal-app/editor'
-import { Hammer, History, Layers, Redo2, ScanLine, Undo2 } from 'lucide-react'
+import { Ellipsis, Hammer, History, Layers, Redo2, ScanLine, Undo2 } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
@@ -11,6 +11,7 @@ import { migrateStudioPanel, type StudioGroup } from '@/lib/studio-workspaces'
 import { useCameraStudio } from './camera-studio/store'
 import { StudioWordmark } from './studio-wordmark'
 import { useRehearsalPlayback } from './theatre/state'
+import './studio-navigation.css'
 
 export type { StudioGroup } from '@/lib/studio-workspaces'
 
@@ -31,11 +32,13 @@ export function openStudioPanel(panel: string): boolean {
 export function StudioNavigation({
   sceneName,
   actions,
+  overflowActions,
   group,
   onGroupChange,
 }: {
   sceneName: string
   actions?: ReactNode
+  overflowActions?: ReactNode
   group: StudioGroup
   onGroupChange: (group: StudioGroup) => void
 }) {
@@ -43,7 +46,19 @@ export function StudioNavigation({
   const mobile = useIsMobile()
   const menu = (
     <>
-      {actions}
+      {mobile && actions}
+      {overflowActions}
+      {!BETA_REMOUNT_ENABLED && (
+        <button
+          type="button"
+          aria-pressed={group === 'set'}
+          disabled={exclusive}
+          onClick={() => onGroupChange('set')}
+        >
+          <Hammer size={16} />
+          置景
+        </button>
+      )}
       <button
         type="button"
         className="studio-history-action"
@@ -53,6 +68,7 @@ export function StudioNavigation({
         disabled={exclusive}
       >
         <Undo2 size={15} />
+        撤销
       </button>
       <button
         type="button"
@@ -63,6 +79,7 @@ export function StudioNavigation({
         disabled={exclusive}
       >
         <Redo2 size={15} />
+        重做
       </button>
       <button type="button" onClick={() => openStudioPanel('versions')} disabled={exclusive}>
         <History size={16} />
@@ -72,6 +89,7 @@ export function StudioNavigation({
         <Layers size={16} />
         剧目库
       </Link>
+      <StageThemeControl systemOnly />
     </>
   )
 
@@ -91,31 +109,38 @@ export function StudioNavigation({
         </div>
       </div>
       <nav className="studio-workspaces" aria-label="工作区">
-        {[
-          { id: 'set' as const, label: '置景', icon: Hammer },
-          ...(BETA_REMOUNT_ENABLED
-            ? [{ id: 'remount' as const, label: '复台', icon: ScanLine }]
-            : []),
-        ].map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            aria-pressed={group === id}
-            disabled={exclusive}
-            onClick={() => {
-              onGroupChange(id)
-            }}
-          >
-            <Icon size={17} />
-            {label}
-          </button>
-        ))}
+        {!BETA_REMOUNT_ENABLED ? (
+          <span className="studio-current-workspace" aria-current="page">
+            置景
+          </span>
+        ) : (
+          [
+            { id: 'set' as const, label: '置景', icon: Hammer },
+            ...(BETA_REMOUNT_ENABLED
+              ? [{ id: 'remount' as const, label: '复台', icon: ScanLine }]
+              : []),
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={group === id}
+              disabled={exclusive}
+              onClick={() => {
+                onGroupChange(id)
+              }}
+            >
+              <Icon size={17} />
+              {label}
+            </button>
+          ))
+        )}
       </nav>
       <div className="studio-navigation-actions">
         <StageThemeControl />
         <span className="studio-project-name" title={sceneName}>
           {sceneName}
         </span>
+        {!mobile && actions}
         {exclusive && (
           <button
             type="button"
@@ -127,23 +152,37 @@ export function StudioNavigation({
             退出取景
           </button>
         )}
-        {mobile ? (
-          <details className="studio-mobile-menu">
-            <summary>更多</summary>
-            <div>
-              <p>AI 置景 · 照片置景 · 剧本置景</p>
-              <button type="button" onClick={() => useEditor.getState().setViewMode('3d')}>
-                三维舞台
-              </button>
-              <button type="button" onClick={() => useEditor.getState().setViewMode('2d')}>
-                平面图
-              </button>
-              {menu}
-            </div>
-          </details>
-        ) : (
-          menu
-        )}
+        <details
+          className={mobile ? 'studio-mobile-menu' : 'studio-overflow-menu'}
+          onKeyDown={(event) => {
+            if (event.key !== 'Escape') return
+            event.preventDefault()
+            event.stopPropagation()
+            event.currentTarget.open = false
+            event.currentTarget.querySelector('summary')?.focus()
+          }}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false
+          }}
+        >
+          <summary aria-label="更多剧目操作" title="更多剧目操作">
+            <Ellipsis size={18} />
+          </summary>
+          <div>
+            {mobile && (
+              <>
+                <p>AI 置景 · 照片置景 · 剧本置景</p>
+                <button type="button" onClick={() => useEditor.getState().setViewMode('3d')}>
+                  三维舞台
+                </button>
+                <button type="button" onClick={() => useEditor.getState().setViewMode('2d')}>
+                  平面图
+                </button>
+              </>
+            )}
+            {menu}
+          </div>
+        </details>
       </div>
     </header>
   )

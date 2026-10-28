@@ -704,6 +704,13 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
             sceneName={document?.production.name ?? meta.name}
             group={group}
             onGroupChange={onGroupChange}
+            overflowActions={
+              <SceneBackupControls
+                sceneName={document?.production.name ?? meta.name}
+                onExport={exportBackup}
+                disabled={!stageReady || recoveryBusy}
+              />
+            }
             actions={
               <>
                 <span className="studio-save-status" role="status">
@@ -726,16 +733,11 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 >
                   保存
                 </button>
-                <SceneBackupControls
-                  sceneName={document?.production.name ?? meta.name}
-                  onExport={exportBackup}
-                  disabled={!stageReady || recoveryBusy}
-                />
               </>
             }
           />
           {!immersive && (
-            <StageFirstVisit ready={stageReady} readOnly={recoveryBusy || !!conflict} />
+            <StageFirstVisit ready={stageReady} readOnly={recoveryBusy || !!conflict} saveStatus={saveStatus} />
           )}
           {stageReady && !immersive && <PhotoStageReference key={meta.id} sceneId={meta.id} />}
           <div className="dia-stage-layout">
