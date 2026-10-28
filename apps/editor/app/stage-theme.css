@@ -283,7 +283,7 @@ html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
     line-height: 1.4;
   }
 
-  html[data-stage-theme] .studio-workspace :is(.studio-navigation, .stage-manual, .theatre-panel, .stage-overview, .dia-panel, .studio-property-tabs, .diastage-viewer-toolbar, .stage-first-visit, .stage-grid-popover) :is(button, select, summary):not(.stage-fold-point, .stage-fold-angle-handle) {
+  html[data-stage-theme] .studio-workspace :is(.studio-navigation, .stage-manual, .theatre-panel, .stage-overview, .dia-panel, .studio-property-tabs, .diastage-viewer-toolbar, .stage-first-visit, .stage-grid-popover) :is(button, select, summary):not(:where(.stage-fold-point, .stage-fold-angle-handle)) {
     min-width: 32px;
     min-height: 32px;
     padding: 4px 6px;
@@ -311,6 +311,7 @@ html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
   html[data-stage-theme] .studio-navigation :is(.studio-identity, .studio-navigation-actions, .studio-workspaces) { gap: 4px; }
   html[data-stage-theme] .studio-navigation .studio-identity > img { width: 24px; height: 24px; }
   html[data-stage-theme] .studio-workspace .studio-navigation a.studio-wordmark { min-height: 32px; font-size: 22px; }
+  html[data-stage-theme] .studio-workspace .studio-navigation .studio-brand-en { font-size: 26px; }
   html[data-stage-theme] .studio-workspace .studio-navigation .studio-brand-cn { font-size: 20px; }
   html[data-stage-theme] .studio-navigation .studio-navigation-actions > a { min-height: 32px; padding: 4px 6px; font-size: 12px; }
   html[data-stage-theme] .studio-navigation .studio-mobile-menu[open] > div { top: 40px; gap: 4px; padding: 8px; }

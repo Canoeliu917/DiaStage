@@ -39,7 +39,8 @@
   .dia-scene-gallery .ds-library-heading { gap: 16px; padding-bottom: 20px; }
   .dia-scene-gallery .dia-gallery-kicker { margin-bottom: 8px; font-size: 12px; }
   .dia-scene-gallery .ds-library-heading h1 { margin-bottom: 8px; font-size: 24px; }
-  .dia-scene-gallery :is(.ds-library-heading, .ds-library-empty) button { min-height: 32px; padding: 4px 10px; font-size: 13px; }
+  .dia-scene-gallery :is(.ds-library-heading, .ds-library-empty) :is(button, a) { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 10px; font-size: 13px; border: 1px solid #33352f; border-radius: 3px; background: transparent; color: #33352f; }
+  .dia-scene-gallery :is(.ds-library-heading, .ds-library-empty) :is(button, a):hover { background: #33352f; color: #f5f4f0; }
   .dia-scene-gallery .ds-library-count { padding: 8px 0; }
   .dia-scene-gallery .ds-scene-entry { padding: 20px 0; }
   .dia-scene-gallery .ds-scene-image { padding: 8px; }
