@@ -253,6 +253,18 @@ html .dia-home :is(.dia-coordinate-node-content, .dia-space-details) {
   animation: none;
 }
 
+@media (min-width: 1000px) {
+  html[data-stage-theme] .studio-workspace .studio-navigation a.studio-wordmark {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  html[data-stage-theme] .studio-workspace .dia-panel :is(.dia-other-proposals, .dia-settings, .dia-input-examples) > summary {
+    min-height: 44px;
+    align-content: center;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html :is(.studio-workspace, .dia-home) *,
   html :is(.studio-workspace, .dia-home) *::before,
