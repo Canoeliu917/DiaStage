@@ -289,7 +289,6 @@ function buildRoomPlacements(
   ]
 
   const placements: Placement[] = []
-  const area = polygonArea(polygon)
 
   const addBack = (assetId: string, inset: number, lateral = 0, rotationDeg = facingRot) => {
     const [x, z] = backPos(inset, lateral)
@@ -316,51 +315,22 @@ function buildRoomPlacements(
 
   switch (roomType) {
     case 'bedroom': {
-      const bedId = Math.max(bounds.width, bounds.depth) >= 3.2 ? 'double-bed' : 'single-bed'
-      const bed = findCatalogItem(bedId)
-      const [bedW = 2, , bedD = 2.5] = bed?.dimensions ?? []
-      addBack(bedId, bedD / 2 + 0.1)
-      if (alongLen > bedW + 1.1) {
-        addBack('bedside-table', 0.35, -(bedW / 2 + 0.35))
-        addBack('bedside-table', 0.35, bedW / 2 + 0.35)
-      }
-      if (area >= 10) addSide('dresser', 0.55, sideAlongLen * 0.22)
-      if (area >= 13) addSide('closet', 0.6, -sideAlongLen * 0.22)
+      const bed = findCatalogItem('sofa')
+      const [bedW = 2.5, , bedD = 1.5] = bed?.dimensions ?? []
+      addBack('sofa', bedD / 2 + 0.1)
+      if (alongLen > bedW + 1.1) addSide('livingroom-chair', 0.85, sideAlongLen * 0.2)
       break
     }
     case 'kitchen':
-      addBack(alongLen >= 2.6 ? 'kitchen' : 'kitchen-counter', 0.55)
-      if (alongLen >= 3.5) addBack('stove', 0.55, alongLen / 2 - 0.65)
-      addSide('fridge', 0.6, sideAlongLen * 0.25)
-      break
     case 'bathroom':
-      addBack('toilet', 0.55, alongLen * 0.25)
-      addBack('bathroom-sink', 0.8, -alongLen * 0.2)
-      if (area >= 6.5) addSide('bathtub', 0.85)
-      else placements.push({ assetId: 'shower-square', x: bounds.centerX, z: bounds.centerZ })
+    case 'laundry':
+    case 'storage':
+      addBack('shelf', 0.45)
       break
     case 'living': {
       addBack('sofa', 0.9)
       addBack('coffee-table', 2.1)
       addSide('livingroom-chair', 0.85, -sideAlongLen * 0.18)
-      // TV faces the sofa from the door wall: use door-wall axes so smart
-      // re-place nudges into the room (along wall / inward), not world X/Z.
-      const doorIdx = doorWallIndex % n
-      const doorStart = polygon[doorIdx]!
-      const doorEnd = polygon[(doorIdx + 1) % n]!
-      const doorMidX = (doorStart[0] + doorEnd[0]) / 2
-      const doorMidZ = (doorStart[1] + doorEnd[1]) / 2
-      // Door-wall inward is opposite of "back wall" inward (into room from door).
-      const doorInX = -inX
-      const doorInZ = -inZ
-      placements.push({
-        assetId: 'tv-stand',
-        x: doorMidX + doorInX * 0.35,
-        z: doorMidZ + doorInZ * 0.35,
-        rotationDeg: facingRot + 180,
-        along: { x: ax, z: az },
-        inward: { x: doorInX, z: doorInZ },
-      })
       break
     }
     case 'dining':
@@ -387,16 +357,9 @@ function buildRoomPlacements(
         })
       }
       break
-    case 'laundry':
-      addBack('washing-machine', 0.6, -0.55)
-      addBack('drying-rack', 0.65, 0.65)
-      break
     case 'entry':
     case 'hallway':
-      if (Math.min(bounds.width, bounds.depth) >= 1.4) addSide('coat-rack', 0.35)
-      break
-    case 'storage':
-      addBack('closet', 0.6)
+      if (Math.min(bounds.width, bounds.depth) >= 1.4) addSide('shelf', 0.35)
       break
   }
 

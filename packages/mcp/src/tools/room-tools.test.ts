@@ -334,9 +334,9 @@ describe('room tools', () => {
     const parsed = JSON.parse((furnish.content as Array<{ type: string; text: string }>)[0]!.text)
     const { findBlockedDoors } = await import('./door-clearance')
     expect(findBlockedDoors({ nodes: Object.values(bridge.getNodes()) })).toEqual([])
-    // Bed is placed against the back wall where the door is; expect clearance skip or empty bed.
+    // Sofa is placed against the back wall where the door is; expect clearance skip or no sofa.
     const bedPlaced = Object.values(bridge.getNodes()).some(
-      (n) => n.type === 'item' && (n.name === 'Double Bed' || n.name === 'Single Bed'),
+      (n) => n.type === 'item' && n.name === 'Sofa',
     )
     const doorSkips = (parsed.skipped as string[]).filter((s) =>
       s.includes('blocks door clearance'),

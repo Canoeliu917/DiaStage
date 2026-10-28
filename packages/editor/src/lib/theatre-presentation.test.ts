@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test'
 import { LevelNode, WallNode } from '@pascal-app/core'
 import { CATALOG_ITEMS } from '../components/ui/item-catalog/catalog-items'
-import { THEATRE_CATALOG_ITEMS, theatreCatalogItems } from '../components/ui/item-catalog/theatre-catalog'
+import {
+  THEATRE_CATALOG_ITEMS,
+  THEATRE_PERFORMANCE_PROP_IDS,
+  theatreCatalogItems,
+} from '../components/ui/item-catalog/theatre-catalog'
 import { CONTINUATION_PROFILES } from './continuation'
 import { getTheatreNodeLabel, getTheatreNodeName } from './theatre-presentation'
 
@@ -17,12 +21,55 @@ describe('theatre presentation boundary', () => {
   })
 
   test('all default asset categories and search candidates are theatrical', () => {
-    expect(new Set(THEATRE_CATALOG_ITEMS.map((item) => item.category))).toEqual(new Set(['furniture', 'props', 'scenery']))
-    expect(THEATRE_CATALOG_ITEMS.some((item) => item.id === 'wine-bottle' && item.category === 'props')).toBe(true)
-    expect(THEATRE_CATALOG_ITEMS.some((item) => item.id === 'books' && item.category === 'props')).toBe(true)
+    expect(new Set(THEATRE_CATALOG_ITEMS.map((item) => item.category))).toEqual(
+      new Set(['furniture', 'props', 'scenery']),
+    )
+    expect(
+      THEATRE_CATALOG_ITEMS.some((item) => item.id === 'wine-bottle' && item.category === 'props'),
+    ).toBe(true)
+    expect(
+      THEATRE_CATALOG_ITEMS.some((item) => item.id === 'books' && item.category === 'props'),
+    ).toBe(true)
     expect(THEATRE_CATALOG_ITEMS.some((item) => item.id === 'dishwasher-movn72ls')).toBe(false)
-    expect(theatreCatalogItems(CATALOG_ITEMS.filter((item) => item.id === 'dishwasher-movn72ls'))).toEqual([])
+    expect(
+      theatreCatalogItems(CATALOG_ITEMS.filter((item) => item.id === 'dishwasher-movn72ls')),
+    ).toEqual([])
     expect(THEATRE_CATALOG_ITEMS.every((item) => !item.tool || item.tool === 'item')).toBe(true)
+  })
+
+  test('exposes only the 21 standard performance props', () => {
+    expect(THEATRE_PERFORMANCE_PROP_IDS).toHaveLength(21)
+    expect(THEATRE_CATALOG_ITEMS.map((item) => item.id).sort()).toEqual(
+      [...THEATRE_PERFORMANCE_PROP_IDS].sort(),
+    )
+    for (const id of [
+      'single-bed',
+      'double-bed',
+      'bedside-table',
+      'dresser',
+      'closet',
+      'coat-rack',
+      'table-lamp',
+      'rectangular-carpet',
+      'round-carpet',
+      'toy',
+      'trash-bin',
+      'tv-stand',
+      'pool-table',
+      'office-table',
+      'office-chair',
+    ]) {
+      expect(theatreCatalogItems(CATALOG_ITEMS.filter((item) => item.id === id))).toEqual([])
+    }
+    expect(THEATRE_CATALOG_ITEMS.find((item) => item.id === 'column')?.category).toBe('scenery')
+    expect(THEATRE_CATALOG_ITEMS.find((item) => item.id === 'sofa')?.category).toBe('furniture')
+    expect(THEATRE_CATALOG_ITEMS.find((item) => item.id === 'dining-chair')?.category).toBe(
+      'furniture',
+    )
+    expect(THEATRE_CATALOG_ITEMS.find((item) => item.id === 'piano')?.category).toBe('props')
+    expect(THEATRE_CATALOG_ITEMS.find((item) => item.id === 'livingroom-chair')?.name).toBe(
+      '靠背椅',
+    )
   })
 
   test('catalog adaptation preserves original assets and exact dimensions', () => {
