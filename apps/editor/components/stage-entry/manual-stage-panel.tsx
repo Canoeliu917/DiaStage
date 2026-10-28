@@ -161,7 +161,7 @@ export function startStagePlacement(
       version: context.documentVersion,
       ...(duplicate && existing ? { duplicateOf: existing.id } : {}),
     },
-    notice: '移动指针查看台位，点击或释放完成落位；Esc 取消。',
+    notice: '',
     snapLabels: [],
   })
 }
@@ -507,7 +507,8 @@ export function StageLibraryPanel() {
           </div>
         )}
         <p className="stage-notice" role="status">
-          {state.notice}
+          {state.notice ||
+            (state.draft ? '移动指针查看台位，点击或释放完成落位；Esc 取消。' : '')}
         </p>
         <div className="stage-manual-actions">
           <button type="button" onClick={() => runUndo()}>

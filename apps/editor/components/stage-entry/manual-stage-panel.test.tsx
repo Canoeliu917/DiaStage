@@ -85,6 +85,33 @@ test('read-only scenes reject a library placement request', () => {
   expect(useStagePlacement.getState().draft).toBeNull()
 })
 
+test('placement guidance follows the ghost and disappears on cancel without losing result notices', () => {
+  const graph = createTheatreSceneGraph()
+  useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)
+  const nodes = useScene.getState().nodes
+  const serverSnapshot = useStagePlacement.getInitialState()
+  const original = { ...serverSnapshot }
+  const render = () => {
+    Object.assign(serverSnapshot, useStagePlacement.getState())
+    return renderToStaticMarkup(<StageLibraryPanel />)
+  }
+  try {
+    startStagePlacement(STAGE_LIBRARY[0]!.entry!)
+    expect(useStagePlacement.getState().draft).not.toBeNull()
+    expect(render()).toContain('移动指针查看台位，点击或释放完成落位；Esc 取消。')
+    cancelStagePlacement()
+    expect(useStagePlacement.getState().draft).toBeNull()
+    expect(render()).not.toContain('移动指针查看台位')
+    useStagePlacement.setState({ notice: '已更新，可撤销。' })
+    cancelStagePlacement()
+    expect(render()).toContain('已更新，可撤销。')
+    expect(useScene.getState().nodes).toBe(nodes)
+  } finally {
+    Object.assign(serverSnapshot, original)
+    useStagePlacement.setState({ notice: '' })
+  }
+})
+
 test('properties guide an empty selection without changing scene data', () => {
   const graph = createTheatreSceneGraph()
   useScene.getState().setScene(graph.nodes, graph.rootNodeIds, graph)

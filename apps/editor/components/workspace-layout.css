@@ -31,6 +31,8 @@
 @media(min-width:1000px) {
   .dia-dock.dia-resizable-dock:not([data-touch-dock]) { width:min(var(--dia-dock-width),22vw); }
   .studio-workspace .dia-editor .editor-sidebar-split { max-width:22vw; }
+  .studio-workspace .diastage-viewer-column button[aria-label="视图朝北"] { width:44px; height:44px; min-width:44px; min-height:44px; }
+  .studio-workspace .stage-grid-controls { left:66px; }
 }
 @media(max-width:999px) {
   .dia-dock.dia-resizable-dock { width: 100%; }

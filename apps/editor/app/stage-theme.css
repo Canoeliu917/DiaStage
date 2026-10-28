@@ -40,14 +40,56 @@ html[data-stage-theme] body {
   --dia-shadow: 0 4px 16px #17181920;
 }
 
-html[data-stage-theme] .studio-workspace {
+html[data-stage-theme] .studio-workspace,
+html[data-stage-theme] .studio-workspace .dark {
+  --background: var(--dia-surface);
+  --foreground: var(--dia-text);
+  --card: var(--dia-panel);
+  --card-foreground: var(--dia-text);
+  --popover: var(--dia-raised);
+  --popover-foreground: var(--dia-text);
+  --primary: var(--dia-active);
   --primary-foreground: var(--dia-on-active);
+  --secondary: var(--dia-raised);
+  --secondary-foreground: var(--dia-text);
+  --muted: var(--dia-raised);
+  --muted-foreground: var(--dia-muted);
+  --accent: var(--dia-hover);
+  --accent-foreground: var(--dia-text);
+  --border: var(--dia-border);
+  --input: var(--dia-border);
+  --ring: var(--dia-focus);
+  --sidebar: var(--dia-panel);
+  --sidebar-foreground: var(--dia-text);
+  --sidebar-primary: var(--dia-active);
   --sidebar-primary-foreground: var(--dia-on-active);
+  --sidebar-accent: var(--dia-hover);
+  --sidebar-accent-foreground: var(--dia-text);
+  --sidebar-border: var(--dia-border);
+  --sidebar-ring: var(--dia-focus);
   color-scheme: light;
 }
 
-html[data-stage-theme="night"] .studio-workspace {
+html[data-stage-theme="night"] .studio-workspace,
+html[data-stage-theme="night"] .studio-workspace .dark {
   color-scheme: dark;
+}
+
+html[data-stage-theme] .studio-workspace :is(.editor-sidebar-split, .diastage-viewer-column) {
+  color: var(--dia-text);
+}
+
+html[data-stage-theme] .studio-workspace .stage-manual :is(input:not([type="checkbox"]), select),
+html[data-stage-theme] .studio-workspace .diastage-viewer-toolbar select,
+html[data-stage-theme] .studio-workspace .stage-grid-popover select {
+  background-color: var(--dia-raised);
+  color: var(--dia-text);
+  border-color: var(--dia-border);
+}
+
+html[data-stage-theme] .studio-workspace :is(.stage-more-tools, .stage-controls-help) > summary {
+  background-color: var(--dia-panel);
+  color: var(--dia-text);
 }
 
 body .ds-library.dia-home,
@@ -65,6 +107,10 @@ html[data-stage-theme] .studio-workspace .studio-navigation {
   color: var(--dia-text);
   background-color: var(--dia-panel);
   border-color: var(--dia-divider);
+}
+
+html[data-stage-theme="day"] .studio-navigation .studio-brand-mark {
+  filter: brightness(0);
 }
 
 html[data-stage-theme] .studio-navigation :is(.studio-project-name, .studio-slogan, .studio-save-status) {
