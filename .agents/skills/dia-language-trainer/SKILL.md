@@ -7,6 +7,8 @@ description: Turn real Dia language-understanding failures into reusable intent 
 
 Use this skill to improve Dia's language understanding from real user corrections. The goal is not to memorize one sentence. The goal is to discover a reusable intent boundary, encode it in the smallest safe place, and prove it with evals.
 
+DiaMotif is the shared DIA knowledge and evaluation entry point. Read the repository-root `DiaMotif/README.md` first; keep canonical JSONL cases under `DiaMotif/evals/`, and sanitized user trials, experiments, beta outcomes and unresolved cases under `DiaMotif/records/`. Never duplicate the canonical eval data in this skill folder.
+
 ## Product constraints
 
 - Dia is currently a stage/scenery-building assistant first. Do not reintroduce rehearsal-character complexity unless the product explicitly asks for it.
@@ -20,7 +22,7 @@ Use this skill to improve Dia's language understanding from real user correction
 Before changing behavior, read:
 
 1. `references/camera-intents.md` in this skill when the failure concerns camera/view language.
-2. `evals/camera-intents.jsonl` in this skill for the canonical camera contrast set.
+2. Repository-root `DiaMotif/evals/camera-intents.jsonl` for the canonical camera contrast set.
 3. The actual Dia parser/prompt/schema/runtime that currently handles the command. Find it from the repo; do not assume a stale path.
 4. Relevant architecture rules if the change touches `packages/core`, `packages/viewer`, `packages/editor`, `packages/nodes`, or shared interaction state.
 

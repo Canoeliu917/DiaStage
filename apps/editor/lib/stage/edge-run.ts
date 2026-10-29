@@ -111,8 +111,8 @@ function placeSlots(
     edge === 'back'
       ? venue.depthMeters - THICK / 2 - INSET
       : edge === 'left'
-        ? -half + THICK / 2
-        : half - THICK / 2
+        ? half - THICK / 2
+        : -half + THICK / 2
   let flatIndex = 0
   for (const slot of slots) {
     const run = slot.kind === 'flat' ? slot.spec.run : slot.run
@@ -165,10 +165,10 @@ export function planRoomEdge(
     : ''
   const notice =
     edge === 'back'
-      ? `后墙宽 ${formatRehearsalLength(venue.widthMeters)}。贴着台左排了${listed}，都是直墙。${holeText}右边${seam}`
+      ? `后墙宽 ${formatRehearsalLength(venue.widthMeters)}。从观众右侧排了${listed}，都是直墙。${holeText}观众左侧${seam}`
       : edge === 'left'
-        ? `左侧贴着台边。靠后墙排了${listed}，直墙。${holeText}台口${seam}开口朝观众。`
-        : `右侧贴着台边。从后墙排了${listed}，直墙。台口${seam}开口朝观众。`
+        ? `观众左侧贴着台边。靠后墙排了${listed}，直墙。${holeText}台口${seam}开口朝观众。`
+        : `观众右侧贴着台边。从后墙排了${listed}，直墙。台口${seam}开口朝观众。`
   return { pieces, notice }
 }
 

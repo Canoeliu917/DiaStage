@@ -9,6 +9,7 @@ import {
 import { betaCapabilityNotice } from '../beta-capabilities'
 import { VERTICAL_VIEW_QUESTION } from './camera-intents'
 import { resolveKnowledgeForProposal } from './knowledge/stage-proposal'
+import { createRegionPlan } from './region-creation'
 import { mapStagePlacementIntent, type StagePlacementProposal } from './stage-placement-actions'
 import { parseStagePlacementIntent } from './stage-placement-intents'
 import { parseViewCommand, type ViewCommand } from './view-commands'
@@ -94,6 +95,17 @@ export function groundLanguage(
         view.type === 'FRAME_SELECTION' && context.selectedObjectIds.length !== 1
           ? '请先选中一个要观察的物品。'
           : null,
+    }
+  const regionPlan = createRegionPlan(text, context)
+  if (regionPlan)
+    return {
+      ...base,
+      intent: regionPlan.questions.length ? 'CLARIFY' : 'ADD_SCENERY',
+      capability: regionPlan.questions.length ? 'clarify' : 'build',
+      plan: regionPlan,
+      target: regionPlan.items.map((item) => item.libraryAssetId!),
+      clarificationRequired: regionPlan.questions.length > 0,
+      clarification: regionPlan.questions.map((question) => question.message).join('；') || null,
     }
   const foldPlan =
     /[二两双三](?:连|联|帘|折)|折叠景片/.test(text) && /围|房间|房屋|长方体|U[形型]/i.test(text)

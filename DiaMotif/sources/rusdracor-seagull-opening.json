@@ -1,0 +1,27 @@
+{
+  "id": "dm-source-rus000072-opening",
+  "title": "The Seagull, Act I opening stage directions",
+  "author": "Anton Chekhov",
+  "language": "ru",
+  "repository": "dracor-org/rusdracor",
+  "commit": "cb06b3a211cc36ed0806c9ae85a94ede5da99557",
+  "path": "tei/chekhov-chaika.xml",
+  "blobSha": "1279b28aea0bf66311bc7210f96047769df25d2a",
+  "sourceUrl": "https://github.com/dracor-org/rusdracor/blob/cb06b3a211cc36ed0806c9ae85a94ede5da99557/tei/chekhov-chaika.xml#L185-L190",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "licenseEvidence": "Source file publicationStmt declares CC0 1.0; sourceDesc marks digital source public domain.",
+  "attribution": "Anton Chekhov; RusDraCor / DraCor contributors; digital source ilibrary.ru",
+  "changes": "Selected two stage elements; added sample wrapper and changed indentation. No translation copied.",
+  "localFile": "rusdracor-seagull-opening.xml",
+  "reviewStatus": "source_and_license_verified",
+  "runtimeEnabled": false,
+  "semanticChecksAuthoredBy": "DiaMotif; derived reference expectations, not live-model results",
+  "semanticChecks": [
+    "区分临时台、桌、若干椅子、灌木、落下的幕与人物、音效。",
+    "保留临时台遮住湖面视线、灌木在台两侧等关系。",
+    "若干椅子没有明确数量，原文未给出尺寸；不能编造精确数量或米数。",
+    "人物从左侧走来是动作证据，不自动推断当前场景坐标或授予执行权限。"
+  ],
+  "liveModelVerification": "not_run"
+}

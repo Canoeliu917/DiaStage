@@ -73,7 +73,7 @@ test('an 8 by 6 stage gets straight curtains flush to the back and both sides, w
   expect(Math.min(...backBounds.map((bounds) => bounds[0]![0]))).toBeCloseTo(-4, 2)
   expect(Math.max(...backBounds.map((bounds) => bounds[2]![1]))).toBeCloseTo(6, 2)
   const leftBounds = prepareStageCollision(placed(left.pieces[0]!)).bounds
-  expect(leftBounds[0]![0]).toBeCloseTo(-4, 2)
+  expect(leftBounds[0]![1]).toBeCloseTo(4, 2)
   expect(leftBounds[2]![1]).toBeLessThanOrEqual(6)
 })
 
@@ -98,20 +98,17 @@ test('a window clicked near the back wall settles into the curtain gap', () => {
 
 test('a door clicked near the left wall turns to face the wall and sits in the opening', () => {
   const left = planRoomEdge('left', venue)
-  const walls = [
-    ...planRoomEdge('back', venue).pieces.map(placed),
-    ...left.pieces.map(placed),
-  ]
+  const walls = [...planRoomEdge('back', venue).pieces.map(placed), ...left.pieces.map(placed)]
   const door = {
     kind: 'door-flat' as const,
     dimensionsMeters: { width: 1.3, height: 2.4, depth: 0.08 },
     transform: {
-      position: { x: -3.6, y: 0, z: 3 },
+      position: { x: 3.6, y: 0, z: 3 },
       rotationDegrees: { x: 0, y: 0, z: 0 },
     },
   }
   const settled = settleOpening(door, walls, venue)
-  expect(settled.labels).toContain('贴台左')
+  expect(settled.labels).toContain('贴台右')
   expect(settled.yaw).toBe(90)
   const placedDoor = {
     ...door,
@@ -122,7 +119,7 @@ test('a door clicked near the left wall turns to face the wall and sits in the o
   }
   for (const wall of walls) expect(stageObjectsTouch(placedDoor, wall, true)).toBe(false)
   const bounds = prepareStageCollision(placedDoor).bounds
-  expect(bounds[0]![0]).toBeGreaterThanOrEqual(-4 - 1e-3)
+  expect(bounds[0]![1]).toBeLessThanOrEqual(4 + 1e-3)
 })
 
 test('footprint snap pulls a straight curtain onto the back edge without a decimal readout', () => {

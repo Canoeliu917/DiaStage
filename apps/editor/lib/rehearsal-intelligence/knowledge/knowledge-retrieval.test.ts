@@ -49,10 +49,7 @@ type KnowledgeEvalRow = {
 }
 
 const cases = readFileSync(
-  resolve(
-    import.meta.dir,
-    '../../../../../.agents/skills/dia-language-trainer/evals/knowledge-retrieval.jsonl',
-  ),
+  resolve(import.meta.dir, '../../../../../DiaMotif/evals/knowledge-retrieval.jsonl'),
   'utf8',
 )
   .trim()

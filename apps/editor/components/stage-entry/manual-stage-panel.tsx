@@ -582,10 +582,20 @@ export function StageLibraryPanel() {
           <button type="button" disabled={readOnly} onClick={() => placeCurtainsAlong('back')}>
             贴后墙
           </button>
-          <button type="button" disabled={readOnly} onClick={() => placeCurtainsAlong('left')}>
+          <button
+            type="button"
+            title="观众面对舞台的左侧"
+            disabled={readOnly}
+            onClick={() => placeCurtainsAlong('left')}
+          >
             贴左侧
           </button>
-          <button type="button" disabled={readOnly} onClick={() => placeCurtainsAlong('right')}>
+          <button
+            type="button"
+            title="观众面对舞台的右侧"
+            disabled={readOnly}
+            onClick={() => placeCurtainsAlong('right')}
+          >
             贴右侧
           </button>
         </div>
@@ -609,8 +619,7 @@ export function StageLibraryPanel() {
           })}
         </div>
         <p className="stage-library-hint">
-          点选道具，再点舞台放置；Esc
-          取消。帘片放下就是直墙。贴后墙、贴左侧、贴右侧沿台边排好，对不齐就留缝。
+          左右按观众面对舞台的方向。后墙留窗洞，左侧留门洞。 点选道具，再点舞台放置；Esc 取消。
         </p>
         <div className="stage-library-grid">
           {visible.map(({ menu, entry }) => (

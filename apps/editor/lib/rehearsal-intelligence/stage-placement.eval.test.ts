@@ -23,10 +23,7 @@ export const placementContext: SceneContextSummary = {
   })),
 }
 const cases = readFileSync(
-  resolve(
-    import.meta.dir,
-    '../../../../.agents/skills/dia-language-trainer/evals/stage-placement-intents.jsonl',
-  ),
+  resolve(import.meta.dir, '../../../../DiaMotif/evals/stage-placement-intents.jsonl'),
   'utf8',
 )
   .trim()

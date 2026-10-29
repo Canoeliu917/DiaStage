@@ -22,10 +22,7 @@ const context: SceneContextSummary = {
 }
 const transaction = { transactionId: 'fold-enclosure-eval', issuedAt: '2026-10-27T00:00:00Z' }
 const cases = readFileSync(
-  new URL(
-    '../../../../.agents/skills/dia-language-trainer/evals/fold-enclosures.jsonl',
-    import.meta.url,
-  ),
+  new URL('../../../../DiaMotif/evals/fold-enclosures.jsonl', import.meta.url),
   'utf8',
 )
   .trim()

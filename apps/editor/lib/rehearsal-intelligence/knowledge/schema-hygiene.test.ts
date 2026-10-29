@@ -21,16 +21,16 @@ function distribution(
   )
 }
 
-describe('Dia Knowledge Schema Hygiene V0.1', () => {
-  test('classifies all 123 current concepts', () => {
-    expect(DIA_KNOWLEDGE.concepts).toHaveLength(123)
+describe('Dia Knowledge Schema Hygiene V0.2', () => {
+  test('classifies 123 original concepts plus 22 published terminology entries', () => {
+    expect(DIA_KNOWLEDGE.concepts).toHaveLength(145)
     expect(distribution('conceptKind')).toEqual({
       asset: 17,
       historical_entity: 1,
       operation: 7,
       spatial_relation: 13,
-      stage_term: 12,
-      theory_concept: 73,
+      stage_term: 30,
+      theory_concept: 77,
     })
   })
 
@@ -56,10 +56,10 @@ describe('Dia Knowledge Schema Hygiene V0.1', () => {
   test('uses heuristic only for the actual stage-zone analysis rule', () => {
     expect(distribution('definitionStatus')).toEqual({
       canonical: 6,
-      descriptive: 76,
+      descriptive: 96,
       heuristic: 1,
       operational: 26,
-      tradition_specific: 9,
+      tradition_specific: 11,
       translation_variant: 5,
     })
     expect(
@@ -81,11 +81,13 @@ describe('Dia Knowledge Schema Hygiene V0.1', () => {
 
   test('keeps authority and activation independent', () => {
     expect(distribution('authorityTier')).toEqual({
-      exam_notes: 113,
-      institutional_teaching: 9,
+      authoritative_reference: 3,
+      exam_notes: 110,
+      institutional_teaching: 22,
       peer_reviewed: 1,
+      primary_source: 9,
     })
-    expect(distribution('status')).toEqual({ ACTIVE: 49, FUTURE: 33, OBSERVE: 41 })
+    expect(distribution('status')).toEqual({ ACTIVE: 49, FUTURE: 33, OBSERVE: 63 })
     expect(
       DIA_KNOWLEDGE.concepts.some(
         (item) => item.status === 'ACTIVE' && item.authorityTier === 'exam_notes',
@@ -100,7 +102,7 @@ describe('Dia Knowledge Schema Hygiene V0.1', () => {
   test('gates execution independently from concept status and authority', () => {
     expect(distribution('executionEligibility')).toEqual({
       allowed: 43,
-      knowledge_only: 34,
+      knowledge_only: 56,
       proposal_only: 46,
     })
     expect(concept('stage-left')).toMatchObject({

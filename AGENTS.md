@@ -45,6 +45,8 @@ Read the relevant page in `wiki/architecture/` **before** writing code. The page
 
 ## When tuning Dia language understanding
 
+**DiaMotif is the highest-priority shared knowledge, reasoning, and training/evaluation program for the DIA series.** Start DIA AI and language work at [DiaMotif](DiaMotif/README.md). Keep book research, source provenance, language evals, sanitized user corrections, experiments, and beta results under that entry point. Future work must append evidence and unresolved cases there; do not call bibliography discovery, synthetic tests, or model output human validation or completed model training. Preserve the current product scope and human adoption boundary.
+
 Invoke the `dia-language-trainer` skill (`.agents/skills/dia-language-trainer/SKILL.md`) whenever the user reports that Dia misunderstood a phrase, asks Dia to learn vocabulary, or requests changes to camera/view, placement, spatial-relation, scene-composition, or object-operation language understanding. The skill owns the correction → contrast pair → eval → smallest safe implementation loop. Do not patch one phrase directly without adding a reusable semantic boundary and regression case.
 
 ## When reviewing a PR

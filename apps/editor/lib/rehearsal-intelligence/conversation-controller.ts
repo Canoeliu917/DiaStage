@@ -1128,7 +1128,12 @@ export class DiaConversation {
       if (!viewOnly) this.status('idle', '舞台没有改变，可以继续讨论或手动操作。')
       await this.persist()
     }
-    if (grounded?.plan?.questions.some((question) => question.id.startsWith('fold-enclosure-'))) {
+    if (
+      grounded?.plan?.questions.some(
+        (question) =>
+          question.id.startsWith('fold-enclosure-') || question.id === 'region-creation',
+      )
+    ) {
       await reply(grounded.clarification!, true)
       this.status(
         parent?.status === 'previewed' ? 'waiting-human' : 'idle',
@@ -1461,7 +1466,7 @@ export class DiaConversation {
     }
     const formal = currentStageContext()
     const inputContext = parent ? draftContext(formal, parent.plan) : formal
-    const parsed = parseStageText(grounded?.normalizedInput ?? text, inputContext)
+    const parsed = grounded?.plan ?? parseStageText(grounded?.normalizedInput ?? text, inputContext)
     if (!parsed) {
       await reply(
         '这句话还不能可靠地转换成搭台方案。可以写“给我一张圆桌，两把椅子，台右一扇门”或“桌子往台左一点”；复杂空间关系请补充对象、方向和距离。我不会猜测坐标。',

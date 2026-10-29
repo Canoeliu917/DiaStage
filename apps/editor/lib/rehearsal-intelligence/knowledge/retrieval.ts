@@ -179,7 +179,7 @@ export function validateKnowledgeCatalog(input: unknown = DIA_KNOWLEDGE_CATALOG)
     new Set(catalog.extraction.coveredSourceIds).size !== catalog.sources.length ||
     catalog.extraction.coveredSourceIds.some((sourceId) => !sources.has(sourceId))
   )
-    errors.push('source coverage 必须为 registry 中完整的 6 个来源')
+    errors.push('source coverage 必须覆盖 registry 中的完整来源')
   if (catalog.extraction.conflictCount !== catalog.extraction.conflictConceptIds.length)
     errors.push('conflictCount 与 conflictConceptIds 数量不一致')
 
