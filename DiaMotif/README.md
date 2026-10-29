@@ -12,8 +12,10 @@ DiaMotif 是 DIA 的长期核心：将戏剧专业知识、语言理解、真实
 | 重点书籍对 DIA 的启示 | [人机交互、AI 辅助编剧与道具研究](references/priority-reading.md) | 来源事实与产品推论分别记录 |
 | GitHub 开源研究与可复用材料 | [项目核查与收录范围](references/github-projects.md) | 9 个项目的来源／许可；5 条方法卡及 1 份 CC0 剧本片段 |
 | 语言、镜头、空间和知识检索评测 | [evals](evals/README.md) | 5 组、179 条已有 JSONL 案例已集中迁入；测试直接读取这里 |
+| 千问真实调用验收 | [30题与运行说明](evals/live-model-acceptance.md) | 20道开发题、10道保留题；模型、几何、网页采用与人工验收分列 |
 | 用户实测、实验、内测与纠正记录 | [records](records/README.md) | 已整理首批两条真实反馈；真实用户验收仍待进行 |
 | 本轮变更、验证与剩余问题 | [2026-10-29 记录](records/2026-10-29-verification.md) | 离线验证与真实模型验收分别标记 |
+| 对话接入与舞台执行审计 | [接入审计及30题结果](records/2026-10-29-dialogue-system-audit.json) | 当前链路已接模型；完整任务验收未通过，失败和待验项保留 |
 
 ## 与运行中的 DIA 连接
 
@@ -21,7 +23,7 @@ DiaMotif 是 DIA 的长期核心：将戏剧专业知识、语言理解、真实
 
 - [知识目录](../apps/editor/lib/rehearsal-intelligence/knowledge/catalog.ts)：145 个概念、12 个登记来源；包括定义、别名、正反例、区别关系和证据级别。
 - [知识检索](../apps/editor/lib/rehearsal-intelligence/knowledge/retrieval.ts)与[模型上下文](../apps/editor/lib/rehearsal-intelligence/knowledge/model-context.ts)：每次最多 6 项、8KB；省略资料时标记 `truncated`。
-- [真实模型请求入口](../apps/editor/lib/rehearsal-intelligence/open-language-server.ts)：将核实的概念送入当前模型请求；不会因收录理论而增加执行权限。
+- [DIA统一对话入口](../apps/editor/lib/rehearsal-intelligence/dialogue-server.ts)：每条当前置景对话先提交千问，带入当前舞台、有限历史、待采用方案和实际检索知识；随后校验并预览。旧 [open-language-server](../apps/editor/lib/rehearsal-intelligence/open-language-server.ts) 保留作对照及兼容。
 - [语言训练工作流](../.agents/skills/dia-language-trainer/SKILL.md)：从误解和人工纠正形成对比案例，修改规则，再复测。
 
 当前是知识检索、提示上下文、规则与评测体系。尚未进行基底模型微调，也没有将全部教材正文导入模型；不能把“加入参考书目”写成“模型已经掌握全书”。

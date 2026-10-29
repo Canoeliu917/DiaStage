@@ -1,0 +1,578 @@
+{
+  "schemaVersion": 1,
+  "title": "DiaMotif 20题真实千问开发集：统一对话首次迭代",
+  "recordType": "sanitized-live-model-development-iteration",
+  "iteration": 1,
+  "runId": "13955e89-fd6a-4c68-a64b-db272f1e097d",
+  "baselineRecord": "DiaMotif/records/2026-10-29-live-model-baseline.json",
+  "baselineRunId": "5b0cf9a0-8a94-4ae8-a286-5edc820a0353",
+  "startedAt": "2026-10-29T07:56:35.885Z",
+  "completedAt": "2026-10-29T07:59:32.990Z",
+  "gitHead": "ea3c6e33720f149ba2ec5393f6e4cd9f028e4514",
+  "suite": {
+    "path": "DiaMotif/evals/live-model-acceptance.jsonl",
+    "sha256": "fd2f9d5356de630a8fd45259dff042945c46ad59501caa4dc44c55df970fc4ff",
+    "totalCases": 30,
+    "testedSplit": "development",
+    "testedCases": 20,
+    "holdoutCases": 10,
+    "holdoutStatus": "not-run-at-this-iteration",
+    "frozenBeforeRun": true
+  },
+  "runtime": {
+    "provider": "aliyun",
+    "model": "qwen3.7-flash-2026-07-15",
+    "dialogueVersion": "diamotif-dialogue-v1",
+    "dialogueService": "respondDiaDialogue",
+    "scriptService": "planFromPassages(forceModel=true)",
+    "photoService": "analyzePhotoStage",
+    "scope": "统一对话及剧本/照片生产服务的直接调用；没有浏览器采用验收。",
+    "codeSnapshot": "基于gitHead的未提交迭代，由生产源文件哈希标识。",
+    "productionChangedDuringRun": false,
+    "sourceSha256": {
+      "apps/editor/lib/rehearsal-intelligence/dialogue-server.ts": "d47fad7cd6dfd1cf808ddbad506ca1d6b5cc89ff27efb40505de5120196c4275",
+      "apps/editor/lib/rehearsal-intelligence/dialogue-schema.ts": "87d080336d11effb3e76310d670f23be9888ad9f61893b266aadb29ccb6e95cf",
+      "apps/editor/lib/rehearsal-intelligence/dialogue-stage-actions.ts": "43da48e2a9a8b8b6ef336cffe52f9fb55257188446cdae2cc69a7d9ae2612f7f",
+      "apps/editor/lib/rehearsal-intelligence/open-language.ts": "fc1b667aa47fd913d42b6ae120476c2567d2e554dae8c4314d2269895e934626",
+      "apps/editor/lib/scripts/script-planner.ts": "1c4892c6a8081af9b6b4a4ce1214d6275bc985a3e6376dbefce8646eb3f938d6",
+      "apps/editor/lib/photo-stage/analyze-server.ts": "46e2a30df41b4f7db82dfa711cc7ec0571e3c8904cdc34bf2fca78dc40f94751"
+    },
+    "runnerSha256": "835081d78cdb092ea24cb2d7778bd88538f2eceb8c5922f7a6a7dc49036896b4",
+    "fixtureBuilderSha256": "dcb7d12359c7e1d1ea0849f33ff72e7e69f975c46665c49d49d08ce7f064acdd"
+  },
+  "measurements": {
+    "attempted": 20,
+    "providerRequests": 23,
+    "http200Responses": 23,
+    "productionReturned": 15,
+    "productionRejected": 5,
+    "inputTokens": 103972,
+    "outputTokens": 15971,
+    "estimatedCostCny": 0.0335712,
+    "costBasis": "应用估算/预留，不是供应商结算账单。",
+    "semanticPassCount": null,
+    "endToEndPassCount": null,
+    "humanReviewed": 0,
+    "interpretation": "15次服务返回不等于15题通过；尤其空动作声称成功及安全但语义错误的方案均不通过。"
+  },
+  "evidenceLimits": [
+    "所有场景均为合成夹具，20题场景对象快照均未变；这不是用户场景采用/保存验证。",
+    "文本调用包含当前场地/物件变换尺寸、有限历史、待采用方案及DiaMotif知识；模型仍可能选错操作或给出无动作回复。",
+    "照片题使用与基线相同两张公共/合成源图，不代表新图片泛化能力。",
+    "离线机械校验与原文证据核对没有追加模型调用。",
+    "未修改题目、required/prohibited或保留集；不得把开发集重试当成独立盲测。"
+  ],
+  "imageFixtures": {
+    "reference-stage": {
+      "path": "apps/editor/public/photo-stage/reference-stage.jpg",
+      "sha256": "335921739e6720156e264ce36c91573d84461cf1c8423ebc5bc4eb369f770ac9"
+    },
+    "synthetic-table-chairs": {
+      "path": "DiaMotif/evals/fixtures/synthetic-table-chairs.png",
+      "sha256": "987a3102ed41883e3bf9d50fa0e6c622a8d6c853f94cefc9958ab0e2fc0ce91c"
+    }
+  },
+  "review": {
+    "reviewerType": "agent",
+    "humanReview": "pending",
+    "score": null,
+    "gate": "not-passed",
+    "method": "对照冻结题库逐题审查真实回复与结构动作；对已返回计划再检查原生映射、身份、坐标差、碰撞/编译和分句原文证据。",
+    "offlineAdditionalProviderRequests": 0
+  },
+  "cases": [
+    {
+      "caseId": "DM-LIVE-T01",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 4647,
+      "requiredChecks": [
+        "table-two-chairs",
+        "middle-front",
+        "native-assets",
+        "no-overlap",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "not-produced",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型decision=reply，plan与grounding均为空，却声称已生成一桌两椅预览。",
+        "没有可采用候选；不能把文字描述计作生成成功。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-T02",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1682,
+      "requiredChecks": [
+        "one-sofa",
+        "audience-right-rear",
+        "back-wall-contact",
+        "no-overlap",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "not-produced",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型只回复已在观众右后靠墙预览沙发，但没有plan或grounding。",
+        "既未生成长沙发，也没有实际贴墙几何证据。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-T03",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1601,
+      "requiredChecks": [
+        "one-window-flat",
+        "middle-rear",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "not-produced",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "识别后区中央与窗景片类别，但因窗景片/落地窗型号而追问，未生成所需单窗预览。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-T04",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1373,
+      "requiredChecks": [
+        "connect-edge",
+        "preserve-object-ids",
+        "edge-contact",
+        "no-overlap",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "not-produced",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "错误表示两件独立窗景片不能连接直墙，并建议替换为二帘。",
+        "未调用已有connect-edge能力；不应替换两件原物件身份。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-T05",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 2097,
+      "requiredChecks": [
+        "form-enclosure",
+        "audience-opening",
+        "preserve-object-ids",
+        "no-overlap",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "mechanically-valid-but-task-wrong",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型声称U形围合，实际输出translate/downstage/2米。",
+        "三件已有物件仅整体ΔZ=-2，yaw均为0，没有旋转接边或形成三面围合。",
+        "身份、原生尺寸、碰撞、边界和编译检查通过，但这不证明完成用户要求。",
+        "2米并非本题用户提供，属于发明的移动量。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-R01",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1935,
+      "requiredChecks": [
+        "group-translation-0.5",
+        "preserve-relative-geometry",
+        "preserve-object-ids",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "passed-mechanical-plan-checks",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "三件existing身份、原生尺寸、朝向保持，均ΔX=-0.5，ΔY=ΔZ=0；相对位置不变。",
+        "离线生产校验无警告，编译通过，合成场景未变。",
+        "回复使用已将整组移动，未说明只是待采用预览，因此仍有执行状态误导。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-R02",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1155,
+      "requiredChecks": [
+        "correction-audience-right",
+        "preserve-object-ids",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "not-produced",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "理解观众右侧并提及沙发，但仍追问目标距离，没有修正提案。",
+        "未验证替换旧候选或保留修正后的目标。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-R03",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1802,
+      "requiredChecks": [
+        "wider-and-keep-stage-left",
+        "preserve-fixed-flat",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "not-produced",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型误称固定台左后无法加宽，要求新增景片或改变其他组件。",
+        "没有wider/keep_stage_left_fixed或实际修订；回复中台左对应对象也与夹具演员方向不一致。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-R04",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1532,
+      "requiredChecks": [
+        "reject-current-proposal",
+        "preserve-scene",
+        "no-creation"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "not-produced",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "文字表示暂不采用，但decision=reply且无reject grounding。",
+        "当前候选未通过本次模型结果被取消，不能视为完成拒绝操作。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-S01",
+      "category": "script",
+      "route": "script",
+      "productionResult": "returned",
+      "providerRequests": 2,
+      "latencyMs": 27923,
+      "requiredChecks": [
+        "script-table-two-chairs",
+        "evidence-exact",
+        "stage-8x6",
+        "assumptions-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "failed-geometry-and-clarification",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "提取一圆桌两椅和真实原文证据；原生映射改善为3件，原生尺寸正确。",
+        "台前中央仍放在6米舞台的z=3中部；两椅绕Z轴90度侧翻，发生地面及桌椅穿插。",
+        "同名的两把硬椅被合并逻辑列为台位冲突，又出现关系冲突和额外问题；valid=false、compile=false。"
+      ],
+      "offlineNativeAssetCount": 3
+    },
+    {
+      "caseId": "DM-LIVE-S02",
+      "category": "script",
+      "route": "script",
+      "productionResult": "rejected",
+      "providerRequests": 2,
+      "latencyMs": 30589,
+      "requiredChecks": [
+        "script-window-door",
+        "actor-stage-left",
+        "passage-1.2",
+        "evidence-exact",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "rejected-native-asset-validation",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "两次模型返回的证据均可对应实际分句的逐字原文，拒绝并非原文捏造。",
+        "第一次单门深度0.4867与原生0.48669697251359767相差约0.000003米，超过当前1e-6校验阈值。",
+        "第二次把SCN-FOLD-03命名为后墙景片（含窗），名称无法映射该资产，且用帘代窗。",
+        "通用错误称无法取得可靠原文证据，没有准确提示资产原因；未得到可用窗门及通道方案。"
+      ],
+      "productionError": "未能取得有可靠原文证据的舞台方案，请缩小范围或修改文件后重试。"
+    },
+    {
+      "caseId": "DM-LIVE-S03",
+      "category": "script",
+      "route": "script",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 9385,
+      "requiredChecks": [
+        "script-only-sofa",
+        "exclude-metaphor-and-effects",
+        "evidence-exact",
+        "assumptions-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "blocked-by-clarification",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "仅提取台后长沙发，排除比喻、人物、灯光，证据逐字正确，位置默认值有说明。",
+        "原生映射改善为1件SCN-SOFA-175，原生尺寸正确、接地、台后位置在边界内，无几何警告。",
+        "另外提出横向位置及贴后墙两个问题，导致valid=false、compile=false，尚非可采用方案。"
+      ],
+      "offlineNativeAssetCount": 1
+    },
+    {
+      "caseId": "DM-LIVE-S04",
+      "category": "script",
+      "route": "script",
+      "productionResult": "rejected",
+      "providerRequests": 2,
+      "latencyMs": 23120,
+      "requiredChecks": [
+        "script-conflict-question",
+        "evidence-exact",
+        "no-silent-overwrite",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "rejected-native-asset-validation",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型识别台左/台右冲突并保留两处逐字证据，但未得到生产接受的待确认结果。",
+        "第一次使用圆桌 (台左)/(台右)名称，无法映射原生ID；第二次增加8×0.15×6米舞台台面，违背SCN-RISER-01原生尺寸。",
+        "首次问题还提出同时放两桌，与同一张桌的版本冲突要求不符。"
+      ],
+      "productionError": "未能取得有可靠原文证据的舞台方案，请缩小范围或修改文件后重试。"
+    },
+    {
+      "caseId": "DM-LIVE-P01",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "rejected",
+      "providerRequests": 1,
+      "latencyMs": 22455,
+      "requiredChecks": [
+        "photo-single-stage",
+        "photo-major-elements",
+        "native-assets",
+        "photo-estimates-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "rejected-collision",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "返回一套上图物件，但大平台仅一个小台块，未保留实际组合高台。",
+        "门与沙发后景仍写成正Z台前坐标；家具标floor而非高台实际支撑。",
+        "浅绿凳与圆桌外框重叠被拒绝。"
+      ],
+      "productionError": "「浅绿塑料凳·演员坐具」与「折叠圆桌」外框重叠，请调整摆位。"
+    },
+    {
+      "caseId": "DM-LIVE-P02",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "rejected",
+      "providerRequests": 1,
+      "latencyMs": 14249,
+      "requiredChecks": [
+        "photo-audience-directions",
+        "photo-rear-sofa",
+        "full-bounds-inside",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "rejected-support-schema",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "门的support.type=elevated同时填写objectId，违反支撑关系协议，生产拒绝。",
+        "左右关系大致保留，但右后沙发写成正Z台前，且高台覆盖及真实接触支撑不足。"
+      ],
+      "productionError": "「单门景片（替代入户门）」须明确有效的估计底部高度，不能同时指定支撑道具。"
+    },
+    {
+      "caseId": "DM-LIVE-P03",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "rejected",
+      "providerRequests": 1,
+      "latencyMs": 20863,
+      "requiredChecks": [
+        "photo-modular-platform",
+        "actual-support",
+        "no-overlap",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "rejected-support-schema",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "多个家具support.type=object同时填写bottomHeightMeters，生产拒绝。",
+        "家具分散在远离主台块的位置，却指向同一小台块，不能形成实际支撑。",
+        "台块位置分散且模块不足，无法视为无缝大平台；后景继续使用正Z台前坐标。"
+      ],
+      "productionError": "「单门景片·入户门」须指定唯一支撑道具，不能同时填写离地高度。"
+    },
+    {
+      "caseId": "DM-LIVE-P04",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 5345,
+      "requiredChecks": [
+        "photo-table-two-chairs",
+        "actual-support",
+        "native-assets",
+        "photo-estimates-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "passed-production-photo-checks",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "仅一张SCN-TABLE-090与两把SCN-CHAIR-045，原生尺寸、接地、边界与无碰撞检查通过，明确尺度未知。",
+        "椅子距桌较远，摘要所述朝内效果还需视觉人验；未做浏览器采用或保存。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-E01",
+      "category": "explanation",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1642,
+      "requiredChecks": [
+        "second-curtain-distinct",
+        "concise-explanation",
+        "no-action"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "not-applicable",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "简短准确区分二道幕顺序位置与二联景片铰接结构；无场景动作。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-E02",
+      "category": "explanation",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1714,
+      "requiredChecks": [
+        "theatre-spaces-distinct",
+        "source-bounded",
+        "no-action"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "not-applicable",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "解释台口、侧台与进出口，但未直接区分侧台空间与侧幕遮挡物。",
+        "把传统左右称谓直接呈现为排练定义，遗漏按现场及传统范围确认的限定。",
+        "未生成动作，也未混同台前台后。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-E03",
+      "category": "explanation",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerRequests": 1,
+      "latencyMs": 1475,
+      "requiredChecks": [
+        "unknown-source-honesty",
+        "no-fabricated-page",
+        "no-action"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "not-applicable",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "明确缺少第83页正文，不编造页内容，无场景动作。",
+        "未说明提供原文后再分析，也未充分区分书目登记与正文收录。",
+        "没有原文却泛称编剧书难指导置景，属于欠缺依据的能力判断。"
+      ]
+    }
+  ],
+  "priorities": [
+    "禁止空动作回复声称已生成预览；模型须明确确认候选或返回受支持的结构动作。",
+    "围合等结构要求不得被无依据的整组平移替代；明确距离必须有当前用户文字依据。",
+    "改善直墙、窗口和当前提案修订/取消的动作选择，再运行开发集；最终冻结后才执行保留集。",
+    "剧本继续处理原生名称/尺寸、同名多件误冲突、旋转轴与证据错误分类。",
+    "照片继续修复台前台后、实际组合台块与支撑协议，再完成人验。"
+  ]
+}

@@ -30,13 +30,16 @@ export async function planStageRequest(
   input: unknown,
   signal: AbortSignal,
   modelPlanner: ModelPlanner = callModel,
+  options: { forceModel?: boolean } = {},
 ): Promise<StagePlan> {
   const request = PlanRequestSchema.safeParse(input)
   if (!request.success)
     throw new AiError('PLAN_INVALID', '口令或舞台摘要格式有误；口令最多 10,000 个字符。')
   signal.throwIfAborted()
   const { source, sceneContext, priorAnswers } = request.data
-  const grounded = groundLanguage(request.data.input, sceneContext, priorAnswers)
+  const grounded = options.forceModel
+    ? null
+    : groundLanguage(request.data.input, sceneContext, priorAnswers)
   if (grounded && ['view', 'clarify', 'unsupported'].includes(grounded.capability))
     return grounded.plan
       ? { ...groundStageAssets(grounded.plan), source }
@@ -58,12 +61,14 @@ export async function planStageRequest(
             },
           ],
         })
-  const localPlan = parseStageText(
-    grounded?.normalizedInput ?? request.data.input,
-    sceneContext,
-    priorAnswers,
-    source,
-  )
+  const localPlan = options.forceModel
+    ? null
+    : parseStageText(
+        grounded?.normalizedInput ?? request.data.input,
+        sceneContext,
+        priorAnswers,
+        source,
+      )
   if (localPlan)
     return trackAiCall(
       'stage-command',
@@ -104,6 +109,25 @@ export async function planStageRequest(
         422,
         true,
       )
+    for (const item of result.data.items) {
+      if (!item.existingNodeId) continue
+      const existing = sceneContext.objects.find((object) => object.id === item.existingNodeId)
+      if (
+        !existing ||
+        item.kind !== existing.kind ||
+        (item.stepCount ?? null) !== (existing.stepCount ?? null) ||
+        (['width', 'height', 'depth'] as const).some(
+          (axis) => item.dimensionsMeters[axis] !== existing.dimensionsMeters[axis],
+        )
+      )
+        throw new AiError(
+          'PLAN_INVALID',
+          '现有道具的身份、形状和尺寸必须保持不变；本次只能调整位置与旋转。',
+          422,
+          true,
+        )
+      item.collisionGeometry = existing.collisionGeometry
+    }
     // Domain conflicts and questions remain reviewable; they never grant permission to execute.
     return validateStagePlan(groundStageAssets(result.data), sceneContext).plan
   }

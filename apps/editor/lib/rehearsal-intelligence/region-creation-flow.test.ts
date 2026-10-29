@@ -14,6 +14,7 @@ import { useStagePlanPreview } from '../stage/plan-preview'
 import { bindRehearsalScene } from './authority'
 import { DiaConversation } from './conversation-controller'
 import { readConversation } from './conversation-storage'
+import { dialogueTestRequest, dialogueTestResponse } from './dialogue.test-helpers'
 
 globalThis.requestAnimationFrame ??= () => 0
 globalThis.cancelAnimationFrame ??= () => {}
@@ -29,9 +30,10 @@ afterEach(() => {
 })
 
 async function stage() {
-  const network = spyOn(globalThis, 'fetch').mockRejectedValue(
-    new Error('Network is disabled in the region creation integration test'),
-  )
+  const network = spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+    expect(url).toBe('/api/dia/dialogue')
+    return dialogueTestResponse(dialogueTestRequest(init))
+  })
   const graph = createManualStageGraph({
     type: 'proscenium',
     widthMeters: 8,
@@ -106,13 +108,13 @@ for (const [input, assets] of [
     const created = Object.values(useScene.getState().nodes).filter((node) => node.type === 'item')
     expect(created.map((node) => node.asset.id).sort()).toEqual([...assets].sort())
     expect(created.every((node) => node.scale.every((value) => value === 1))).toBe(true)
-    expect(network).not.toHaveBeenCalled()
+    expect(network).toHaveBeenCalledTimes(1)
     useScene.temporal.getState().undo()
     expect(currentStageContext().objects).toHaveLength(0)
   })
 }
 
-test('region clarification keeps the existing preview and never calls the provider', async () => {
+test('model clarification keeps the existing preview after a second dialogue request', async () => {
   const { dia, network } = await stage()
   const before = useScene.getState().nodes
   await dia.send('请在舞台中前区生成一组桌椅')
@@ -125,7 +127,7 @@ test('region clarification keeps the existing preview and never calls the provid
   expect(dia.store.getState().thread!.status).toBe('waiting-human')
   expect(dia.store.getState().thread!.messages.at(-1)!.content).toContain('请明确')
   expect(useScene.getState().nodes).toBe(before)
-  expect(network).not.toHaveBeenCalled()
+  expect(network).toHaveBeenCalledTimes(2)
 })
 
 for (const input of ['不要在舞台中前区生成一组桌椅', '在舞台右后生成沙发或者放一张桌子']) {

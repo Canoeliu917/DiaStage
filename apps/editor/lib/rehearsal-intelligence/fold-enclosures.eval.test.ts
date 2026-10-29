@@ -12,6 +12,7 @@ import { createManualStageGraph } from '../stage/initial-stage'
 import { useStagePlanPreview } from '../stage/plan-preview'
 import { bindRehearsalScene } from './authority'
 import { DiaConversation } from './conversation-controller'
+import { dialogueTestRequest, dialogueTestResponse } from './dialogue.test-helpers'
 import { groundLanguage } from './language-grounding'
 
 const context: SceneContextSummary = {
@@ -83,7 +84,7 @@ test('folding existing scenery remains a placement operation rather than new roo
   expect(grounded.plan).toBeUndefined()
 })
 
-test('controller creates a local proposal or asks a fold clarification without calling a provider or writing the scene', async () => {
+test('controller requests model confirmation for fold proposals and clarification without scene writes', async () => {
   globalThis.requestAnimationFrame ??= () => 0
   globalThis.cancelAnimationFrame ??= () => {}
   const graph = createManualStageGraph(context.venue!)
@@ -97,9 +98,10 @@ test('controller creates a local proposal or asks a fold clarification without c
   const originalFetch = globalThis.fetch
   let requests = 0,
     commits = 0
-  globalThis.fetch = (async () => {
+  globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
     requests++
-    throw new Error('provider must not be called')
+    expect(url).toBe('/api/dia/dialogue')
+    return dialogueTestResponse(dialogueTestRequest(init))
   }) as unknown as typeof fetch
   const stop = subscribeSceneCommits(() => commits++)
   try {
@@ -128,7 +130,7 @@ test('controller creates a local proposal or asks a fold clarification without c
     expect(dia.buildProposal()).toBe(previewed)
     expect(useStagePlanPreview.getState().plan).toBe(preview)
     expect(dia.store.getState().thread!.status).toBe('waiting-human')
-    expect(requests).toBe(0)
+    expect(requests).toBe(4)
     expect(commits).toBe(0)
     expect(useScene.getState().nodes).toBe(before)
     expect(useScene.temporal.getState().pastStates).toHaveLength(0)

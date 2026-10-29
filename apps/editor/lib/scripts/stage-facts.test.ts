@@ -1,7 +1,17 @@
 import { describe, expect, test } from 'bun:test'
-import { parseStageText, type StagePlan, StagePlanSchema } from '@pascal-app/core/stage'
-import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
-import { planFromPassages, type ScriptModelPlanner } from './script-planner'
+import {
+  compileStagePlan,
+  parseStageText,
+  type StagePlan,
+  StagePlanSchema,
+} from '@pascal-app/core/stage'
+import { AVAILABLE_STAGE_SCENERY, stagePropCollisionGeometry } from '../stage/prop-assets'
+import {
+  parseScriptModelPlan,
+  planFromPassages,
+  type ScriptModelPlanner,
+  scriptModelFormat,
+} from './script-planner'
 import {
   chunkStagePassages,
   mergeStageFacts,
@@ -32,6 +42,28 @@ function oneSofa(): StagePlan {
     { id: 'p1:0', page: 1, paragraph: 1, excerpt: '舞台中央摆着双人沙发', certainty: 'stated' },
   ]
   plan.items = plan.items.map((item) => ({ ...item, certainty: 'stated', evidenceIds: ['p1:0'] }))
+  return plan
+}
+
+function repeatedItems(excerpt: string, assetId = 'SCN-CHAIR-045'): StagePlan {
+  const plan = oneSofa()
+  const { asset, kind } = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
+  const source = plan.items[0]!
+  plan.items = [-1, 1].map((x, index) => ({
+    ...source,
+    proposalId: `item-${index}`,
+    libraryAssetId: assetId,
+    kind,
+    displayName: asset.name,
+    dimensionsMeters: {
+      width: asset.dimensions![0],
+      height: asset.dimensions![1],
+      depth: asset.dimensions![2],
+    },
+    transform: { ...source.transform, position: { x, y: 0, z: 3 } },
+  }))
+  plan.relations = []
+  plan.evidence[0]!.excerpt = excerpt
   return plan
 }
 
@@ -108,6 +140,53 @@ describe('script physical fact selection and merge', () => {
     expect(merged.items).toHaveLength(2)
   })
 
+  test('explicit counts preserve separate same-name objects within one chunk and deduplicate overlap', () => {
+    for (const [excerpt, assetId] of [
+      ['两把椅子分列圆桌两侧', 'SCN-CHAIR-045'],
+      ['台上放2把硬椅', 'SCN-CHAIR-045'],
+      ['两张圆桌分别放在左右两侧', 'SCN-TABLE-090'],
+    ]) {
+      const input = repeatedItems(excerpt!, assetId)
+      const merged = mergeStageFacts([input, structuredClone(input)])
+      expect(merged.items).toHaveLength(2)
+      expect(merged.items.map((item) => item.transform.position.x)).toEqual([-1, 1])
+      expect(merged.questions).toHaveLength(0)
+      expect(merged.items.every((item) => item.evidenceIds.length === 1)).toBe(true)
+    }
+  })
+
+  test('same-object, unrelated counts and ambiguous repeated names still need a choice', () => {
+    for (const excerpt of [
+      '同一把椅子先在台左再在台右',
+      '两张圆桌之间放椅子',
+      '椅子放在台左或台右',
+      '两把椅子中同一把椅子先在台左再在台右',
+    ]) {
+      const merged = mergeStageFacts([repeatedItems(excerpt)])
+      expect(merged.items).toHaveLength(2)
+      expect(merged.questions).toHaveLength(1)
+      expect(merged.questions[0]?.options).toEqual([
+        '采用前一处描述',
+        '采用后一处描述',
+        '作为两件布景保留',
+      ])
+    }
+  })
+
+  test('counts do not authorize extra objects or overwrite a conflicting later chunk', () => {
+    const input = repeatedItems('两把椅子分列圆桌两侧')
+    input.items.push({
+      ...structuredClone(input.items[0]!),
+      proposalId: 'unexpected-third',
+      transform: { ...input.items[0]!.transform, position: { x: 0, y: 0, z: 4 } },
+    })
+    expect(mergeStageFacts([input]).questions).toHaveLength(1)
+    const first = repeatedItems('两把椅子分列圆桌两侧')
+    const second = structuredClone(first)
+    second.items[0]!.transform.position.x = -2
+    expect(mergeStageFacts([first, second]).questions).toHaveLength(1)
+  })
+
   test('conflicting stage sizes require valid explicit dimensions', () => {
     const first = oneSofa(),
       second = oneSofa()
@@ -125,6 +204,152 @@ describe('script physical fact selection and merge', () => {
 })
 
 describe('script planner', () => {
+  test('model schema demands native asset IDs and upright yaw-only rotations', () => {
+    const schema = JSON.stringify(scriptModelFormat())
+    expect(schema).not.toContain('collisionGeometry')
+    expect(schema).toContain('SCN-DOOR-130')
+    const input = oneSofa()
+    for (const libraryAssetId of [null, 'invented-asset']) {
+      const invalid = structuredClone(input)
+      invalid.items[0]!.libraryAssetId = libraryAssetId
+      expect(() => parseScriptModelPlan(invalid)).toThrow()
+    }
+    for (const rotationDegrees of [
+      { x: 0, y: 0, z: 90 },
+      { x: 90, y: 0, z: 0 },
+      { x: 0, y: 181, z: 0 },
+    ]) {
+      const invalid = structuredClone(input)
+      invalid.items[0]!.transform.rotationDegrees = rotationDegrees
+      expect(() => parseScriptModelPlan(invalid)).toThrow()
+    }
+    for (const y of [-180, 90, 180]) {
+      input.items[0]!.transform.rotationDegrees = { x: 0, y, z: 0 }
+      expect(parseScriptModelPlan(input).items[0]?.transform.rotationDegrees.y).toBe(y)
+    }
+  })
+
+  test('native model assets determine names, exact dimensions and collision geometry locally', () => {
+    const input = oneSofa()
+    input.items[0] = {
+      ...input.items[0]!,
+      libraryAssetId: 'SCN-DOOR-130',
+      displayName: '单门景片（左）',
+      kind: 'scenic-flat',
+      dimensionsMeters: { width: 1.3, height: 2.4, depth: 0.4867 },
+    }
+    const original = structuredClone(input)
+    const result = parseScriptModelPlan(input)
+    const { asset, kind } = AVAILABLE_STAGE_SCENERY.find(
+      ({ asset }) => asset.id === 'SCN-DOOR-130',
+    )!
+    const dimensions = {
+      width: asset.dimensions![0],
+      height: asset.dimensions![1],
+      depth: asset.dimensions![2],
+    }
+    expect(result.items[0]).toMatchObject({
+      displayName: asset.name,
+      kind,
+      dimensionsMeters: dimensions,
+      collisionGeometry: stagePropCollisionGeometry(asset.id, dimensions),
+      transform: original.items[0]!.transform,
+      evidenceIds: original.items[0]!.evidenceIds,
+    })
+    expect(
+      result.assumptions.some(
+        (assumption) =>
+          result.items[0]!.assumptionIds.includes(assumption.id) &&
+          assumption.message.includes('不代表剧本中的实测尺寸'),
+      ),
+    ).toBe(true)
+    expect(input).toEqual(original)
+  })
+
+  test('canonical asset resolution does not bypass original evidence checks', async () => {
+    let calls = 0
+    await expect(
+      planFromPassages([passage('舞台中央摆着双人沙发')], signal(), {}, async () => {
+        calls++
+        const input = oneSofa()
+        input.items[0]!.libraryAssetId = 'SCN-DOOR-130'
+        return parseScriptModelPlan(input)
+      }),
+    ).rejects.toThrow('可靠原文证据')
+    expect(calls).toBe(2)
+  })
+
+  test('floating, ground penetration and crossing the proscenium remain blocked without moving model coordinates', async () => {
+    for (const [position, code] of [
+      [{ x: 0, y: 0.425, z: 3 }, 'invalid-plan'],
+      [{ x: 0, y: -0.1, z: 3 }, 'invalid-plan'],
+      [{ x: 0, y: 0, z: -5.6 }, 'out-of-bounds'],
+      [{ x: 0, y: 0, z: 0 }, 'out-of-bounds'],
+    ] as const) {
+      const input = oneSofa()
+      input.relations = []
+      input.items[0]!.transform.position = { ...position }
+      const plan = await planFromPassages(
+        [passage('舞台中央摆着双人沙发')],
+        signal(),
+        { forceModel: true },
+        async () => parseScriptModelPlan(input),
+      )
+      expect(plan.items[0]!.transform.position).toEqual(position)
+      expect(plan.evidence[0]?.excerpt).toBe('舞台中央摆着双人沙发')
+      expect(plan.warnings.some((warning) => warning.code === code && warning.blocking)).toBe(true)
+      if (code === 'invalid-plan')
+        expect(plan.questions.some(({ id }) => id === 'script-support-confirmation')).toBe(true)
+      const compiled = compileStagePlan(plan, context, {
+        transactionId: 'script-review',
+        issuedAt: '2026-10-29T00:00:00.000Z',
+      })
+      expect(compiled.ok).toBe(false)
+      expect(compiled.commands).toEqual([])
+    }
+  })
+
+  test('floor contact and actual platform contact do not create a floating warning', async () => {
+    for (const { y, depth } of [
+      { y: 0, depth: 6 },
+      { y: 0.3, depth: 6 },
+      { y: 0.3, depth: 4 },
+    ]) {
+      const input = oneSofa()
+      input.relations = []
+      input.items[0]!.transform.position = { x: 0, y, z: 3 }
+      const sceneContext = {
+        ...context,
+        venue: { ...input.venue!, depthMeters: depth },
+        objects: y
+          ? [
+              {
+                id: 'support-platform',
+                name: '台块',
+                kind: 'platform' as const,
+                dimensionsMeters: { width: 3, height: 0.3, depth: 2 },
+                transform: {
+                  position: { x: 0, y: 0, z: depth / 2 },
+                  rotationDegrees: { x: 0, y: 0, z: 0 },
+                },
+              },
+            ]
+          : [],
+      }
+      const before = structuredClone(sceneContext)
+      const plan = await planFromPassages(
+        [passage('舞台中央摆着双人沙发')],
+        signal(),
+        { sceneContext, forceModel: true },
+        async () => parseScriptModelPlan(input),
+      )
+      expect(plan.items[0]!.transform.position.y).toBe(y)
+      expect(plan.warnings.some((warning) => warning.blocking)).toBe(false)
+      expect(plan.questions).toHaveLength(0)
+      expect(sceneContext).toEqual(before)
+    }
+  })
+
   test('equivalent PDF page and DOCX paragraph text yield the same offline stage with truthful evidence', async () => {
     const pdf = await planFromPassages([passage()], signal(), { note: ' \n ' }, noModel)
     const docx = await planFromPassages([passage(text, 'paragraph1', null)], signal(), {}, noModel)

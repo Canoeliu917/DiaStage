@@ -18,6 +18,7 @@ import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { bindRehearsalScene } from './authority'
 import { DiaConversation } from './conversation-controller'
+import { dialogueTestRequest, dialogueTestResponse } from './dialogue.test-helpers'
 import { parseOpenLanguage } from './open-language'
 
 globalThis.requestAnimationFrame ??= () => 0
@@ -88,21 +89,26 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
     const originalFetch = globalThis.fetch
     let providerCalls = 0
     globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-      expect(url).toBe('/api/dia/ground')
+      expect(url).toBe('/api/dia/dialogue')
       providerCalls++
-      const request = JSON.parse(String(init?.body))
-      expect(request.context.objects.some((o: object) => 'transform' in o)).toBe(false)
-      return Response.json({
-        requestId: crypto.randomUUID(),
-        grounding: {
-          ...(parseOpenLanguage(request.rawUtterance) ?? parseOpenLanguage('两块景片拐90度')),
-          rawUtterance: request.rawUtterance,
-        },
-        provider: 'openai',
+      const request = dialogueTestRequest(init)
+      expect(request.openContext.objects.some((o: object) => 'transform' in o)).toBe(false)
+      const grounding = {
+        ...(parseOpenLanguage(request.rawUtterance) ?? parseOpenLanguage('两块景片拐90度')!),
+        rawUtterance: request.rawUtterance,
+      }
+      return dialogueTestResponse(request, {
+        grounding,
+        reply: grounding.requiresClarification
+          ? `需要澄清：${grounding.ambiguities.join('；')}`
+          : '已提供 Stage Proposal，先预览再采用。',
+        provider: 'aliyun',
         model: 'mock-provider-not-live',
       })
     }) as typeof fetch
+    let messagesSent = 0
     const send = async (text: string) => {
+      messagesSent++
       await dia.send(text)
       return dia.store.getState().thread!.messages.at(-1)?.content
     }
@@ -124,7 +130,7 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
       const message = await send(phrase)
       expect(dia.buildProposal()?.structuredGrounding, message).toBeDefined()
       expect(dia.buildProposal()!.groundingProvider).toEqual({
-        provider: 'openai',
+        provider: 'aliyun',
         model: 'mock-provider-not-live',
       })
       if (scenario === 'enclosure') {
@@ -219,9 +225,7 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
           }),
         ).toBe(acceptedLeftTransform)
       }
-      expect(providerCalls).toBe(
-        scenario === 'enclosure' ? 4 : ['partial', 'direction'].includes(scenario) ? 3 : 2,
-      )
+      expect(providerCalls).toBe(messagesSent)
     } finally {
       globalThis.fetch = originalFetch
       dia.dispose()
@@ -249,9 +253,10 @@ test('Integration: compound stage stays Ghost-only until one Accept transaction'
   const dia = new DiaConversation(sceneId, () => null, undefined, false)
   const originalFetch = globalThis.fetch
   let providerCalls = 0
-  globalThis.fetch = (async () => {
+  globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
     providerCalls++
-    throw new Error('compound stage must stay deterministic')
+    expect(url).toBe('/api/dia/dialogue')
+    return dialogueTestResponse(dialogueTestRequest(init))
   }) as typeof fetch
   const phrase = '生成一个有三帘景片和二帘景片联合搭成的舞台，舞台中有桌子椅子沙发'
   try {
@@ -265,7 +270,7 @@ test('Integration: compound stage stays Ghost-only until one Accept transaction'
       'SCN-CHAIR-045',
       'SCN-SOFA-175',
     ])
-    expect(providerCalls).toBe(0)
+    expect(providerCalls).toBe(1)
     expect(commits).toBe(0)
     expect(JSON.stringify(useScene.getState().nodes)).toBe(before)
     await dia.previewBuild(dia.buildProposal()!.plan)
@@ -287,7 +292,7 @@ test('Integration: compound stage stays Ghost-only until one Accept transaction'
     expect(JSON.stringify(useScene.getState().nodes)).toBe(before)
     useScene.temporal.getState().redo()
     expect(JSON.stringify(useScene.getState().nodes)).toBe(accepted)
-    expect(providerCalls).toBe(0)
+    expect(providerCalls).toBe(3)
   } finally {
     globalThis.fetch = originalFetch
     dia.dispose()

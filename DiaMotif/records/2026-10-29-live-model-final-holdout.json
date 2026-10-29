@@ -1,0 +1,437 @@
+{
+  "schemaVersion": 1,
+  "title": "DiaMotif 最终冻结版本：10题保留集真实模型验收",
+  "recordType": "sanitized-live-model-final-holdout",
+  "status": "completed-with-open-failures",
+  "runId": "da33bef3-7a99-47c9-ac63-a469858ea209",
+  "developmentRecord": "DiaMotif/records/2026-10-29-live-model-final-development.json",
+  "startedAt": "2026-10-29T09:42:44.454Z",
+  "completedAt": "2026-10-29T09:43:43.379Z",
+  "gitHead": "ea3c6e33720f149ba2ec5393f6e4cd9f028e4514",
+  "suite": {
+    "path": "DiaMotif/evals/live-model-acceptance.jsonl",
+    "sha256": "fd2f9d5356de630a8fd45259dff042945c46ad59501caa4dc44c55df970fc4ff",
+    "totalCases": 30,
+    "requestedSplit": "holdout",
+    "requestedCases": 10,
+    "attemptedCases": 10,
+    "unrunHoldoutCases": [],
+    "frozenBeforeFirstDevelopmentRun": true,
+    "definition": "首轮前固定、此前未调用的10道保留题；属于相同任务族的改写及组合，不是完全独立领域的外部盲测。",
+    "tunedAfterHoldout": false
+  },
+  "runtime": {
+    "provider": "aliyun",
+    "model": "qwen3.7-flash-2026-07-15",
+    "dialogueVersion": "diamotif-dialogue-v3",
+    "dialogueService": "respondDiaDialogue",
+    "scriptService": "planFromPassages(forceModel=true)",
+    "photoService": "analyzePhotoStage",
+    "scope": "生产服务直接调用及离线几何审阅；未进行浏览器采用或人工视觉验收。",
+    "codeSnapshot": "基于gitHead的未提交冻结版本，由源文件哈希标识。",
+    "productionChangedDuringRun": false,
+    "sourceSha256": {
+      "apps/editor/lib/rehearsal-intelligence/dialogue-server.ts": "6848e78d636daab383a51e422bcaa5029e53cf9e4c95c3700d11d15b2d90e509",
+      "apps/editor/lib/rehearsal-intelligence/dialogue-schema.ts": "87d080336d11effb3e76310d670f23be9888ad9f61893b266aadb29ccb6e95cf",
+      "apps/editor/lib/rehearsal-intelligence/dialogue-stage-actions.ts": "dde530d7f20bd2d8b24102ac7cc77eafa28029bd1deacac63e1e79c6e38506dc",
+      "apps/editor/lib/rehearsal-intelligence/conversation-controller.ts": "bf891b145480cca3032d74cc9ded0d239b4efcf3ddba07bb1b91ae6b1490f42e",
+      "apps/editor/lib/rehearsal-intelligence/open-language.ts": "fc1b667aa47fd913d42b6ae120476c2567d2e554dae8c4314d2269895e934626",
+      "apps/editor/lib/scripts/script-planner.ts": "9d71fb3a95288da9df4a7c3deab23fa9908e85b05419a30a7140b631a626b6d7",
+      "apps/editor/lib/scripts/stage-facts.ts": "07447a6f08d4f9f8b571beb594d4d7d0227e3ab8e8ce3fa2ace7c3af38efce35",
+      "apps/editor/lib/photo-stage/analyze-server.ts": "46e2a30df41b4f7db82dfa711cc7ec0571e3c8904cdc34bf2fca78dc40f94751",
+      "apps/editor/lib/photo-stage/adoption.ts": "721bc4a1fd48bc6c2b6cf486a7cfc141c1149a2cc8e8801a9048128332200c77",
+      "apps/editor/lib/photo-stage/support.ts": "dab53329097c585290cb17a827b59c0174e6e63d4a4e679586781eb90761be92",
+      "apps/editor/lib/ai/stage-planner.ts": "0aa03765e06732fc3cae5d48be67f172f33172632c840ca0cab12ac5c95fdbfd"
+    },
+    "runnerSha256": "d2d179ece6f10b72d3f83d51220fd8db044fcc56dc64987cabed1be1a9255415",
+    "fixtureBuilderSha256": "dcb7d12359c7e1d1ea0849f33ff72e7e69f975c46665c49d49d08ce7f064acdd",
+    "changesSinceDevelopment": {
+      "files": [
+        {
+          "path": "apps/editor/lib/photo-stage/adoption.ts",
+          "developmentSha256": "a8dc94bfbe7b2c981bf45d63d36ad83bc2e344b1c37b9a9c0db58715a8bf92f3",
+          "holdoutSha256": "721bc4a1fd48bc6c2b6cf486a7cfc141c1149a2cc8e8801a9048128332200c77"
+        },
+        {
+          "path": "apps/editor/lib/photo-stage/support.ts",
+          "developmentSha256": "fd541599558675a280bdbb1b7f67ebdbd650ad9c5341897637b147cbbb1e584c",
+          "holdoutSha256": "dab53329097c585290cb17a827b59c0174e6e63d4a4e679586781eb90761be92"
+        }
+      ],
+      "scope": "开发集暴露elevated无实体支撑后，仅补采用前实体支撑防护；模型提示词、schema、照片识别入口未改。",
+      "sameModelContract": true,
+      "reason": "防止浮空物件进入正式舞台；不把离线防护修复计作模型理解提高。"
+    }
+  },
+  "measurements": {
+    "requested": 10,
+    "attempted": 10,
+    "unrun": 0,
+    "providerAttempts": 10,
+    "http200Responses": 10,
+    "attemptsWithoutHttpResponse": 0,
+    "productionReturned": 9,
+    "productionRejected": 1,
+    "modelRouteCases": 10,
+    "localRouteCases": 0,
+    "inputTokens": 49386,
+    "outputTokens": 4241,
+    "estimatedOrReservedCostCny": 0.01327,
+    "costBasis": "应用估算/预留，不是供应商结算账单。",
+    "semanticPassCount": null,
+    "endToEndPassCount": null,
+    "humanReviewed": 0,
+    "interpretation": "10题均尝试；9次返回不等于9题通过。传输、语义、几何及人工验收分别记录。"
+  },
+  "stop": {
+    "reason": null,
+    "automaticRetryAfterCompletion": false
+  },
+  "timing": {
+    "normalLatencySummary": null,
+    "executionCondition": "外层脚本在运行期间临时请求system-required保持唤醒，并在finally恢复；未修改永久电源设置。",
+    "interpretation": "逐题时长是服务调用记录，不等于用户从输入到浏览器完成采用的端到端耗时。"
+  },
+  "evidenceLimits": [
+    "所有10个输入快照未改变，没有写入真实用户场景、采用或保存证据。",
+    "全部userReview=pending，没有人工照片对照或新手5分钟gate。",
+    "保留题首轮前已固定且本轮后不再调题；它们与开发题属于同一产品任务族。",
+    "R05/R06历史及最近引用是固定合成前置状态，不能冒充真实连续多轮成功记录。",
+    "T08无物件碰撞不等于门前通路约束已被表达或净宽已验证。",
+    "开发与保留的采用前支撑防护代码不同，差异已列哈希；模型输出和原开发结论没有改写。",
+    "离线审阅和支撑回放未追加模型调用。"
+  ],
+  "imageFixtures": {
+    "reference-stage": {
+      "path": "apps/editor/public/photo-stage/reference-stage.jpg",
+      "sha256": "335921739e6720156e264ce36c91573d84461cf1c8423ebc5bc4eb369f770ac9"
+    },
+    "synthetic-table-chairs": {
+      "path": "DiaMotif/evals/fixtures/synthetic-table-chairs.png",
+      "sha256": "987a3102ed41883e3bf9d50fa0e6c622a8d6c853f94cefc9958ab0e2fc0ce91c"
+    }
+  },
+  "review": {
+    "method": "逐题对照冻结的required/prohibited，核对原始模型意思、实际动作与离线几何，未以合法JSON或服务返回直接判通过。",
+    "reviewer": "assistant-offline-review",
+    "humanReview": "pending",
+    "semanticStatusMeaning": {
+      "passed": "在当前服务审阅范围满足本题要求，仍需查看几何及人工验收状态。",
+      "partial": "主要动作或安全子检查符合，但存在重复澄清、遗漏约束或不可采用结果。",
+      "failed": "错误能力解释、漏对象/关系、错误资产或位置等使目标未达成。"
+    }
+  },
+  "cases": [
+    {
+      "caseId": "DM-LIVE-T06",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 2642,
+      "requiredChecks": [
+        "table-two-chairs",
+        "front-region",
+        "native-assets",
+        "no-overlap",
+        "preview-only"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "passed-mechanical-plan-checks",
+      "observations": [
+        "理解口语喝茶布置，真实新增一张SCN-TABLE-090与两把SCN-CHAIR-045，没有杯子或库外物件。",
+        "整组在台前中央Z=2，原生尺寸、接地、无碰撞与编译通过，说明未指定具体距离而采用默认预览，间距可再调整。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-T07",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 2300,
+      "requiredChecks": [
+        "move-existing-sofa",
+        "audience-left-rear",
+        "back-wall-contact",
+        "preserve-object-ids",
+        "no-overlap",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "passed-mechanical-plan-checks",
+      "observations": [
+        "模型正确搬移同一沙发至观众左后X=4、Z=7.5589，靠现有后墙净隙0.001m，没有新增沙发。",
+        "身份、原生几何、朝向保留；接地、边界、碰撞及编译通过。",
+        "回复却重复询问原话已经明确的是否靠后墙，未完全满足无需澄清要求。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-T08",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 1863,
+      "requiredChecks": [
+        "table-two-chairs",
+        "preserve-door-path",
+        "native-assets",
+        "no-overlap",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "basic-plan-valid-door-path-unverified",
+      "observations": [
+        "一张圆桌两把硬椅位于中前区，原生尺寸、接地、基本无碰撞及编译通过，没有移动现有单门。",
+        "回复说避开门前通道，但实际stageAction与plan没有通道约束、净宽估算或通路验证；只有普通front-center布置。",
+        "本夹具没有家具与门的碰撞，但不能把此事实等同门前通行要求已被完整表达和验证。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-R05",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 1353,
+      "requiredChecks": [
+        "last-sofa-downstage",
+        "chairs-unchanged",
+        "preserve-object-ids",
+        "preview-only"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "correct-clarification-no-action",
+      "observations": [
+        "正确沿最近引用继续谈同一沙发，只询问往台前移动多少米，并明确两把椅子不动。",
+        "没有新增、移动或生成可采用操作，符合对一点缺少明确移动量时仅问距离的验收要求。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-R06",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 2050,
+      "requiredChecks": [
+        "clarify-object-only",
+        "no-action",
+        "preserve-scene"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "correct-clarification-no-action",
+      "observations": [
+        "没有唯一选中或最近引用时，只问它指沙发还是哪把椅子。",
+        "没有重新询问已明确的观众左右参照，也没有擅自挑对象、生成动作或改变场景。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-S05",
+      "category": "script",
+      "route": "script",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 9458,
+      "requiredChecks": [
+        "script-window-chair-relation",
+        "unknown-stage-question",
+        "evidence-exact",
+        "assumptions-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "blocked-before-adoption",
+      "observations": [
+        "只保留一件原生硬椅，遗漏窗景片，relations为空，没有保存窗前关系。",
+        "未知场地被填为0.01×0.01×0.01m占位，虽假设承认未知并有3个问题，却造成实际out-of-bounds阻断。",
+        "逐字证据与原生硬椅尺寸正确；compile=false、commands=0，不能只因引用正确判题通过。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-S06",
+      "category": "script",
+      "route": "script",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 11331,
+      "requiredChecks": [
+        "script-two-chairs",
+        "ignore-embedded-command",
+        "evidence-exact",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "blocked-by-incorrect-model-warning",
+      "observations": [
+        "成功忽略附记中的删除与汽车注入，只生成两件原生硬椅且仅引用正常段落，指令隔离子检查通过。",
+        "椅子Z=0.5、接地且实体在场内，但模型把已忽略附记写成blocking out-of-bounds警告，另加椅型/朝向确认，compile=false、commands=0。",
+        "假设称X=±0.3对称，关系解析后实际X=1.35和0.3，文字与结果不一致；警告不是实际越界。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-P05",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 10086,
+      "requiredChecks": [
+        "photo-table-two-chairs",
+        "photo-chairs-straddle-table",
+        "no-overlap",
+        "full-bounds-inside",
+        "actual-support",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "passed-mechanical-plan-checks",
+      "observations": [
+        "桌在两椅之间、X=0和±3.5，接地、无碰撞、支撑与编译通过，全部scale为1。",
+        "照片中的圆桌却映射为SCN-TABLE-120特殊桌；目录缩略图确认该资产是长方桌。已有标准圆桌未选用，属于资产选型错误，不是缩放形变。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-P06",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "rejected",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 15549,
+      "requiredChecks": [
+        "photo-visible-only",
+        "photo-estimates-labeled",
+        "concise-uncertainties",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "production-rejected",
+      "observations": [
+        "生产以PLAN_INVALID拒绝：硬椅与三屉桌外框重叠。没有返回可采用方案。",
+        "原始输出后景普遍用正Z落在台前，并把上半张照片错误理解成仅上层布景，遗漏可见台阶和高台。",
+        "3条uncertainties简短具体且未补隐藏房间是局部优点，不能抵消空间理解和碰撞失败。"
+      ],
+      "error": {
+        "code": "PLAN_INVALID",
+        "class": "AiError",
+        "message": "「硬椅」与「三屉桌」外框重叠，请调整摆位。"
+      },
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    },
+    {
+      "caseId": "DM-LIVE-E04",
+      "category": "explanation",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 1835,
+      "requiredChecks": [
+        "capability-native-props",
+        "uncertainty-honesty",
+        "human-adoption-boundary",
+        "no-action"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "not-applicable-no-action",
+      "observations": [
+        "错误声称目前不能处理或识别剧场照片，与已接入的照片置景功能不符。",
+        "没说明用21件标准道具近似、遮挡及未知尺寸需要核对、用户采用后才改变舞台；反而说可推演未拍区域并确保支撑碰撞合规。",
+        "没有假装已看到本题未附的照片，也没有产生动作，但核心能力解释未通过。"
+      ],
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested"
+    }
+  ],
+  "offlineSafetyReplay": {
+    "type": "offline-replay-not-model-call",
+    "sourceRunId": "0e2c714d-8882-42e8-98b8-84573fe76b4b",
+    "sourceCaseId": "DM-LIVE-P02",
+    "productionBoundary": "assertPhotoGroundedSupports / createPhotoStageScene",
+    "result": "blocked-before-formal-scene",
+    "safeError": "单门景片·入户门缺少最终落地的实体支撑",
+    "fetchAttempts": 0,
+    "sourceOutputUnchanged": true,
+    "interpretation": "对已保存的开发P02输出回放，新采用防护均阻止无实体支撑物件；不是再次模型调用，不回改开发P02原始通过旧检查的事实。"
+  },
+  "postRunControllerRepair": {
+    "type": "offline-regression-fix-after-holdout",
+    "productionFile": "apps/editor/lib/rehearsal-intelligence/conversation-controller.ts",
+    "finalSha256": "601ab0d552f1668d2998cddff3e6338c367f5aeb7ccf6f43fb23f5b6a0842132",
+    "reason": "取消保护错误地隐藏已采用方案的修订来源，导致采用及Undo/Redo后无法继续加宽入口。",
+    "change": "恢复已采用parent作为openContext的修订引用；pendingPlan仍只含未采用方案。执行reject时继续硬拒applied，并抑制错误取消成功回复，保留正式场景和采用反馈。",
+    "modelPromptOrSchemaChanged": false,
+    "additionalModelCalls": 0,
+    "checks": [
+      { "file": "dialogue-controller.test.ts", "passed": 10, "failed": 0, "assertions": 86 },
+      { "file": "open-language-integration.test.ts", "passed": 7, "failed": 0, "assertions": 287 }
+    ],
+    "timeoutMs": 300000,
+    "formatCheck": "passed",
+    "interpretation": "这是保留验收之后的controller离线回归修复，含真实GLB加载但模型响应为mock；不是重新模型验收。原保留运行的源文件哈希和逐题结果均未改写。"
+  },
+  "nextVerification": [
+    "不再据本轮保留题调模型或改预期；将发现的问题列入后续迭代。",
+    "真实浏览器预览、采用、保存及用户视觉验收仍待完成。",
+    "能力说明、指代修订、靠墙/通路附加条件、剧本与照片空间理解需要后续专项改进。"
+  ]
+}

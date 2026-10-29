@@ -58,19 +58,18 @@ import {
 } from './conversation-storage'
 import { currentDiaAppContext } from './dia-app-context'
 import { type DiaBuildProposal, diaIntent, discussStage } from './dia-backbone'
+import { requestDiaDialogue } from './dialogue-client'
 import { readFeedbackLog, saveFeedback, saveInteraction } from './feedback'
 import { type InteractionEnvelope, InteractionEnvelopeSchema } from './interaction-envelope'
 import type { DiaStageProposal } from './knowledge/stage-proposal'
 import { groundLanguage, recordGroundingCorrection } from './language-grounding'
 import { LOCAL_REHEARSAL_MODEL_VERSION, localRehearsalOutput } from './local-rehearsal'
 import {
-  OPEN_CAMERA_IDS,
   openGroundingPlacement,
-  parseOpenLanguage,
   type StructuredGrounding,
   validateOpenGrounding,
 } from './open-language'
-import { OpenGroundingRequestError, requestOpenGrounding } from './open-language-client'
+import { OpenGroundingRequestError } from './open-language-client'
 import {
   keepCurrentStageLeftFixed,
   openLanguageContext,
@@ -463,13 +462,16 @@ export class DiaConversation {
       epoch = ++this.epoch
     this.request = request
     const remountUnavailable =
-      !BETA_REMOUNT_ENABLED && (diaIntent(text) === 'remount' || /\bremount\b/i.test(text))
+      this.rehearsalEnabled &&
+      !BETA_REMOUNT_ENABLED &&
+      (diaIntent(text) === 'remount' || /\bremount\b/i.test(text))
     this.store.setState({
       busy: true,
       draft: text.trim(),
-      ...(remountUnavailable ? {} : { placementProposal: null }),
+      ...(remountUnavailable || !this.rehearsalEnabled ? {} : { placementProposal: null }),
     })
     const viewOnly =
+      !this.rehearsalEnabled ||
       remountUnavailable ||
       groundLanguage(text.trim(), currentStageContext())?.capability === 'view'
     if (!viewOnly) {
@@ -497,7 +499,7 @@ export class DiaConversation {
         await this.persist()
         return
       }
-      if (await this.routeBackbone(text.trim(), request.signal)) return
+      if (await this.routeBackbone(text.trim(), request.signal, userMessage.messageId)) return
       request.signal.throwIfAborted()
       const current = this.store.getState()
       const selectedProposalId =
@@ -778,6 +780,7 @@ export class DiaConversation {
     spatialSolution?: SpatialSolution,
     structuredGrounding?: StructuredGrounding,
     groundingProvider?: DiaBuildProposal['groundingProvider'],
+    modelMessage?: ThreadMessage,
   ) {
     this.navigate?.('items')
     if (this.store.getState().builds.length >= 200)
@@ -795,7 +798,8 @@ export class DiaConversation {
       previewedPlan: null,
       ...(knowledgeProposal ? { knowledgeProposal } : {}),
       ...(spatialSolution ? { spatialSolution } : {}),
-      ...(structuredGrounding ? { structuredGrounding, groundingProvider } : {}),
+      ...(structuredGrounding ? { structuredGrounding } : {}),
+      ...(groundingProvider ? { groundingProvider } : {}),
       status: 'proposed',
       finalSceneVersion: null,
       privateProjectData: true,
@@ -807,6 +811,12 @@ export class DiaConversation {
       buildFeedbackEvent(this.sceneId, proposal, parent ? 'revision' : 'proposal'),
     )
     signal.throwIfAborted()
+    if (
+      groundingProvider &&
+      (this.currentContext().sceneVersion !== sceneVersion ||
+        JSON.stringify(currentStageContext()) !== JSON.stringify(formal))
+    )
+      throw new Error('保存提案期间舞台或选择已经变化，请重新发送。')
     useStagePlanPreview.setState({ plan: null })
     this.store.setState((state) => ({
       builds: [...state.builds, proposal],
@@ -820,13 +830,15 @@ export class DiaConversation {
         activeInteractionId: proposal.id,
       },
     }))
-    const proposalMessage = this.message(
-      'dia',
-      knowledgeProposal
-        ? `Stage Proposal：${knowledgeProposal.rationale} 先看 Ghost，再由你采用或取消。`
-        : `${parent ? '搭台修订' : '搭台建议'}：${plan.items.map((item) => item.displayName).join('、') || '场地调整'}。先在舞台上试试，再由你决定。${plan.questions.map((question) => question.message).join('；')}`,
-      sceneVersion,
-    )
+    const proposalMessage =
+      modelMessage ??
+      this.message(
+        'dia',
+        knowledgeProposal
+          ? `Stage Proposal：${knowledgeProposal.rationale} 先看 Ghost，再由你采用或取消。`
+          : `${parent ? '搭台修订' : '搭台建议'}：${plan.items.map((item) => item.displayName).join('、') || '场地调整'}。先在舞台上试试，再由你决定。${plan.questions.map((question) => question.message).join('；')}`,
+        sceneVersion,
+      )
     this.store.setState((state) => ({
       thread: {
         ...state.thread!,
@@ -1053,6 +1065,12 @@ export class DiaConversation {
         status: 'applied',
         finalSceneVersion: this.currentContext().sceneVersion ?? null,
       })
+      this.lastOpenReference = {
+        sceneVersion: this.currentContext().sceneVersion ?? '',
+        ids: result.nodeIds
+          .filter((id) => currentStageContext().objects.some((object) => object.id === id))
+          .slice(0, 3),
+      }
       this.message(
         'system-state',
         '搭台方案已采用，本机已保存，可一步撤销。',
@@ -1070,6 +1088,10 @@ export class DiaConversation {
   private async rejectBuildWithinRequest(signal: AbortSignal) {
     const proposal = this.buildProposal()
     if (!proposal) return
+    if (proposal.status === 'applied')
+      throw new Error('这个方案已采用，不能作为未采用预览撤销；正式舞台与采用记录保留。')
+    if (!['proposed', 'previewed'].includes(proposal.status))
+      throw new Error('当前没有可取消的待采用方案。')
     useStagePlanPreview.setState({ plan: null })
     this.replaceBuild({ ...proposal, status: 'rejected' })
     if (proposal.envelope)
@@ -1080,7 +1102,202 @@ export class DiaConversation {
     await this.event('proposal_rejected')
   }
 
-  private async routeBackbone(text: string, signal: AbortSignal) {
+  private async routeDialogue(text: string, signal: AbortSignal, requestMessageId: string) {
+    const context = this.currentContext()
+    const formal = currentStageContext()
+    const previous = this.buildProposal()
+    const proposalSnapshot = JSON.stringify(previous ?? null)
+    const parent =
+      previous &&
+      ((['proposed', 'previewed'].includes(previous.status) &&
+        previous.sceneVersion === context.sceneVersion) ||
+        (previous.status === 'applied' && previous.finalSceneVersion === context.sceneVersion))
+        ? previous
+        : null
+    const pending = parent && ['proposed', 'previewed'].includes(parent.status) ? parent : null
+    const messages = this.store
+      .getState()
+      .thread!.messages.filter((message) => message.messageId !== requestMessageId)
+    const history = messages.slice(-8).map(({ role, content, sceneVersion }) => ({
+      role,
+      content: content.slice(0, 2000),
+      sceneVersion,
+    }))
+    while (history.reduce((length, message) => length + message.content.length, 0) > 8000)
+      history.shift()
+    const openContext = openLanguageContext(
+      formal,
+      context.sceneVersion!,
+      this.lastOpenReference && this.lastOpenReference.sceneVersion === context.sceneVersion
+        ? this.lastOpenReference.ids
+        : [],
+      parent,
+      !!useStagePlanPreview.getState().plan && pending?.status === 'previewed',
+      currentDiaAppContext(),
+    )
+    try {
+      const result = await requestDiaDialogue(
+        text,
+        {
+          sceneVersion: context.sceneVersion!,
+          sceneContext: formal,
+          openContext,
+          history,
+          historyTruncated:
+            messages.length !== history.length ||
+            messages.some((message) => message.content.length > 2000),
+          pendingPlan: pending?.plan ?? null,
+        },
+        signal,
+      )
+      signal.throwIfAborted()
+      if (
+        result.sceneVersion !== context.sceneVersion ||
+        this.currentContext().sceneVersion !== context.sceneVersion ||
+        JSON.stringify(currentStageContext()) !== JSON.stringify(formal) ||
+        JSON.stringify(this.buildProposal() ?? null) !== proposalSnapshot
+      )
+        throw new Error('解析期间舞台、选择或当前提案已经变化，请重新发送。')
+      if (
+        result.grounding?.modifiers.includes('reject') &&
+        this.buildProposal()?.status === 'applied'
+      )
+        await this.rejectBuildWithinRequest(signal)
+      const provider = { provider: result.provider, model: result.model }
+      const modelMessage = this.message('dia', result.reply, context.sceneVersion!)
+      if (result.plan) {
+        if (!this.buildInScope(result.plan)) throw new Error('方案超出当前置景范围。')
+        await this.proposeBuildPlan(
+          text,
+          result.plan,
+          formal,
+          context.sceneVersion!,
+          parent,
+          signal,
+          undefined,
+          undefined,
+          undefined,
+          provider,
+          modelMessage,
+        )
+        return true
+      }
+      const semantic = result.grounding
+      if (result.localView) {
+        const view = groundLanguage(text, formal)?.view
+        if (!view) throw new Error('观察指令未通过本地校验。')
+        const { runViewCommand } = await import('./view-runtime')
+        signal.throwIfAborted()
+        runViewCommand(this.sceneId, view)
+      } else if (semantic && !semantic.requiresClarification) {
+        const resolved = validateOpenGrounding(semantic, text, openContext, 'model')
+        if (resolved.candidateId) {
+          await this.chooseSpatialCandidateWithinRequest(resolved.candidateId, signal)
+        } else if (semantic.modifiers.includes('reject')) {
+          await this.rejectBuildWithinRequest(signal)
+        } else {
+          const revision =
+            semantic.modifiers.includes('wider') ||
+            (semantic.constraints.length === 1 && semantic.constraints[0] === 'leave-opening')
+          let knowledge: DiaStageProposal | undefined
+          let placement: StagePlacementProposal | undefined
+          if (revision) {
+            if (!parent) throw new Error('没有当前可修订的提案。')
+            knowledge = reviseOpenProposal(resolved, parent, formal)
+          } else {
+            const mapped = openGroundingPlacement(resolved, formal)
+            if ('type' in mapped) {
+              const { runViewCommand } = await import('./view-runtime')
+              signal.throwIfAborted()
+              runViewCommand(this.sceneId, mapped)
+            } else {
+              if (
+                parent &&
+                parent.status !== 'applied' &&
+                !semantic.modifiers.includes('correction')
+              )
+                throw new Error('已有待确认提案，请先采用或取消后再生成独立搭建方案。')
+              placement = mapped
+              knowledge = mapped.knowledgeProposal
+              this.store.setState({ placementProposal: placement })
+            }
+          }
+          if (knowledge) {
+            let plan: StagePlan
+            let solution: SpatialSolution | undefined
+            if (spatialConstraintsForProposal(knowledge).length) {
+              solution = solveStageSpatialProposal(knowledge, formal)
+              if (semantic.modifiers.includes('keep_stage_left_fixed')) {
+                if (!parent) throw new Error('没有当前两片方案可保持台左景片不动。')
+                solution = keepCurrentStageLeftFixed(solution, parent, formal)
+              }
+              plan = solution.candidates[0]?.plan ?? spatialCandidatePlan([])
+            } else {
+              if (!placement) throw new Error('没有已支持的摆放操作。')
+              const runtime = compileStageProposalPreview(placement, formal)
+              if (runtime.kind === 'no_preview') throw new Error(runtime.reason)
+              plan = validateStagePlan(runtime.plan, formal).plan
+            }
+            await this.proposeBuildPlan(
+              text,
+              plan,
+              formal,
+              context.sceneVersion!,
+              parent,
+              signal,
+              knowledge,
+              solution,
+              semantic,
+              provider,
+              modelMessage,
+            )
+            if (resolved.subjectIds.length)
+              this.lastOpenReference = {
+                sceneVersion: context.sceneVersion!,
+                ids: resolved.subjectIds,
+              }
+            return true
+          }
+        }
+      }
+      signal.throwIfAborted()
+      this.store.setState({ draft: '' })
+      const active = this.buildProposal()
+      this.status(
+        active?.status === 'previewed'
+          ? 'waiting-human'
+          : active?.status === 'rejected'
+            ? 'rejected'
+            : active?.status === 'proposed'
+              ? 'proposal-ready'
+              : 'idle',
+        active?.status === 'previewed'
+          ? '对话已回复，当前预览保留；采用后才会改变舞台。'
+          : '对话已回复，正式舞台未改变。',
+      )
+      await this.persist()
+      return true
+    } catch (error) {
+      signal.throwIfAborted()
+      const requestFailed = error instanceof OpenGroundingRequestError
+      this.message(
+        'system-state',
+        `${requestFailed ? '' : '需要澄清：'}${error instanceof Error ? error.message : '对话结果未通过校验。'} 正式舞台未改变。`,
+        context.sceneVersion!,
+      )
+      this.status(
+        this.buildProposal()?.status === 'previewed' ? 'waiting-human' : 'idle',
+        requestFailed
+          ? SERVICE_REQUEST_FAILURE_NOTICE
+          : '回复未采用；已有提案保持原样，请按当前舞台重新发送。',
+      )
+      await this.persist()
+      return true
+    }
+  }
+
+  private async routeBackbone(text: string, signal: AbortSignal, requestMessageId: string) {
+    if (!this.rehearsalEnabled) return this.routeDialogue(text, signal, requestMessageId)
     signal.throwIfAborted()
     const previous = this.buildProposal()
     const context = this.currentContext()
@@ -1156,167 +1373,6 @@ export class DiaConversation {
         )
       }
       return true
-    }
-    const localOpen =
-      this.rehearsalEnabled ||
-      grounded?.capability === 'view' ||
-      grounded?.intent === 'ADD_SCENERY' ||
-      grounded?.intent === 'SET_VENUE'
-        ? null
-        : parseOpenLanguage(text)
-    const explainOnly =
-      !!localOpen?.requiresClarification &&
-      /[？?]|你好|能.*[做帮]|是什么|什么意思|为什么|区别|介绍|解释/.test(text)
-    // Legacy verified creation/view commands remain on their existing path. Unrecognized
-    // utterances may use the semantic-only provider, never the old model StagePlan endpoint.
-    const tryOpenProvider =
-      !localOpen &&
-      !grounded?.placement &&
-      !grounded?.view &&
-      grounded?.capability !== 'build' &&
-      !['version', 'remount'].includes(intent) &&
-      !this.rehearsalEnabled
-    const groundActionWithProvider =
-      !!localOpen &&
-      !localOpen.requiresClarification &&
-      (localOpen.constraints.length > 0 ||
-        localOpen.intents.some((id) => !OPEN_CAMERA_IDS.includes(id as never)) ||
-        localOpen.modifiers.includes('wider'))
-    if (localOpen || tryOpenProvider) {
-      try {
-        if (localOpen?.modifiers.includes('wider') && !parent)
-          throw new Error('没有可继续加宽的当前方案，或舞台版本已经变化。')
-        if (parent && parent.status !== 'applied') this.assertBuildCurrent(parent)
-        const openContext = openLanguageContext(
-          formalContext,
-          context.sceneVersion!,
-          this.lastOpenReference && this.lastOpenReference.sceneVersion === context.sceneVersion
-            ? this.lastOpenReference.ids
-            : [],
-          parent,
-          !!useStagePlanPreview.getState().plan && parent?.status === 'previewed',
-          currentDiaAppContext(),
-        )
-        let semantic = explainOnly || groundActionWithProvider ? null : localOpen
-        let provider: DiaBuildProposal['groundingProvider'] = {
-          provider: 'deterministic',
-          model: null,
-        }
-        if (!semantic) {
-          const result = await requestOpenGrounding(text, openContext, signal)
-          semantic = result.grounding
-          provider = { provider: result.provider, model: result.model }
-          if (semantic.requiresClarification && result.reply) {
-            signal.throwIfAborted()
-            await reply(result.reply, true)
-            this.store.setState({ draft: '' })
-            this.status(
-              parent?.status === 'previewed' ? 'waiting-human' : 'idle',
-              '对话回复；舞台与现有提案均未改变。',
-            )
-            await this.persist()
-            return true
-          }
-        }
-        signal.throwIfAborted()
-        if (
-          this.currentContext().sceneVersion !== context.sceneVersion ||
-          JSON.stringify(currentStageContext()) !== JSON.stringify(formalContext)
-        )
-          throw new Error('解析期间舞台或选择已经变化，请重新发送。')
-        const resolved = validateOpenGrounding(semantic, text, openContext)
-        if (resolved.candidateId) {
-          await this.chooseSpatialCandidateWithinRequest(resolved.candidateId, signal)
-          this.message(
-            'dia',
-            '已切换当前 Ghost；只有你点采用才会改变正式舞台。',
-            context.sceneVersion!,
-          )
-          await this.persist()
-          return true
-        }
-        if (semantic.modifiers.includes('reject')) {
-          await this.rejectBuildWithinRequest(signal)
-          await this.persist()
-          return true
-        }
-        const revision =
-          semantic.modifiers.includes('wider') ||
-          (semantic.constraints.length === 1 && semantic.constraints[0] === 'leave-opening')
-        let knowledge: DiaStageProposal | undefined
-        let placement: StagePlacementProposal | undefined
-        if (revision) {
-          if (!parent) throw new Error('没有当前可修订的提案。')
-          knowledge = reviseOpenProposal(resolved, parent, formalContext)
-        } else {
-          const mapped = openGroundingPlacement(resolved, formalContext)
-          if ('type' in mapped) {
-            const { runViewCommand } = await import('./view-runtime')
-            await reply(runViewCommand(this.sceneId, grounded?.view ?? mapped), true)
-            return true
-          }
-          if (parent && !semantic.modifiers.includes('correction'))
-            throw new Error('已有待确认提案；可以修订入口、切换候选，或取消后再描述新方案。')
-          placement = mapped
-          knowledge = mapped.knowledgeProposal
-          this.store.setState({ placementProposal: placement })
-        }
-        if (!knowledge) throw new Error('没有通过 Knowledge 来源校验。')
-        if (spatialConstraintsForProposal(knowledge).length) {
-          let solution = solveStageSpatialProposal(knowledge, formalContext)
-          if (semantic.modifiers.includes('keep_stage_left_fixed')) {
-            if (!parent) throw new Error('没有当前两片方案可保持台左景片不动。')
-            solution = keepCurrentStageLeftFixed(solution, parent, formalContext)
-          }
-          await this.proposeBuildPlan(
-            text,
-            solution.candidates[0]?.plan ?? spatialCandidatePlan([]),
-            formalContext,
-            context.sceneVersion!,
-            parent,
-            signal,
-            knowledge,
-            solution,
-            semantic,
-            provider,
-          )
-        } else {
-          if (!placement) throw new Error('没有已支持的摆放操作。')
-          const runtime = compileStageProposalPreview(placement, formalContext)
-          if (runtime.kind === 'no_preview') throw new Error(runtime.reason)
-          await this.proposeBuildPlan(
-            text,
-            validateStagePlan(runtime.plan, formalContext).plan,
-            formalContext,
-            context.sceneVersion!,
-            parent,
-            signal,
-            knowledge,
-            undefined,
-            semantic,
-            provider,
-          )
-        }
-        if (resolved.subjectIds.length)
-          this.lastOpenReference = { sceneVersion: context.sceneVersion!, ids: resolved.subjectIds }
-        return true
-      } catch (error) {
-        signal.throwIfAborted()
-        const requestFailed = error instanceof OpenGroundingRequestError
-        await reply(
-          `${requestFailed ? '' : '需要澄清：'}${error instanceof Error ? error.message : '这句话没有通过语义验证。'} 正式舞台未改变。`,
-          true,
-          true,
-        )
-        this.status(
-          parent?.status === 'previewed' ? 'waiting-human' : 'idle',
-          requestFailed
-            ? SERVICE_REQUEST_FAILURE_NOTICE
-            : '口令未采用；已有提案保持原样，请补充明确要求。',
-        )
-        await this.persist()
-        return true
-      }
     }
     if (
       !this.rehearsalEnabled &&

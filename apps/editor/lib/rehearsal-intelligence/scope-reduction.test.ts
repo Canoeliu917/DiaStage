@@ -8,6 +8,7 @@ import { useStagePlanPreview } from '../stage/plan-preview'
 import { migrateStudioGroup, migrateStudioPanel } from '../studio-workspaces'
 import { bindRehearsalScene, clearProposalGhost, useProposalGhost } from './authority'
 import { DiaConversation } from './conversation-controller'
+import { dialogueTestRequest, dialogueTestResponse } from './dialogue.test-helpers'
 import { createSyntheticDemoScene } from './synthetic-demo'
 
 globalThis.requestAnimationFrame ??= () => 0
@@ -24,6 +25,14 @@ async function setup(
   rehearsalEnabled = BETA_REHEARSAL_ENABLED,
   navigate?: (panel: 'versions' | 'remount' | 'items') => void,
 ) {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
+    expect(url).toBe('/api/dia/dialogue')
+    return dialogueTestResponse(dialogueTestRequest(init))
+  }) as typeof fetch
+  disposers.push(() => {
+    globalThis.fetch = originalFetch
+  })
   const graph = createSyntheticDemoScene()
   const sceneId = crypto.randomUUID()
   useScene.getState().setReadOnly(false)
@@ -43,21 +52,40 @@ test('0.1 maps historical workspaces and hidden panels to Build or basic View', 
   expect(BETA_REMOUNT_ENABLED).toBe(false)
   for (const value of ['rehearse', 'remount', 'director', 'lighting', 'timeline', 'video'])
     expect(migrateStudioGroup(value)).toBe('set')
-  for (const value of ['simulation', 'remount', 'theatre-roles', 'theatre-paths', 'lighting', 'sequencer'])
+  for (const value of [
+    'simulation',
+    'remount',
+    'theatre-roles',
+    'theatre-paths',
+    'lighting',
+    'sequencer',
+  ])
     expect(migrateStudioPanel(value)).toBe('items')
   for (const value of ['camera-studio', 'camera-rehearsal', 'record', 'observe'])
     expect(migrateStudioPanel(value)).toBe('view')
   expect(migrateStudioPanel('versions')).toBe('versions')
 })
 
-test('disabled Remount refuses before any model request and preserves the pending set preview', async () => {
+test('disabled Remount explains its limit through the model and preserves the pending set preview', async () => {
   const navigations: string[] = []
   const { controller } = await setup(false, (panel) => navigations.push(panel))
   const originalFetch = globalThis.fetch
   let requests = 0
-  globalThis.fetch = (async () => {
+  globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
     requests++
-    throw new Error('disabled Remount must not request a model')
+    expect(url).toBe('/api/dia/dialogue')
+    const request = dialogueTestRequest(init)
+    return dialogueTestResponse(
+      request,
+      /复台|搬到新场地|换一个场地|Remount/.test(request.rawUtterance)
+        ? {
+            plan: null,
+            grounding: null,
+            localView: false,
+            reply: '复台暂未开放。可以继续 AI 置景、照片置景或剧本置景。',
+          }
+        : {},
+    )
   }) as typeof fetch
   try {
     await controller.send('一张圆桌，两把硬椅')
@@ -79,7 +107,7 @@ test('disabled Remount refuses before any model request and preserves the pendin
       expect(useStagePlanPreview.getState().plan).toBe(preview)
       expect(useScene.getState().nodes).toBe(nodes)
     }
-    expect(requests).toBe(0)
+    expect(requests).toBe(5)
     expect(navigations).toEqual([])
   } finally {
     globalThis.fetch = originalFetch
