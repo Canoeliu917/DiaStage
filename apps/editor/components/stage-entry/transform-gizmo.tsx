@@ -228,7 +228,7 @@ function AxisHandle({
                 ) as ItemNode['position']
               }
             }
-            setValue(`${position[axis].toFixed(3)} m`)
+            setValue(`${Math.round(position[axis] * 100)} 厘米`)
             return floorSafeItemPatch(initialNode, { position })
           }
           let angle: number

@@ -171,7 +171,7 @@ test('selected prop keeps name, position, heading and visibility primary with ad
   }
   const primary = html.split('<details class="stage-object-more">')[0]!
   for (const label of ['名称', '位置', '朝向', '在舞台中显示']) expect(primary).toContain(label)
-  for (const label of ['锁定位置与属性', '形状初始化', '尺寸与精确位置', '复制后落位', '删除']) {
+  for (const label of ['锁定位置与属性', '形状初始化', '尺寸与位置', '复制后落位', '删除']) {
     expect(primary).not.toContain(label)
     expect(html).toContain(label)
   }

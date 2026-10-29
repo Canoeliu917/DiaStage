@@ -22,6 +22,18 @@ import { create } from 'zustand'
 import { objectSnapshot } from '@/lib/remount-scene'
 import { commandMeta, executeStageCommands } from '@/lib/stage/command-executor'
 import { currentStageContext, stageFrame, stageKind, stageRevision } from '@/lib/stage/context'
+import {
+  centerFromPivot,
+  edgeRunCommands,
+  edgeRunRefusal,
+  type FoldPlacement,
+  pivotFromCenter,
+  planRoomEdge,
+  type StageEdge,
+  settleOpening,
+  snapFootprintToStageEdges,
+  straightFoldShape,
+} from '@/lib/stage/edge-run'
 import { useStageFolding } from '@/lib/stage/folding'
 import { stageKindLabels as labels } from '@/lib/stage/labels'
 import { installNativeStagePlacement } from '@/lib/stage/native-placement'
@@ -32,12 +44,18 @@ import {
   stagePropAssetUrl,
   stagePropCollisionGeometry,
 } from '@/lib/stage/prop-assets'
+import {
+  describeStagePoint,
+  rehearsalBlock,
+  rehearsalKept,
+  speakSnapLabel,
+} from '@/lib/stage/rehearsal-measure'
 import { resetStageObjectShape } from '@/lib/stage/reset-shape'
 import { SCENERY_LIBRARY } from '@/lib/stage/scenery'
 import { createUUID } from '../../lib/uuid'
 import { useCameraStudio } from '../camera-studio/store'
 import { useSimulationSelection } from '../theatre/simulation-panel'
-import { FoldingPanel } from './folding-panel'
+import { FoldStops } from './folding-panel'
 import type { PlacementSnap } from './placement-math'
 import { PropRotationControls } from './rigid-prop-controls'
 import { StagePresets } from './stage-presets'
@@ -79,7 +97,12 @@ export const STAGE_LIBRARY_CATEGORIES = [
   { label: '家具', sources: ['沙发', '桌', '椅凳'] },
   { label: '道具', sources: ['台块与支撑'] },
 ] as const
-type PlacementDraft = { item: StageItemProposal; version: number; duplicateOf?: string }
+type PlacementDraft = {
+  item: StageItemProposal
+  version: number
+  duplicateOf?: string
+  foldPlacement?: FoldPlacement
+}
 export const useStagePlacement = create<{
   draft: PlacementDraft | null
   snap: PlacementSnap
@@ -126,22 +149,46 @@ export function startStagePlacement(
   const context = currentStageContext()
   placementContext = context
   if (!context.venue) {
-    useStagePlacement.setState({ notice: '请先设置舞台宽度与深度。' })
+    useStagePlacement.setState({ notice: '请先把舞台的宽和深定下来。' })
     return
   }
+  const straight =
+    !existing && (entry.libraryAssetId === 'SCN-FOLD-02' || entry.libraryAssetId === 'SCN-FOLD-03')
+      ? straightFoldShape(entry.libraryAssetId)
+      : undefined
+  const foldPlacement: FoldPlacement | undefined = straight
+    ? {
+        angles: [180, 180],
+        centerOffset: { x: straight.boundsCenter[0], z: straight.boundsCenter[2] },
+      }
+    : undefined
+  const dimensionsMeters = straight
+    ? {
+        width: straight.dimensions[0],
+        height: straight.dimensions[1],
+        depth: straight.dimensions[2],
+      }
+    : entry.dimensionsMeters
   const item: StageItemProposal = {
     proposalId: createUUID(),
     existingNodeId: existing && !duplicate ? existing.id : null,
     kind: entry.kind,
     displayName: duplicate ? `${entry.name} 副本` : entry.name,
     libraryAssetId: entry.libraryAssetId,
-    dimensionsMeters: entry.dimensionsMeters,
+    dimensionsMeters,
     collisionGeometry:
       existing?.collisionGeometry ??
-      stagePropCollisionGeometry(entry.libraryAssetId, entry.dimensionsMeters),
+      straight?.collisionGeometry ??
+      stagePropCollisionGeometry(entry.libraryAssetId, dimensionsMeters),
     stepCount: existing?.stepCount,
     transform: existing?.transform ?? {
-      position: { x: 0, y: entry.kind === 'camera' ? 1.4 : 0, z: context.venue.depthMeters / 2 },
+      position: foldPlacement
+        ? pivotFromCenter(
+            { x: 0, y: 0, z: context.venue.depthMeters / 2 },
+            entry.kind === 'platform' || entry.name === '枕木' ? 90 : 0,
+            foldPlacement.centerOffset,
+          )
+        : { x: 0, y: entry.kind === 'camera' ? 1.4 : 0, z: context.venue.depthMeters / 2 },
       rotationDegrees: {
         x: 0,
         y: 0,
@@ -159,6 +206,7 @@ export function startStagePlacement(
     draft: {
       item,
       version: context.documentVersion,
+      ...(foldPlacement ? { foldPlacement } : {}),
       ...(duplicate && existing ? { duplicateOf: existing.id } : {}),
     },
     notice: '',
@@ -184,6 +232,7 @@ export function updateStagePlacement(position: StagePoint) {
   const context =
     placementContext?.documentVersion === stageRevision() ? placementContext : currentStageContext()
   placementContext = context
+  const yaw = state.draft.item.transform.rotationDegrees.y
   const snapped = snapStageObject(
     position,
     {
@@ -191,15 +240,52 @@ export function updateStagePlacement(position: StagePoint) {
       stepCount: state.draft.item.stepCount ?? undefined,
       id: state.draft.item.existingNodeId ?? state.draft.item.proposalId,
       name: state.draft.item.displayName,
+      transform: {
+        ...state.draft.item.transform,
+        position: state.draft.foldPlacement ? position : state.draft.item.transform.position,
+      },
     },
     context,
     state.snap,
   )
+  let next = state.draft.foldPlacement
+    ? pivotFromCenter(snapped.position, yaw, state.draft.foldPlacement.centerOffset)
+    : snapped.position
+  const pose = {
+    ...state.draft.item,
+    transform: { ...state.draft.item.transform, position: next },
+  }
+  const labels = snapped.labels.map(speakSnapLabel)
+  if (context.venue && ['scenic-flat', 'door-flat', 'window-flat'].includes(pose.kind)) {
+    const flush = snapFootprintToStageEdges(pose, context.venue)
+    next = flush.position
+    labels.push(...flush.labels)
+    if (pose.kind === 'door-flat' || pose.kind === 'window-flat') {
+      const settled = settleOpening(
+        { ...pose, transform: { ...pose.transform, position: next } },
+        context.objects,
+        context.venue,
+      )
+      next = settled.position
+      pose.transform = {
+        ...pose.transform,
+        position: next,
+        rotationDegrees: { ...pose.transform.rotationDegrees, y: settled.yaw },
+      }
+      labels.push(...settled.labels.filter((label) => !labels.includes(label)))
+    }
+  }
+  const rotationDegrees = {
+    ...state.draft.item.transform.rotationDegrees,
+    y: pose.transform.rotationDegrees.y,
+  }
+  next = { ...next, y: state.draft.item.transform.position.y }
   if (
     context.documentVersion === state.draft.version &&
     (['x', 'y', 'z'] as const).every(
-      (axis) => state.draft!.item.transform.position[axis] === snapped.position[axis],
-    )
+      (axis) => state.draft!.item.transform.position[axis] === next[axis],
+    ) &&
+    state.draft.item.transform.rotationDegrees.y === rotationDegrees.y
   )
     return
   useStagePlacement.setState({
@@ -208,10 +294,10 @@ export function updateStagePlacement(position: StagePoint) {
       version: context.documentVersion,
       item: {
         ...state.draft.item,
-        transform: { ...state.draft.item.transform, position: snapped.position },
+        transform: { ...state.draft.item.transform, position: next, rotationDegrees },
       },
     },
-    snapLabels: snapped.labels,
+    snapLabels: [...new Set(labels)],
   })
 }
 export function commitStagePlacement() {
@@ -225,8 +311,12 @@ export function commitStagePlacement() {
   const meta = commandMeta('manual')
   const compiled = compileStagePlan(placementPlan(draft), context, meta)
   if (!compiled.ok) {
+    const reason = rehearsalKept(
+      compiled.warnings.map((warning) => warning.message).join(' ') || '这里放不下。',
+    )
+    const spot = context.venue ? nearestLegalSpot(draft, context) : null
     useStagePlacement.setState({
-      notice: compiled.warnings.map((warning) => warning.message).join(' '),
+      notice: spot ? `${reason}旁边大概可以放在${spot}。` : reason,
     })
     return false
   }
@@ -241,10 +331,18 @@ export function commitStagePlacement() {
           position: draft.item.transform.position,
         },
       ]
-    : compiled.commands
+    : compiled.commands.map((command) =>
+        command.type === 'AddScenery' && draft.foldPlacement
+          ? { ...command, foldAngles: draft.foldPlacement.angles }
+          : command,
+      )
   const result = executeStageCommands(commands)
   if (!result.ok) {
-    useStagePlacement.setState({ notice: result.error ?? '未能完成落位，请调整后重试。' })
+    const reason = rehearsalKept(result.error ?? '这里放不下。')
+    const spot = context.venue ? nearestLegalSpot(draft, context) : null
+    useStagePlacement.setState({
+      notice: spot ? `${reason}旁边大概可以放在${spot}。` : reason,
+    })
     return false
   }
   cancelStagePlacement()
@@ -255,8 +353,83 @@ export function commitStagePlacement() {
     else if (draft.item.kind === 'camera') useCameraStudio.getState().selectShot(selected)
     else useViewer.getState().setSelection({ selectedIds: [selected] })
   }
-  useStagePlacement.setState({ notice: `已落位「${draft.item.displayName}」，可继续调整或撤销。` })
+  const overlap = compiled.warnings
+    .filter((warning) => warning.code === 'collision')
+    .map((warning) => rehearsalBlock(warning.message))
+  useStagePlacement.setState({
+    notice: overlap.length
+      ? `放下了「${draft.item.displayName}」，但${overlap.join('')}红的就是碰到的那一件，挪到旁边的空位就好。`
+      : `放下了「${draft.item.displayName}」。`,
+  })
   return true
+}
+
+function nearestLegalSpot(
+  draft: PlacementDraft,
+  context: NonNullable<ReturnType<typeof currentStageContext>>,
+): string | null {
+  const venue = context.venue
+  if (!venue) return null
+  const origin = draft.foldPlacement
+    ? centerFromPivot(
+        draft.item.transform.position,
+        draft.item.transform.rotationDegrees.y,
+        draft.foldPlacement.centerOffset,
+      )
+    : draft.item.transform.position
+  const spots: StagePoint[] = []
+  for (let z = 1; z <= venue.depthMeters - 1; z += 1)
+    for (let x = -Math.floor(venue.widthMeters / 2) + 1; x <= venue.widthMeters / 2 - 1; x += 1)
+      spots.push({ x, y: origin.y, z })
+  spots.sort(
+    (a, b) =>
+      Math.hypot(a.x - origin.x, a.z - origin.z) - Math.hypot(b.x - origin.x, b.z - origin.z),
+  )
+  for (const center of spots.slice(0, 24)) {
+    const position = draft.foldPlacement
+      ? pivotFromCenter(
+          center,
+          draft.item.transform.rotationDegrees.y,
+          draft.foldPlacement.centerOffset,
+        )
+      : center
+    const result = compileStagePlan(
+      placementPlan({
+        ...draft,
+        item: { ...draft.item, transform: { ...draft.item.transform, position } },
+      }),
+      context,
+      commandMeta('manual'),
+    )
+    if (
+      result.ok &&
+      !result.warnings.some(
+        (warning) => warning.code === 'collision' && warning.message.includes('穿插'),
+      )
+    )
+      return describeStagePoint(center, venue.depthMeters)
+  }
+  return null
+}
+
+export function placeCurtainsAlong(edge: StageEdge) {
+  cancelStagePlacement()
+  if (useScene.getState().readOnly) return
+  const context = currentStageContext()
+  if (!context.venue) {
+    useStagePlacement.setState({ notice: '请先把舞台的宽和深定下来。' })
+    return
+  }
+  const planned = planRoomEdge(edge, context.venue)
+  const refusal = edgeRunRefusal(planned.pieces, context)
+  if (refusal || !planned.pieces.length) {
+    useStagePlacement.setState({ notice: refusal || planned.notice })
+    return
+  }
+  const result = executeStageCommands(edgeRunCommands(planned.pieces, commandMeta('manual')))
+  useStagePlacement.setState({
+    notice: result.ok ? planned.notice : rehearsalKept(result.error ?? '没排上。'),
+  })
 }
 
 export function StagePlacementRuntime() {
@@ -405,7 +578,40 @@ export function StageLibraryPanel() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
-        <p className="stage-library-hint">点选道具，再点舞台放置；Esc 取消。</p>
+        <div className="stage-edge-actions" role="group" aria-label="沿台边排直墙">
+          <button type="button" disabled={readOnly} onClick={() => placeCurtainsAlong('back')}>
+            贴后墙
+          </button>
+          <button type="button" disabled={readOnly} onClick={() => placeCurtainsAlong('left')}>
+            贴左侧
+          </button>
+          <button type="button" disabled={readOnly} onClick={() => placeCurtainsAlong('right')}>
+            贴右侧
+          </button>
+        </div>
+        <div className="stage-quick-props" role="group" aria-label="门和窗">
+          {(['SCN-DOOR-130', 'SCN-WIN-130'] as const).map((id) => {
+            const found = STAGE_LIBRARY.find(({ menu }) => menu.id === id)
+            return (
+              <button
+                key={id}
+                type="button"
+                disabled={readOnly || !found?.entry}
+                onClick={() => {
+                  if (!found?.entry) return
+                  setSelectedId(id)
+                  startStagePlacement(found.entry)
+                }}
+              >
+                {id === 'SCN-DOOR-130' ? '单门' : '窗'}
+              </button>
+            )
+          })}
+        </div>
+        <p className="stage-library-hint">
+          点选道具，再点舞台放置；Esc
+          取消。帘片放下就是直墙。贴后墙、贴左侧、贴右侧沿台边排好，对不齐就留缝。
+        </p>
         <div className="stage-library-grid">
           {visible.map(({ menu, entry }) => (
             <button
@@ -498,17 +704,32 @@ export function StageLibraryPanel() {
           <div className="stage-placement-readout" aria-live="polite">
             <strong>{stagePositionLabel(position, venue.depthMeters)}</strong>
             <span>
-              距中心线 {Math.abs(position.x).toFixed(2)} 米 · 距台口 {position.z.toFixed(2)} 米
+              {describeStagePoint(
+                state.draft?.foldPlacement
+                  ? centerFromPivot(
+                      position,
+                      state.draft.item.transform.rotationDegrees.y,
+                      state.draft.foldPlacement.centerOffset,
+                    )
+                  : position,
+                venue.depthMeters,
+              )}
             </span>
-            <span>{state.snapLabels.join(' · ') || '自由落位'}</span>
+            <span>{state.snapLabels.join(' · ') || '按格子落位'}</span>
             <button type="button" onClick={cancelStagePlacement}>
               取消落位
             </button>
           </div>
         )}
-        <p className="stage-notice" role="status">
-          {state.notice ||
-            (state.draft ? '移动指针查看台位，点击或释放完成落位；Esc 取消。' : '')}
+        <p
+          className="stage-notice"
+          role={
+            /出了台面|会碰到|放不下|叠在一起|没排|改不了|没有改/.test(state.notice)
+              ? 'alert'
+              : 'status'
+          }
+        >
+          {state.notice || (state.draft ? '移动指针查看台位，点击或释放完成落位；Esc 取消。' : '')}
         </p>
         <div className="stage-manual-actions">
           <button type="button" onClick={() => runUndo()}>
@@ -617,6 +838,7 @@ function NumberInput({
 }
 export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
   const foldingId = useStageFolding((state) => state.nodeId)
+  const placementNotice = useStagePlacement((state) => state.notice)
   const selected = useViewer((s) => s.selection.selectedIds)
   const nodes = useScene((s) => s.nodes)
   const readOnly = useScene((s) => s.readOnly)
@@ -712,7 +934,7 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
       { ...command, meta: commandMeta('manual'), nodeId: object.id },
     ])
     useStagePlacement.setState({
-      notice: result.ok ? '已更新，可撤销。' : (result.error ?? '无法完成修改。'),
+      notice: result.ok ? '改好了。' : rehearsalKept(result.error ?? '没改成。'),
     })
   }
   const entry: StageLibraryEntry = {
@@ -752,6 +974,10 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
           </button>
         </div>
         <PropRotationControls nodeId={object.id} compact />
+        <FoldStops
+          nodeId={object.id}
+          onNotice={(notice) => useStagePlacement.setState({ notice })}
+        />
         <label className="stage-object-visibility">
           <input
             type="checkbox"
@@ -784,11 +1010,10 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
         >
           形状初始化
         </button>
-        <FoldingPanel nodeId={object.id} />
         <fieldset className="stage-object-transform" disabled={locked || foldingId === object.id}>
           <PropRotationControls nodeId={object.id} />
           <details data-stage-dimensions>
-            <summary>尺寸与精确位置</summary>
+            <summary>尺寸与位置</summary>
             <div className="stage-property-grid" data-stage-position-fields>
               {(['x', 'y', 'z'] as const).map((axis, i) => (
                 <NumberInput
@@ -809,18 +1034,25 @@ export function StageObjectPanel({ nodeId }: { nodeId?: string } = {}) {
               {(['width', 'height', 'depth'] as const).map((axis, i) => (
                 <NumberInput
                   key={axis}
-                  min={0.01}
-                  label={['宽 / 米', '高 / 米', '深 / 米'][i]!}
-                  value={object.dimensionsMeters[axis]}
+                  min={1}
+                  label={['宽 / 厘米', '高 / 厘米', '深 / 厘米'][i]!}
+                  value={object.dimensionsMeters[axis] * 100}
+                  integer
                   onCommit={(value) =>
                     run({
                       type: 'ResizeObject',
-                      dimensionsMeters: { ...object.dimensionsMeters, [axis]: value },
+                      dimensionsMeters: {
+                        ...object.dimensionsMeters,
+                        [axis]: value / 100,
+                      },
                     })
                   }
                 />
               ))}
             </div>
+            {/出了台面|会碰到|没改成|还停在/.test(placementNotice) && (
+              <p role="alert">{placementNotice}</p>
+            )}
           </details>
           {node?.type === 'block' && (
             <label>

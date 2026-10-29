@@ -111,7 +111,7 @@ function FoldPosition({ node, corner }: { node: ItemNode; corner: number }) {
           type="button"
           aria-label={`拖动${foldCornerLabel(corner)}`}
           data-fold-corner={corner}
-          title={`${foldCornerLabel(corner)} · 每格 ${FOLD_ANGLE_STEP}° · Shift 自由角度`}
+          title={`${foldCornerLabel(corner)} · 每档 ${FOLD_ANGLE_STEP}°`}
           onPointerDown={(event) => {
             if (event.button !== 0) return
             event.preventDefault()

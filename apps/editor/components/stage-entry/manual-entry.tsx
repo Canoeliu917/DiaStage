@@ -71,11 +71,11 @@ export function ManualStageEntry({ initiallyOpen = false }: { initiallyOpen?: bo
       </label>
       <label>
         宽度（米）
-        <input type="number" name="width" defaultValue={8} min={1} max={1000} step="0.1" required />
+        <input type="number" name="width" defaultValue={8} min={1} max={1000} step="1" required />
       </label>
       <label>
         深度（米）
-        <input type="number" name="depth" defaultValue={6} min={1} max={1000} step="0.1" required />
+        <input type="number" name="depth" defaultValue={6} min={1} max={1000} step="1" required />
       </label>
       <label>
         高度（米，可稍后补充）
@@ -84,7 +84,7 @@ export function ManualStageEntry({ initiallyOpen = false }: { initiallyOpen?: bo
           name="height"
           min={1}
           max={1000}
-          step="0.1"
+          step="1"
           placeholder="未测量时暂按 4 米预览"
         />
       </label>

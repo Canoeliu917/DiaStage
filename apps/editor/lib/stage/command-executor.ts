@@ -63,6 +63,7 @@ import {
   stageSite,
 } from './context'
 import { ScriptImportSchema } from './import-metadata'
+import { snapFoldStop } from './rehearsal-measure'
 import { makeScenery, SCENERY_LIBRARY } from './scenery'
 import { SpatialFoldConfigurationSchema } from './spatial-constraints'
 import { prepareSpatialFold } from './spatial-fold'
@@ -363,7 +364,7 @@ export function executeStageCommands(
         for (const child of children) update(child)
         if (node.type !== 'item' && node.type !== 'block' && node.type !== 'stair')
           throw new Error('布景类型无效')
-        const moved = {
+        let moved = {
           ...node,
           ...localPose(
             node,
@@ -372,6 +373,24 @@ export function executeStageCommands(
             stageToWorldRotation(command.transform.rotationDegrees),
           ),
         } as AnyNode
+        if (command.foldAngles?.length && moved.type === 'item') {
+          const controls = {
+            fold_angle_1_deg: snapFoldStop(command.foldAngles[0]!),
+            fold_angle_2_deg: snapFoldStop(command.foldAngles[1] ?? 180),
+          }
+          const shape = stageFoldGeometry(moved.asset.id, controls, [1, 1, 1])
+          if (shape)
+            moved = {
+              ...moved,
+              scale: [1, 1, 1],
+              controls,
+              asset: {
+                ...moved.asset,
+                dimensions: shape.dimensions,
+                boundsCenter: shape.boundsCenter,
+              },
+            }
+        }
         update(moved)
         spatial.add(moved.id)
         aliases.set(command.nodeId, moved.id)

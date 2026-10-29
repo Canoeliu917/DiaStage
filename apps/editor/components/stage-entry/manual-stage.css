@@ -12,6 +12,14 @@
 .stage-library-heading { display:flex; align-items:center; justify-content:space-between; }
 .stage-library-heading > span { color:var(--dia-muted); font-size:11px; }
 .stage-library-hint { margin:8px 0; }
+.stage-edge-actions,.stage-quick-props { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; }
+.stage-quick-props { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.stage-edge-actions button,.stage-quick-props button { text-align:center; }
+.stage-fold-stops { display:flex; flex-direction:column; gap:6px; border:0; margin:0; padding:0; }
+.stage-fold-stops legend { padding:0; }
+.stage-fold-stop { display:flex; align-items:center; gap:6px; }
+.stage-fold-stop span { flex:1; }
+.stage-manual [role=alert] { color:var(--dia-error); }
 .stage-library-snaps { flex-shrink:0; }
 .stage-presets { flex-shrink:0; }
 .stage-presets > button { display:flex; flex-direction:column; gap:3px; width:100%; margin-top:5px; }
