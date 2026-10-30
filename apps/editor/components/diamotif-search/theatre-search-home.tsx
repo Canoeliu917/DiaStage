@@ -4,6 +4,8 @@ import {
   ArrowDown,
   ArrowRight,
   ArrowUpRight,
+  ChevronDown,
+  ChevronUp,
   Globe,
   LoaderCircle,
   MessageCircle,
@@ -49,8 +51,10 @@ export function TheatreSearchHome({
   const [busy, setBusy] = useState<'search' | 'ai' | 'web' | null>(null)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState(false)
+  const [showSearchHint, setShowSearchHint] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const request = useRef<AbortController | null>(null)
+  const submittedSearch = useRef<{ query: string; category: SearchCategory } | null>(null)
 
   const search = useCallback(
     async (
@@ -63,10 +67,12 @@ export function TheatreSearchHome({
       request.current?.abort()
       const controller = new AbortController()
       request.current = controller
+      submittedSearch.current = { query: text.trim(), category: nextCategory }
       setQuery(text)
       setCategory(nextCategory)
       setBusy(useWeb ? 'web' : useAi ? 'ai' : 'search')
       setError('')
+      setShowSearchHint(false)
       setExpanded(true)
       setResponse((previous) =>
         !useWeb && previous?.query === text.trim() && previous.category === nextCategory
@@ -123,15 +129,28 @@ export function TheatreSearchHome({
 
   function clear() {
     request.current?.abort()
+    submittedSearch.current = null
     setQuery('')
     setCategory('all')
     setResponse(null)
     setBusy(null)
     setError('')
     setExpanded(false)
+    setShowSearchHint(false)
     window.history.replaceState(null, '', '/')
     input.current?.focus()
   }
+
+  function searchWithAi(useWeb = false) {
+    if (!query.trim()) {
+      setShowSearchHint(true)
+      input.current?.focus()
+      return
+    }
+    void search(query, category, true, 0, useWeb)
+  }
+
+  const hasSearch = response !== null || busy !== null || error !== ''
 
   return (
     <>
@@ -158,6 +177,7 @@ export function TheatreSearchHome({
             <span lang="zh-CN">咫台</span>
             <span>DiaStage</span>
           </h1>
+          <p>用 AI 汇聚戏剧资讯，让创作有迹可循。</p>
         </div>
         <form
           className="motif-search-form"
@@ -205,8 +225,8 @@ export function TheatreSearchHome({
             type="button"
             aria-label="联网检索"
             title="联网检索"
-            disabled={busy !== null || !query.trim()}
-            onClick={() => void search(query, category, true, 0, true)}
+            disabled={busy !== null}
+            onClick={() => searchWithAi(true)}
           >
             {busy === 'web' ? (
               <LoaderCircle className="motif-loading" size={16} aria-hidden="true" />
@@ -218,8 +238,8 @@ export function TheatreSearchHome({
             type="button"
             aria-label="问 DIA"
             title="问 DIA"
-            disabled={busy !== null || !query.trim()}
-            onClick={() => void search(query, category, true)}
+            disabled={busy !== null}
+            onClick={() => searchWithAi()}
           >
             {busy === 'ai' ? (
               <LoaderCircle className="motif-loading" size={16} aria-hidden="true" />
@@ -228,6 +248,11 @@ export function TheatreSearchHome({
             )}
           </button>
         </div>
+        {showSearchHint && !query.trim() && (
+          <p className="motif-search-hint" role="status">
+            先输入关键词，再选择联网检索或问 DIA。
+          </p>
+        )}
         <nav className="motif-categories" aria-label="检索分类">
           {SEARCH_CATEGORIES.map((item) => (
             <button
@@ -235,16 +260,47 @@ export function TheatreSearchHome({
               type="button"
               aria-pressed={category === item.id}
               title={item.description}
-              onClick={() => void search(query, item.id)}
+              onClick={() => {
+                if (
+                  item.id === category &&
+                  submittedSearch.current?.category === category &&
+                  submittedSearch.current.query === query.trim() &&
+                  hasSearch
+                )
+                  setExpanded((value) => !value)
+                else void search(query, item.id)
+              }}
             >
               {item.label}
             </button>
           ))}
         </nav>
+        {hasSearch && (
+          <button
+            className="motif-results-toggle"
+            type="button"
+            aria-controls="motif-results"
+            aria-expanded={expanded}
+            onClick={() => setExpanded((value) => !value)}
+          >
+            {expanded ? (
+              <ChevronUp size={14} aria-hidden="true" />
+            ) : (
+              <ChevronDown size={14} aria-hidden="true" />
+            )}
+            {expanded ? '收起结果' : '展开结果'}
+          </button>
+        )}
       </section>
 
-      {expanded && (
-        <section className="motif-results" aria-label="检索结果" aria-busy={busy !== null}>
+      {hasSearch && (
+        <section
+          id="motif-results"
+          className="motif-results"
+          aria-label="检索结果"
+          aria-busy={busy !== null}
+          hidden={!expanded}
+        >
           <div className="motif-result-toolbar">
             <p role="status">
               {busy === 'web'
@@ -411,6 +467,12 @@ export function TheatreSearchHome({
               </div>
             ))}
           </dl>
+          <details className="motif-intake-policy">
+            <summary>Dia 收录准则</summary>
+            <p>
+              仅收录戏剧专业资料，排除娱乐新闻、八卦与绯闻。演员信息须关联可核实的戏剧作品。来源、版本与访问条件分别记录；票讯及招生要求以官方最新公告为准。当前先收录资源信息与链接，正文与视频按许可访问。
+            </p>
+          </details>
           <div className="motif-brand-introduction">
             <p>{DIASTAGE_BRAND.product}</p>
           </div>
@@ -420,7 +482,6 @@ export function TheatreSearchHome({
 
       <footer className="motif-footer">
         <div className="motif-footer-top">
-          <p>有出处的戏剧知识，为每一次创作找到依据。</p>
           <div>
             <button type="button" onClick={openScript}>
               导入剧本
@@ -430,12 +491,6 @@ export function TheatreSearchHome({
           </div>
         </div>
         <div className="motif-footer-bottom">
-          <details>
-            <summary>Dia 收录准则</summary>
-            <p>
-              仅收录戏剧专业资料，排除娱乐新闻、八卦与绯闻。演员信息须关联可核实的戏剧作品。来源、版本与访问条件分别记录；票讯及招生要求以官方最新公告为准。当前先收录资源信息与链接，正文与视频按许可访问。
-            </p>
-          </details>
           <a href="mailto:21@diastage.art">联系咫台</a>
           <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
             粤ICP备2026162365号
