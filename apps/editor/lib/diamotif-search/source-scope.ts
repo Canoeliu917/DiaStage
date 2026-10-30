@@ -22,6 +22,7 @@ const sourceRegions = {
   'shlab.org.cn': 'mainland',
   'help.aliyun.com': 'mainland',
   'cucp.com.cn': 'mainland',
+  'peiyuanproject.com': 'mainland',
   'yixi.tv': 'mainland',
   'lmtw.com': 'mainland',
   'bjd.com.cn': 'mainland',

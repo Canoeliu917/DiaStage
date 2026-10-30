@@ -26,6 +26,7 @@ export const SearchInputSchema = z
     topic: SearchTopicSchema.default('all'),
     useAi: z.boolean().default(false),
     useWeb: z.boolean().default(false),
+    smart: z.boolean().default(false),
     offset: z.number().int().min(0).max(10000).default(0),
   })
   .refine(({ category, topic }) => topicFitsCategory(category, topic), {

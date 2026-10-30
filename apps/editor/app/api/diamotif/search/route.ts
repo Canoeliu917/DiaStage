@@ -47,6 +47,8 @@ export async function POST(request: Request) {
     )
   }
   const search = searchDiaMotif(input)
+  if (input.smart && (!input.useAi || !input.useWeb))
+    return sceneApiJson(request, { error: '智能搜索须同时启用联网与 AI。' }, { status: 400 })
   if (input.useWeb && (!input.useAi || !input.query || input.offset !== 0))
     return sceneApiJson(
       request,
@@ -74,15 +76,33 @@ export async function POST(request: Request) {
     })
   const paid = await handleAiRequest(request, async ({ signal }) => {
     if (input.useWeb) {
-      const results = await searchDiaMotifWeb(input.query, input.category, signal, input.topic)
+      const evidence = input.smart ? search.results.slice(0, 8) : undefined
+      const web = await searchDiaMotifWeb(
+        input.query,
+        input.category,
+        signal,
+        input.topic,
+        evidence,
+      )
+      const results = [
+        ...(evidence ?? []),
+        ...web.results.filter((source) => !evidence?.some((item) => item.url === source.url)),
+      ]
+      const answer = web.answer
       return {
         ...search,
         results,
         total: results.length,
+        answer,
+        aiStatus: input.smart ? (answer ? 'answered' : 'unavailable') : search.aiStatus,
         webStatus: 'searched',
-        notice: results.length
-          ? '以下为大陆及港澳来源站点的联网候选，正文、内容地区、时效与许可待核验；未自动入库，请打开原站确认。'
-          : '联网服务未返回符合大陆及港澳戏剧与AI影视收录范围的结构化来源；没有补写链接或答案。',
+        notice: input.smart
+          ? answer
+            ? 'DIA 根据本次检索资料回答；联网内容待复核，请沿引用查看原站。'
+            : '联网检索已完成，但回答缺少有效引用或引用未通过范围校验，未显示答案；已保留可用资料。'
+          : results.length
+            ? '以下为大陆及港澳来源站点的联网候选，正文、内容地区、时效与许可待核验；未自动入库，请打开原站确认。'
+            : '联网服务未返回符合大陆及港澳戏剧与AI影视收录范围的结构化来源；没有补写链接或答案。',
       }
     }
     return { ...search, answer: await answerDiaMotifSearch(search, signal), aiStatus: 'answered' }

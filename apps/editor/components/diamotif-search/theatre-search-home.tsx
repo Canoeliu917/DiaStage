@@ -87,6 +87,7 @@ export function TheatreSearchHome({
     category: SearchCategory
     topic: SearchTopic
   } | null>(null)
+  const retrySearch = useRef<() => void>(() => {})
 
   const search = useCallback(
     async (
@@ -96,7 +97,10 @@ export function TheatreSearchHome({
       offset = 0,
       useWeb = false,
       nextTopic: SearchTopic = 'all',
+      smart = false,
     ) => {
+      retrySearch.current = () =>
+        void search(text, nextCategory, useAi, offset, useWeb, nextTopic, smart)
       request.current?.abort()
       const controller = new AbortController()
       request.current = controller
@@ -137,6 +141,7 @@ export function TheatreSearchHome({
             useAi,
             offset,
             useWeb,
+            smart,
           }),
           signal: AbortSignal.any([
             controller.signal,
@@ -274,7 +279,7 @@ export function TheatreSearchHome({
           role="search"
           onSubmit={(event) => {
             event.preventDefault()
-            void search(query, category, false, 0, false, topic)
+            void search(query, category, !!query.trim(), 0, !!query.trim(), topic, !!query.trim())
           }}
         >
           <label className="motif-search-field">
@@ -299,9 +304,9 @@ export function TheatreSearchHome({
               className="motif-submit"
               type="submit"
               disabled={busy !== null}
-              aria-label="搜索戏剧资料"
+              aria-label="智能搜索戏剧资料"
             >
-              {busy === 'search' ? (
+              {busy !== null ? (
                 <LoaderCircle className="motif-loading" size={19} aria-hidden="true" />
               ) : (
                 <ArrowRight size={21} aria-hidden="true" />
@@ -314,7 +319,7 @@ export function TheatreSearchHome({
           <button
             type="button"
             aria-label="联网检索"
-            title="联网检索"
+            title="仅查联网来源"
             disabled={busy !== null}
             onClick={() => searchWithAi(true)}
           >
@@ -327,7 +332,7 @@ export function TheatreSearchHome({
           <button
             type="button"
             aria-label="问 DIA"
-            title="问 DIA"
+            title="仅解读已收录资料"
             disabled={busy !== null}
             onClick={() => searchWithAi()}
           >
@@ -462,7 +467,7 @@ export function TheatreSearchHome({
                     ? '正在查找资料…'
                     : response
                       ? response.webStatus === 'searched'
-                        ? `本次联网找到 ${response.total} 个候选来源`
+                        ? `本次资料 ${response.results.length} 条 · 联网来源 ${response.results.filter(({ status }) => status === 'web-candidate').length} 条`
                         : `${response.topic !== 'all' ? `${SEARCH_TOPICS.find(({ id }) => id === response.topic)!.label} · ` : ''}共 ${response.total} 条已收录记录，显示 ${response.results.length} 条`
                       : '检索结果'}
             </p>
@@ -470,10 +475,7 @@ export function TheatreSearchHome({
           {error && (
             <p className="motif-notice" role="alert">
               {error}
-              <button
-                type="button"
-                onClick={() => void search(query, category, false, 0, false, topic)}
-              >
+              <button type="button" onClick={() => retrySearch.current()}>
                 重试检索
               </button>
             </p>
@@ -484,8 +486,8 @@ export function TheatreSearchHome({
             </p>
           )}
           {response?.answer && (
-            <article className="motif-answer" aria-label="DIA 资料解读">
-              <h2>DIA 资料解读</h2>
+            <article className="motif-answer" aria-label="DIA 回答">
+              <h2>DIA 回答</h2>
               <p>{response.answer.text}</p>
               <div className="motif-citations">
                 {response.answer.citationIds.map((id, index) => {
@@ -502,7 +504,11 @@ export function TheatreSearchHome({
           )}
           {response && !response.results.length && !busy && (
             <div className="motif-empty">
-              <h2>还没有匹配的已收录资料</h2>
+              <h2>
+                {response.webStatus === 'searched'
+                  ? '本次没有找到可用来源'
+                  : '还没有匹配的已收录资料'}
+              </h2>
               <p>试试作品名、专业术语，或切换分类。未核实的履历、场次和资料不会补写成结果。</p>
               <button
                 type="button"
@@ -582,7 +588,7 @@ export function TheatreSearchHome({
               </article>
             ))}
           </div>
-          {response && response.total > 24 && (
+          {response && response.webStatus !== 'searched' && response.total > 24 && (
             <nav className="motif-pagination" aria-label="结果分页">
               <button
                 type="button"

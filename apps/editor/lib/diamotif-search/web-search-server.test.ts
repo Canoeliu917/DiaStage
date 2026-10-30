@@ -392,4 +392,120 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     expect(blocked.results).toHaveLength(0)
     expect(calls).toBe(before)
   })
+
+  const smartFrames = (
+    text: string,
+    sources: unknown[] = [
+      {
+        index: 1,
+        title: '戏剧专业教学资料',
+        url: 'https://www.chntheatre.edu.cn/synthetic-smart-test',
+      },
+    ],
+  ) => [
+    { output: { search_info: { search_results: sources } } },
+    { output: { choices: [{ message: { content: [{ text: text.slice(0, 4) }] } }] } },
+    {
+      ...finish,
+      output: { choices: [{ finish_reason: 'stop', message: { content: text.slice(4) } }] },
+    },
+  ]
+
+  test('smart search answers with native sources even when the local catalog has no hit', async () => {
+    frames = smartFrames('这份戏剧资料可供继续查阅[ref_1]。')
+    const before = calls
+    const result = await (await POST(request({ query: '独立戏剧新资料zzzz', smart: true }))).json()
+    expect(calls).toBe(before + 1)
+    expect(result.aiStatus).toBe('answered')
+    expect(result.answer.text).toBe('这份戏剧资料可供继续查阅[1]。')
+    expect(result.answer.citationIds).toEqual([result.results[0].id])
+    expect(body.parameters.search_options).toMatchObject({
+      enable_citation: true,
+      citation_format: '[ref_<number>]',
+    })
+    expect(JSON.stringify(body.input.messages[0])).toContain('统一智能搜索')
+    expect(body.input.messages).toHaveLength(2)
+  })
+
+  test('smart search includes local DiaMotif evidence and keeps local and native citations aligned', async () => {
+    const { searchDiaMotif } = await import('./search')
+    const evidence = searchDiaMotif({ query: '二道幕' }).results.slice(0, 8)
+    expect(evidence.length).toBeGreaterThan(0)
+    frames = smartFrames('二道幕是幕布[motif_1]，可继续阅读专业资料[ref_1]。')
+    const result = await (await POST(request({ query: '二道幕', smart: true }))).json()
+    expect(result.aiStatus).toBe('answered')
+    expect(result.answer.text).toContain('[1]')
+    expect(result.answer.text).toContain('[2]')
+    expect(result.answer.citationIds[0]).toBe(evidence[0]!.id)
+    for (const id of result.answer.citationIds)
+      expect(result.results.some((resource: { id: string }) => resource.id === id)).toBe(true)
+    const context = JSON.stringify(body.input.messages[0])
+    for (const item of evidence) expect(context).toContain(item.id)
+  })
+
+  test.each([
+    '无来源的猜测',
+    '没有此来源[ref_999]',
+    '无来源引用[ref_无]',
+    '伪造本地引用[motif_999]',
+    '危险链接 https://invented.example/ [ref_1]',
+    '伪造链接[详情](//invented.example/)[ref_1]',
+  ])('smart answers with missing or invalid citations are withheld: %s', async (answer) => {
+    frames = smartFrames(answer)
+    const result = await (await POST(request({ smart: true }))).json()
+    expect(result.webStatus).toBe('searched')
+    expect(result.aiStatus).toBe('unavailable')
+    expect(result.answer).toBeNull()
+    expect(result.results.length).toBeGreaterThan(0)
+    expect(JSON.stringify(result)).not.toContain('invented.example')
+  })
+
+  test('a native source matching local evidence is displayed once with consistent citation numbering', async () => {
+    const { searchDiaMotif } = await import('./search')
+    const local = searchDiaMotif({ query: '二道幕' }).results.find((item) => item.url)!
+    expect(local).toBeDefined()
+    frames = smartFrames('二道幕属于幕布[ref_1]，仍须结合版本核对[motif_1]。', [
+      { index: 1, title: '舞台幕布安全资料', url: local.url },
+    ])
+    const result = await (await POST(request({ query: '二道幕', smart: true }))).json()
+    expect(result.aiStatus).toBe('answered')
+    expect(result.results.filter((item: { url: string }) => item.url === local.url)).toHaveLength(1)
+    expect(result.answer.citationIds[0]).toBe(local.id)
+    expect(
+      result.answer.citationIds.every((id: string) =>
+        result.results.some((item: { id: string }) => item.id === id),
+      ),
+    ).toBe(true)
+  })
+
+  test('conflicting and out-of-scope native source indices cannot support an answer', async () => {
+    for (const sources of [
+      [{ index: 1, title: '戏剧资料', url: 'https://www.folger.edu/explore/' }],
+      [
+        { index: 1, title: '戏剧资料甲', url: 'https://www.chntheatre.edu.cn/synthetic-a' },
+        { index: 1, title: '戏剧资料乙', url: 'https://www.chntheatre.edu.cn/synthetic-b' },
+      ],
+    ]) {
+      frames = smartFrames('无法确定来源的内容[ref_1]', sources)
+      const result = await (await POST(request({ smart: true }))).json()
+      expect(result.answer).toBeNull()
+      expect(result.aiStatus).toBe('unavailable')
+    }
+  })
+
+  test('smart requests cannot bypass the explicit web flags, login or budget guards', async () => {
+    const before = calls
+    expect((await POST(request({ smart: true, useWeb: false }))).status).toBe(400)
+    expect((await POST(request({ smart: true, useAi: false }))).status).toBe(400)
+    for (const account of [null, 'not-invited', 'invited-user']) {
+      user = account
+      exhausted = account === 'invited-user'
+      const result = await (await POST(request({ smart: true }))).json()
+      expect(result.aiStatus).toBe('unavailable')
+      expect(result.answer).toBeNull()
+    }
+    user = 'invited-user'
+    exhausted = false
+    expect(calls).toBe(before)
+  })
 }
