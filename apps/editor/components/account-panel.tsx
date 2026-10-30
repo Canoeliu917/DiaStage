@@ -257,13 +257,19 @@ export function AccountForm({
   )
 }
 
-export function AccountMenu({ user }: { user: AccountUser }) {
+export function AccountMenu({
+  user,
+  showScenesLink = true,
+}: {
+  user: AccountUser
+  showScenesLink?: boolean
+}) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   return (
     <div className="dia-account-menu">
       <span title={user.email}>{user.email}</span>
-      <Link href="/scenes">我的剧目</Link>
+      {showScenesLink && <Link href="/scenes">我的剧目</Link>}
       <button
         type="button"
         disabled={busy}

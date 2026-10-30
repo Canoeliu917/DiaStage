@@ -162,8 +162,17 @@ export function TheatreSearchHome({
           DiaStage<span>咫台</span>
         </Link>
         <nav aria-label="账号与舞台">
+          <button type="button" onClick={openScript}>
+            导入剧本
+          </button>
+          <Link href="/photo-stage">照片置景</Link>
+          <Link href="/scenes">我的舞台</Link>
           <StageThemeControl />
-          {user ? <AccountMenu user={user} /> : <Link href="/login?next=%2F">登录 / 注册</Link>}
+          {user ? (
+            <AccountMenu user={user} showScenesLink={false} />
+          ) : (
+            <Link href="/login?next=%2F">登录 / 注册</Link>
+          )}
           <button className="motif-stage-link" onClick={openStage} type="button">
             进入舞台
             <ArrowUpRight size={15} aria-hidden="true" />
@@ -453,12 +462,15 @@ export function TheatreSearchHome({
       )}
 
       <section className="motif-brand" aria-labelledby="motif-brand-title">
-        <h2 id="motif-brand-title">
-          认识 Dia 与 DiaStage
-          <ArrowDown size={14} aria-hidden="true" />
-        </h2>
+        <div className="motif-brand-heading">
+          <h2 id="motif-brand-title">
+            认识 Dia 与 DiaStage
+            <ArrowDown size={14} aria-hidden="true" />
+          </h2>
+        </div>
         <div className="motif-brand-details">
           <p className="motif-brand-companion">{DIASTAGE_BRAND.companion}</p>
+          <p className="motif-brand-product">{DIASTAGE_BRAND.product}</p>
           <dl>
             {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
               <div key={name}>
@@ -470,27 +482,15 @@ export function TheatreSearchHome({
           <details className="motif-intake-policy">
             <summary>Dia 收录准则</summary>
             <p>
-              仅收录戏剧专业资料，排除娱乐新闻、八卦与绯闻。演员信息须关联可核实的戏剧作品。来源、版本与访问条件分别记录；票讯及招生要求以官方最新公告为准。当前先收录资源信息与链接，正文与视频按许可访问。
+              仅收录戏剧专业资料与来源链接，排除娱乐新闻和八卦绯闻；人物须关联可核实作品，来源、版本与访问条件可查，票讯及招生以官方最新公告为准，正文与视频按许可访问。
             </p>
           </details>
-          <div className="motif-brand-introduction">
-            <p>{DIASTAGE_BRAND.product}</p>
-          </div>
-          <p className="motif-brand-motto">AI 虽能拓展想象，但还请你坚信直觉。</p>
         </div>
       </section>
 
       <footer className="motif-footer">
-        <div className="motif-footer-top">
-          <div>
-            <button type="button" onClick={openScript}>
-              导入剧本
-            </button>
-            <Link href="/photo-stage">照片置景</Link>
-            <Link href="/scenes">我的舞台</Link>
-          </div>
-        </div>
-        <div className="motif-footer-bottom">
+        <p className="motif-brand-motto">AI 虽能拓展想象，但还请你坚信直觉。</p>
+        <div className="motif-contact-links">
           <a href="mailto:21@diastage.art">联系咫台</a>
           <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
             粤ICP备2026162365号
