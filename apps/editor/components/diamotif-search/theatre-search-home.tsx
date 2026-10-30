@@ -162,12 +162,12 @@ export function TheatreSearchHome({
           DiaStage<span>咫台</span>
         </Link>
         <nav aria-label="账号与舞台">
+          <StageThemeControl />
           <button type="button" onClick={openScript}>
             导入剧本
           </button>
           <Link href="/photo-stage">照片置景</Link>
           <Link href="/scenes">我的舞台</Link>
-          <StageThemeControl />
           {user ? (
             <AccountMenu user={user} showScenesLink={false} />
           ) : (

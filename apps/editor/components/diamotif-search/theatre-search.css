@@ -17,7 +17,8 @@ html:has(.motif-home) { overflow-y: auto; }
 .motif-header nav :is(a,button) { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 32px; font-size: 12px; line-height: 20px; white-space: nowrap; }
 .motif-header .dia-account-menu { display: flex; align-items: center; gap: 14px; font-size: 12px; }
 .motif-header .dia-account-menu > span { display: none; }
-.motif-header .stage-theme-control button { border: 0; background: transparent; display: flex; gap: 6px; align-items: center; padding: 4px; }
+.motif-header .stage-theme-control button { width: 32px; border: 0; background: transparent; display: flex; gap: 6px; align-items: center; padding: 4px; }
+.motif-header .stage-theme-control button > span { display: none; }
 .motif-stage-link { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--dia-text); border-radius: 4px; padding: 5px 13px; }
 .motif-stage-link:hover { background: var(--dia-text); color: var(--dia-surface); }
 .motif-search-area { width: min(840px, calc(100% - 48px)); margin: clamp(50px, 12vh, 130px) auto 76px; text-align: center; }
