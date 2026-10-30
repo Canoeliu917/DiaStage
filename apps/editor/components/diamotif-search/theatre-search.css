@@ -90,7 +90,7 @@ html:has(.motif-home) { overflow-y: auto; }
 .motif-brand-introduction p { margin: 0; font-size: 14px; line-height: 1.5; }
 .motif-brand-motto { margin: 16px 0 0; color: var(--dia-muted); font-size: 12px; }
 @supports (animation-timeline: view()) {
-  .motif-brand-details { animation: motif-brand-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+  .motif-brand { animation: motif-brand-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
 }
 @keyframes motif-brand-reveal { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 .motif-footer { margin-top: auto; padding: 20px 36px 18px; border-top: 1px solid var(--dia-divider); font-size: 12px; color: var(--dia-muted); }
