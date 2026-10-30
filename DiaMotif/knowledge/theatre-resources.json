@@ -549,5 +549,440 @@
     "verifiedAt": "2026-10-30",
     "rights": "metadata-only",
     "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-rsc-voice",
+    "title": "RSC：演员台词与声音训练",
+    "category": "knowledge",
+    "topics": [
+      "台词训练",
+      "声音训练",
+      "发声",
+      "呼吸",
+      "角色",
+      "莎士比亚",
+      "Voice coaching"
+    ],
+    "summary": "RSC 声音教练介绍排练中如何连接文本、声音与角色，以及身体、呼吸和演前热身的作用。这是剧团实践说明，未收录课程或训练视频全文。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/voice",
+    "theatreEvidence": "官方 Voice coaching for actors 正文说明剧目排练中的文本与声音工作，以及替补角色和演前声音热身。",
+    "sourceRefs": [
+      {
+        "title": "Voice coaching for actors",
+        "locator": "正文：声音与节奏、身体与呼吸、角色和演前热身；页面未标发布日期。",
+        "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/voice"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-rsc-stage-management",
+    "title": "RSC：舞台监督与演出提示分工",
+    "category": "knowledge",
+    "topics": [
+      "舞台监督",
+      "舞台管理",
+      "舞监",
+      "演出提示",
+      "音效",
+      "灯光",
+      "换景",
+      "Stage management",
+      "cue"
+    ],
+    "summary": "介绍 RSC 舞台管理团队如何衔接排练与技术部门，并区分舞台监督、副舞台监督、助理舞台监督的职责。职称与分工属于该剧团实践，不能直接等同所有剧院制度。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/stage-management",
+    "theatreEvidence": "官方 Stage management 正文分别介绍各职位，并说明副舞台监督在演出中发出声音、灯光和换景提示。",
+    "sourceRefs": [
+      {
+        "title": "Stage management",
+        "locator": "职位清单及 Company Manager、Stage Manager、Deputy Stage Manager、Assistant Stage Manager 说明。",
+        "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/stage-management"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-rsc-making-scenery",
+    "title": "RSC：从舞美模型到布景制作",
+    "category": "knowledge",
+    "topics": [
+      "舞台美术",
+      "舞美模型",
+      "布景制作",
+      "舞台设计",
+      "模型箱",
+      "技术图纸",
+      "换景",
+      "Making Scenery"
+    ],
+    "summary": "介绍布景从设计构想、模型箱与技术图纸，到工程、木工、绘景及进场的制作流程，并讨论轮换演出和材料再利用。只收流程资料入口，不提供施工认证或结构承载结论。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/making-scenery",
+    "theatreEvidence": "官方 Making Scenery 的 Drawing office、Scenic Engineering、Carpentry、Paint Shop 与 Leaving the workshop 分节说明舞台布景制作。",
+    "sourceRefs": [
+      {
+        "title": "Making Scenery",
+        "locator": "Drawing office：1:25 模型与技术图纸；后续工程、木工、绘景和进场分节。",
+        "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/making-scenery"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-rsc-making-props",
+    "title": "RSC：道具选用、制作与演出维护",
+    "category": "knowledge",
+    "topics": [
+      "道具制作",
+      "道具管理",
+      "道具选用",
+      "耐用性",
+      "排练道具",
+      "技术合成",
+      "Making Props"
+    ],
+    "summary": "介绍道具需求如何从设计和演员使用方式出发，经过复用、改造或制作，再进入技术排练、定位与日常维护。道具与布景的划分按 RSC 原页语境理解。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/props",
+    "theatreEvidence": "RSC 剧团官方 Making Props 页面说明舞台道具的定义、选用、制作、演出准备与演后复用，定位为对应五个分节。",
+    "sourceRefs": [
+      {
+        "title": "Making Props",
+        "locator": "Sourcing props：耐用性、材料、演员使用和存放；Preparing for the show：技术排练、道具定位及维护。",
+        "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/props"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-cad-stanislavski-2024",
+    "title": "中戏：斯坦尼斯拉夫斯基体系与当代研讨（2024）",
+    "category": "knowledge",
+    "topics": [
+      "斯坦尼斯拉夫斯基",
+      "斯氏体系",
+      "表导演",
+      "表演训练",
+      "导演创作",
+      "海鸥",
+      "格洛托夫斯基",
+      "方法派"
+    ],
+    "summary": "中央戏剧学院对2024年研讨会的报道，记录斯氏体系、表导演训练及《海鸥》舞台设计等发言主题。可追溯研究者与讨论方向；这是会议报道，未收录演讲或论文全文。",
+    "organization": "中央戏剧学院",
+    "url": "https://www.chntheatre.edu.cn/cn/xue/detail/22291.html",
+    "theatreEvidence": "学校2024-06-05原文明确记录2024年5月30日至6月1日的研讨会及具名发言，涉及表演体系、导演实践和《海鸥》舞台设计。",
+    "sourceRefs": [
+      {
+        "title": "“斯坦尼斯拉夫斯基体系与当代”国际学术研讨会成功举办",
+        "locator": "发布日期2024-06-05；刘杏林《特里波列夫的舞台》、易立明和姜涛的发言段落。",
+        "url": "https://www.chntheatre.edu.cn/cn/xue/detail/22291.html"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-cad-stanislavski-book",
+    "title": "《斯氏体系在中国》修订本：姜涛著作介绍",
+    "category": "knowledge",
+    "topics": [
+      "斯氏体系在中国",
+      "姜涛",
+      "斯坦尼斯拉夫斯基",
+      "表演教学",
+      "导演教学",
+      "中国演剧学习实践斯氏体系讲略"
+    ],
+    "summary": "中央戏剧学院2019年发布的修订本介绍，核实姜涛著作与旧书名的关系及研究范围。仅收书目介绍和原页链接，不能据此回答未读取的书中章节细节。",
+    "organization": "中央戏剧学院",
+    "url": "https://www.chntheatre.edu.cn/cn/xue/detail/13349.html",
+    "theatreEvidence": "学校2019-03-05原文介绍戏剧导演姜涛著《斯氏体系在中国》修订再版，说明旧题名、修订范围及表导演教学研究背景。",
+    "recordType": "bibliography",
+    "sourceRefs": [
+      {
+        "title": "我院导演系主任姜涛教授著《斯氏体系在中国》（修订本）再版",
+        "locator": "发布日期2019-03-05；旧题名与修订说明段。职务为原文当时标注，不推断现任职务。",
+        "url": "https://www.chntheatre.edu.cn/cn/xue/detail/13349.html"
+      }
+    ],
+    "access": "public",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-folger-hamlet-text",
+    "title": "《哈姆雷特》英文剧本｜Folger 版",
+    "category": "scripts",
+    "topics": [
+      "哈姆雷特",
+      "Hamlet",
+      "莎士比亚",
+      "William Shakespeare",
+      "Folger版",
+      "英国戏剧",
+      "悲剧",
+      "英文剧本",
+      "独白",
+      "台词",
+      "人物表",
+      "分幕分场",
+      "舞台提示"
+    ],
+    "summary": "Folger 编辑版英文剧本，提供人物表、幕场导航和行号，便于查找对白与舞台提示。公开在线阅读；本站仅收录版本信息与原页链接。",
+    "organization": "Folger Shakespeare Library",
+    "url": "https://www.folger.edu/explore/shakespeares-works/hamlet/read/",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "官方页面标题为 Hamlet - Entire Play，正文提供 Characters in the Play、Act and scene list、带行号的角色对白和舞台提示。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "Hamlet - Entire Play",
+        "url": "https://www.folger.edu/explore/shakespeares-works/hamlet/read/",
+        "locator": "Navigate this work → Act and scene list；Characters in the Play；带行号的剧本正文"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-gutenberg-cherry-orchard-west",
+    "title": "《樱桃园》英文剧本｜Julius West 译本",
+    "category": "scripts",
+    "topics": [
+      "樱桃园",
+      "The Cherry Orchard",
+      "契诃夫",
+      "Anton Chekhov",
+      "俄国戏剧",
+      "四幕剧",
+      "英文剧本",
+      "Julius West",
+      "Julius West译本",
+      "人物表",
+      "场景说明",
+      "舞台提示"
+    ],
+    "summary": "收于《契诃夫戏剧第二集》的 Julius West 英译本，可从在线正文目录进入《樱桃园》及其四幕。原站注明美国公版；本站仅收录元数据与来源，不导入全文。",
+    "organization": "Project Gutenberg",
+    "url": "https://www.gutenberg.org/ebooks/7986",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "官方书目 About this eBook 列出作者契诃夫、译者 Julius West、语言 English 及 The cherry orchard；在线正文包含 THE CHERRY ORCHARD、人物表和四幕戏剧文本。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "Plays by Anton Chekhov, Second Series",
+        "url": "https://www.gutenberg.org/ebooks/7986",
+        "locator": "About this eBook → Translator / Contents / Language / Copyright"
+      },
+      {
+        "title": "THE CHERRY ORCHARD — 在线正文",
+        "url": "https://www.gutenberg.org/cache/epub/7986/pg7986-images.html",
+        "locator": "CONTENTS → THE CHERRY ORCHARD → ACT ONE 至 ACT FOUR"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-folger-macbeth-2008-video",
+    "title": "《麦克白》舞台全剧影像｜Folger Theatre 2008",
+    "category": "videos",
+    "topics": [
+      "麦克白",
+      "Macbeth",
+      "莎士比亚",
+      "William Shakespeare",
+      "Folger Theatre 2008",
+      "英国戏剧",
+      "悲剧",
+      "舞台录像",
+      "全剧影像",
+      "导演",
+      "表演",
+      "舞台打斗",
+      "Teller",
+      "Aaron Posner"
+    ],
+    "summary": "Folger Theatre 与 Two River Theater Company 的2008年舞台制作。官方页面提供上下两部全剧的 YouTube 入口，以及导演、表演和舞台打斗访谈；页面标为免费观看，实际播放以原平台为准。",
+    "organization": "Folger Shakespeare Library / Folger Theatre",
+    "url": "https://www.folger.edu/explore/shakespeare-in-performance/video-folger-theatre-2008-macbeth/",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "官方页面 Full performance 栏列出两部完整舞台演出入口；Special features 列出导演、表演和舞台打斗访谈；Credits 确认2008年合作制作。仅核验页面及观看入口，未验证视频播放。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "Video: Folger Theatre's 2008 Macbeth",
+        "url": "https://www.folger.edu/explore/shakespeare-in-performance/video-folger-theatre-2008-macbeth/",
+        "locator": "Watch online for free；Full performance → Part 1 / Part 2；Special features；Credits"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-cctv-mudanting-youyuan-20191114",
+    "title": "昆曲《牡丹亭·游园》｜央视像音像2019年版",
+    "category": "videos",
+    "topics": [
+      "牡丹亭",
+      "游园",
+      "汤显祖",
+      "昆曲",
+      "昆剧",
+      "戏曲",
+      "杜丽娘",
+      "春香",
+      "赵秀君",
+      "王竹馨",
+      "戏曲影像",
+      "中国京剧像音像集萃"
+    ],
+    "summary": "央视2019年11月14日节目中的昆曲《牡丹亭·游园》，页面列明赵秀君饰杜丽娘、王竹馨饰春香。原页提供节目影像入口；这是《游园》部分，并非《牡丹亭》全本。",
+    "organization": "中央广播电视总台央视网 / CCTV-11",
+    "url": "https://tv.cctv.com/2019/11/14/VIDEIj5avldRfzedfSczu4ym191114.shtml",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "CCTV-11 官方节目页标题明确为昆曲《牡丹亭·游园》，视频简介列出剧作家汤显祖以及杜丽娘、春香的饰演者。已核验公开正文，未验证播放器可用性。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "《中国京剧像音像集萃》20191114 昆曲《牡丹亭·游园》",
+        "url": "https://tv.cctv.com/2019/11/14/VIDEIj5avldRfzedfSczu4ym191114.shtml",
+        "locator": "节目标题；来源与更新时间；视频简介中的剧目、作者及角色演员"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-cctv-bawangbieji-20190711",
+    "title": "京剧《霸王别姬》｜央视像音像2019年版",
+    "category": "videos",
+    "topics": [
+      "霸王别姬",
+      "京剧",
+      "戏曲",
+      "虞姬",
+      "项羽",
+      "王艳",
+      "黄齐峰",
+      "王嘉庆",
+      "楚汉",
+      "戏曲影像",
+      "中国京剧像音像集萃"
+    ],
+    "summary": "央视2019年7月11日京剧《霸王别姬》节目页，简介提供剧情梗概及王艳、黄齐峰、王嘉庆的角色信息。可跳转原页查看节目影像，不与同名故事片混收。",
+    "organization": "中央广播电视总台央视网 / CCTV-11",
+    "url": "https://tv.cctv.com/2019/07/11/VIDEqNgR1KvLf6lfNGjj3qKb190711.shtml",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "CCTV-11 官方节目标题明确为京剧《霸王别姬》，视频简介将王艳与虞姬、黄齐峰和王嘉庆与项羽关联。已核验公开节目正文，未验证播放器可用性。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "《中国京剧像音像集萃》20190711 京剧《霸王别姬》",
+        "url": "https://tv.cctv.com/2019/07/11/VIDEqNgR1KvLf6lfNGjj3qKb190711.shtml",
+        "locator": "节目标题；来源与更新时间；视频简介中的剧情及演员角色"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-cctv-red-detachment-changqing-20250405",
+    "title": "芭蕾舞剧《红色娘子军·常青指路》选段｜央视影像",
+    "category": "videos",
+    "topics": [
+      "红色娘子军",
+      "常青指路",
+      "芭蕾",
+      "舞剧",
+      "中国芭蕾",
+      "中央芭蕾舞团舞蹈学校",
+      "舞台表演",
+      "舞剧选段",
+      "演出影像"
+    ],
+    "summary": "央视2025年4月5日发布的芭蕾舞剧《红色娘子军》选段《常青指路》，由中央芭蕾舞团舞蹈学校表演。链接直达该选段页面，不是整部舞剧或整期综艺。",
+    "organization": "中央广播电视总台央视网",
+    "url": "https://tv.cctv.com/2025/04/05/VIDEpk30m2NfYiQGAbBvT5mg250405.shtml",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "央视官方独立视频页的标题、视频简介明确标注芭蕾舞剧《红色娘子军》选段《常青指路》，并将表演团体明确为中央芭蕾舞团舞蹈学校。已核验公开正文，未验证播放器可用性。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "芭蕾舞剧《红色娘子军》选段《常青指路》",
+        "url": "https://tv.cctv.com/2025/04/05/VIDEpk30m2NfYiQGAbBvT5mg250405.shtml",
+        "locator": "视频标题；来源与更新时间2025-04-05 21:32；视频简介中的作品、选段及表演团体"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-folger-midsummer-text",
+    "title": "《仲夏夜之梦》英文剧本｜Folger 版",
+    "category": "scripts",
+    "topics": [
+      "仲夏夜之梦",
+      "仲夏夜之夢",
+      "A Midsummer Night's Dream",
+      "A Midsummer Night’s Dream",
+      "莎士比亚",
+      "William Shakespeare",
+      "Folger版",
+      "英国戏剧",
+      "喜剧",
+      "英文剧本",
+      "戏中戏",
+      "人物表",
+      "分幕分场",
+      "台词",
+      "舞台提示"
+    ],
+    "summary": "Folger 编辑版莎士比亚喜剧英文文本，含人物表、幕场导航及带行号的对白与舞台提示。公开在线阅读；可从第一幕第二场和第五幕第一场定位剧中工匠排戏与演出。",
+    "organization": "Folger Shakespeare Library",
+    "url": "https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "官方页面标题为 A Midsummer Night’s Dream - Entire Play，正文包含人物表、五幕场次与带行号剧本；幕场导读明确标出工匠筹备戏剧及婚礼演出的场景。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "A Midsummer Night’s Dream - Entire Play",
+        "url": "https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/",
+        "locator": "Navigate this work → Characters in the Play / Act and scene list；Act 1, scene 2；Act 5, scene 1；带行号正文"
+      }
+    ]
   }
 ]

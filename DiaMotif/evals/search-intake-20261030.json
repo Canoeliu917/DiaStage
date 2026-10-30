@@ -1,0 +1,80 @@
+[
+  {
+    "query": "请找《仲夏夜之梦》的英文剧本",
+    "category": "scripts",
+    "expectedId": "dm-resource-folger-midsummer-text",
+    "url": "https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/"
+  },
+  {
+    "query": "Hamlet",
+    "category": "scripts",
+    "expectedId": "dm-resource-folger-hamlet-text",
+    "url": "https://www.folger.edu/explore/shakespeares-works/hamlet/read/"
+  },
+  {
+    "query": "《樱桃园》英文剧本",
+    "category": "scripts",
+    "expectedId": "dm-resource-gutenberg-cherry-orchard-west",
+    "url": "https://www.gutenberg.org/ebooks/7986"
+  },
+  {
+    "query": "麦克白 舞台录像",
+    "category": "videos",
+    "expectedId": "dm-resource-folger-macbeth-2008-video",
+    "url": "https://www.folger.edu/explore/shakespeare-in-performance/video-folger-theatre-2008-macbeth/"
+  },
+  {
+    "query": "昆曲 牡丹亭 游园",
+    "category": "videos",
+    "expectedId": "dm-resource-cctv-mudanting-youyuan-20191114",
+    "url": "https://tv.cctv.com/2019/11/14/VIDEIj5avldRfzedfSczu4ym191114.shtml"
+  },
+  {
+    "query": "京剧《霸王别姬》",
+    "category": "videos",
+    "expectedId": "dm-resource-cctv-bawangbieji-20190711",
+    "url": "https://tv.cctv.com/2019/07/11/VIDEqNgR1KvLf6lfNGjj3qKb190711.shtml"
+  },
+  {
+    "query": "红色娘子军 常青指路",
+    "category": "videos",
+    "expectedId": "dm-resource-cctv-red-detachment-changqing-20250405",
+    "url": "https://tv.cctv.com/2025/04/05/VIDEpk30m2NfYiQGAbBvT5mg250405.shtml"
+  },
+  {
+    "query": "演员声音训练",
+    "category": "knowledge",
+    "expectedId": "dm-resource-rsc-voice",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/voice"
+  },
+  {
+    "query": "RSC 舞台监督职责",
+    "category": "knowledge",
+    "expectedId": "dm-resource-rsc-stage-management",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/stage-management"
+  },
+  {
+    "query": "RSC 布景制作流程",
+    "category": "knowledge",
+    "expectedId": "dm-resource-rsc-making-scenery",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/making-scenery"
+  },
+  {
+    "query": "道具制作和演出维护",
+    "category": "knowledge",
+    "expectedId": "dm-resource-rsc-making-props",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/props"
+  },
+  {
+    "query": "斯坦尼斯拉夫斯基体系与当代",
+    "category": "knowledge",
+    "expectedId": "dm-resource-cad-stanislavski-2024",
+    "url": "https://www.chntheatre.edu.cn/cn/xue/detail/22291.html"
+  },
+  {
+    "query": "《斯氏体系在中国》姜涛",
+    "category": "knowledge",
+    "expectedId": "dm-resource-cad-stanislavski-book",
+    "url": "https://www.chntheatre.edu.cn/cn/xue/detail/13349.html"
+  }
+]

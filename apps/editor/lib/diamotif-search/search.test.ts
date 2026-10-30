@@ -1,4 +1,6 @@
 import { expect, test } from 'bun:test'
+import resources from '../../../../DiaMotif/knowledge/theatre-resources.json'
+import { DIA_KNOWLEDGE } from '../rehearsal-intelligence/knowledge/retrieval'
 import {
   isEntertainmentQuery,
   isTheatreResource,
@@ -8,9 +10,19 @@ import {
 import { SEARCH_RESOURCES, searchDiaMotif } from './search'
 
 test('catalog exposes all current concepts and registered sources without private paths', () => {
-  expect(SEARCH_RESOURCES.filter((item) => item.recordType === 'concept')).toHaveLength(145)
-  expect(SEARCH_RESOURCES.filter((item) => item.recordType === 'bibliography')).toHaveLength(12)
-  expect(SEARCH_RESOURCES.filter((item) => item.status !== 'registered')).toHaveLength(25)
+  expect(
+    SEARCH_RESOURCES.filter(
+      (item) => item.status === 'registered' && item.recordType === 'concept',
+    ),
+  ).toHaveLength(DIA_KNOWLEDGE.concepts.length)
+  expect(
+    SEARCH_RESOURCES.filter(
+      (item) => item.status === 'registered' && item.recordType === 'bibliography',
+    ),
+  ).toHaveLength(DIA_KNOWLEDGE.sources.length)
+  expect(SEARCH_RESOURCES.filter((item) => item.status !== 'registered')).toHaveLength(
+    resources.length,
+  )
   expect(new Set(SEARCH_RESOURCES.map(({ id }) => id)).size).toBe(SEARCH_RESOURCES.length)
   expect(JSON.stringify(SEARCH_RESOURCES)).not.toMatch(/D:\/Obsidian|localFileRef|apiKey|SecretKey/)
   for (const item of SEARCH_RESOURCES.filter((entry) => entry.status === 'registered')) {
@@ -39,6 +51,37 @@ test('all categories browse curated records; random input does not become invent
   expect(searchDiaMotif({ query: 'zzzzqqqq999999' }).results).toHaveLength(0)
   expect(() => searchDiaMotif({ query: '字'.repeat(501) })).toThrow()
   expect(() => searchDiaMotif({ query: '导演', category: 'gossip' })).toThrow()
+})
+
+test('specific topics do not return generic directories on a shared theatre fragment', () => {
+  for (const query of ['沉浸式戏剧', '沉浸式戏剧录像']) {
+    const result = searchDiaMotif({ query, category: 'videos' })
+    expect(result.results.map(({ id }) => id)).not.toContain('dm-resource-ncpa-opera-highlights')
+    expect(result.results.map(({ id }) => id)).not.toContain('dm-resource-nt-collection-schools')
+  }
+  expect(searchDiaMotif({ query: '戏剧', category: 'videos' }).results.length).toBeGreaterThan(0)
+})
+
+test('named plays constrain sources instead of matching only the word script', () => {
+  const named = searchDiaMotif({ query: '《雷雨》剧本', category: 'scripts' })
+  expect(named.results.map(({ id }) => id)).not.toContain('dm-resource-folger-plays')
+  expect(named.results.map(({ id }) => id)).not.toContain('dm-resource-gutenberg-dolls-house')
+  expect(
+    searchDiaMotif({ query: '《未收录的星际雨夜》剧本', category: 'scripts' }).results,
+  ).toHaveLength(0)
+  expect(
+    searchDiaMotif({ query: '未收录的星际雨夜剧本', category: 'scripts' }).results,
+  ).toHaveLength(0)
+})
+
+test.each([
+  ['《玩偶之家》英文剧本', 'dm-resource-gutenberg-dolls-house'],
+  ['娜拉 英文剧本', 'dm-resource-gutenberg-dolls-house'],
+  ["A Doll's House", 'dm-resource-gutenberg-dolls-house'],
+  ['HAMLET', 'dm-resource-folger-plays'],
+])('Chinese and English work names remain discoverable: %s', (query, expectedId) => {
+  const result = searchDiaMotif({ query, category: 'scripts' })
+  expect(result.results.slice(0, 3).map(({ id }) => id)).toContain(expectedId)
 })
 
 test('gossip stays out while relationship analysis and acting terminology remain searchable', () => {

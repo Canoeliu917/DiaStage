@@ -172,7 +172,8 @@ if (process.env.DIAMOTIF_SEARCH_TEST_CHILD !== '1') {
   test('pagination returns distinct pages, rejects invalid offsets and never charges for later pages', async () => {
     const first = await GET(new Request('http://127.0.0.1/api/diamotif/search')).json()
     const second = await GET(new Request('http://127.0.0.1/api/diamotif/search?offset=24')).json()
-    expect(first.total).toBe(182)
+    expect(first.total).toBe(searchDiaMotif({}).total)
+    expect(second.total).toBe(first.total)
     expect(second.offset).toBe(24)
     expect(second.results).toHaveLength(24)
     const firstIds = new Set(first.results.map((item: { id: string }) => item.id))

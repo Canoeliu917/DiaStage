@@ -40,7 +40,7 @@ const registered: SearchResource[] = [
       category: 'knowledge',
       topics: [...new Set([concept.canonicalLabel, ...concept.aliases])],
       summary: explainConcept(concept.id)!.statement,
-      organization: 'DiaMotif 知识整理',
+      organization: 'Dia 知识整理',
       url: concept.authorityRefs[0]?.url ?? recordUrl,
       verifiedAt: null,
       access: 'public',
@@ -65,7 +65,7 @@ const registered: SearchResource[] = [
       category: source.sourceType === 'example_source' ? 'scripts' : 'knowledge',
       topics: [source.title],
       summary: '已登记的戏剧参考资料，仅提供来源记录；不提供全文，也不代表已掌握整本教材。',
-      organization: 'DiaMotif 来源登记',
+      organization: 'Dia 来源登记',
       url: source.notes.match(/https?:\/\/[^\s]+/)?.[0] ?? recordUrl,
       verifiedAt: null,
       access: 'mixed',
@@ -85,21 +85,31 @@ const normalize = (value: string) =>
     .toLowerCase()
     .replace(/[\s\p{P}]/gu, '')
 
-function relevance(resource: SearchResource, query: string) {
+function relevance(resource: SearchResource, query: string, workTitles: string[]) {
   const title = normalize(resource.title)
   const terms = [title, ...resource.topics.map(normalize)].filter((term) => term.length >= 2)
-  let score = title === query ? 100 : 0
-  for (const term of terms) if (query.includes(term)) score += 15 + Math.min(30, term.length)
   const text = normalize(
     `${resource.title} ${resource.topics.join(' ')} ${resource.summary} ${resource.organization}`,
   )
-  if (text.includes(query)) score += 25
+  if (workTitles.length && !workTitles.some((workTitle) => text.includes(workTitle))) return 0
+  const matchedTerms = terms.filter((term) => query.includes(term))
   const grams = [
     ...new Set(
       Array.from({ length: Math.max(0, query.length - 1) }, (_, i) => query.slice(i, i + 2)),
     ),
   ]
-  score += grams.filter((gram) => text.includes(gram)).length
+  const matchedGrams = grams.filter((gram) => text.includes(gram)).length
+  // A shared short fragment must not erase the rest of a specific topic or work name.
+  if (
+    !text.includes(query) &&
+    !matchedTerms.some((term) => term.length >= 3) &&
+    matchedGrams < Math.ceil(grams.length * 0.6)
+  )
+    return 0
+  let score = title === query ? 100 : 0
+  for (const term of matchedTerms) score += 15 + Math.min(30, term.length)
+  if (text.includes(query)) score += 25
+  score += matchedGrams
   return score
 }
 
@@ -119,9 +129,10 @@ export function searchDiaMotif(raw: unknown): SearchResponse {
     return {
       ...base,
       notice:
-        'DiaMotif 只收录戏剧专业资料，不检索演员八卦、绯闻或私生活；可查询剧目、角色、创作与教学。',
+        'Dia 只收录戏剧专业资料，不检索演员八卦、绯闻或私生活；可查询剧目、角色、创作与教学。',
     }
   const normalized = normalize(query)
+  const workTitles = [...query.matchAll(/《([^》]+)》/g)].map((match) => normalize(match[1]!))
   const ranked = SEARCH_RESOURCES.filter(
     (resource) => category === 'all' || resource.category === category,
   )
@@ -129,7 +140,7 @@ export function searchDiaMotif(raw: unknown): SearchResponse {
       resource,
       index,
       score: normalized
-        ? relevance(resource, normalized)
+        ? relevance(resource, normalized, workTitles)
         : resource.status === 'registered'
           ? 0
           : 1,
