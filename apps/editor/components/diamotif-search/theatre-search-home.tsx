@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRight, ArrowUpRight, LoaderCircle, Search, X } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUpRight, LoaderCircle, Search, X } from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AccountMenu, type AccountUser } from '@/components/account-panel'
@@ -150,7 +150,7 @@ export function TheatreSearchHome({
             <span lang="zh-CN">咫台</span>
             <span>DiaStage</span>
           </h1>
-          <p>戏剧艺术 AI 检索</p>
+          <p>戏剧艺术 AI 平台</p>
         </div>
         <form
           className="motif-search-form"
@@ -222,6 +222,7 @@ export function TheatreSearchHome({
               key={item.id}
               type="button"
               aria-pressed={category === item.id}
+              title={item.description}
               onClick={() => void search(query, item.id)}
             >
               {item.label}
@@ -399,21 +400,6 @@ export function TheatreSearchHome({
         </section>
       )}
 
-      <section className="motif-brand" aria-labelledby="motif-brand-title">
-        <h2 id="motif-brand-title">认识 Dia 与 DiaStage</h2>
-        <p className="motif-brand-companion">{DIASTAGE_BRAND.companion}</p>
-        <dl>
-          {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
-            <div key={name}>
-              <dt>{name}</dt>
-              <dd>{description}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="motif-brand-meaning">{DIASTAGE_BRAND.nameMeaning}</p>
-        <p className="motif-brand-motto">AI虽能完成想象，但还请相信直觉。</p>
-      </section>
-
       <footer className="motif-footer">
         <div className="motif-footer-top">
           <p>有出处的戏剧知识，为每一次创作找到依据。</p>
@@ -427,7 +413,7 @@ export function TheatreSearchHome({
         </div>
         <div className="motif-footer-bottom">
           <details>
-            <summary>DiaMotif 收录准则</summary>
+            <summary>Dia 收录准则</summary>
             <p>
               仅收录戏剧专业资料，排除娱乐新闻、八卦与绯闻。演员信息须关联可核实的戏剧作品。来源、版本与访问条件分别记录；票讯及招生要求以官方最新公告为准。当前先收录资源信息与链接，正文与视频按许可访问。
             </p>
@@ -438,6 +424,29 @@ export function TheatreSearchHome({
           </a>
         </div>
       </footer>
+
+      <section className="motif-brand" aria-labelledby="motif-brand-title">
+        <h2 id="motif-brand-title">
+          认识 Dia 与 DiaStage
+          <ArrowDown size={14} aria-hidden="true" />
+        </h2>
+        <div className="motif-brand-details">
+          <p className="motif-brand-companion">{DIASTAGE_BRAND.companion}</p>
+          <dl>
+            {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
+              <div key={name}>
+                <dt>{name}</dt>
+                <dd>{description}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="motif-brand-introduction">
+            <p>{DIASTAGE_BRAND.product}</p>
+            <p>{DIASTAGE_BRAND.nameMeaning}</p>
+          </div>
+          <p className="motif-brand-motto">AI虽能完成想象，但还请相信直觉。</p>
+        </div>
+      </section>
     </>
   )
 }

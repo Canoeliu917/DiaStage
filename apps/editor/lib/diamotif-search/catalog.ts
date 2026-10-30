@@ -1,15 +1,15 @@
 import { z } from 'zod'
 
 export const SEARCH_CATEGORIES = [
-  { id: 'all', label: '全部' },
-  { id: 'scripts', label: '剧本' },
-  { id: 'knowledge', label: '戏剧知识' },
-  { id: 'videos', label: '影像' },
-  { id: 'people', label: '戏剧人物' },
-  { id: 'venues', label: '剧院与剧团' },
-  { id: 'events', label: '演出与票讯' },
-  { id: 'admissions', label: '院校与招生' },
-  { id: 'opportunities', label: '招募与机会' },
+  { id: 'all', label: '全部', description: '所有戏剧专业资料' },
+  { id: 'scripts', label: '剧本', description: '剧作、版本、选段与文本来源' },
+  { id: 'knowledge', label: '戏剧知识', description: '表演、导演、台词、声乐、舞美与戏剧理论' },
+  { id: 'videos', label: '演出影像', description: '演出录像、剧目片段与创作纪录片' },
+  { id: 'people', label: '演职人员', description: '戏剧演员、导演、编剧与舞台创作人员' },
+  { id: 'venues', label: '剧场剧团', description: '剧场空间、剧院与演出团体' },
+  { id: 'events', label: '演出票讯', description: '剧目排期、巡演与官方购票来源' },
+  { id: 'admissions', label: '院校招生', description: '戏剧院校、专业、艺考与招生公告' },
+  { id: 'opportunities', label: '招募招聘', description: '演员选角、试镜、剧组招募与剧院岗位' },
 ] as const
 
 export type SearchCategory = (typeof SEARCH_CATEGORIES)[number]['id']

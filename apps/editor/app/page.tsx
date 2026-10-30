@@ -2,11 +2,12 @@ import { headers } from 'next/headers'
 import { HomeStageSpace } from '@/components/stage-entry/home-stage-space'
 import { isAiProviderConfigured } from '@/lib/ai/provider-config'
 import { getSession } from '@/lib/auth/server'
+import { DIASTAGE_BRAND } from '@/lib/brand'
 import '@/components/diamotif-search/theatre-search.css'
 
 export const metadata = {
-  title: '咫台 DiaStage · 戏剧艺术 AI 检索',
-  description: '检索剧本、表导演知识、戏剧视频、院校与演出资料，走进你的排练舞台。',
+  title: '咫台 DiaStage · 戏剧艺术 AI 平台',
+  description: DIASTAGE_BRAND.product,
 }
 
 export default async function Home({
