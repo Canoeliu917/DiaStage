@@ -1,6 +1,15 @@
 'use client'
 
-import { ArrowDown, ArrowRight, ArrowUpRight, LoaderCircle, Search, X } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUpRight,
+  Globe,
+  LoaderCircle,
+  MessageCircle,
+  Search,
+  X,
+} from 'lucide-react'
 import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AccountMenu, type AccountUser } from '@/components/account-panel'
@@ -16,7 +25,6 @@ const accessLabels: Record<string, string> = {
   onsite: '到馆查阅',
   mixed: '部分公开',
 }
-const suggestions = ['剧本选段', '表演与导演', '声乐与台词', '舞台美术', '艺考招生', '演出票讯']
 
 export function TheatreSearchHome({
   user,
@@ -150,7 +158,6 @@ export function TheatreSearchHome({
             <span lang="zh-CN">咫台</span>
             <span>DiaStage</span>
           </h1>
-          <p>戏剧艺术 AI 平台</p>
         </div>
         <form
           className="motif-search-form"
@@ -196,24 +203,29 @@ export function TheatreSearchHome({
         <div className="motif-search-actions" role="group" aria-label="联网与知识问答">
           <button
             type="button"
+            aria-label="联网检索"
+            title="联网检索"
             disabled={busy !== null || !query.trim()}
             onClick={() => void search(query, category, true, 0, true)}
           >
             {busy === 'web' ? (
-              <>
-                <LoaderCircle className="motif-loading" size={14} aria-hidden="true" />
-                正在联网检索…
-              </>
+              <LoaderCircle className="motif-loading" size={16} aria-hidden="true" />
             ) : (
-              '联网检索'
+              <Globe size={16} aria-hidden="true" />
             )}
           </button>
           <button
             type="button"
+            aria-label="问 DIA"
+            title="问 DIA"
             disabled={busy !== null || !query.trim()}
             onClick={() => void search(query, category, true)}
           >
-            {busy === 'ai' ? 'DIA 正在查阅…' : '问 DIA'}
+            {busy === 'ai' ? (
+              <LoaderCircle className="motif-loading" size={16} aria-hidden="true" />
+            ) : (
+              <MessageCircle size={16} aria-hidden="true" />
+            )}
           </button>
         </div>
         <nav className="motif-categories" aria-label="检索分类">
@@ -229,22 +241,6 @@ export function TheatreSearchHome({
             </button>
           ))}
         </nav>
-        {!expanded && (
-          <div className="motif-discovery">
-            <p>从一场戏，找到更多可能。</p>
-            <div className="motif-suggestions" role="group" aria-label="检索方向">
-              {suggestions.map((text) => (
-                <button type="button" key={text} onClick={() => void search(text, 'all')}>
-                  {text}
-                </button>
-              ))}
-            </div>
-            <button className="motif-browse" type="button" onClick={() => void search('', 'all')}>
-              浏览已收录资料
-              <ArrowRight size={14} aria-hidden="true" />
-            </button>
-          </div>
-        )}
       </section>
 
       {expanded && (
@@ -400,6 +396,28 @@ export function TheatreSearchHome({
         </section>
       )}
 
+      <section className="motif-brand" aria-labelledby="motif-brand-title">
+        <h2 id="motif-brand-title">
+          认识 Dia 与 DiaStage
+          <ArrowDown size={14} aria-hidden="true" />
+        </h2>
+        <div className="motif-brand-details">
+          <p className="motif-brand-companion">{DIASTAGE_BRAND.companion}</p>
+          <dl>
+            {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
+              <div key={name}>
+                <dt>{name}</dt>
+                <dd>{description}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="motif-brand-introduction">
+            <p>{DIASTAGE_BRAND.product}</p>
+          </div>
+          <p className="motif-brand-motto">AI 虽能拓展想象，但还请你坚信直觉。</p>
+        </div>
+      </section>
+
       <footer className="motif-footer">
         <div className="motif-footer-top">
           <p>有出处的戏剧知识，为每一次创作找到依据。</p>
@@ -424,28 +442,6 @@ export function TheatreSearchHome({
           </a>
         </div>
       </footer>
-
-      <section className="motif-brand" aria-labelledby="motif-brand-title">
-        <h2 id="motif-brand-title">
-          认识 Dia 与 DiaStage
-          <ArrowDown size={14} aria-hidden="true" />
-        </h2>
-        <div className="motif-brand-details">
-          <p className="motif-brand-companion">{DIASTAGE_BRAND.companion}</p>
-          <dl>
-            {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
-              <div key={name}>
-                <dt>{name}</dt>
-                <dd>{description}</dd>
-              </div>
-            ))}
-          </dl>
-          <div className="motif-brand-introduction">
-            <p>{DIASTAGE_BRAND.product}</p>
-          </div>
-          <p className="motif-brand-motto">AI 助创作，请相信直觉。</p>
-        </div>
-      </section>
     </>
   )
 }
