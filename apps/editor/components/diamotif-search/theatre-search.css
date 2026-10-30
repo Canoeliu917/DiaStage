@@ -82,6 +82,14 @@ html:has(.motif-home) { overflow-y: auto; }
 .motif-stage-follow button { display: inline-flex; align-items: center; gap: 10px; min-height: 34px; }
 .motif-pagination { display: flex; gap: 24px; align-items: center; justify-content: center; margin-block: 32px; font-size: 12px; }
 .motif-pagination button { min-height: 34px; text-decoration: underline; }
+.motif-brand { width: min(1000px, calc(100% - 48px)); margin: 0 auto 40px; padding-top: 24px; border-top: 1px solid var(--dia-divider); }
+.motif-brand h2 { margin: 0 0 10px; text-align: center; font-size: 18px; font-weight: 500; }
+.motif-brand-companion { max-width: 72ch; margin: 0 auto; text-align: center; color: var(--dia-muted); font-size: 13px; }
+.motif-brand dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; margin: 24px 0; }
+.motif-brand dt { font-size: 14px; font-weight: 600; }
+.motif-brand dd { margin: 6px 0 0; color: var(--dia-muted); font-size: 13px; }
+.motif-brand-meaning { margin: 0; text-align: center; color: var(--dia-muted); font-size: 13px; }
+.motif-brand-motto { margin: 16px 0 0; text-align: center; font-size: 16px; }
 .motif-footer { margin-top: auto; padding: 20px 36px 18px; border-top: 1px solid var(--dia-divider); font-size: 12px; color: var(--dia-muted); }
 .motif-footer-top { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 10px; }
 .motif-footer-top p { margin: 0; }
@@ -110,6 +118,7 @@ html:has(.motif-home) { overflow-y: auto; }
   .motif-search-field .motif-submit { padding-inline: 12px; }
   .motif-submit > span { display: none; }
   .motif-categories { gap: 4px 17px; }
+  .motif-brand dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .motif-footer { padding-inline: 22px; }
   .motif-footer-top { flex-wrap: wrap; }
 }

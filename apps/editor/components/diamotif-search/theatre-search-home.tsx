@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AccountMenu, type AccountUser } from '@/components/account-panel'
 import { StageThemeControl } from '@/components/stage-theme'
+import { DIASTAGE_BRAND } from '@/lib/brand'
 import { SEARCH_CATEGORIES, type SearchCategory } from '@/lib/diamotif-search/catalog'
 import type { SearchResponse } from '@/lib/diamotif-search/search'
 
@@ -397,6 +398,21 @@ export function TheatreSearchHome({
           )}
         </section>
       )}
+
+      <section className="motif-brand" aria-labelledby="motif-brand-title">
+        <h2 id="motif-brand-title">认识 Dia 与 DiaStage</h2>
+        <p className="motif-brand-companion">{DIASTAGE_BRAND.companion}</p>
+        <dl>
+          {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
+            <div key={name}>
+              <dt>{name}</dt>
+              <dd>{description}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="motif-brand-meaning">{DIASTAGE_BRAND.nameMeaning}</p>
+        <p className="motif-brand-motto">AI虽能完成想象，但还请相信直觉。</p>
+      </section>
 
       <footer className="motif-footer">
         <div className="motif-footer-top">
