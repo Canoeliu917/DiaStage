@@ -198,9 +198,8 @@ test('wider partial enclosure keeps the current stage-left flat fixed', () => {
     proposal: wider,
     constraints: spatialConstraintsForProposal(wider),
   })
-  const fixed = [...selected.resolvedTransforms].sort(
-    (a, b) => b.transform.position.x - a.transform.position.x,
-  )[0]!
+  const fixed = selected.resolvedTransforms.find((item) => item.subject === 'a')!
+  expect(fixed.transform.position.x).toBeLessThan(0)
   const filtered = keepCurrentStageLeftFixed(
     next,
     { status: 'applied', spatialSolution: initial } as never,
@@ -212,3 +211,50 @@ test('wider partial enclosure keeps the current stage-left flat fixed', () => {
       candidate.resolvedTransforms.find((item) => item.subject === fixed.subject)?.transform,
     ).toEqual(accepted.objects.find((item) => item.id === fixed.subject)?.transform)
 })
+
+for (const status of ['previewed', 'applied'] as const)
+  test(`keeping actor stage-left fixes the negative-X identity, not the opposite flat (${status})`, () => {
+    const actorLeft = { ...box('flat-z', -2), name: '长景片' }
+    const actorRight = { ...box('flat-a', 2), name: '短景片' }
+    const scene = { ...snapshot(), objects: [actorRight, actorLeft] }
+    const leftPreview = {
+      ...actorLeft.transform,
+      position: { ...actorLeft.transform.position, x: -1.5 },
+    }
+    const previous = {
+      candidateId: 'previous',
+      resolvedTransforms: [
+        { subject: actorRight.id, transform: actorRight.transform },
+        { subject: actorLeft.id, transform: leftPreview },
+      ],
+    }
+    const leftExpected = status === 'applied' ? actorLeft.transform : leftPreview
+    const candidates = [
+      {
+        candidateId: 'wrong-side-fixed',
+        resolvedTransforms: [
+          { subject: actorRight.id, transform: actorRight.transform },
+          { subject: actorLeft.id, transform: box(actorLeft.id, -3).transform },
+        ],
+      },
+      {
+        candidateId: 'actor-left-fixed',
+        resolvedTransforms: [
+          { subject: actorLeft.id, transform: leftExpected },
+          { subject: actorRight.id, transform: box(actorRight.id, 3).transform },
+        ],
+      },
+    ]
+    const solution = { candidates, warnings: [] }
+    const parent = {
+      status,
+      spatialSolution: { candidates: [previous], selectedCandidateId: previous.candidateId },
+    }
+    const before = JSON.stringify({ scene, solution, parent })
+    const filtered = keepCurrentStageLeftFixed(solution as never, parent as never, scene)
+    expect(filtered.candidates.map((candidate) => candidate.candidateId)).toEqual([
+      'actor-left-fixed',
+    ])
+    expect(filtered.selectedCandidateId).toBe('actor-left-fixed')
+    expect(JSON.stringify({ scene, solution, parent })).toBe(before)
+  })

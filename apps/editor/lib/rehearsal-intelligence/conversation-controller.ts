@@ -780,7 +780,7 @@ export class DiaConversation {
     spatialSolution?: SpatialSolution,
     structuredGrounding?: StructuredGrounding,
     groundingProvider?: DiaBuildProposal['groundingProvider'],
-    modelMessage?: ThreadMessage,
+    modelReply?: string,
   ) {
     this.navigate?.('items')
     if (this.store.getState().builds.length >= 200)
@@ -830,15 +830,14 @@ export class DiaConversation {
         activeInteractionId: proposal.id,
       },
     }))
-    const proposalMessage =
-      modelMessage ??
-      this.message(
-        'dia',
-        knowledgeProposal
+    const proposalMessage = this.message(
+      'dia',
+      modelReply ??
+        (knowledgeProposal
           ? `Stage Proposal：${knowledgeProposal.rationale} 先看 Ghost，再由你采用或取消。`
-          : `${parent ? '搭台修订' : '搭台建议'}：${plan.items.map((item) => item.displayName).join('、') || '场地调整'}。先在舞台上试试，再由你决定。${plan.questions.map((question) => question.message).join('；')}`,
-        sceneVersion,
-      )
+          : `${parent ? '搭台修订' : '搭台建议'}：${plan.items.map((item) => item.displayName).join('、') || '场地调整'}。先在舞台上试试，再由你决定。${plan.questions.map((question) => question.message).join('；')}`),
+      sceneVersion,
+    )
     this.store.setState((state) => ({
       thread: {
         ...state.thread!,
@@ -1092,11 +1091,28 @@ export class DiaConversation {
       throw new Error('这个方案已采用，不能作为未采用预览撤销；正式舞台与采用记录保留。')
     if (!['proposed', 'previewed'].includes(proposal.status))
       throw new Error('当前没有可取消的待采用方案。')
-    useStagePlanPreview.setState({ plan: null })
-    this.replaceBuild({ ...proposal, status: 'rejected' })
-    if (proposal.envelope)
-      await saveBuildFeedback(buildFeedbackEvent(this.sceneId, this.buildProposal()!, 'reject'))
     signal.throwIfAborted()
+    const sceneVersion = this.currentContext().sceneVersion
+    const formalSnapshot = JSON.stringify(currentStageContext())
+    const proposalSnapshot = JSON.stringify(proposal)
+    const previewSnapshot = JSON.stringify(useStagePlanPreview.getState().plan)
+    const rejected: DiaBuildProposal = {
+      ...proposal,
+      status: 'rejected',
+      ...(proposal.envelope ? { envelope: this.buildEnvelope(proposal, 'rejected') } : {}),
+    }
+    if (proposal.envelope)
+      await saveBuildFeedback(buildFeedbackEvent(this.sceneId, rejected, 'reject'))
+    signal.throwIfAborted()
+    if (
+      this.currentContext().sceneVersion !== sceneVersion ||
+      JSON.stringify(currentStageContext()) !== formalSnapshot ||
+      JSON.stringify(this.buildProposal()) !== proposalSnapshot ||
+      JSON.stringify(useStagePlanPreview.getState().plan) !== previewSnapshot
+    )
+      throw new Error('保存取消决定期间舞台、提案或预览已经变化，请重新确认。')
+    useStagePlanPreview.setState({ plan: null })
+    this.replaceBuild(rejected)
     this.message('system-state', '已放下搭台建议，正式舞台没有改变。', proposal.sceneVersion)
     this.status('rejected', '已放下这个方向，可以重新告诉 Dia 想法。')
     await this.event('proposal_rejected')
@@ -1164,7 +1180,6 @@ export class DiaConversation {
       )
         await this.rejectBuildWithinRequest(signal)
       const provider = { provider: result.provider, model: result.model }
-      const modelMessage = this.message('dia', result.reply, context.sceneVersion!)
       if (result.plan) {
         if (!this.buildInScope(result.plan)) throw new Error('方案超出当前置景范围。')
         await this.proposeBuildPlan(
@@ -1178,7 +1193,7 @@ export class DiaConversation {
           undefined,
           undefined,
           provider,
-          modelMessage,
+          result.reply,
         )
         return true
       }
@@ -1249,7 +1264,7 @@ export class DiaConversation {
               solution,
               semantic,
               provider,
-              modelMessage,
+              result.reply,
             )
             if (resolved.subjectIds.length)
               this.lastOpenReference = {
@@ -1261,6 +1276,7 @@ export class DiaConversation {
         }
       }
       signal.throwIfAborted()
+      this.message('dia', result.reply, context.sceneVersion!)
       this.store.setState({ draft: '' })
       const active = this.buildProposal()
       this.status(

@@ -79,7 +79,7 @@ if (process.env.DIA_DIALOGUE_TEST_CHILD !== '1') {
     ])
     expect(result.provider).toBe('aliyun')
     const payload = JSON.parse(requests.at(-1)!.inputText)
-    expect(payload.diaMotif.version).toBe('diamotif-dialogue-v3')
+    expect(payload.diaMotif.version).toBe('diamotif-dialogue-v4')
     expect(payload.availableSceneryLibrary).toHaveLength(21)
   })
 
@@ -144,6 +144,13 @@ if (process.env.DIA_DIALOGUE_TEST_CHILD !== '1') {
     expect(result.localView).toBe(false)
   })
 
+  test('view changes do not claim a saved stage or require adopting props', async () => {
+    answer = { ...reply, candidateAccepted: true, reply: '已采用并保存。' }
+    const result = await respondDiaDialogue(input('正上方视图'), signal())
+    expect(result.localView).toBe(true)
+    expect(result.reply).toBe('调整观察视角，正式舞台布景不变。')
+  })
+
   test('a reply claiming a generated preview cannot replace an actual proposal', async () => {
     answer = { ...reply, reply: '已为您生成桌椅预览。' }
     await expect(respondDiaDialogue(input('生成一组桌椅'), signal())).rejects.toThrow(
@@ -177,7 +184,7 @@ if (process.env.DIA_DIALOGUE_TEST_CHILD !== '1') {
   })
 
   test('revising an unadopted group preserves its proposed identities without duplicate creation', async () => {
-    const request = input('当前预览这组向观众右移动0.5米')
+    const request = input('当前预览整组向观众右移动0.5米')
     const pending = buildDialogueStagePlan(
       {
         mode: 'create',
@@ -224,6 +231,165 @@ if (process.env.DIA_DIALOGUE_TEST_CHILD !== '1') {
     const result = await respondDiaDialogue(request, signal())
     expect(result.grounding?.modifiers).toEqual(['reject'])
     expect(result.plan).toBeNull()
+  })
+
+  test.each([
+    false,
+    true,
+  ])('a pending native wall remains an anchor for the new sofa (candidate=%s)', async (candidateAccepted) => {
+    const request = input('在舞台中后靠后墙位置生成沙发')
+    const pending = buildDialogueStagePlan(
+      {
+        mode: 'create',
+        assetIds: ['SCN-WIN-130'],
+        objectIds: [],
+        region: 'rear-center',
+        wall: null,
+        direction: null,
+        distanceMeters: null,
+      },
+      request.sceneContext,
+    )
+    pending.items[0]!.transform.position.z = 7.5
+    const before = JSON.stringify(pending)
+    answer = {
+      ...reply,
+      candidateAccepted,
+      stageAction: candidateAccepted
+        ? null
+        : {
+            mode: 'create',
+            assetIds: ['SCN-SOFA-175'],
+            objectIds: [],
+            region: 'rear-center',
+            wall: null,
+            direction: null,
+            distanceMeters: null,
+          },
+    }
+    const result = await respondDiaDialogue({ ...request, pendingPlan: pending }, signal())
+    expect(result.plan?.items).toHaveLength(2)
+    expect(result.plan!.items[0]!.transform).toEqual(pending.items[0]!.transform)
+    expect(result.plan!.items.map((item) => item.libraryAssetId)).toEqual([
+      'SCN-WIN-130',
+      'SCN-SOFA-175',
+    ])
+    expect(result.plan!.items.every((item) => item.existingNodeId === null)).toBe(true)
+    expect(JSON.stringify(pending)).toBe(before)
+    expect(request.sceneContext.objects).toHaveLength(0)
+  })
+
+  test.each([
+    '不是台右，是观众右侧',
+    '入口再宽一点',
+    '入口再宽一点，但台左景片不要动',
+    '不要取消这个方案',
+    '取消靠墙要求',
+    '不要这个方向，改成观众右',
+  ])('negation is not cancellation: %s', async (text) => {
+    answer = { ...reply, proposalAction: 'reject' }
+    await expect(respondDiaDialogue(input(text, 'enclosure-proposal'), signal())).rejects.toThrow(
+      '不能取消预览',
+    )
+    expect(JSON.parse(requests.at(-1)!.inputText).cancellationAllowed).toBe(false)
+  })
+
+  test('canonical revision candidates remain revisions and do not require an exact old phrase', async () => {
+    answer = { ...reply, candidateAccepted: true }
+    const result = await respondDiaDialogue(input('入口再宽一点', 'enclosure-proposal'), signal())
+    expect(result.grounding?.modifiers).toEqual(['wider'])
+    expect(result.reply).toContain('建议加宽')
+    expect(result.reply).not.toContain('已完成')
+  })
+
+  test('grounding cannot bypass cancellation scope', async () => {
+    const { emptyGrounding } = await import('./open-language')
+    const {
+      rawUtterance: _,
+      groundingVersion: __,
+      knowledgeConceptIds: ___,
+      ...grounding
+    } = emptyGrounding('不是台右，是观众右侧')
+    answer = { ...reply, grounding: { ...grounding, modifiers: ['reject'] } }
+    await expect(
+      respondDiaDialogue(input('不是台右，是观众右侧', 'enclosure-proposal'), signal()),
+    ).rejects.toThrow('不能取消预览')
+  })
+
+  test('all group members are required even when the model forgets one', async () => {
+    answer = {
+      ...reply,
+      stageAction: {
+        mode: 'translate',
+        assetIds: [],
+        objectIds: ['table-a', 'chair-a'],
+        region: null,
+        wall: null,
+        direction: 'audience-right',
+        distanceMeters: 0.5,
+      },
+    }
+    await expect(
+      respondDiaDialogue(
+        input('整组向观众右移0.5米，间距不变', 'table-chair-group', [
+          'table-a',
+          'chair-a',
+          'chair-b',
+        ]),
+        signal(),
+      ),
+    ).rejects.toThrow('整组')
+  })
+
+  test('candidate acceptance cannot silently omit a passage requirement', async () => {
+    answer = {
+      ...reply,
+      stageAction: {
+        mode: 'create',
+        assetIds: ['SCN-TABLE-090'],
+        objectIds: [],
+        region: 'front-center',
+        wall: null,
+        direction: null,
+        distanceMeters: null,
+      },
+    }
+    await expect(respondDiaDialogue(input('台前放桌子，保留通道'), signal())).rejects.toThrow(
+      '保留通道',
+    )
+  })
+
+  test('a passage-only grounding cannot replace a compound creation or move', async () => {
+    const { parseOpenLanguage } = await import('./open-language')
+    const {
+      rawUtterance: _,
+      groundingVersion: __,
+      knowledgeConceptIds: ___,
+      ...grounding
+    } = parseOpenLanguage('门口留1米通道')!
+    answer = { ...reply, grounding }
+    for (const text of [
+      '在台前生成一组桌椅，但门口保留1米通道',
+      '把桌子移到台后，同时门口留1米通道',
+    ]) {
+      const request = input(text, 'front-door')
+      const before = JSON.stringify(request)
+      await expect(respondDiaDialogue(request, signal())).rejects.toThrow('通道')
+      expect(JSON.stringify(request)).toBe(before)
+    }
+    const result = await respondDiaDialogue(input('门口留1米通道', 'front-door'), signal())
+    expect(result.grounding?.constraints).toEqual(['preserve-path'])
+    expect(result.grounding?.minimumWidthMeters).toBe(1)
+    expect(result.plan).toBeNull()
+  })
+
+  test('proposal replies describe actual native assets and do not repeat invented model IDs or completion claims', async () => {
+    answer = { ...reply, candidateAccepted: true, reply: '已经摆好SCN-FAKE-999并保存了。' }
+    const result = await respondDiaDialogue(input('请在舞台中前区生成一组桌椅'), signal())
+    expect(result.reply).not.toContain('SCN-FAKE')
+    expect(result.reply).not.toContain('已经')
+    expect(result.reply).toContain('采用后生效')
+    expect(result.plan?.items).toHaveLength(3)
   })
 
   test('mixed decisions, unknown references and absent candidates fail explicitly', async () => {

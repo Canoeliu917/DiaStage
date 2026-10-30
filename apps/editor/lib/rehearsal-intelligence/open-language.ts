@@ -273,7 +273,7 @@ export function parseOpenLanguage(rawUtterance: string): StructuredGrounding | n
   if (fixedLeftRevision) {
     g.modifiers.push('wider', 'keep_stage_left_fixed')
     g.references = [ref('current_proposal')]
-  } else if (/^(?:(?:再|稍微)?宽(?:一点|些)|入口加宽一点)$/.test(text)) {
+  } else if (/^(?:入口)?(?:(?:再|稍微)?宽(?:一点|些)|加宽一点)$/.test(text)) {
     g.modifiers.push('wider')
     g.references = [ref('current_proposal')]
   } else if (/^(?:换|看)(?:另一个|另外一个|另一边)(?:方案)?$/.test(text)) {

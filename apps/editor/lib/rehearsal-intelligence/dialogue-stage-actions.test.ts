@@ -10,7 +10,9 @@ import {
 import { planRoomEdge } from '../stage/edge-run'
 import { AVAILABLE_STAGE_SCENERY, stagePropCollisionGeometry } from '../stage/prop-assets'
 import {
+  assertDialogueRigidGroup,
   assertDialogueSupports,
+  assertDialogueWallContact,
   buildDialogueStagePlan,
   type DialogueStageAction,
   DialogueStageActionSchema,
@@ -277,4 +279,59 @@ test('mode confusion, duplicate/missing references, absent dimensions and unknow
   expect(DialogueStageActionSchema.safeParse({ ...creation, position: [0, 0, 0] }).success).toBe(
     false,
   )
+})
+
+for (const wall of ['back', 'left', 'right'] as const)
+  test(`wall requirement validates ${wall} contact independently of the model wall field`, () => {
+    const context: SceneContextSummary = {
+      ...empty,
+      objects: planRoomEdge(wall, empty.venue!).pieces.map((piece, index) => ({
+        id: `wall-${index}`,
+        name: piece.name,
+        kind: 'scenic-flat',
+        dimensionsMeters: piece.dimensionsMeters,
+        collisionGeometry: piece.collisionGeometry,
+        transform: { position: piece.position, rotationDegrees: { x: 0, y: piece.yaw, z: 0 } },
+      })),
+    }
+    const action = {
+      ...creation,
+      assetIds: ['SCN-SOFA-175'],
+      region: wall === 'back' ? 'rear-right' : `middle-${wall}`,
+      wall,
+    }
+    const touching = buildDialogueStagePlan(action, context).items
+    const before = JSON.stringify({ touching, context })
+    expect(() => assertDialogueWallContact(touching, context, wall)).not.toThrow()
+    const omitted = buildDialogueStagePlan({ ...action, wall: null }, context).items
+    expect(() => assertDialogueWallContact(omitted, context, wall)).toThrow('不能省略靠墙')
+    expect(() => assertDialogueWallContact(touching, empty, wall)).toThrow('没有可确认')
+    expect(JSON.stringify({ touching, context })).toBe(before)
+  })
+
+test('group requirement rejects omitted, duplicated, invented and separately moved members', () => {
+  const context = furniture()
+  const plan = buildDialogueStagePlan(move, context)
+  const before = JSON.stringify({ plan, context })
+  expect(() => assertDialogueRigidGroup(plan.items, context, move.objectIds)).not.toThrow()
+  expect(() =>
+    assertDialogueRigidGroup([...plan.items].reverse(), context, move.objectIds),
+  ).not.toThrow()
+  for (const items of [
+    plan.items.slice(0, 1),
+    [plan.items[0]!, plan.items[0]!, plan.items[2]!],
+    buildDialogueStagePlan(creation, empty).items,
+  ])
+    expect(() => assertDialogueRigidGroup(items, context, move.objectIds)).toThrow('全部对象')
+  const split = structuredClone(plan.items)
+  split[1]!.transform.position.z += 0.1
+  expect(() => assertDialogueRigidGroup(split, context, move.objectIds)).toThrow('相对位置')
+  const turned = structuredClone(plan.items)
+  turned[1]!.transform.rotationDegrees.y += 90
+  expect(() => assertDialogueRigidGroup(turned, context, move.objectIds)).toThrow('朝向')
+  const reshaped = structuredClone(plan.items)
+  reshaped[1]!.dimensionsMeters.width *= 2
+  expect(() => assertDialogueRigidGroup(reshaped, context, move.objectIds)).toThrow('尺寸')
+  expect(() => assertDialogueRigidGroup(plan.items, context, [])).toThrow('全部对象')
+  expect(JSON.stringify({ plan, context })).toBe(before)
 })

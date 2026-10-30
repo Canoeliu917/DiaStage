@@ -7,6 +7,7 @@ import { currentStageContext } from '../stage/context'
 import { createManualStageGraph } from '../stage/initial-stage'
 import { useStagePlanPreview } from '../stage/plan-preview'
 import { bindRehearsalScene } from './authority'
+import * as buildFeedback from './build-feedback'
 import { readBuildFeedback } from './build-feedback'
 import { withLegacyTable } from './build-fixture'
 import { DiaConversation } from './conversation-controller'
@@ -363,4 +364,145 @@ test('direct and model cancellation cannot reject an adopted proposal or its fee
       .thread!.messages.some((message) => message.content === '错误的取消成功答复'),
   ).toBe(false)
   expect(dia.store.getState().thread!.messages.at(-1)!.content).toContain('已采用')
+})
+
+test('a model reply rejected by the local build boundary is never published or persisted', async () => {
+  const { dia, sceneId, request } = await setup()
+  request.mockImplementationOnce(async (text, context) =>
+    response(context, { plan: groundLanguage(text, context.sceneContext)!.plan! }),
+  )
+  await dia.send('请在舞台中前区生成一组桌椅')
+  await dia.preview()
+  const previous = dia.buildProposal()!
+  const ghost = useStagePlanPreview.getState().plan
+  const before = useScene.getState().nodes
+  const invalid = structuredClone(previous.plan)
+  invalid.items[0]!.kind = 'camera'
+  const reply = '已整理新机位的候选，可以预览。'
+  request.mockImplementationOnce(async (_text, context) =>
+    response(context, { plan: invalid, reply }),
+  )
+  await dia.send('改成机位候选')
+  expect(dia.buildProposal()).toBe(previous)
+  expect(useStagePlanPreview.getState().plan).toBe(ghost)
+  expect(useScene.getState().nodes).toBe(before)
+  expect(dia.store.getState().thread!.messages.some((message) => message.content === reply)).toBe(
+    false,
+  )
+  expect(
+    (await readConversation(sceneId))!.thread.messages.some((message) => message.content === reply),
+  ).toBe(false)
+  expect(dia.store.getState().thread!.messages.at(-1)!.content).toContain('超出当前置景范围')
+})
+
+test('failed proposal feedback keeps the old preview without publishing model success', async () => {
+  const { dia, sceneId, request } = await setup()
+  request.mockImplementationOnce(async (text, context) =>
+    response(context, { plan: groundLanguage(text, context.sceneContext)!.plan! }),
+  )
+  await dia.send('请在舞台中前区生成一组桌椅')
+  await dia.preview()
+  const previous = dia.buildProposal()!
+  const ghost = useStagePlanPreview.getState().plan
+  const before = useScene.getState().nodes
+  const feedback = await readBuildFeedback(sceneId)
+  const reply = '已整理调整后的候选，请预览。'
+  request.mockImplementationOnce(async (_text, context) =>
+    response(context, { plan: context.pendingPlan, reply }),
+  )
+  spyOn(buildFeedback, 'saveBuildFeedback').mockRejectedValueOnce(new Error('提案记录保存失败'))
+  await dia.send('保留这组桌椅，重新整理候选')
+  expect(dia.buildProposal()).toBe(previous)
+  expect(useStagePlanPreview.getState().plan).toBe(ghost)
+  expect(useScene.getState().nodes).toBe(before)
+  expect(await readBuildFeedback(sceneId)).toEqual(feedback)
+  expect(dia.store.getState().thread!.messages.some((message) => message.content === reply)).toBe(
+    false,
+  )
+  expect(
+    (await readConversation(sceneId))!.thread.messages.some((message) => message.content === reply),
+  ).toBe(false)
+  expect(dia.store.getState().thread!.messages.at(-1)!.content).toContain('提案记录保存失败')
+})
+
+for (const trigger of ['direct', 'model'] as const)
+  test(`${trigger} cancellation feedback failure preserves the pending proposal and preview`, async () => {
+    const { dia, sceneId, request } = await setup()
+    request.mockImplementationOnce(async (text, context) =>
+      response(context, { plan: groundLanguage(text, context.sceneContext)!.plan! }),
+    )
+    await dia.send('请在舞台中前区生成一组桌椅')
+    await dia.preview()
+    const previous = dia.buildProposal()!
+    const ghost = useStagePlanPreview.getState().plan
+    const before = useScene.getState().nodes
+    const feedback = await readBuildFeedback(sceneId)
+    const reply = '已取消当前候选，正式舞台保留。'
+    request.mockImplementationOnce(async (text, context) =>
+      response(context, {
+        reply,
+        grounding: {
+          ...emptyGrounding(text),
+          references: [{ kind: 'current_proposal', text: null, count: null, index: null }],
+          modifiers: ['reject'],
+        },
+      }),
+    )
+    spyOn(buildFeedback, 'saveBuildFeedback').mockRejectedValueOnce(new Error('取消记录保存失败'))
+    if (trigger === 'direct') await dia.reject()
+    else await dia.send('这个方案不要了')
+    expect(dia.buildProposal()).toBe(previous)
+    expect(dia.buildProposal()!.status).toBe('previewed')
+    expect(useStagePlanPreview.getState().plan).toBe(ghost)
+    expect(useScene.getState().nodes).toBe(before)
+    expect(await readBuildFeedback(sceneId)).toEqual(feedback)
+    expect(dia.store.getState().thread!.messages.some((message) => message.content === reply)).toBe(
+      false,
+    )
+    const saved = (await readConversation(sceneId))!
+    expect(saved.builds.at(-1)!.status).toBe('previewed')
+    expect(saved.thread.messages.some((message) => message.content === reply)).toBe(false)
+  })
+
+test('a delayed cancellation cannot clear a newer pending proposal or publish success', async () => {
+  const { dia, request } = await setup()
+  request.mockImplementationOnce(async (text, context) =>
+    response(context, { plan: groundLanguage(text, context.sceneContext)!.plan! }),
+  )
+  await dia.send('请在舞台中前区生成一组桌椅')
+  await dia.preview()
+  const entered = Promise.withResolvers<void>()
+  const release = Promise.withResolvers<void>()
+  spyOn(buildFeedback, 'saveBuildFeedback').mockImplementationOnce(async () => {
+    entered.resolve()
+    await release.promise
+  })
+  const reply = '旧候选取消成功。'
+  request.mockImplementationOnce(async (text, context) =>
+    response(context, {
+      reply,
+      grounding: {
+        ...emptyGrounding(text),
+        references: [{ kind: 'current_proposal', text: null, count: null, index: null }],
+        modifiers: ['reject'],
+      },
+    }),
+  )
+  const pending = dia.send('这个方案不要了')
+  await entered.promise
+  const current = dia.buildProposal()!
+  const newer = { ...current, plan: structuredClone(current.plan) }
+  newer.plan.items[0]!.transform.position.x += 0.2
+  dia.store.setState((state) => ({
+    builds: state.builds.map((entry) => (entry.id === newer.id ? newer : entry)),
+  }))
+  useStagePlanPreview.setState({ plan: newer.plan })
+  release.resolve()
+  await pending
+  expect(dia.buildProposal()).toBe(newer)
+  expect(useStagePlanPreview.getState().plan).toBe(newer.plan)
+  expect(dia.store.getState().thread!.messages.some((message) => message.content === reply)).toBe(
+    false,
+  )
+  expect(dia.store.getState().thread!.messages.at(-1)!.content).toContain('已经变化')
 })

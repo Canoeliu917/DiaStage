@@ -13,6 +13,7 @@ import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { Group } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { SceneJournal } from '../scene-journal'
+import { currentStageContext } from '../stage/context'
 import { useStagePlanPreview } from '../stage/plan-preview'
 import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { createTheatreSceneGraph } from '../theatre/new-production'
@@ -184,18 +185,13 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
       expect(commits, dia.store.getState().notice).toBe(1)
       expect(useScene.temporal.getState().pastStates).toHaveLength(1)
       const accepted = JSON.stringify(useScene.getState().nodes)
-      const acceptedLeft =
-        scenario === 'partial'
-          ? [...dia.buildProposal()!.spatialSolution!.candidates]
-              .find(
-                (candidate) =>
-                  candidate.candidateId ===
-                  dia.buildProposal()!.spatialSolution!.selectedCandidateId,
-              )!
-              .resolvedTransforms.toSorted(
-                (a, b) => b.transform.position.x - a.transform.position.x,
-              )[0]!.subject
-          : null
+      const acceptedLeft = scenario === 'partial' ? ids[0]! : null
+      if (acceptedLeft) {
+        const positions = currentStageContext().objects
+        expect(
+          positions.find((item) => item.id === acceptedLeft)!.transform.position.x,
+        ).toBeLessThan(positions.find((item) => item.id === ids[1])!.transform.position.x)
+      }
       const acceptedLeftTransform = acceptedLeft
         ? JSON.stringify({
             position: (useScene.getState().nodes[acceptedLeft] as ItemNode).position,

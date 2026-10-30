@@ -157,6 +157,69 @@ function contactWall(
   shift(items, axis === 0 ? delta : 0, axis === 2 ? delta : 0)
 }
 
+export function assertDialogueWallContact(
+  items: StageItemProposal[],
+  context: SceneContextSummary,
+  wall: NonNullable<DialogueStageAction['wall']>,
+) {
+  if (!items.length) throw new Error('靠墙要求没有对应的布景候选。')
+  const touching = structuredClone(items)
+  contactWall(touching, wall, context)
+  if (
+    touching.some((item, index) =>
+      (['x', 'z'] as const).some(
+        (axis) =>
+          Math.abs(item.transform.position[axis] - items[index]!.transform.position[axis]) > 0.002,
+      ),
+    )
+  )
+    throw new Error('候选没有贴近指定的现有墙片，不能省略靠墙要求。')
+}
+
+export function assertDialogueRigidGroup(
+  items: StageItemProposal[],
+  context: SceneContextSummary,
+  requiredIds: string[],
+) {
+  const required = new Set(requiredIds)
+  const actual = new Set(items.map((item) => item.existingNodeId))
+  if (
+    !required.size ||
+    required.size !== requiredIds.length ||
+    items.length !== required.size ||
+    actual.size !== required.size ||
+    items.some((item) => !item.existingNodeId || !required.has(item.existingNodeId))
+  )
+    throw new Error('整组移动必须包含要求中的全部对象，不能遗漏、重复或新增物件。')
+  let delta: number[] | undefined
+  for (const item of items) {
+    const matches = context.objects.filter((object) => object.id === item.existingNodeId)
+    const previous = matches[0]
+    if (!previous || matches.length !== 1)
+      throw new Error('整组对象没有唯一的当前身份，请先明确选择。')
+    if (
+      item.libraryAssetId !== null ||
+      item.kind !== previous.kind ||
+      JSON.stringify(item.dimensionsMeters) !== JSON.stringify(previous.dimensionsMeters) ||
+      JSON.stringify(item.collisionGeometry) !== JSON.stringify(previous.collisionGeometry) ||
+      (item.stepCount ?? null) !== (previous.stepCount ?? null) ||
+      (['x', 'y', 'z'] as const).some(
+        (axis) =>
+          Math.abs(
+            item.transform.rotationDegrees[axis] - previous.transform.rotationDegrees[axis],
+          ) > 1e-6,
+      )
+    )
+      throw new Error('整组平移必须保留每件道具的身份、尺寸、形状与朝向。')
+    const moved = (['x', 'y', 'z'] as const).map(
+      (axis) => item.transform.position[axis] - previous.transform.position[axis],
+    )
+    if (delta && moved.some((value, axis) => Math.abs(value - delta![axis]!) > 1e-6))
+      throw new Error('整组移动必须保持相对位置，不能分别改变物件之间的距离或高度。')
+    delta = moved
+  }
+}
+
 /** Semantic actions become the same preview plan in 2D and 3D; this function never mutates a scene. */
 export function buildDialogueStagePlan(raw: unknown, snapshot: SceneContextSummary): StagePlan {
   const action = DialogueStageActionSchema.parse(raw)
