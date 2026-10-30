@@ -442,9 +442,8 @@ export function TheatreSearchHome({
           </dl>
           <div className="motif-brand-introduction">
             <p>{DIASTAGE_BRAND.product}</p>
-            <p>{DIASTAGE_BRAND.nameMeaning}</p>
           </div>
-          <p className="motif-brand-motto">AI虽能完成想象，但还请相信直觉。</p>
+          <p className="motif-brand-motto">AI 助创作，请相信直觉。</p>
         </div>
       </section>
     </>
