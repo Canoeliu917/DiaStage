@@ -18,11 +18,13 @@ import { AccountMenu, type AccountUser } from '@/components/account-panel'
 import { StageThemeControl } from '@/components/stage-theme'
 import { DIASTAGE_BRAND } from '@/lib/brand'
 import {
+  AI_INVOLVEMENT_LABELS,
   SEARCH_CATEGORIES,
   SEARCH_CATEGORY_GROUPS,
   type SearchCategory,
 } from '@/lib/diamotif-search/catalog'
 import type { SearchResponse } from '@/lib/diamotif-search/search'
+import { SEARCH_TOPICS, type SearchTopic } from '@/lib/diamotif-search/search-topics'
 
 const accessLabels: Record<string, string> = {
   public: '公开访问',
@@ -31,17 +33,30 @@ const accessLabels: Record<string, string> = {
   onsite: '到馆查阅',
   mixed: '部分公开',
 }
+const sourceTierLabels = {
+  official: '官方来源',
+  'professional-media': '专业媒体',
+  creator: '创作者',
+  platform: '平台发布',
+} as const
+const viewpointLabels: Record<string, string> = {
+  'creator-experience': '创作者经验',
+  'audience-review': '观众观点',
+  promotion: '商业推广',
+}
 
 export function TheatreSearchHome({
   user,
   initialQuery,
   initialCategory,
+  initialTopic,
   openStage,
   openScript,
 }: {
   user: AccountUser | null
   initialQuery?: string
   initialCategory?: string
+  initialTopic?: string
   openStage: () => void
   openScript: () => void
 }) {
@@ -52,6 +67,13 @@ export function TheatreSearchHome({
       : 'all',
   )
   const [response, setResponse] = useState<SearchResponse | null>(null)
+  const [topic, setTopic] = useState<SearchTopic>(
+    SEARCH_TOPICS.some(
+      ({ id, category: topicCategory }) => id === initialTopic && topicCategory === initialCategory,
+    )
+      ? (initialTopic as SearchTopic)
+      : 'all',
+  )
   const [busy, setBusy] = useState<'search' | 'ai' | 'web' | null>(null)
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState(false)
@@ -60,7 +82,11 @@ export function TheatreSearchHome({
   const input = useRef<HTMLInputElement>(null)
   const categoryNav = useRef<HTMLElement>(null)
   const request = useRef<AbortController | null>(null)
-  const submittedSearch = useRef<{ query: string; category: SearchCategory } | null>(null)
+  const submittedSearch = useRef<{
+    query: string
+    category: SearchCategory
+    topic: SearchTopic
+  } | null>(null)
 
   const search = useCallback(
     async (
@@ -69,26 +95,36 @@ export function TheatreSearchHome({
       useAi = false,
       offset = 0,
       useWeb = false,
+      nextTopic: SearchTopic = 'all',
     ) => {
       request.current?.abort()
       const controller = new AbortController()
       request.current = controller
-      submittedSearch.current = { query: text.trim(), category: nextCategory }
+      submittedSearch.current = {
+        query: text.trim(),
+        category: nextCategory,
+        topic: nextTopic,
+      }
       setQuery(text)
       setCategory(nextCategory)
+      setTopic(nextTopic)
       setBusy(useWeb ? 'web' : useAi ? 'ai' : 'search')
       setError('')
       setShowSearchHint(false)
       setExpandedCategoryGroup(null)
       setExpanded(true)
       setResponse((previous) =>
-        !useWeb && previous?.query === text.trim() && previous.category === nextCategory
+        !useWeb &&
+        previous?.query === text.trim() &&
+        previous.category === nextCategory &&
+        previous.topic === nextTopic
           ? { ...previous, answer: null, notice: null }
           : null,
       )
       const params = new URLSearchParams()
       if (text.trim()) params.set('q', text.trim())
       if (nextCategory !== 'all') params.set('category', nextCategory)
+      if (nextTopic !== 'all') params.set('topic', nextTopic)
       window.history.replaceState(null, '', params.size ? `/?${params}` : '/')
       try {
         const result = await fetch('/api/diamotif/search', {
@@ -97,6 +133,7 @@ export function TheatreSearchHome({
           body: JSON.stringify({
             query: text.trim(),
             category: nextCategory,
+            topic: nextTopic,
             useAi,
             offset,
             useWeb,
@@ -130,9 +167,18 @@ export function TheatreSearchHome({
         SEARCH_CATEGORIES.some((item) => item.id === initialCategory)
           ? (initialCategory as SearchCategory)
           : 'all',
+        false,
+        0,
+        false,
+        SEARCH_TOPICS.some(
+          ({ id, category: topicCategory }) =>
+            id === initialTopic && topicCategory === initialCategory,
+        )
+          ? (initialTopic as SearchTopic)
+          : 'all',
       )
     return () => request.current?.abort()
-  }, [initialQuery, initialCategory, search])
+  }, [initialQuery, initialCategory, initialTopic, search])
 
   useEffect(() => {
     if (!expandedCategoryGroup) return
@@ -149,6 +195,7 @@ export function TheatreSearchHome({
     submittedSearch.current = null
     setQuery('')
     setCategory('all')
+    setTopic('all')
     setResponse(null)
     setBusy(null)
     setError('')
@@ -165,13 +212,13 @@ export function TheatreSearchHome({
       input.current?.focus()
       return
     }
-    void search(query, category, true, 0, useWeb)
+    void search(query, category, true, 0, useWeb, topic)
   }
 
   const hasSearch = response !== null || busy !== null || error !== ''
   const categoryGroup = SEARCH_CATEGORY_GROUPS.find((group) => group.id === expandedCategoryGroup)
 
-  function chooseCategory(nextCategory: SearchCategory) {
+  function chooseCategory(nextCategory: SearchCategory, nextTopic: SearchTopic = 'all') {
     if (expandedCategoryGroup)
       document.getElementById(`motif-category-${expandedCategoryGroup}`)?.focus()
     setExpandedCategoryGroup(null)
@@ -179,10 +226,11 @@ export function TheatreSearchHome({
       nextCategory === category &&
       submittedSearch.current?.category === category &&
       submittedSearch.current.query === query.trim() &&
+      submittedSearch.current.topic === nextTopic &&
       hasSearch
     )
       setExpanded((value) => !value)
-    else void search(query, nextCategory)
+    else void search(query, nextCategory, false, 0, false, nextTopic)
   }
 
   return (
@@ -226,7 +274,7 @@ export function TheatreSearchHome({
           role="search"
           onSubmit={(event) => {
             event.preventDefault()
-            void search(query, category)
+            void search(query, category, false, 0, false, topic)
           }}
         >
           <label className="motif-search-field">
@@ -308,7 +356,26 @@ export function TheatreSearchHome({
         >
           {SEARCH_CATEGORY_GROUPS.map((group) => {
             const selected = group.categories.some((id) => id === category)
-            const grouped = group.categories.length > 1
+            const items = group.categories.flatMap((categoryId) => [
+              {
+                ...SEARCH_CATEGORIES.find((item) => item.id === categoryId)!,
+                label:
+                  categoryId === 'knowledge'
+                    ? '全部知识'
+                    : categoryId === 'ai-screen'
+                      ? '全部AI影视'
+                      : categoryId === 'opportunities'
+                        ? '全部机会'
+                        : SEARCH_CATEGORIES.find((item) => item.id === categoryId)!.label,
+                category: categoryId,
+                topic: 'all' as SearchTopic,
+              },
+              ...SEARCH_TOPICS.filter((item) => item.category === categoryId).map((item) => ({
+                ...item,
+                topic: item.id as SearchTopic,
+              })),
+            ])
+            const grouped = items.length > 1
             return (
               <div className="motif-category-group" key={group.id}>
                 <button
@@ -321,9 +388,7 @@ export function TheatreSearchHome({
                       ? `motif-subcategories-${group.id}`
                       : undefined
                   }
-                  title={group.categories
-                    .map((id) => SEARCH_CATEGORIES.find((item) => item.id === id)?.label)
-                    .join('、')}
+                  title={items.map(({ label }) => label).join('、')}
                   onClick={() => {
                     if (grouped)
                       setExpandedCategoryGroup((current) =>
@@ -342,15 +407,14 @@ export function TheatreSearchHome({
                     role="group"
                     aria-label={`${group.label}细分`}
                   >
-                    {group.categories.map((id) => {
-                      const item = SEARCH_CATEGORIES.find((entry) => entry.id === id)!
+                    {items.map((item) => {
                       return (
                         <button
-                          key={id}
+                          key={item.id}
                           type="button"
-                          aria-pressed={category === id}
+                          aria-pressed={category === item.category && topic === item.topic}
                           title={item.description}
-                          onClick={() => chooseCategory(id)}
+                          onClick={() => chooseCategory(item.category, item.topic)}
                         >
                           {item.label}
                         </button>
@@ -397,14 +461,19 @@ export function TheatreSearchHome({
                   : busy === 'search'
                     ? '正在查找资料…'
                     : response
-                      ? `共 ${response.total} 条，显示 ${response.results.length} 条资料`
+                      ? response.webStatus === 'searched'
+                        ? `本次联网找到 ${response.total} 个候选来源`
+                        : `${response.topic !== 'all' ? `${SEARCH_TOPICS.find(({ id }) => id === response.topic)!.label} · ` : ''}共 ${response.total} 条已收录记录，显示 ${response.results.length} 条`
                       : '检索结果'}
             </p>
           </div>
           {error && (
             <p className="motif-notice" role="alert">
               {error}
-              <button type="button" onClick={() => void search(query, category)}>
+              <button
+                type="button"
+                onClick={() => void search(query, category, false, 0, false, topic)}
+              >
                 重试检索
               </button>
             </p>
@@ -435,7 +504,10 @@ export function TheatreSearchHome({
             <div className="motif-empty">
               <h2>还没有匹配的已收录资料</h2>
               <p>试试作品名、专业术语，或切换分类。未核实的履历、场次和资料不会补写成结果。</p>
-              <button type="button" onClick={() => void search('', category)}>
+              <button
+                type="button"
+                onClick={() => void search('', category, false, 0, false, topic)}
+              >
                 浏览这个分类
               </button>
             </div>
@@ -445,6 +517,7 @@ export function TheatreSearchHome({
               <article id={`resource-${resource.id}`} key={resource.id} className="motif-resource">
                 <div className="motif-resource-source">
                   <span>{resource.organization}</span>
+                  {resource.sourceTier && <span>{sourceTierLabels[resource.sourceTier]}</span>}
                   <span>
                     {!resource.url
                       ? '来源登记'
@@ -479,11 +552,17 @@ export function TheatreSearchHome({
                   </span>
                   {resource.status === 'source-directory' && <span>资料入口</span>}
                   {resource.recordType === 'bibliography' && <span>书目，未收录全书</span>}
+                  {resource.sourceKind && viewpointLabels[resource.sourceKind] && (
+                    <span>{viewpointLabels[resource.sourceKind]}</span>
+                  )}
+                  {resource.aiInvolvement && (
+                    <span>{AI_INVOLVEMENT_LABELS[resource.aiInvolvement]}</span>
+                  )}
                 </div>
                 {resource.sourceRefs?.length ? (
                   <details className="motif-source-detail">
                     <summary>来源与适用说明</summary>
-                    <p>{resource.theatreEvidence}</p>
+                    <p>{resource.theatreEvidence ?? resource.aiEvidence}</p>
                     <ul>
                       {resource.sourceRefs.map((source, index) => (
                         <li key={`${source.title}-${index}`}>
@@ -514,6 +593,8 @@ export function TheatreSearchHome({
                     response.category,
                     false,
                     Math.max(0, response.offset - 24),
+                    false,
+                    response.topic,
                   )
                 }
               >
@@ -528,7 +609,14 @@ export function TheatreSearchHome({
                   busy !== null || response.offset + response.results.length >= response.total
                 }
                 onClick={() =>
-                  void search(response.query, response.category, false, response.offset + 24)
+                  void search(
+                    response.query,
+                    response.category,
+                    false,
+                    response.offset + 24,
+                    false,
+                    response.topic,
+                  )
                 }
               >
                 下一页
@@ -568,7 +656,7 @@ export function TheatreSearchHome({
           <details className="motif-intake-policy">
             <summary>Dia 收录准则</summary>
             <p>
-              仅收录中国大陆及港澳的戏剧专业资料与来源，国外暂缓；排除娱乐八卦，人物须关联可核实作品，票讯、招生与艺考以官方适用年份公告为准，正文与视频按许可访问。
+              仅收录中国大陆及港澳的戏剧艺术与AI影视专业资料，国外暂缓；排除娱乐八卦，人物须关联可核实作品，AI影视注明AI参与依据，正文与视频按许可访问。
             </p>
           </details>
         </div>

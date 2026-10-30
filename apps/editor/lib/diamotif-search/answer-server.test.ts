@@ -1,5 +1,6 @@
 import { expect, mock, test } from 'bun:test'
 import { tmpdir } from 'node:os'
+import type { SearchResource } from './catalog'
 
 if (process.env.DIAMOTIF_SEARCH_TEST_CHILD !== '1') {
   test('search API and Qwen answer boundaries run offline in an isolated process', () => {
@@ -74,6 +75,7 @@ if (process.env.DIAMOTIF_SEARCH_TEST_CHILD !== '1') {
     },
   }))
   const { GET, POST } = await import('../../app/api/diamotif/search/route')
+  const { topicMatches } = await import('./search-topics')
   const { searchDiaMotif } = await import('./search')
   const query = '二道幕'
   const citation = searchDiaMotif({ query }).results[0]!.id
@@ -117,6 +119,57 @@ if (process.env.DIAMOTIF_SEARCH_TEST_CHILD !== '1') {
     exhausted = false
   })
 
+  test('public GET and POST apply the same knowledge facet without a provider call', async () => {
+    const before = providerCalls
+    const input = { category: 'knowledge', topic: 'voice' }
+    const expected = searchDiaMotif(input)
+    expect(expected.total).toBeGreaterThan(0)
+    for (const response of [
+      GET(new Request('http://127.0.0.1/api/diamotif/search?category=knowledge&topic=voice')),
+      await POST(request(input)),
+    ]) {
+      expect(response.status).toBe(200)
+      const data = await response.json()
+      expect(data.topic).toBe('voice')
+      expect(data.results.map((item: { id: string }) => item.id)).toEqual(
+        expected.results.map(({ id }) => id),
+      )
+      expect(data.answer).toBeNull()
+    }
+    expect(
+      GET(new Request('http://127.0.0.1/api/diamotif/search?category=knowledge&topic=invalid'))
+        .status,
+    ).toBe(400)
+    expect((await POST(request({ category: 'scripts', topic: 'voice' }))).status).toBe(400)
+    expect(providerCalls).toBe(before)
+  })
+
+  test('nonknowledge facets are identical across public GET and POST', async () => {
+    const before = providerCalls
+    for (const [category, topic] of [
+      ['venues', 'venue-space'],
+      ['arts-exams', 'exam-policy'],
+      ['festivals', 'workshop'],
+    ]) {
+      const expected = searchDiaMotif({ category, topic })
+      expect(expected.total).toBeGreaterThan(0)
+      for (const response of [
+        GET(
+          new Request(`http://127.0.0.1/api/diamotif/search?category=${category}&topic=${topic}`),
+        ),
+        await POST(request({ category, topic })),
+      ]) {
+        const data = await response.json()
+        expect(response.status).toBe(200)
+        expect(data.topic).toBe(topic)
+        expect(data.results.map((item: { id: string }) => item.id)).toEqual(
+          expected.results.map(({ id }) => id),
+        )
+      }
+    }
+    expect(providerCalls).toBe(before)
+  })
+
   test('an invited explicit AI request uses only retrieved evidence and valid IDs', async () => {
     user = 'invited-user'
     modelAnswer = {
@@ -149,6 +202,30 @@ if (process.env.DIAMOTIF_SEARCH_TEST_CHILD !== '1') {
       expect(data.results.length).toBeGreaterThan(0)
       expect(JSON.stringify(data)).not.toContain('PRIVATE PROVIDER DETAIL')
     }
+  })
+
+  test('AI answers retain the selected knowledge facet and use only matching evidence', async () => {
+    user = 'invited-user'
+    const input = {
+      query: '舞台',
+      category: 'knowledge',
+      topic: 'stage-design',
+      useAi: true,
+    }
+    const expected = searchDiaMotif(input)
+    expect(expected.results.length).toBeGreaterThan(0)
+    modelAnswer = { text: '以下解读仅采用所选舞美资料。', citationIds: [expected.results[0]!.id] }
+    const data = await (await POST(request(input))).json()
+    expect(data.aiStatus).toBe('answered')
+    expect(data.topic).toBe('stage-design')
+    const context = JSON.parse(captured)
+    expect(context.topic).toBe('stage-design')
+    expect(context.evidence.map((item: { id: string }) => item.id)).toEqual(
+      expected.results.slice(0, 8).map(({ id }) => id),
+    )
+    expect(
+      context.evidence.every((item: SearchResource) => topicMatches(item, 'stage-design')),
+    ).toBe(true)
   })
 
   test('missing credentials, blocked topics and injected resources do not call the provider', async () => {

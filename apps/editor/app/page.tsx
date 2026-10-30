@@ -13,9 +13,9 @@ export const metadata = {
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ entry?: string; q?: string; category?: string }>
+  searchParams: Promise<{ entry?: string; q?: string; category?: string; topic?: string }>
 }) {
-  const { entry, q, category } = await searchParams
+  const { entry, q, category, topic } = await searchParams
   const session = await getSession(await headers())
   return (
     <main className="motif-home">
@@ -23,6 +23,7 @@ export default async function Home({
         initialEntry={entry}
         initialQuery={q}
         initialCategory={category}
+        initialTopic={topic}
         modelConfigured={isAiProviderConfigured()}
         user={
           session

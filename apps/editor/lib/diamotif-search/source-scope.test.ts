@@ -19,6 +19,18 @@ test.each([
 })
 
 test.each([
+  ['https://www.xiaohongshu.com/explore/synthetic', 'mainland'],
+  ['https://www.kuaishou.com/short-video/synthetic', 'mainland'],
+  ['https://channels.weixin.qq.com/synthetic', 'mainland'],
+  ['https://ir.kuaishou.com/zh-hans/synthetic', 'hong-kong'],
+  ['https://www.xiaohongshu.com.attacker.invalid/explore/synthetic', null],
+  ['https://evilkuaishou.com/short-video/synthetic', null],
+  ['https://channels.weixin.qq.com.attacker.invalid/synthetic', null],
+] as const)('platform candidates retain exact domain boundaries and specific routing: %s', (url, region) => {
+  expect(sourceRegion(url)).toBe(region)
+})
+
+test.each([
   'https://www.folger.edu/explore/shakespeares-works/',
   'https://www.rsc.org.uk/about-us/',
   'https://www.gutenberg.org/ebooks/2542',

@@ -3,7 +3,7 @@ import resources from '../../../../DiaMotif/knowledge/theatre-resources.json'
 import { DIA_KNOWLEDGE } from '../rehearsal-intelligence/knowledge/retrieval'
 import {
   isEntertainmentQuery,
-  isTheatreResource,
+  isProfessionalResource,
   SEARCH_CATEGORIES,
   SEARCH_CATEGORY_GROUPS,
   SearchResourceSchema,
@@ -100,6 +100,7 @@ test('arts-exam news is a distinct category from school admissions', () => {
     '剧本',
     '戏剧知识',
     '演出影像',
+    'AI影视',
     '演职人员',
     '剧场剧团',
     '演出票讯',
@@ -118,10 +119,11 @@ test('arts-exam news is a distinct category from school admissions', () => {
   expect(admissions.results.some(({ id }) => examIds.has(id))).toBe(false)
 })
 
-test('seven navigation groups cover every search category exactly once', () => {
+test('eight navigation groups cover every search category exactly once', () => {
   expect(SEARCH_CATEGORY_GROUPS.map(({ id, label }) => [id, label])).toEqual([
     ['all', '全部'],
     ['works', '剧本影像'],
+    ['ai-screen', 'AI影视'],
     ['knowledge', '戏剧知识'],
     ['people-venues', '演职与剧场'],
     ['events-activities', '演出活动'],
@@ -155,13 +157,13 @@ test.each([
   expect(isEntertainmentQuery(query)).toBe(true)
   const result = searchDiaMotif({ query })
   expect(result.results).toHaveLength(0)
-  expect(result.notice).toContain('戏剧专业资料')
+  expect(result.notice).toContain('专业资料')
 })
 
 test('people need a verified professional link and resource links cannot execute scripts', () => {
   const base = SEARCH_RESOURCES[0]!
   expect(
-    isTheatreResource({
+    isProfessionalResource({
       ...base,
       recordType: 'person',
       status: 'verified',
@@ -169,7 +171,7 @@ test('people need a verified professional link and resource links cannot execute
     }),
   ).toBe(true)
   expect(
-    isTheatreResource({
+    isProfessionalResource({
       ...base,
       recordType: 'person',
       status: 'registered',
@@ -177,7 +179,7 @@ test('people need a verified professional link and resource links cannot execute
     }),
   ).toBe(false)
   expect(
-    isTheatreResource({
+    isProfessionalResource({
       ...base,
       recordType: 'person',
       status: 'verified',

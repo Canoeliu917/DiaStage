@@ -16,6 +16,7 @@ export function GET(request: Request) {
   const input = SearchInputSchema.safeParse({
     query: url.searchParams.get('q') ?? '',
     category: url.searchParams.get('category') ?? 'all',
+    topic: url.searchParams.get('topic') ?? 'all',
     offset: Number(url.searchParams.get('offset') ?? 0),
   })
   if (!input.success)
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
     })
   const paid = await handleAiRequest(request, async ({ signal }) => {
     if (input.useWeb) {
-      const results = await searchDiaMotifWeb(input.query, input.category, signal)
+      const results = await searchDiaMotifWeb(input.query, input.category, signal, input.topic)
       return {
         ...search,
         results,
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
         webStatus: 'searched',
         notice: results.length
           ? '以下为大陆及港澳来源站点的联网候选，正文、内容地区、时效与许可待核验；未自动入库，请打开原站确认。'
-          : '联网服务未返回符合大陆及港澳戏剧收录范围的结构化来源；没有补写链接或答案。',
+          : '联网服务未返回符合大陆及港澳戏剧与AI影视收录范围的结构化来源；没有补写链接或答案。',
       }
     }
     return { ...search, answer: await answerDiaMotifSearch(search, signal), aiStatus: 'answered' }

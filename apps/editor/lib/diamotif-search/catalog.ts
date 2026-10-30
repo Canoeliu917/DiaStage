@@ -1,7 +1,16 @@
 import { z } from 'zod'
+import { SearchTopicSchema, topicFitsCategory } from './search-topics'
+
+export const AI_INVOLVEMENT_LABELS = {
+  generated: 'AI生成',
+  assisted: 'AI辅助制作',
+  'about-ai': '以AI为题材',
+  reference: 'AI创作资料',
+  unverified: '使用情况待核验',
+} as const
 
 export const SEARCH_CATEGORIES = [
-  { id: 'all', label: '全部', description: '所有戏剧专业资料' },
+  { id: 'all', label: '全部', description: '戏剧与AI影视专业资料' },
   {
     id: 'scripts',
     label: '剧本',
@@ -16,6 +25,11 @@ export const SEARCH_CATEGORIES = [
     id: 'videos',
     label: '演出影像',
     description: '舞台录像、剧目片段、创作纪录及专业访谈；不含影视剧和娱乐视频',
+  },
+  {
+    id: 'ai-screen',
+    label: 'AI影视',
+    description: 'AI电影、电视剧、短剧、漫剧、动画及创作技术；AI制作与AI题材分开标记',
   },
   {
     id: 'people',
@@ -58,6 +72,7 @@ export type SearchCategory = (typeof SEARCH_CATEGORIES)[number]['id']
 export const SEARCH_CATEGORY_GROUPS = [
   { id: 'all', label: '全部', categories: ['all'] },
   { id: 'works', label: '剧本影像', categories: ['scripts', 'videos'] },
+  { id: 'ai-screen', label: 'AI影视', categories: ['ai-screen'] },
   { id: 'knowledge', label: '戏剧知识', categories: ['knowledge'] },
   { id: 'people-venues', label: '演职与剧场', categories: ['people', 'venues'] },
   { id: 'events-activities', label: '演出活动', categories: ['events', 'festivals'] },
@@ -75,6 +90,7 @@ export const SearchResourceSchema = z
     title: z.string().min(1),
     category: SearchCategorySchema.exclude(['all']).nullable(),
     topics: z.array(z.string()),
+    subtopics: z.array(SearchTopicSchema.exclude(['all'])).optional(),
     summary: z.string().min(1),
     organization: z.string().min(1),
     url: sourceUrl.nullable(),
@@ -92,7 +108,29 @@ export const SearchResourceSchema = z
       'concept',
       'bibliography',
     ]),
-    theatreEvidence: z.string().min(8),
+    theatreEvidence: z.string().min(8).optional(),
+    aiEvidence: z.string().min(8).optional(),
+    aiInvolvement: z
+      .enum(['generated', 'assisted', 'about-ai', 'reference', 'unverified'])
+      .optional(),
+    sourceTier: z.enum(['official', 'professional-media', 'creator', 'platform']).optional(),
+    publishedAt: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable()
+      .optional(),
+    applicableYear: z.string().min(1).nullable().optional(),
+    contentRegion: z.enum(['mainland', 'hong-kong', 'macao']).nullable().optional(),
+    sourceKind: z
+      .enum([
+        'announcement',
+        'research',
+        'professional-media',
+        'creator-experience',
+        'audience-review',
+        'promotion',
+      ])
+      .optional(),
     status: z.enum(['source-directory', 'verified', 'registered', 'web-candidate']),
     sourceRefs: z
       .array(
@@ -105,6 +143,31 @@ export const SearchResourceSchema = z
     path: ['category'],
     message: '正式资料必须有明确分类，联网候选可等待分类核验。',
   })
+  .refine(
+    (resource) =>
+      !resource.subtopics?.length ||
+      (resource.category !== null &&
+        resource.subtopics.every((topic) => topicFitsCategory(resource.category!, topic))),
+    { path: ['subtopics'], message: '细分方向须与资料分类一致，待分类候选不预设方向。' },
+  )
+  .refine(
+    (resource) =>
+      resource.category === null ||
+      (resource.category === 'ai-screen'
+        ? Boolean(resource.aiEvidence)
+        : Boolean(resource.theatreEvidence)),
+    { path: ['category'], message: 'AI影视须提供AI创作关联证据，戏剧资料须提供戏剧关联证据。' },
+  )
+  .refine(
+    (resource) =>
+      resource.category !== 'ai-screen' ||
+      resource.status === 'web-candidate' ||
+      resource.aiInvolvement !== undefined,
+    {
+      path: ['aiInvolvement'],
+      message: '正式AI影视资料须标明AI参与方式；以AI为题材不等于AI制作。',
+    },
+  )
 export type SearchResource = z.infer<typeof SearchResourceSchema>
 
 export function isEntertainmentQuery(query: string) {
@@ -115,11 +178,19 @@ export function isEntertainmentQuery(query: string) {
   )
 }
 
-export function isTheatreResource(resource: SearchResource) {
+export function isProfessionalResource(resource: SearchResource) {
   if (isEntertainmentQuery(`${resource.title} ${resource.summary}`)) return false
+  if (resource.category === 'ai-screen')
+    return (
+      (resource.aiEvidence?.length ?? 0) >= 8 &&
+      /\bAI\b|AIGC|人工智能|生成式/i.test(resource.aiEvidence ?? '') &&
+      /影视|影視|电影|電影|电视|電視|短剧|短劇|漫剧|漫劇|动画|動畫|视频|視頻|分镜|分鏡|镜头|鏡頭|film|cinema|animation|video/i.test(
+        resource.aiEvidence ?? '',
+      )
+    )
   if (
     !/剧|劇|戏|戲|舞台|演出|表演|theatr|drama|opera|ballet|\bplays?\b/i.test(
-      resource.theatreEvidence,
+      resource.theatreEvidence ?? '',
     )
   )
     return false
@@ -127,7 +198,7 @@ export function isTheatreResource(resource: SearchResource) {
     return (
       resource.status === 'verified' &&
       /剧目|劇目|角色|剧团|劇團|剧院|劇院|舞台|演出|戏剧教学|戲劇教學/.test(
-        resource.theatreEvidence,
+        resource.theatreEvidence ?? '',
       )
     )
   return true

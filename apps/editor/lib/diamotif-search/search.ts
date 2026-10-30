@@ -1,27 +1,41 @@
 import { z } from 'zod'
+import discoveryResources from '../../../../DiaMotif/knowledge/domestic-discovery.json'
 import regionalResources from '../../../../DiaMotif/knowledge/theatre-regional-intake-20261030.json'
 import resources from '../../../../DiaMotif/knowledge/theatre-resources.json'
 import { DIA_KNOWLEDGE, explainConcept } from '../rehearsal-intelligence/knowledge/retrieval'
 import {
   isEntertainmentQuery,
-  isTheatreResource,
+  isProfessionalResource,
   type SearchCategory,
   SearchCategorySchema,
   type SearchResource,
   SearchResourceSchema,
 } from './catalog'
+import {
+  type SearchTopic,
+  SearchTopicSchema,
+  topicFitsCategory,
+  topicMatches,
+} from './search-topics'
 import { sourceRegion } from './source-scope'
 
-export const SearchInputSchema = z.strictObject({
-  query: z.string().trim().max(500).default(''),
-  category: SearchCategorySchema.default('all'),
-  useAi: z.boolean().default(false),
-  useWeb: z.boolean().default(false),
-  offset: z.number().int().min(0).max(10000).default(0),
-})
+export const SearchInputSchema = z
+  .strictObject({
+    query: z.string().trim().max(500).default(''),
+    category: SearchCategorySchema.default('all'),
+    topic: SearchTopicSchema.default('all'),
+    useAi: z.boolean().default(false),
+    useWeb: z.boolean().default(false),
+    offset: z.number().int().min(0).max(10000).default(0),
+  })
+  .refine(({ category, topic }) => topicFitsCategory(category, topic), {
+    path: ['topic'],
+    message: '细分方向须与检索分类一致。',
+  })
 export type SearchResponse = {
   query: string
   category: SearchCategory
+  topic: SearchTopic
   results: SearchResource[]
   total: number
   offset: number
@@ -91,10 +105,12 @@ const registered: SearchResource[] = [
 ]
 export const SEARCH_RESOURCES = SearchResourceSchema.array()
   .parse([
-    ...[...resources, ...regionalResources].filter((resource) => sourceRegion(resource.url)),
+    ...[...resources, ...regionalResources, ...discoveryResources].filter((resource) =>
+      sourceRegion(resource.url),
+    ),
     ...registered,
   ])
-  .filter(isTheatreResource)
+  .filter(isProfessionalResource)
 const normalize = (value: string) =>
   value
     .normalize('NFKC')
@@ -148,10 +164,11 @@ function relevance(resource: SearchResource, query: string, workTitles: string[]
 }
 
 export function searchDiaMotif(raw: unknown): SearchResponse {
-  const { query, category, offset } = SearchInputSchema.parse(raw)
+  const { query, category, topic, offset } = SearchInputSchema.parse(raw)
   const base: SearchResponse = {
     query,
     category,
+    topic,
     results: [],
     total: 0,
     offset,
@@ -162,13 +179,13 @@ export function searchDiaMotif(raw: unknown): SearchResponse {
   if (isEntertainmentQuery(query))
     return {
       ...base,
-      notice:
-        'Dia 只收录戏剧专业资料，不检索演员八卦、绯闻或私生活；可查询剧目、角色、创作与教学。',
+      notice: 'Dia 只收录戏剧专业资料及AI影视创作信息，不检索八卦、绯闻或私生活。',
     }
   const normalized = normalizeQuery(query)
   const workTitles = [...query.matchAll(/《([^》]+)》/g)].map((match) => normalize(match[1]!))
   const ranked = SEARCH_RESOURCES.filter(
-    (resource) => category === 'all' || resource.category === category,
+    (resource) =>
+      (category === 'all' || resource.category === category) && topicMatches(resource, topic),
   )
     .map((resource, index) => ({
       resource,

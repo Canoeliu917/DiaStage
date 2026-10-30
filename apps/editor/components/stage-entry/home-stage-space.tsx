@@ -35,12 +35,14 @@ export function HomeStageSpace({
   initialEntry,
   initialQuery,
   initialCategory,
+  initialTopic,
   modelConfigured = false,
   user,
 }: {
   initialEntry?: string
   initialQuery?: string
   initialCategory?: string
+  initialTopic?: string
   modelConfigured?: boolean
   user: AccountUser | null
 }) {
@@ -85,6 +87,7 @@ export function HomeStageSpace({
         user={user}
         initialQuery={initialQuery}
         initialCategory={initialCategory}
+        initialTopic={initialTopic}
         openStage={() => open('manual')}
         openScript={() => open('script')}
       />
