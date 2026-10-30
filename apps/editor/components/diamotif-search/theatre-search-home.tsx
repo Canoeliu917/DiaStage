@@ -17,7 +17,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AccountMenu, type AccountUser } from '@/components/account-panel'
 import { StageThemeControl } from '@/components/stage-theme'
 import { DIASTAGE_BRAND } from '@/lib/brand'
-import { SEARCH_CATEGORIES, type SearchCategory } from '@/lib/diamotif-search/catalog'
+import {
+  SEARCH_CATEGORIES,
+  SEARCH_CATEGORY_GROUPS,
+  type SearchCategory,
+} from '@/lib/diamotif-search/catalog'
 import type { SearchResponse } from '@/lib/diamotif-search/search'
 
 const accessLabels: Record<string, string> = {
@@ -52,7 +56,9 @@ export function TheatreSearchHome({
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState(false)
   const [showSearchHint, setShowSearchHint] = useState(false)
+  const [expandedCategoryGroup, setExpandedCategoryGroup] = useState<string | null>(null)
   const input = useRef<HTMLInputElement>(null)
+  const categoryNav = useRef<HTMLElement>(null)
   const request = useRef<AbortController | null>(null)
   const submittedSearch = useRef<{ query: string; category: SearchCategory } | null>(null)
 
@@ -73,6 +79,7 @@ export function TheatreSearchHome({
       setBusy(useWeb ? 'web' : useAi ? 'ai' : 'search')
       setError('')
       setShowSearchHint(false)
+      setExpandedCategoryGroup(null)
       setExpanded(true)
       setResponse((previous) =>
         !useWeb && previous?.query === text.trim() && previous.category === nextCategory
@@ -127,6 +134,16 @@ export function TheatreSearchHome({
     return () => request.current?.abort()
   }, [initialQuery, initialCategory, search])
 
+  useEffect(() => {
+    if (!expandedCategoryGroup) return
+    function closeOnOutside(event: PointerEvent) {
+      if (event.target instanceof Node && !categoryNav.current?.contains(event.target))
+        setExpandedCategoryGroup(null)
+    }
+    document.addEventListener('pointerdown', closeOnOutside)
+    return () => document.removeEventListener('pointerdown', closeOnOutside)
+  }, [expandedCategoryGroup])
+
   function clear() {
     request.current?.abort()
     submittedSearch.current = null
@@ -137,6 +154,7 @@ export function TheatreSearchHome({
     setError('')
     setExpanded(false)
     setShowSearchHint(false)
+    setExpandedCategoryGroup(null)
     window.history.replaceState(null, '', '/')
     input.current?.focus()
   }
@@ -151,6 +169,21 @@ export function TheatreSearchHome({
   }
 
   const hasSearch = response !== null || busy !== null || error !== ''
+  const categoryGroup = SEARCH_CATEGORY_GROUPS.find((group) => group.id === expandedCategoryGroup)
+
+  function chooseCategory(nextCategory: SearchCategory) {
+    if (expandedCategoryGroup)
+      document.getElementById(`motif-category-${expandedCategoryGroup}`)?.focus()
+    setExpandedCategoryGroup(null)
+    if (
+      nextCategory === category &&
+      submittedSearch.current?.category === category &&
+      submittedSearch.current.query === query.trim() &&
+      hasSearch
+    )
+      setExpanded((value) => !value)
+    else void search(query, nextCategory)
+  }
 
   return (
     <>
@@ -262,27 +295,72 @@ export function TheatreSearchHome({
             先输入关键词，再选择联网检索或问 DIA。
           </p>
         )}
-        <nav className="motif-categories" aria-label="检索分类">
-          {SEARCH_CATEGORIES.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              aria-pressed={category === item.id}
-              title={item.description}
-              onClick={() => {
-                if (
-                  item.id === category &&
-                  submittedSearch.current?.category === category &&
-                  submittedSearch.current.query === query.trim() &&
-                  hasSearch
-                )
-                  setExpanded((value) => !value)
-                else void search(query, item.id)
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
+        <nav
+          ref={categoryNav}
+          className="motif-categories"
+          aria-label="检索分类"
+          onKeyDown={(event) => {
+            if (event.key === 'Escape' && expandedCategoryGroup) {
+              document.getElementById(`motif-category-${expandedCategoryGroup}`)?.focus()
+              setExpandedCategoryGroup(null)
+            }
+          }}
+        >
+          {SEARCH_CATEGORY_GROUPS.map((group) => {
+            const selected = group.categories.some((id) => id === category)
+            const grouped = group.categories.length > 1
+            return (
+              <div className="motif-category-group" key={group.id}>
+                <button
+                  id={`motif-category-${group.id}`}
+                  type="button"
+                  aria-pressed={selected}
+                  aria-expanded={grouped ? expandedCategoryGroup === group.id : undefined}
+                  aria-controls={
+                    expandedCategoryGroup === group.id
+                      ? `motif-subcategories-${group.id}`
+                      : undefined
+                  }
+                  title={group.categories
+                    .map((id) => SEARCH_CATEGORIES.find((item) => item.id === id)?.label)
+                    .join('、')}
+                  onClick={() => {
+                    if (grouped)
+                      setExpandedCategoryGroup((current) =>
+                        current === group.id ? null : group.id,
+                      )
+                    else chooseCategory(group.categories[0])
+                  }}
+                >
+                  {group.label}
+                  {grouped && <ChevronDown size={12} aria-hidden="true" />}
+                </button>
+                {categoryGroup?.id === group.id && (
+                  <div
+                    id={`motif-subcategories-${group.id}`}
+                    className="motif-subcategories"
+                    role="group"
+                    aria-label={`${group.label}细分`}
+                  >
+                    {group.categories.map((id) => {
+                      const item = SEARCH_CATEGORIES.find((entry) => entry.id === id)!
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={category === id}
+                          title={item.description}
+                          onClick={() => chooseCategory(id)}
+                        >
+                          {item.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </nav>
         {hasSearch && (
           <button
@@ -368,21 +446,29 @@ export function TheatreSearchHome({
                 <div className="motif-resource-source">
                   <span>{resource.organization}</span>
                   <span>
-                    {String(resource.status) === 'web-candidate'
-                      ? '查看原站'
-                      : (accessLabels[resource.access] ?? '查看来源')}
+                    {!resource.url
+                      ? '来源登记'
+                      : String(resource.status) === 'web-candidate'
+                        ? '查看原站'
+                        : (accessLabels[resource.access] ?? '查看来源')}
                   </span>
                 </div>
                 <h2>
-                  <a href={resource.url} target="_blank" rel="noopener noreferrer">
-                    {resource.title}
-                    <ArrowUpRight size={16} aria-hidden="true" />
-                  </a>
+                  {resource.url ? (
+                    <a href={resource.url} target="_blank" rel="noopener noreferrer">
+                      {resource.title}
+                      <ArrowUpRight size={16} aria-hidden="true" />
+                    </a>
+                  ) : (
+                    resource.title
+                  )}
                 </h2>
                 <p>{resource.summary}</p>
                 <div className="motif-resource-meta">
                   <span>
-                    {SEARCH_CATEGORIES.find((item) => item.id === resource.category)?.label}
+                    {resource.status === 'web-candidate'
+                      ? '分类待核验'
+                      : SEARCH_CATEGORIES.find((item) => item.id === resource.category)?.label}
                   </span>
                   <span>
                     {String(resource.status) === 'web-candidate'
@@ -482,7 +568,7 @@ export function TheatreSearchHome({
           <details className="motif-intake-policy">
             <summary>Dia 收录准则</summary>
             <p>
-              仅收录戏剧专业资料与来源链接，排除娱乐新闻和八卦绯闻；人物须关联可核实作品，来源、版本与访问条件可查，票讯及招生以官方最新公告为准，正文与视频按许可访问。
+              仅收录中国大陆及港澳的戏剧专业资料与来源，国外暂缓；排除娱乐八卦，人物须关联可核实作品，票讯、招生与艺考以官方适用年份公告为准，正文与视频按许可访问。
             </p>
           </details>
         </div>

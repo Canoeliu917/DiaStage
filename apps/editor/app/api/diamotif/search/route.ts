@@ -80,8 +80,8 @@ export async function POST(request: Request) {
         total: results.length,
         webStatus: 'searched',
         notice: results.length
-          ? '以下为实际联网发现的候选来源，尚未核验正文、时效或许可，也未进入正式知识库；请打开原站确认。'
-          : '联网服务未返回符合戏剧收录边界的结构化来源；没有补写链接或答案。',
+          ? '以下为大陆及港澳来源站点的联网候选，正文、内容地区、时效与许可待核验；未自动入库，请打开原站确认。'
+          : '联网服务未返回符合大陆及港澳戏剧收录范围的结构化来源；没有补写链接或答案。',
       }
     }
     return { ...search, answer: await answerDiaMotifSearch(search, signal), aiStatus: 'answered' }

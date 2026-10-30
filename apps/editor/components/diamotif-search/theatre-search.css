@@ -42,8 +42,14 @@ html:has(.motif-home) { overflow-y: auto; }
 .motif-search-actions button:disabled { cursor: default; }
 .motif-search-hint { margin: 4px 0 0; color: var(--dia-muted); font-size: 12px; }
 .motif-categories { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 20px; margin-top: 18px; }
-.motif-categories button { padding: 4px 1px 7px; min-height: 32px; color: var(--dia-muted); border-bottom: 1px solid transparent; }
+.motif-categories button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 1px 7px; min-height: 32px; color: var(--dia-muted); border-bottom: 1px solid transparent; }
 .motif-categories button[aria-pressed=true] { border-color: var(--dia-text); color: var(--dia-text); }
+.motif-categories button[aria-expanded=true] svg { transform: rotate(180deg); }
+.motif-category-group { position: relative; }
+.motif-subcategories { position: absolute; top: 100%; left: 0; z-index: 5; display: flex; flex-direction: column; width: max-content; min-width: 100%; padding-block: 4px; border: 1px solid var(--dia-border); border-radius: 3px; background: var(--dia-surface); font-size: 12px; }
+.motif-subcategories button { display: block; min-height: 32px; padding: 5px 12px 5px 0; border: 0; color: var(--dia-muted); text-align: left; white-space: nowrap; }
+.motif-subcategories button:hover { background: var(--dia-divider); color: var(--dia-text); }
+.motif-subcategories button[aria-pressed=true] { color: var(--dia-text); text-decoration: underline; }
 .motif-results-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin-top: 10px; font-size: 12px; color: var(--dia-muted); text-decoration: underline; }
 .motif-search-area[data-expanded=true] { margin-top: 24px; margin-bottom: 24px; }
 .motif-search-area[data-expanded=true] .motif-search-heading { margin-bottom: 20px; }

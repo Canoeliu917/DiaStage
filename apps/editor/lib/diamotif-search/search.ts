@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import regionalResources from '../../../../DiaMotif/knowledge/theatre-regional-intake-20261030.json'
 import resources from '../../../../DiaMotif/knowledge/theatre-resources.json'
 import { DIA_KNOWLEDGE, explainConcept } from '../rehearsal-intelligence/knowledge/retrieval'
 import {
@@ -9,6 +10,7 @@ import {
   type SearchResource,
   SearchResourceSchema,
 } from './catalog'
+import { sourceRegion } from './source-scope'
 
 export const SearchInputSchema = z.strictObject({
   query: z.string().trim().max(500).default(''),
@@ -29,44 +31,55 @@ export type SearchResponse = {
   notice: string | null
 }
 
-const recordUrl =
-  'https://github.com/Canoeliu917/DiaStage/blob/codex/path9-desktop-ui/DiaMotif/references/theatre-books-and-sources.md'
-const sources = new Map(DIA_KNOWLEDGE.sources.map((source) => [source.sourceId, source]))
+const sourceTitles = new Map(DIA_KNOWLEDGE.sources.map((source) => [source.sourceId, source.title]))
+const sources = new Map(
+  DIA_KNOWLEDGE.sources.flatMap((source) => {
+    const url = source.notes.match(/https?:\/\/[^\s]+/)?.[0] ?? null
+    if (url ? !sourceRegion(url) : source.sourceType === 'example_source') return []
+    return [[source.sourceId, { ...source, url }] as const]
+  }),
+)
 const registered: SearchResource[] = [
-  ...DIA_KNOWLEDGE.concepts.map(
-    (concept): SearchResource => ({
+  ...DIA_KNOWLEDGE.concepts.map((concept): SearchResource => {
+    const authorityRefs = concept.authorityRefs.filter(({ url }) => sourceRegion(url))
+    const sourceRefs = concept.sourceRefs
+    return {
       id: `concept:${concept.id}`,
       title: concept.label,
       category: 'knowledge',
       topics: [...new Set([concept.canonicalLabel, ...concept.aliases])],
       summary: explainConcept(concept.id)!.statement,
       organization: 'Dia 知识整理',
-      url: concept.authorityRefs[0]?.url ?? recordUrl,
+      url: authorityRefs[0]?.url ?? sources.get(sourceRefs[0]?.sourceId ?? '')?.url ?? null,
       verifiedAt: null,
       access: 'public',
       rights: 'metadata-only',
       recordType: 'concept',
-      theatreEvidence: `戏剧专业概念；${concept.sourceRefs.map((ref) => `${sources.get(ref.sourceId)!.title}：${ref.locator}`).join('；')}`,
+      theatreEvidence: `戏剧专业概念；${sourceRefs.map((ref) => `${sourceTitles.get(ref.sourceId)!}：${ref.locator}`).join('；')}`,
       status: 'registered',
       definitionStatus: concept.definitionStatus,
       sourceRefs: [
-        ...concept.authorityRefs.map(({ title, url }) => ({ title, url })),
-        ...concept.sourceRefs.map((ref) => ({
-          title: sources.get(ref.sourceId)!.title,
+        ...concept.authorityRefs.map(({ title, url }) =>
+          sourceRegion(url)
+            ? { title, url }
+            : { title, locator: '历史术语参考；区域外原站暂缓跳转' },
+        ),
+        ...sourceRefs.map((ref) => ({
+          title: sourceTitles.get(ref.sourceId)!,
           locator: ref.locator,
         })),
       ],
-    }),
-  ),
-  ...DIA_KNOWLEDGE.sources.map(
+    }
+  }),
+  ...[...sources.values()].map(
     (source): SearchResource => ({
       id: `source:${source.sourceId}`,
       title: source.title,
-      category: source.sourceType === 'example_source' ? 'scripts' : 'knowledge',
+      category: 'knowledge',
       topics: [source.title],
       summary: '已登记的戏剧参考资料，仅提供来源记录；不提供全文，也不代表已掌握整本教材。',
       organization: 'Dia 来源登记',
-      url: source.notes.match(/https?:\/\/[^\s]+/)?.[0] ?? recordUrl,
+      url: source.url,
       verifiedAt: null,
       access: 'mixed',
       rights: 'metadata-only',
@@ -77,7 +90,10 @@ const registered: SearchResource[] = [
   ),
 ]
 export const SEARCH_RESOURCES = SearchResourceSchema.array()
-  .parse([...resources, ...registered])
+  .parse([
+    ...[...resources, ...regionalResources].filter((resource) => sourceRegion(resource.url)),
+    ...registered,
+  ])
   .filter(isTheatreResource)
 const normalize = (value: string) =>
   value
@@ -170,7 +186,7 @@ export function searchDiaMotif(raw: unknown): SearchResponse {
     results: ranked.slice(offset, offset + 24).map(({ resource }) => resource),
     total: ranked.length,
     notice: ranked.length
-      ? '检索已登记资料与官方入口；目录不代表实时场次、余票或招生名额，全文访问以来源许可为准。'
-      : '当前收录范围内没有匹配资料；未进行全网搜索，也未生成未经核实的推荐。',
+      ? null
+      : '中国大陆及港澳的已收录资料中暂无匹配；国外资料与链接暂缓，未生成未经核实的推荐。',
   }
 }

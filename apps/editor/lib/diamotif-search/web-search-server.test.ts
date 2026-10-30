@@ -73,6 +73,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     )
   }) as typeof fetch
   const { POST } = await import('../../app/api/diamotif/search/route')
+  const { SEARCH_CATEGORIES } = await import('./catalog')
   const { estimateCall, WEB_SEARCH_TOOL_RESERVE_CNY } = await import('../ai/model-budget')
   const { estimateTextCostCny, QWEN_TRIAL_MODEL } = await import('../ai/model-pricing')
   const request = (values: Record<string, unknown> = {}) =>
@@ -101,12 +102,17 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
             search_results: [
               {
                 title: '戏剧专业教学资料',
-                url: 'https://theatre.example.edu/book',
+                url: 'https://www.chntheatre.edu.cn/synthetic-test',
                 site_name: '戏剧学院',
               },
-              { title: '演员八卦恋情', url: 'https://news.example.com/gossip' },
+              { title: '演员八卦恋情', url: 'https://www.chntheatre.edu.cn/gossip' },
               { title: '舞台资料', url: 'http://127.0.0.1/secret' },
-              { title: '购物促销', url: 'https://shop.example.com' },
+              { title: '购物促销', url: 'https://www.chntheatre.edu.cn/shop' },
+              { title: '戏剧资料', url: 'https://www.folger.edu/explore/' },
+              { title: '戏剧资料', url: 'https://theatre.example.cn/book' },
+              { title: '戏剧资料', url: 'https://www.chntheatre.edu.cn.attacker.invalid/book' },
+              { title: '戏剧资料', url: 'https://github.com/theatre/book' },
+              { title: '戏剧资料', url: 'https://web.arte.gov.tw/childrendrama/02.html' },
             ],
           },
         },
@@ -117,7 +123,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
             search_results: [
               {
                 title: '戏剧专业教学资料',
-                url: 'https://theatre.example.edu/book',
+                url: 'https://www.chntheatre.edu.cn/synthetic-test',
                 site_name: '戏剧学院',
               },
             ],
@@ -134,12 +140,19 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     expect(result.results).toHaveLength(1)
     expect(result.results[0]).toMatchObject({
       status: 'web-candidate',
+      category: null,
       verifiedAt: null,
       rights: 'metadata-only',
+      url: 'https://www.chntheatre.edu.cn/synthetic-test',
     })
-    expect(JSON.stringify(result)).not.toMatch(/1000元|invented\.example|synthetic-web-key/)
+    expect(JSON.stringify(result)).not.toMatch(
+      /1000元|invented\.example|synthetic-web-key|folger\.edu|example\.cn|attacker\.invalid|github\.com|arte\.gov\.tw/,
+    )
     expect(body.model).toBe(QWEN_TRIAL_MODEL)
     expect(body.input.messages[0].role).toBe('system')
+    const instructions = JSON.stringify(body.input.messages[0])
+    for (const region of ['中国大陆', '香港', '澳门']) expect(instructions).toContain(region)
+    expect(instructions).toMatch(/国外|境外/)
     expect(body.input.messages[1]).toEqual({ role: 'user', content: [{ text: '话剧舞台资料' }] })
     expect(body.parameters).toMatchObject({
       max_tokens: 800,
@@ -164,6 +177,36 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
       inputTokens: 5000,
       outputTokens: 80,
     })
+  })
+
+  test('the selected arts-exam scope constrains retrieval without classifying unverified candidates', async () => {
+    frames = [
+      {
+        output: {
+          search_info: {
+            search_results: [
+              {
+                title: '戏剧表演艺考资讯',
+                url: 'https://www.chntheatre.edu.cn/synthetic-arts-exam',
+                site_name: '戏剧学院',
+              },
+            ],
+          },
+        },
+      },
+      finish,
+    ]
+    const result = await (await POST(request({ category: 'arts-exams' }))).json()
+    expect(result.webStatus).toBe('searched')
+    expect(result.results).toHaveLength(1)
+    expect(result.results[0].category).toBeNull()
+    expect(result.results[0].status).toBe('web-candidate')
+    expect(result.answer).toBeNull()
+    const scope = SEARCH_CATEGORIES.find(({ id }) => id === 'arts-exams')!
+    const instructions = JSON.stringify(body.input.messages[0])
+    expect(instructions).toContain(scope.label)
+    expect(instructions).toContain(scope.description)
+    expect(body.input.messages[1]).toEqual({ role: 'user', content: [{ text: '话剧舞台资料' }] })
   })
 
   test('empty structure never falls back to generated URLs and no local hit is required', async () => {

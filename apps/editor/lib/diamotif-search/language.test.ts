@@ -1,6 +1,9 @@
 import { expect, test } from 'bun:test'
 import { readFileSync } from 'node:fs'
-import { SEARCH_RESOURCES, searchDiaMotif } from './search'
+import resources from '../../../../DiaMotif/knowledge/theatre-resources.json'
+import { DIA_KNOWLEDGE } from '../rehearsal-intelligence/knowledge/retrieval'
+import { searchDiaMotif } from './search'
+import { sourceRegion } from './source-scope'
 
 type LanguageCase = {
   id: string
@@ -26,11 +29,19 @@ const cases: LanguageCase[] = readFileSync(
   .split('\n')
   .map((line) => JSON.parse(line))
 
-test('search-language cases keep their provenance and contrast coverage', () => {
+const deferredIds = new Set(resources.filter(({ url }) => !sourceRegion(url)).map(({ id }) => id))
+const deferred = (entry: LanguageCase) =>
+  entry.expectedAnyIds?.every((id) => deferredIds.has(id)) ?? false
+
+test('historical search-language cases retain their original provenance and contrast coverage', () => {
   expect(cases).toHaveLength(30)
   expect(new Set(cases.map(({ id }) => id)).size).toBe(cases.length)
   expect(cases.every(({ source }) => source === 'synthetic')).toBe(true)
-  const resourceIds = new Set(SEARCH_RESOURCES.map(({ id }) => id))
+  const resourceIds = new Set([
+    ...resources.map(({ id }) => id),
+    ...DIA_KNOWLEDGE.concepts.map(({ id }) => `concept:${id}`),
+    ...DIA_KNOWLEDGE.sources.map(({ sourceId }) => `source:${sourceId}`),
+  ])
   for (const entry of cases)
     for (const id of [...(entry.expectedAnyIds ?? []), ...(entry.forbiddenIds ?? [])])
       expect(resourceIds.has(id)).toBe(true)
@@ -41,7 +52,9 @@ test('search-language cases keep their provenance and contrast coverage', () => 
   }
 })
 
-test.each(cases)('search language $id: $query', (entry) => {
+test.each(
+  cases.filter((entry) => !deferred(entry)),
+)('retained search language $id: $query', (entry) => {
   const result = searchDiaMotif({ query: entry.query, category: entry.category })
   const ids = result.results.map(({ id }) => id)
   if (entry.expectedAnyIds)
@@ -56,13 +69,23 @@ test.each(cases)('search language $id: $query', (entry) => {
   expect(result.aiStatus).toBe('disabled')
 })
 
+test.each(cases.filter(deferred))('deferred international fixture $id: $query', (entry) => {
+  const result = searchDiaMotif({ query: entry.query, category: entry.category })
+  for (const id of entry.expectedAnyIds!)
+    expect(result.results.map((resource) => resource.id)).not.toContain(id)
+  expect(result.total).toBe(0)
+  expect(result.answer).toBeNull()
+  expect(result.aiStatus).toBe('disabled')
+})
+
 test.each([
   ['麻烦帮我找《哈姆雷特》的英文剧本', 'dm-resource-folger-hamlet-text'],
   ['請問能否提供《櫻桃園》的英文劇本', 'dm-resource-gutenberg-cherry-orchard-west'],
-])('quoted work names survive unregistered polite wording: %s', (query, id) => {
+])('polite wording cannot reintroduce deferred international sources: %s', (query, id) => {
   expect(
     searchDiaMotif({ query, category: 'scripts' })
       .results.slice(0, 3)
       .map((resource) => resource.id),
-  ).toContain(id)
+  ).not.toContain(id)
+  expect(searchDiaMotif({ query, category: 'scripts' }).total).toBe(0)
 })
