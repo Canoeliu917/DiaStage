@@ -42,7 +42,7 @@ export default async function ScenesPage({
           <Image alt="" src="/diastage-mark.svg" width={36} height={36} />
           <div>
             <StudioWordmark />
-            <span className="studio-slogan">AI Stage Set</span>
+            <span className="studio-slogan">Stage Build &amp; Remount Preview</span>
           </div>
         </div>
         <div className="ds-library-actions">
@@ -143,7 +143,7 @@ export default async function ScenesPage({
         )}
         <footer className="ds-library-footer">
           <StudioWordmark />
-          <span>AI Stage Set</span>
+          <span>Stage Build &amp; Remount Preview</span>
         </footer>
       </main>
     </div>

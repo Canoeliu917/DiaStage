@@ -105,7 +105,7 @@ export function StudioNavigation({
         />
         <div>
           <StudioWordmark />
-          <span className="studio-slogan">AI Stage Set</span>
+          <span className="studio-slogan">Stage Build &amp; Remount Preview</span>
         </div>
       </div>
       <nav className="studio-workspaces" aria-label="工作区">
