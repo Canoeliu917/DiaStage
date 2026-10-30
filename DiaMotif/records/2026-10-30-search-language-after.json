@@ -1,0 +1,276 @@
+{
+  "source": "synthetic_offline_eval",
+  "caseFile": "DiaMotif/evals/search-language-20261030.jsonl",
+  "phase": "after",
+  "searchableRecords": 195,
+  "passed": 30,
+  "total": 30,
+  "results": [
+    {
+      "id": "sl30-01",
+      "passed": true,
+      "total": 4,
+      "topIds": [
+        "concept:proscenium-opening",
+        "concept:apron",
+        "concept:proscenium-stage",
+        "concept:main-curtain"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-02",
+      "passed": true,
+      "total": 2,
+      "topIds": [
+        "dm-resource-rsc-stage-management",
+        "concept:stage-manager"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-03",
+      "passed": true,
+      "total": 4,
+      "topIds": [
+        "concept:proscenium-opening",
+        "concept:apron",
+        "concept:proscenium-stage",
+        "concept:main-curtain"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-04",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "concept:act-curtain"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-05",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    },
+    {
+      "id": "sl30-06",
+      "passed": true,
+      "total": 8,
+      "topIds": [
+        "concept:curtain",
+        "concept:wing-curtain",
+        "concept:border-curtain",
+        "concept:main-curtain",
+        "concept:cyclorama",
+        "concept:scrim"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-07",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-gutenberg-cherry-orchard-west"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-08",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-gutenberg-cherry-orchard-west"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-09",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-folger-macbeth-2008-video"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-10",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    },
+    {
+      "id": "sl30-11",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-cctv-red-detachment-changqing-20250405"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-12",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-cctv-bawangbieji-20190711"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-13",
+      "passed": true,
+      "total": 2,
+      "topIds": [
+        "dm-resource-folger-plays",
+        "dm-resource-folger-hamlet-text"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-14",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-folger-hamlet-text"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-15",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-gutenberg-cherry-orchard-west"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-16",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-folger-midsummer-text"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-17",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    },
+    {
+      "id": "sl30-18",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-gutenberg-dolls-house"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-19",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    },
+    {
+      "id": "sl30-20",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-folger-hamlet-text"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-21",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    },
+    {
+      "id": "sl30-22",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    },
+    {
+      "id": "sl30-23",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-gutenberg-cherry-orchard-west"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-24",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-gutenberg-dolls-house"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-25",
+      "passed": true,
+      "total": 2,
+      "topIds": [
+        "dm-resource-rsc-stage-management",
+        "concept:stage-manager"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-26",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "dm-resource-cctv-bawangbieji-20190711"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-27",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    },
+    {
+      "id": "sl30-28",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    },
+    {
+      "id": "sl30-29",
+      "passed": true,
+      "total": 1,
+      "topIds": [
+        "concept:emotion-memory"
+      ],
+      "failures": []
+    },
+    {
+      "id": "sl30-30",
+      "passed": true,
+      "total": 0,
+      "topIds": [],
+      "failures": []
+    }
+  ]
+}

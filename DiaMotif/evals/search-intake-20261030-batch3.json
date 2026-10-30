@@ -1,0 +1,38 @@
+[
+  {
+    "query": "《雷雨》导演阐述",
+    "category": "knowledge",
+    "expectedId": "dm-resource-cad-thunderstorm-20260410",
+    "url": "https://www.chntheatre.edu.cn/cn/xiao/detail/25324.html"
+  },
+  {
+    "query": "歌剧《骆驼祥子》舞美",
+    "category": "knowledge",
+    "expectedId": "dm-resource-ncpa-rickshaw-boy-2015",
+    "url": "https://www.chncpa.org/subsite/ltxz2015/jmjq.html"
+  },
+  {
+    "query": "沉浸式戏剧 不眠之夜",
+    "category": "knowledge",
+    "expectedId": "dm-resource-smg-sleep-no-more-shanghai",
+    "url": "https://www.smg.cn/review/202211/0164830.html"
+  },
+  {
+    "query": "音乐剧 在远方 探班",
+    "category": "videos",
+    "expectedId": "dm-resource-cctv-on-the-road-backstage-20210716",
+    "url": "https://m.news.cctv.com/2021/07/16/ARTIIzKLs3mIoDRAe7Dq0QD3210716.shtml"
+  },
+  {
+    "query": "话剧《雷雨》录像",
+    "category": "videos",
+    "expectedId": "dm-resource-cctv-thunderstorm-20170501-part1",
+    "url": "https://tv.cctv.com/2017/05/01/VIDEMQ9dyZ4261XqCzMNL9OY170501.shtml"
+  },
+  {
+    "query": "音乐剧 剧院魅影 制作",
+    "category": "knowledge",
+    "expectedId": "dm-resource-smg-phantom-production-cast",
+    "url": "https://www.smg.cn/review/202404/0165428.html"
+  }
+]

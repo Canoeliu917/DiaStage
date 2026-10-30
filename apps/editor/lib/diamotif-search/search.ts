@@ -85,6 +85,17 @@ const normalize = (value: string) =>
     .toLowerCase()
     .replace(/[\s\p{P}]/gu, '')
 
+function normalizeQuery(value: string) {
+  const subject = value
+    .replace(
+      /^(?:[请請](?:[帮幫]我|[给給]我)?|[帮幫]我|我想)?(?:查(?:找|[询詢])?|找|搜索|了解|介[绍紹]|解[释釋])(?:一下)?/u,
+      '',
+    )
+    .replace(/(?:是什[么麼](?:意思)?|什[么麼]意思|的(?:含义|含義|意思))[？?。！!]*$/u, '')
+    .trim()
+  return normalize(subject || value)
+}
+
 function relevance(resource: SearchResource, query: string, workTitles: string[]) {
   const title = normalize(resource.title)
   const terms = [title, ...resource.topics.map(normalize)].filter((term) => term.length >= 2)
@@ -92,6 +103,13 @@ function relevance(resource: SearchResource, query: string, workTitles: string[]
     `${resource.title} ${resource.topics.join(' ')} ${resource.summary} ${resource.organization}`,
   )
   if (workTitles.length && !workTitles.some((workTitle) => text.includes(workTitle))) return 0
+  const englishWork = query.match(/^(.+?)(?:的)?英文(?:剧本|劇本|译本|譯本|文本)$/u)?.[1]
+  if (
+    englishWork &&
+    (!/英文|english/.test(text) ||
+      (!workTitles.length && !text.includes(englishWork.replace(/的$/u, ''))))
+  )
+    return 0
   const matchedTerms = terms.filter((term) => query.includes(term))
   const grams = [
     ...new Set(
@@ -131,7 +149,7 @@ export function searchDiaMotif(raw: unknown): SearchResponse {
       notice:
         'Dia 只收录戏剧专业资料，不检索演员八卦、绯闻或私生活；可查询剧目、角色、创作与教学。',
     }
-  const normalized = normalize(query)
+  const normalized = normalizeQuery(query)
   const workTitles = [...query.matchAll(/《([^》]+)》/g)].map((match) => normalize(match[1]!))
   const ranked = SEARCH_RESOURCES.filter(
     (resource) => category === 'all' || resource.category === category,

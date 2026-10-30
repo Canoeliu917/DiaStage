@@ -1,8 +1,9 @@
 import { expect, test } from 'bun:test'
 import cases from '../../../../DiaMotif/evals/search-intake-20261030.json'
+import batch3Cases from '../../../../DiaMotif/evals/search-intake-20261030-batch3.json'
 import { searchDiaMotif } from './search'
 
-test.each(cases)('verified source is discoverable: $query', ({
+test.each([...cases, ...batch3Cases])('verified source is discoverable: $query', ({
   query,
   category,
   expectedId,

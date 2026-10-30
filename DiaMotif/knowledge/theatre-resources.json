@@ -775,6 +775,7 @@
     "category": "scripts",
     "topics": [
       "樱桃园",
+      "櫻桃園",
       "The Cherry Orchard",
       "契诃夫",
       "Anton Chekhov",
@@ -815,6 +816,7 @@
     "category": "videos",
     "topics": [
       "麦克白",
+      "麥克白",
       "Macbeth",
       "莎士比亚",
       "William Shakespeare",
@@ -887,6 +889,7 @@
     "category": "videos",
     "topics": [
       "霸王别姬",
+      "霸王別姬",
       "京剧",
       "戏曲",
       "虞姬",
@@ -921,6 +924,7 @@
     "category": "videos",
     "topics": [
       "红色娘子军",
+      "紅色娘子軍",
       "常青指路",
       "芭蕾",
       "舞剧",
@@ -982,6 +986,220 @@
         "title": "A Midsummer Night’s Dream - Entire Play",
         "url": "https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/",
         "locator": "Navigate this work → Characters in the Play / Act and scene list；Act 1, scene 2；Act 5, scene 1；带行号正文"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-cad-thunderstorm-20260410",
+    "title": "《雷雨》2026版创排说明｜中央戏剧学院",
+    "category": "knowledge",
+    "topics": [
+      "雷雨",
+      "曹禺",
+      "曹艳",
+      "曹艷",
+      "刘杏林",
+      "劉杏林",
+      "导演阐述",
+      "導演闡述",
+      "舞台空间",
+      "舞臺空間",
+      "人物行动",
+      "中国剧目创排计划",
+      "中國劇目創排計劃"
+    ],
+    "summary": "中央戏剧学院2026年4月10日发布的《雷雨》创排介绍，含曹艳的导演阐述及刘杏林对舞台转译的说明，可用于比较人物行动、叙事结构与空间处理。仅收录官方介绍入口，不提供曹禺剧本全文，也不是当前售票信息。",
+    "organization": "中央戏剧学院",
+    "url": "https://www.chntheatre.edu.cn/cn/xiao/detail/25324.html",
+    "access": "public",
+    "recordType": "production",
+    "theatreEvidence": "学院原页标注日期2026-04-10，列出中国剧目创排计划《雷雨》及导演的话、为什么排演《雷雨》等具名创作说明，明确关联话剧排演与舞台创作。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中央戏剧学院：中国剧目创排计划《雷雨》上演",
+        "url": "https://www.chntheatre.edu.cn/cn/xiao/detail/25324.html",
+        "locator": "标题及日期2026-04-10；导演的话（曹艳）；为什么排演《雷雨》（刘杏林）。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-ncpa-rickshaw-boy-2015",
+    "title": "歌剧《骆驼祥子》制作与舞美介绍｜国家大剧院2015专题",
+    "category": "knowledge",
+    "topics": [
+      "骆驼祥子",
+      "駱駝祥子",
+      "歌剧",
+      "歌劇",
+      "郭文景",
+      "徐瑛",
+      "易立明",
+      "舞美设计",
+      "舞美設計",
+      "场景转换",
+      "場景轉換",
+      "老舍",
+      "剧本改编"
+    ],
+    "summary": "国家大剧院2015年专题介绍原创歌剧《骆驼祥子》的音乐、剧本改编与舞台视觉处理，具名介绍郭文景、徐瑛、易立明等主创。用于区分歌剧版本与同名小说、话剧；此页不是剧本、演出全片或当前购票入口。",
+    "organization": "国家大剧院",
+    "url": "https://www.chncpa.org/subsite/ltxz2015/jmjq.html",
+    "access": "public",
+    "recordType": "production",
+    "theatreEvidence": "国家大剧院官方专题的剧目介绍分节列出歌剧作曲、编剧、导演与舞美主创，并说明2014年首演及2015年再演的版本背景。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "国家大剧院原创歌剧《骆驼祥子》：剧目介绍",
+        "url": "https://www.chncpa.org/subsite/ltxz2015/jmjq.html",
+        "locator": "剧目介绍第1段主创；第2段音乐与舞美处理；末段2014年首演、2015年再演说明。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-smg-sleep-no-more-shanghai",
+    "title": "浸入式戏剧《不眠之夜》上海版｜SMG官方作品介绍",
+    "category": "knowledge",
+    "topics": [
+      "不眠之夜",
+      "Sleep No More",
+      "沉浸式戏剧",
+      "沉浸式戲劇",
+      "浸入式戏剧",
+      "浸入式戲劇",
+      "Punchdrunk",
+      "空间叙事",
+      "空間敘事",
+      "观演关系",
+      "觀演關係",
+      "麦克白",
+      "麥克白"
+    ],
+    "summary": "SMG对《不眠之夜》上海版的官方作品介绍，说明其与《麦克白》的改编关系、联合制作机构及观众自由行进的空间结构。页面包含历史运营资料，可供沉浸式戏剧研究；不是演出录像，也不证明当前仍驻演或正在售票。",
+    "organization": "上海广播电视台（SMG）",
+    "url": "https://www.smg.cn/review/202211/0164830.html",
+    "access": "public",
+    "recordType": "production",
+    "theatreEvidence": "SMG原页首段列出浸入式戏剧《不眠之夜》上海版的出品、制作及2016年首演；后续段落说明《麦克白》改编和自由探索空间的观演方式。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "SMG：不眠之夜",
+        "url": "https://www.smg.cn/review/202211/0164830.html",
+        "locator": "首段作品与联合制作机构；次段《麦克白》改编及观众探索空间；运营统计明确截至2021年12月。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-cctv-on-the-road-backstage-20210716",
+    "title": "音乐剧《在远方》演出探班视频｜央视新闻2021",
+    "category": "videos",
+    "topics": [
+      "在远方",
+      "在遠方",
+      "音乐剧",
+      "音樂劇",
+      "原创音乐剧",
+      "原創音樂劇",
+      "演出探班",
+      "舞台设计",
+      "舞臺設計",
+      "北京歌剧舞剧院",
+      "北京演艺集团"
+    ],
+    "summary": "央视新闻2021年7月16日的音乐剧《在远方》演出探班视频页面，说明北京演艺集团出品、北京歌剧舞剧院演出。是剧场演出现场的短视频报道，不是同名电视剧，也不是音乐剧全剧录像；播放器和地域可用性需到原站确认。",
+    "organization": "央视新闻客户端／央视网",
+    "url": "https://m.news.cctv.com/2021/07/16/ARTIIzKLs3mIoDRAe7Dq0QD3210716.shtml",
+    "access": "public",
+    "recordType": "resource",
+    "theatreEvidence": "央视原文标注2021-07-16 20:20，正文明确音乐剧演出探班与出品、演出机构；原页HTML包含videoGuidCode1和嵌入视频配置，可定位该短视频入口。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "央视新闻：二轮首演开启，探班中国原创音乐剧《在远方》",
+        "url": "https://m.news.cctv.com/2021/07/16/ARTIIzKLs3mIoDRAe7Dq0QD3210716.shtml",
+        "locator": "标题、来源与日期；正文第1段探班视频入口、第3段出品及演出机构；原页videoGuidCode1播放器容器。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-cctv-thunderstorm-20170501-part1",
+    "title": "话剧《雷雨》录像（1/2）｜CCTV空中剧院2017",
+    "category": "videos",
+    "topics": [
+      "雷雨",
+      "话剧",
+      "話劇",
+      "话剧录像",
+      "話劇錄像",
+      "曹禺",
+      "周朴园",
+      "周樸園",
+      "周蘩漪",
+      "鲁侍萍",
+      "魯侍萍",
+      "CCTV空中剧院",
+      "舞台表演"
+    ],
+    "summary": "《CCTV空中剧院》2017年5月1日播出的话剧《雷雨》录像第一部分，官方视频简介列出达式常、潘虹、濮存昕等演员及其角色。此链接仅为1/2，不当作全剧全集；属于历史舞台影像，不是电影、电视剧或当期演出票讯。",
+    "organization": "央视网",
+    "url": "https://tv.cctv.com/2017/05/01/VIDEMQ9dyZ4261XqCzMNL9OY170501.shtml",
+    "access": "public",
+    "recordType": "resource",
+    "theatreEvidence": "央视CCTV-11原页标题标注话剧《雷雨》及1/2，来源与更新时间为2017-05-01 03:04，视频简介逐项关联演员和剧中角色。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "《CCTV空中剧院》20170501 明星版话剧《雷雨》1/2",
+        "url": "https://tv.cctv.com/2017/05/01/VIDEMQ9dyZ4261XqCzMNL9OY170501.shtml",
+        "locator": "节目标题的1/2；来源及更新时间；视频简介开头演员—角色对应表。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-smg-phantom-production-cast",
+    "title": "原版音乐剧《剧院魅影》制作与角色介绍｜SMG巡演公告",
+    "category": "knowledge",
+    "topics": [
+      "剧院魅影",
+      "劇院魅影",
+      "音乐剧",
+      "音樂劇",
+      "原版音乐剧",
+      "原版音樂劇",
+      "国际巡演",
+      "國際巡演",
+      "制作团队",
+      "製作團隊",
+      "卡司",
+      "舞台角色",
+      "上海文广演艺集团"
+    ],
+    "summary": "SMG原版音乐剧《剧院魅影》巡演公告，介绍联合呈现机构、所延续的1986年制作版本及该轮角色阵容。供研究音乐剧制作和版本关系；原页未明确显示发布日期，阵容与“今年”表述不视为当前信息，也不提供现时票务状态。",
+    "organization": "上海广播电视台（SMG）",
+    "url": "https://www.smg.cn/review/202404/0165428.html",
+    "access": "public",
+    "recordType": "production",
+    "theatreEvidence": "SMG官方公告将《剧院魅影》明确标为原版音乐剧，正文列明出品、运营及联合呈现机构，说明所延续的制作版本和该轮演出角色。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "SMG：定了！原版音乐剧《剧院魅影》新一批卡司官宣",
+        "url": "https://www.smg.cn/review/202404/0165428.html",
+        "locator": "正文第2段联合制作与1986年版本说明；第3段该轮角色阵容。页面未显示明确发布日期。"
       }
     ]
   }
