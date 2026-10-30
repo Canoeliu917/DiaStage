@@ -8,6 +8,13 @@ import {
 } from './model-pricing'
 import { usageLedger } from './usage-ledger'
 
+// Search intent counts are not invoices. Keep this conservative tool reserve even with token usage.
+export const WEB_SEARCH_TOOL_RESERVE_CNY = 0.03
+export const WEB_SEARCH_INPUT_ALLOWANCE = 24_576
+export const WEB_SEARCH_OUTPUT_LIMIT = 800
+export const modelToolReserveCny = (feature: string) =>
+  feature === 'diamotif-web-search' ? WEB_SEARCH_TOOL_RESERVE_CNY : 0
+
 export class ModelBudgetError extends Error {
   constructor(
     readonly code: 'BUDGET_CONFIRMATION_REQUIRED' | 'BUDGET_EXCEEDED' | 'AI_INVITE_REQUIRED',
@@ -53,6 +60,15 @@ export function estimateCall(
   if (model === QWEN_TRIAL_MODEL) {
     // Text-only payload plus protocol allowance is an estimate, not a tokenizer guarantee.
     // The single-image allowance requires vl_high_resolution_images:true; exclude image base64.
+    if (feature === 'diamotif-web-search')
+      return (
+        estimateTextCostCny(
+          model,
+          estimatedInput + 1024 + WEB_SEARCH_INPUT_ALLOWANCE,
+          0,
+          WEB_SEARCH_OUTPUT_LIMIT + 10,
+        ) + modelToolReserveCny(feature)
+      )
     return estimateTextCostCny(
       model,
       estimatedInput + 1024 + (feature === 'photo-stage-plan' ? QWEN_IMAGE_INPUT_TOKENS : 0),

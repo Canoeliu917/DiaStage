@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks'
-import { estimateCall, reserveModelCall } from './model-budget'
+import { estimateCall, modelToolReserveCny, reserveModelCall } from './model-budget'
 import { estimateTextCostCny, QWEN_TRIAL_MODEL, usdCnyReference } from './model-pricing'
 import { usageLedger } from './usage-ledger'
 
@@ -11,6 +11,8 @@ export interface AiUsageRecord {
     | 'script-stage-plan'
     | 'rehearsal-proposal'
     | 'photo-stage-plan'
+    | 'diamotif-search'
+    | 'diamotif-web-search'
   model: string
   inputTokens: number | null
   cachedInputTokens: number | null
@@ -128,16 +130,17 @@ export async function trackAiCall<T>(
       record.cacheWrite12hTokens =
         actual.input_tokens_details?.cache_write_tokens_details?.ttl_12h_tokens ?? null
       record.outputTokens = actual.output_tokens
-      record.estimatedCostCny = estimateTextCostCny(
-        model,
-        actual.input_tokens,
-        actual.input_tokens_details?.cached_tokens ?? 0,
-        actual.output_tokens,
-        model === QWEN_TRIAL_MODEL ? 1 : usdCnyReference(),
-        actual.input_tokens > 272_000,
-        record.cacheWriteTokens ?? actual.input_tokens - record.cachedInputTokens,
-        record.cacheWrite12hTokens ?? 0,
-      )
+      record.estimatedCostCny =
+        estimateTextCostCny(
+          model,
+          actual.input_tokens,
+          actual.input_tokens_details?.cached_tokens ?? 0,
+          actual.output_tokens,
+          model === QWEN_TRIAL_MODEL ? 1 : usdCnyReference(),
+          actual.input_tokens > 272_000,
+          record.cacheWriteTokens ?? actual.input_tokens - record.cachedInputTokens,
+          record.cacheWrite12hTokens ?? 0,
+        ) + modelToolReserveCny(feature)
     }
     signal.throwIfAborted()
     return result

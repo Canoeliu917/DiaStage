@@ -19,6 +19,7 @@ import {
   BETA_EXPERT_MEDIA_ENABLED,
   BETA_REHEARSAL_ENABLED,
   BETA_REMOUNT_ENABLED,
+  BETA_STAGE_DIA_ENABLED,
 } from '@/lib/beta-capabilities'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { apiGraphSchema } from '@/lib/graph-schema'
@@ -37,6 +38,7 @@ import { CameraPersistence } from './camera-studio/persistence'
 import { DiaDock } from './dia-dock'
 import { PhotoStageReference } from './photo-stage-reference'
 import { SceneBackupControls } from './scene-backup-controls'
+import { LiveStagePlan } from './stage-entry/live-stage-plan'
 import { StageCommandRuntime } from './stage-entry/runtime'
 import { StageFirstVisit } from './stage-entry/stage-first-visit'
 import { useAudienceCover } from './use-audience-cover'
@@ -77,7 +79,6 @@ const RehearsalPartner = dynamic(
   () => import('./theatre/rehearsal-partner').then((m) => m.RehearsalPartner),
   { ssr: false },
 )
-
 const CameraRehearsalSystem = dynamic(
   () => import('./camera-rehearsal-system').then((m) => m.CameraRehearsalSystem),
   { ssr: false },
@@ -853,6 +854,17 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                   />
                 }
               />
+              {!BETA_STAGE_DIA_ENABLED && stageReady && !immersive && (
+                <section className="stage-overview-mini" aria-label="舞台俯视图">
+                  <ViewerErrorBoundary
+                    scope="stage-overview-mini"
+                    resetKey={meta.id}
+                    fallback={<p role="alert">俯视图暂不可用，舞台仍可编辑与保存。</p>}
+                  >
+                    <LiveStagePlan title="舞台俯视图" />
+                  </ViewerErrorBoundary>
+                </section>
+              )}
               {cameraEnabled && (
                 <ViewerErrorBoundary
                   fallback={<p role="alert">监看已暂停，场景仍可编辑。</p>}
@@ -865,24 +877,26 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 </ViewerErrorBoundary>
               )}
             </div>
-            <DiaDock hidden={immersive}>
-              {stageReady && (
-                <ViewerErrorBoundary
-                  scope="dia-conversation"
-                  resetKey={meta.id}
-                  onError={clearProposalGhost}
-                  fallback={
-                    <p role="alert">Dia 对话暂不可用，舞台仍可编辑与保存。请刷新后重试。</p>
-                  }
-                >
-                  <RehearsalPartner
-                    key={meta.id}
-                    sceneId={meta.id}
-                    modelConfigured={modelConfigured}
-                  />
-                </ViewerErrorBoundary>
-              )}
-            </DiaDock>
+            {BETA_STAGE_DIA_ENABLED && (
+              <DiaDock hidden={immersive}>
+                {stageReady && (
+                  <ViewerErrorBoundary
+                    scope="dia-conversation"
+                    resetKey={meta.id}
+                    onError={clearProposalGhost}
+                    fallback={
+                      <p role="alert">Dia 对话暂不可用，舞台仍可编辑与保存。请刷新后重试。</p>
+                    }
+                  >
+                    <RehearsalPartner
+                      key={meta.id}
+                      sceneId={meta.id}
+                      modelConfigured={modelConfigured}
+                    />
+                  </ViewerErrorBoundary>
+                )}
+              </DiaDock>
+            )}
           </div>
           {recordingEnabled && (
             <ViewerErrorBoundary

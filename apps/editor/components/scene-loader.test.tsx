@@ -42,7 +42,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   let metaVersion = 7
   let workspaceQuery = ''
   let panelOpeningAllowed = true
-  const editorState = { activeSidebarPanel: 'theatre-roles' }
+  const editorState = { activeSidebarPanel: 'theatre-roles', isPreviewMode: false }
   let exports = 0,
     retries = 0
   let reloads = 0
@@ -223,6 +223,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const componentModules = {
     // Save/revision behavior is independent of placement, command execution and selection UI.
     './stage-entry/runtime': ['StageCommandRuntime'],
+    './stage-entry/live-stage-plan': ['LiveStagePlan'],
     './stage-entry/placement-system': ['StagePlacementSystem', 'StagePlacementFloorplan'],
     './stage-entry/plan-preview-system': ['StagePlanPreviewSystem'],
     './stage-entry/stage-selection-panel': ['StageSelectionPanel'],
@@ -257,6 +258,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     return respond()
   }
   const { SceneLoader } = await import('./scene-loader')
+  const { DiaDock } = await import('./dia-dock')
   type Element = { type?: unknown; props?: Record<string, unknown> }
   type EditorProps = {
     onLoad: () => Promise<SceneGraph>
@@ -292,6 +294,11 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
       },
     })
     const nodes = elements(tree)
+    assert.equal(
+      nodes.some((node) => node.type === DiaDock),
+      false,
+      'the stage conversation and its reopen button stay unmounted',
+    )
     for (const effect of effects) effect()
     const props = nodes.find((node) => node.type === Editor)?.props as unknown as EditorProps
     assert.equal(
@@ -356,6 +363,17 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     panelOpeningAllowed = true
     render()
     const ready = render()
+    assert.ok(
+      ready.nodes.some((node) => node.props?.['aria-label'] === '舞台俯视图'),
+      'the live overview stays available without the conversation',
+    )
+    editorState.isPreviewMode = true
+    assert.equal(
+      render().nodes.some((node) => node.props?.['aria-label'] === '舞台俯视图'),
+      false,
+      'immersive viewing keeps editing overlays hidden',
+    )
+    editorState.isPreviewMode = false
     assert.equal(ready.navigation?.group, 'set', 'disabled workspaces normalize to Set after hydration')
     assert.equal(editorState.activeSidebarPanel, expectedPanel, 'the sidebar opens the available workspace')
     const changeGroup = ready.navigation?.onGroupChange as (group: string) => void

@@ -28,7 +28,7 @@ const endMove = () =>
     .getState()
     .endIf((scope) => scope.kind === 'drafting' && scope.tool === 'diastage-live-plan')
 
-export const LiveStagePlan = memo(function LiveStagePlan() {
+export const LiveStagePlan = memo(function LiveStagePlan({ title = 'Dia预演：' }: { title?: string }) {
   const scene = useLiveStageContext()
   const context = useMemo(
     () => ({
@@ -99,7 +99,7 @@ export const LiveStagePlan = memo(function LiveStagePlan() {
   }
   return (
     <>
-      <h2>Dia预演：</h2>
+      <h2>{title}</h2>
       <PlanDrawing
         plan={plan}
         context={context}

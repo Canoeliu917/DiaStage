@@ -1,4 +1,8 @@
 .dia-stage-layout { position: relative; }
+.stage-overview-mini { position:absolute; top:56px; right:12px; z-index:40; width:min(260px,32%); max-height:42%; overflow:auto; padding:8px; border:1px solid var(--dia-border); border-radius:4px; background:var(--dia-panel); color:var(--dia-text); font:12px/1.5 var(--dia-font-ui); }
+.stage-overview-mini h2 { margin:0 0 6px; font-size:12px; font-weight:500; }
+.stage-overview-mini .stage-plan-drawing svg { display:block; width:100%; max-height:180px; }
+.stage-overview-mini .stage-plan-drawing figcaption { display:none; }
 .dia-dock.dia-resizable-dock { position: relative; width: min(var(--dia-dock-width), 50vw); }
 .dia-dock-controls { position: absolute; top: 10px; right: 10px; z-index: 2; display: flex; gap: 4px; }
 .dia-dock-controls button, .dia-restore-tab { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; border: 1px solid var(--dia-border); border-radius: 4px; background: var(--dia-raised); color: var(--dia-text); cursor: pointer; }
