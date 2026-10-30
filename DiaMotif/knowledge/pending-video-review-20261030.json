@@ -1,0 +1,290 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-30",
+  "scope": "逐条核验既有5条B站及3条抖音候选；不含已拒收的耸动人物指控。仅保存可公开的元数据与自编摘要。",
+  "method": "agent-reach v1.5.0 doctor本轮确认B站搜索API可达，bili-cli/OpenCLI未安装。B站用公开搜索API按BV号精确匹配投稿元数据，不读取浏览器Cookie或登录。网页412后不反复请求；官方同题原文按web/Jina只读路由读取。抖音读取实际原帖页面文字，空白/服务器错误不按搜索摘要升级。无软件安装、验证码绕过、音视频下载、转录或付费调用。",
+  "counts": {
+    "processedCandidates": 8,
+    "bilibili": 5,
+    "douyin": 3,
+    "originalMetadataOrCaptionReadable": 7,
+    "originalAdmitted": 1,
+    "alternativesAdmitted": 2,
+    "retainedPendingWithoutAlternative": 4,
+    "accessBlockedWithoutAlternative": 1,
+    "admittedResources": 3
+  },
+  "boundaries": [
+    "公开API的标题、投稿者显示名、pubdate、时长和投稿简介属于平台元数据，不是完整视频、讲稿或字幕。搜索description可能截断，不据其重建教程。",
+    "B站账号显示名和mid不是实名认证、官方认证或视频授权的证明。国内平台和中文标题也不证明创作者或作品内容地区。",
+    "B站pubdate按Asia/Shanghai换算；不将senddate、抓取时间、相对时间或URL日期当发布日期。",
+    "下列status表示本次核验决定，admittedResources里的verified仅表示所述元数据及出处已经读取，不表示视频全片和所有叙述事实均已独立验证。",
+    "替代资料与原视频分列。官方文章不能证明个人上传视频的版本、完整度、播放可用性或传播授权。"
+  ],
+  "candidates": [
+    {
+      "id": "sd-bili-yixi-xuang",
+      "originalUrl": "https://www.bilibili.com/video/BV1as41117c1/",
+      "status": "admit-alternative-original-pending",
+      "attempts": [
+        { "method": "web原视频页", "result": "HTTP 412，停止重复请求该网页" },
+        { "method": "B站公开搜索API按BV号精确匹配", "result": "HTTP 200/code 0；实际返回相同BV号投稿元数据" },
+        { "method": "一席同题原站，经curl/Jina读取", "result": "取得徐昂《喜剧的忧伤》完整演讲文本，非搜索摘要；只保存元数据和短摘要" }
+      ],
+      "metadata": {
+        "title": "【一席】《十二公民》话剧导演 徐昂：喜剧的忧伤",
+        "displayAuthor": "一席精选",
+        "platformAccountId": "26079128",
+        "publishedAt": "2016-07-25",
+        "durationAsReturned": "29:26",
+        "accountCertification": "未核验",
+        "originalVideoAuthorization": "未核验"
+      },
+      "evidence": "公开API投稿简介涉及北京人艺及《喜剧的忧伤》；一席原站对应演讲明确写2015-06-27、深圳，正文区分开场电影《十二公民》与话剧《喜剧的忧伤》。",
+      "limitations": "B站只核投稿元数据，未观看视频、核认证或授权。2016-07-25是B站上传日期，2015-06-27是演讲日期，不能合并；不能把《十二公民》说成这份资料提供的话剧剧本。",
+      "metadataSourceUrl": "https://api.bilibili.com/x/web-interface/search/all/v2?keyword=BV1as41117c1&page=1",
+      "alternativeUrls": ["https://admin.yixi.tv/h5/speech/366/"],
+      "admittedResourceIds": ["dm-resource-yixi-xuang-comedy-speech-2015"],
+      "nextVerification": "如需收录原视频，核对UP主认证、与一席的发布关系及视频访问条件；本轮优先使用一席原站文本来源。"
+    },
+    {
+      "id": "sd-bili-agu-ai-short",
+      "originalUrl": "https://www.bilibili.com/video/BV1WBiSBTE4R/",
+      "status": "retain-pending",
+      "attempts": [
+        { "method": "web原视频页", "result": "HTTP 412，停止重复请求该网页" },
+        { "method": "B站公开搜索API按BV号精确匹配", "result": "HTTP 200/code 0；精确匹配标题、投稿者和时间" }
+      ],
+      "metadata": {
+        "title": "AI短片创作",
+        "displayAuthor": "阿顾cg屋",
+        "platformAccountId": "7197341",
+        "publishedAt": "2026-01-08",
+        "durationAsReturned": "1:42",
+        "descriptionAsReturned": "-",
+        "aiInvolvement": "unverified",
+        "contentRegion": null
+      },
+      "evidence": "平台标题和标签包含AI短片，投稿简介实际只返回横线；本次没有得到制作过程正文。",
+      "limitations": "账号主体、内容地区、具体AI参与方式、原创与授权情况未确认；不凭标题判定全AI生成，也不声称已看完整作品。",
+      "metadataSourceUrl": "https://api.bilibili.com/x/web-interface/search/all/v2?keyword=BV1WBiSBTE4R&page=1",
+      "alternativeUrls": [],
+      "admittedResourceIds": [],
+      "nextVerification": "取得无需绕过访问控制的创作者公开说明及可核地区依据，再判断是否仅登记作品元数据。"
+    },
+    {
+      "id": "sd-bili-ai-adaptation",
+      "originalUrl": "https://www.bilibili.com/video/BV11QgP6JECE/",
+      "status": "retain-pending",
+      "attempts": [
+        { "method": "web原视频页", "result": "HTTP 412，停止重复请求该网页" },
+        { "method": "B站公开搜索API按BV号精确匹配", "result": "HTTP 200/code 0；取得投稿元数据及可能截断的投稿简介" }
+      ],
+      "metadata": {
+        "title": "我让AI把经典电影改编成了漫剧，结果有点上头【B站AI创造公开赛】",
+        "displayAuthor": "阿七夕夜",
+        "platformAccountId": "13127110",
+        "publishedAt": "2026-08-14",
+        "durationAsReturned": "16:16",
+        "aiInvolvement": "unverified",
+        "contentRegion": null,
+        "sourceKindHint": "promotion"
+      },
+      "evidence": "投稿简介自述演示其AI产品“漫剧工坊”，涉及电影分析、角色映射与分集大纲，并声称参赛。实际可核的是平台的这段投稿元数据，不是已完成漫剧或比赛认证。",
+      "limitations": "未核账号、产品效果、内容地区、参赛归属及影视改编权。不能把宣传性产品演示说成一部经核实的AI漫剧作品，也不完整转录其教程。",
+      "metadataSourceUrl": "https://api.bilibili.com/x/web-interface/search/all/v2?keyword=BV11QgP6JECE&page=1",
+      "alternativeUrls": [],
+      "admittedResourceIds": [],
+      "nextVerification": "补创作者主体与地区、比赛官方作品页及权利说明；如收录应标注产品宣传/创作者经验，不能作为独立效果评测。"
+    },
+    {
+      "id": "sd-bili-ai-three-kingdoms",
+      "originalUrl": "https://www.bilibili.com/video/BV1gH4y1p7me/",
+      "status": "retain-pending",
+      "attempts": [
+        { "method": "web原视频页", "result": "HTTP 412，停止重复请求该网页" },
+        { "method": "B站公开搜索API按BV号精确匹配", "result": "HTTP 200/code 0；补齐原先缺失的上传日期及账号显示名" }
+      ],
+      "metadata": {
+        "title": "我用AI做了一个三国电影短片",
+        "displayAuthor": "AxisDesignLab",
+        "platformAccountId": "3493077991820066",
+        "publishedAt": "2024-03-24",
+        "durationAsReturned": "8:20",
+        "aiInvolvement": "unverified",
+        "contentRegion": null
+      },
+      "evidence": "pubdate=1711210795按Asia/Shanghai对应2024-03-24；简介称为三国题材AI电影短片教程，提及故事、镜头和图像生成。API简介后段有截断。",
+      "limitations": "未看视频或读取完整教程；内容地区、账号主体、工具实际效果及AI生成/辅助比例未核。只纠正日期，不因中文历史题材或国内平台推断作者在大陆。",
+      "metadataSourceUrl": "https://api.bilibili.com/x/web-interface/search/all/v2?keyword=BV1gH4y1p7me&page=1",
+      "alternativeUrls": [],
+      "admittedResourceIds": [],
+      "nextVerification": "核创作者公开地区及制作说明，取得完整可公开的内容依据后再决定正式元数据收录。"
+    },
+    {
+      "id": "sd-bili-li-bai-stage",
+      "originalUrl": "https://www.bilibili.com/video/BV1nWwWeaEhS/",
+      "status": "admit-alternative-original-pending",
+      "attempts": [
+        { "method": "web原视频页", "result": "取得标题、2025-01-23日期、投稿者及上传简介；没有观看全片" },
+        { "method": "B站公开搜索API按BV号精确匹配", "result": "HTTP 200/code 0；精确匹配投稿者VVvChong及144:47时长" },
+        { "method": "国家大剧院同题原文", "result": "读取到2012-07-04《李白》来院演出的历史原文及主创信息" }
+      ],
+      "metadata": {
+        "title": "【人艺｜话剧】- 李白 苏民导演、濮存昕、何冰、郭启宏编剧",
+        "displayAuthor": "VVvChong",
+        "platformAccountId": "43199628",
+        "publishedAt": "2025-01-23",
+        "durationAsReturned": "144:47",
+        "accountCertification": "未核验",
+        "originalVideoAuthorization": "未核验"
+      },
+      "evidence": "个人上传页关联北京人艺《李白》。国家大剧院历史原文可核其2012年演出及苏民、唐烨、郭启宏、濮存昕等主创，不能证明个人上传的具体版本。",
+      "limitations": "时长不能证明全剧完整；未核上传传播授权及演出版本，也未核该上传题名中每项演员信息。不将个人投稿说成人艺官方录像。",
+      "metadataSourceUrl": "https://api.bilibili.com/x/web-interface/search/all/v2?keyword=BV1nWwWeaEhS&page=1",
+      "alternativeUrls": ["https://www.chncpa.org/zxdt_331/zxdtlm/yczx_332/201608/t20160823_110282.shtml"],
+      "admittedResourceIds": ["dm-resource-ncpa-li-bai-production-2012"],
+      "nextVerification": "原视频继续待核传播授权和具体版本；当前仅收同题官方历史制作资料，不补全剧链接承诺。"
+    },
+    {
+      "id": "sd-douyin-gansu-dazhaimen",
+      "originalUrl": "https://www.douyin.com/video/7678246994527395705",
+      "status": "access-blocked-without-admission",
+      "attempts": [
+        { "method": "web原帖读取及一次重读", "result": "均为0行，无可读正文" },
+        { "method": "curl/Jina网页备选", "result": "返回抖音通用页面和“服务器出现问题”，未得到目标帖正文；停止" },
+        { "method": "公开检索同题来源", "result": "仅得到该帖索引和不同城市历史资料，未取得可替代的甘肃当期原始公告" }
+      ],
+      "metadata": {
+        "titleFromIndexOnly": "原汁原味！在家门口重温国话精品剧目《大宅门》！",
+        "displayAuthorFromIndexOnly": "甘肃大剧院",
+        "publishedAt": null,
+        "contentRegion": null
+      },
+      "evidence": "索引提示这是高清影像放映而非真人演出；本次没有将索引所列未来时间、账号名或场地当作已核票讯。",
+      "limitations": "原帖正文不可读，账号归属、场次及票务状态未核；Jina的通用Published Time与索引日期冲突，不采用任一日期作为已核发布日。",
+      "alternativeUrls": [],
+      "admittedResourceIds": [],
+      "nextVerification": "待场馆可公开原公告或原帖恢复后核验，尤其先区分录像放映与现场演出；不声称正在售票或仍有名额。"
+    },
+    {
+      "id": "sd-douyin-cnt-tianqinxin",
+      "originalUrl": "https://jingxuan.douyin.com/m/video/7564664718482345265",
+      "status": "admit-original-metadata",
+      "attempts": [
+        { "method": "web原帖读取", "result": "取得青流视频显示名、完整帖文署名和2025-10-24发布日期；后续一次读取超时，不据此覆盖已取得的正文证据" },
+        { "method": "北京青年报同题原发布链接", "result": "找到精确同题URL，但直读及Jina均无正文，不将搜索摘要作为原文" },
+        { "method": "北京科技职业大学官方媒体报道页", "result": "原文将青流视频称为北京青年报青流视频；仅作品牌关联交叉线索，不证明此抖音账号认证" }
+      ],
+      "metadata": {
+        "title": "田沁鑫谈国话CNT现场",
+        "displayAuthor": "青流视频",
+        "byline": "北京青年报记者郭佳、柴程",
+        "publishedAt": "2025-10-24",
+        "contentRegion": "mainland",
+        "accountCertification": "未读取认证徽章或控制权证明"
+      },
+      "evidence": "实际原帖文字介绍中国国家话剧院CNT现场的中国剧场影像展映并具名记者，日期为2025-10-24；可核的是历史采访条目的署名和文字，非完整视频内容或当前覆盖规模。",
+      "limitations": "未播放视频、未核完整采访或转录许可；账号认证未核，因此按平台来源展示并保留页面署名，不称官方认证账号。原帖2025年的“今年”不能用作2026年统计。",
+      "alternativeUrls": ["https://app.bjtitle.com/8816/newshow.php?did=867540036296033&mood=&newsid=6701882&typeid=2&uid=0"],
+      "identityCrosscheckUrls": ["https://www.bpu.edu.cn/info/1052/11442.htm"],
+      "admittedResourceIds": ["dm-resource-douyin-cnt-tianqinxin-20251024"],
+      "nextVerification": "可继续补平台账号认证与采访完整播放条件，但不能借现有元数据宣称已观看全片。"
+    },
+    {
+      "id": "sd-douyin-lewis-ai",
+      "originalUrl": "https://jingxuan.douyin.com/m/video/7610059817041939750",
+      "status": "retain-pending",
+      "attempts": [
+        { "method": "web原帖读取", "result": "取得LewisAi显示名、完整帖文及2026-02-23发布日期；未播放视频" }
+      ],
+      "metadata": {
+        "title": "颤抖吧！这是AI生成的！",
+        "displayAuthor": "LewisAi",
+        "publishedAt": "2026-02-23",
+        "aiInvolvement": "unverified",
+        "contentRegion": null,
+        "sourceKindHint": "creator-experience"
+      },
+      "evidence": "实际原帖自述比较C4D玻璃拟态风格与AI制作，提及提示词要求；这是创作者体验文字，不是独立效果或工期验证。",
+      "limitations": "没有取得创作者/内容地区依据及完整制作过程，不能从中文和国内平台推断地区，亦不采纳替代三维渲染、单镜头工期和质量的宣传性结论。",
+      "alternativeUrls": [],
+      "admittedResourceIds": [],
+      "nextVerification": "补可公开地区、账号及具体AI参与说明；如未来收录，使用中性标题并标创作者经验和未独立实测。"
+    }
+  ],
+  "admittedResources": [
+    {
+      "id": "dm-resource-yixi-xuang-comedy-speech-2015",
+      "title": "徐昂《喜剧的忧伤》｜一席2015深圳演讲文本",
+      "category": "knowledge",
+      "subtopics": ["directing", "performance", "dramaturgy"],
+      "topics": ["徐昂", "喜剧的忧伤", "喜劇的憂傷", "北京人艺", "一席", "导演与演员沟通", "文本修订", "喜剧排练"],
+      "summary": "一席原站公开徐昂2015年6月27日在深圳的演讲文本，涉及北京人艺的文本修订、导演与演员沟通及喜剧排练。仅收元数据与自编摘要，观点按讲者创作经验理解，不作为普遍导演准则；页面未见独立发布日期。",
+      "organization": "一席／讲者徐昂",
+      "url": "https://admin.yixi.tv/h5/speech/366/",
+      "verifiedAt": "2026-10-30",
+      "publishedAt": null,
+      "applicableYear": "2015",
+      "contentRegion": "mainland",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "sourceTier": "professional-media",
+      "sourceKind": "creator-experience",
+      "theatreEvidence": "一席原站文本页明确讲者徐昂、深圳演讲日期及北京人艺导演经历，正文围绕话剧《喜剧的忧伤》的文本与排练沟通；电影《十二公民》仅为开场话题。",
+      "status": "verified",
+      "sourceRefs": [
+        { "title": "一席：徐昂《喜剧的忧伤》", "url": "https://admin.yixi.tv/h5/speech/366/", "locator": "经curl/Jina取得原站完整演讲文本；页首徐昂、2015-06-27、深圳；正文文本修订与导演演员沟通段落。事件日期不充作网页发布日期，未导入全文或视频。" }
+      ]
+    },
+    {
+      "id": "dm-resource-ncpa-li-bai-production-2012",
+      "title": "话剧《李白》2012国家大剧院演出｜官方历史制作资料",
+      "category": "knowledge",
+      "subtopics": ["directing", "performance", "history-theory"],
+      "topics": ["李白", "话剧李白", "話劇李白", "北京人艺", "苏民", "唐烨", "郭启宏", "濮存昕", "龚丽君", "历史制作"],
+      "summary": "国家大剧院2012年7月4日原文介绍北京人艺《李白》来院演出及主创的导演、表演思考。仅作历史制作资料，不是当前票讯，也不证明B站个人上传录像的版本、完整度或授权；不提供全剧视频。",
+      "organization": "国家大剧院",
+      "url": "https://www.chncpa.org/zxdt_331/zxdtlm/yczx_332/201608/t20160823_110282.shtml",
+      "verifiedAt": "2026-10-30",
+      "publishedAt": "2012-07-04",
+      "applicableYear": "2012",
+      "contentRegion": "mainland",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "production",
+      "sourceTier": "official",
+      "sourceKind": "announcement",
+      "theatreEvidence": "国家大剧院原文具名记录北京人艺话剧《李白》、苏民与唐烨导演、郭启宏编剧及濮存昕等主创，并讨论角色塑造和舞台创作；对应2012年北京演出。",
+      "status": "verified",
+      "sourceRefs": [
+        { "title": "国家大剧院：经典话剧《李白》首登国家大剧院", "url": "https://www.chncpa.org/zxdt_331/zxdtlm/yczx_332/201608/t20160823_110282.shtml", "locator": "正文标题下来源及日期国家大剧院2012/07/04；首段主创及北京演出；《李白》二十载与首登大剧院段落。URL中的201608不是发布日期。" }
+      ]
+    },
+    {
+      "id": "dm-resource-douyin-cnt-tianqinxin-20251024",
+      "title": "田沁鑫谈国话CNT现场｜青流视频2025采访条目",
+      "category": "videos",
+      "subtopics": ["video-interview"],
+      "topics": ["田沁鑫", "CNT现场", "CNT現場", "中国国家话剧院", "戏剧影像传播", "青流视频", "专业访谈"],
+      "summary": "抖音原帖署名北京青年报记者郭佳、柴程，介绍国话CNT现场的剧场影像传播，发布日期2025年10月24日。只核原帖文字及元数据，未观看全片或核账号认证；属于历史采访，不把当时放映规模当作当前统计。",
+      "organization": "青流视频（页面署名北京青年报记者）",
+      "url": "https://jingxuan.douyin.com/m/video/7564664718482345265",
+      "verifiedAt": "2026-10-30",
+      "publishedAt": "2025-10-24",
+      "applicableYear": "2025",
+      "contentRegion": "mainland",
+      "access": "mixed",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "sourceTier": "platform",
+      "sourceKind": "professional-media",
+      "theatreEvidence": "实际原帖围绕中国国家话剧院CNT现场的全国剧场高清展映，具名田沁鑫与北京青年报记者；可核其戏剧影像传播主题和2025年发布时间，不等于观看或核实完整专访。",
+      "status": "verified",
+      "sourceRefs": [
+        { "title": "抖音青流视频：田沁鑫谈CNT现场", "url": "https://jingxuan.douyin.com/m/video/7564664718482345265", "locator": "读取原帖账号显示名青流视频、帖文末记者郭佳/柴程署名及2025-10-24发布日；认证徽章、视频播放与转载许可未核。" }
+      ]
+    }
+  ]
+}
