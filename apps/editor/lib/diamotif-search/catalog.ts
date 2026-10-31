@@ -85,7 +85,7 @@ export const SEARCH_CATEGORY_GROUPS = [
   { id: 'knowledge', label: '戏剧知识', categories: ['knowledge'] },
   { id: 'people-venues', label: '演职与剧场', categories: ['people', 'venues'] },
   { id: 'events-activities', label: '演出活动', categories: ['events', 'festivals'] },
-  { id: 'study', label: '艺考咨询', categories: ['admissions', 'arts-exams'] },
+  { id: 'study', label: '艺考资讯', categories: ['admissions', 'arts-exams'] },
   { id: 'opportunities', label: '招募招聘', categories: ['opportunities'] },
 ] as const satisfies readonly { id: string; label: string; categories: readonly SearchCategory[] }[]
 export const SearchCategorySchema = z.enum(SEARCH_CATEGORIES.map(({ id }) => id))

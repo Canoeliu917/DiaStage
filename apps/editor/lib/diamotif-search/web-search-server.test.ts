@@ -49,8 +49,10 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     }),
   }))
   globalThis.fetch = mock(async (url: string | URL | Request, init?: RequestInit) => {
-    expect(url).toBe(
-      'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
+    const base =
+      process.env.DASHSCOPE_BASE_URL?.trim() || 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+    expect(String(url)).toBe(
+      `${new URL(base).origin}/api/v1/services/aigc/multimodal-generation/generation`,
     )
     expect(init?.redirect).toBe('error')
     expect(new Headers(init?.headers).get('X-DashScope-SSE')).toBe('enable')
@@ -353,6 +355,8 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
       const result = await (await POST(request())).json()
       expect(calls).toBe(before + 1)
       expect(result.webStatus).toBe('unavailable')
+      expect(result.notice).toContain('调用没有完成')
+      expect(result.notice).not.toContain('额度')
       expect(JSON.stringify(result)).not.toContain('PRIVATE PROVIDER ERROR')
       expect(reconciliations.at(-1)?.[1]).toBe(reservations.at(-1)?.[3])
       expect(reconciliations.at(-1)?.[1]).toBe(
@@ -436,20 +440,26 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     }
   })
 
-  test('smart search answers with native sources even when the local catalog has no hit', async () => {
+  test('smart search does not invent an answer when the reviewed library has no hit', async () => {
     frames = smartFrames('这份戏剧资料可供继续查阅[ref_1]。')
     const before = calls
     const result = await (await POST(request({ query: '独立戏剧新资料zzzz', smart: true }))).json()
     expect(calls).toBe(before + 1)
-    expect(result.aiStatus).toBe('answered')
-    expect(result.answer.text).toBe('这份戏剧资料可供继续查阅[1]。')
-    expect(result.answer.citationIds).toEqual([result.results[0].id])
+    expect(result.aiStatus).toBe('unavailable')
+    expect(result.answer).toBeNull()
+    expect(result.notice).toContain('暂无')
+    expect(result.notice).toContain('不会进入公开检索')
+    expect(result.results.length).toBeGreaterThan(0)
+    expect(
+      result.results.every((item: { status: string }) => item.status === 'web-candidate'),
+    ).toBe(true)
     expect(body.parameters.search_options).toMatchObject({
       enable_citation: true,
       citation_format: '[ref_<number>]',
     })
     expect(JSON.stringify(body.input.messages[0])).toContain('统一智能搜索')
     expect(body.input.messages).toHaveLength(2)
+    expect(body.model).toBe(QWEN_TRIAL_MODEL)
   })
 
   test('smart search includes local DiaMotif evidence and keeps local and native citations aligned', async () => {
@@ -528,6 +538,10 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
       const result = await (await POST(request({ smart: true }))).json()
       expect(result.aiStatus).toBe('unavailable')
       expect(result.answer).toBeNull()
+      expect(result.notice).toContain(
+        account === null ? '登录' : account === 'not-invited' ? '受邀' : '额度',
+      )
+      expect(result.notice).not.toContain('synthetic-web-key')
     }
     user = 'invited-user'
     exhausted = false

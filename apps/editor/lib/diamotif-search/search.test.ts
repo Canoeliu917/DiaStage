@@ -127,7 +127,7 @@ test('eight navigation groups cover every search category exactly once', () => {
     ['knowledge', '戏剧知识'],
     ['people-venues', '演职与剧场'],
     ['events-activities', '演出活动'],
-    ['study', '艺考咨询'],
+    ['study', '艺考资讯'],
     ['opportunities', '招募招聘'],
   ])
   expect(SEARCH_CATEGORY_GROUPS.flatMap(({ categories }) => [...categories]).sort()).toEqual(

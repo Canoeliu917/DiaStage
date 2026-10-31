@@ -2,6 +2,11 @@ import { AiError, handleAiRequest, readBoundedBody } from '@/lib/ai/api'
 import { isAiProviderConfigured } from '@/lib/ai/provider-config'
 import { answerDiaMotifSearch } from '@/lib/diamotif-search/answer-server'
 import { isEntertainmentQuery, isExcludedMedia } from '@/lib/diamotif-search/catalog'
+import {
+  describeQwenFailure,
+  describeSmartSearchResult,
+  QWEN_NOTICES,
+} from '@/lib/diamotif-search/qwen-search'
 import { SearchInputSchema, searchDiaMotif } from '@/lib/diamotif-search/search'
 import { searchDiaMotifWeb } from '@/lib/diamotif-search/web-search-server'
 import { guardSceneApiRequest, sceneApiJson, sceneApiPreflight } from '@/lib/scene-api-security'
@@ -59,10 +64,11 @@ export async function POST(request: Request) {
     isEntertainmentQuery(input.query) ||
     isExcludedMedia(input.query.replace(/《[^》]*》/g, '')) ||
     !input.useAi ||
-    !input.query ||
-    (!input.useWeb && !search.results.length)
+    !input.query
   )
     return sceneApiJson(request, search)
+  if (!input.useWeb && !search.results.length)
+    return sceneApiJson(request, { ...search, notice: QWEN_NOTICES.emptyLibrary })
   if (input.offset !== 0)
     return sceneApiJson(request, {
       ...search,
@@ -73,7 +79,9 @@ export async function POST(request: Request) {
       ...search,
       aiStatus: 'unavailable',
       ...(input.useWeb ? { webStatus: 'unavailable' } : {}),
-      notice: 'AI 回答尚未配置，以下资料仍可检索与打开。',
+      notice: search.results.length
+        ? `${QWEN_NOTICES.keyMissing}${QWEN_NOTICES.localStillOpen}`
+        : `${QWEN_NOTICES.emptyLibrary}${QWEN_NOTICES.keyMissing}`,
     })
   const paid = await handleAiRequest(request, async ({ signal }) => {
     if (input.useWeb) {
@@ -89,7 +97,8 @@ export async function POST(request: Request) {
         ...(evidence ?? []),
         ...web.results.filter((source) => !evidence?.some((item) => item.url === source.url)),
       ]
-      const answer = web.answer
+      const localIds = new Set((evidence ?? []).map((item) => item.id))
+      const answer = web.answer?.citationIds.some((id) => localIds.has(id)) ? web.answer : null
       return {
         ...search,
         results,
@@ -98,33 +107,29 @@ export async function POST(request: Request) {
         aiStatus: input.smart ? (answer ? 'answered' : 'unavailable') : search.aiStatus,
         webStatus: 'searched',
         notice: input.smart
-          ? answer
-            ? 'DIA 根据本次可用资料回答；联网公告待复核，知识与完整作品仅展示已审核来源。'
-            : '联网检索已完成，但回答缺少有效引用或引用未通过范围校验，未显示答案；已保留可用资料。'
+          ? describeSmartSearchResult({
+              localCount: localIds.size,
+              webCount: web.results.length,
+              answered: Boolean(answer),
+            })
           : results.length
             ? '以下为大陆及港澳来源站点的联网候选，正文、内容地区、时效与许可待核验；未自动入库，请打开原站确认。'
-            : '联网服务未返回符合大陆及港澳戏剧与AI影视收录范围的结构化来源；没有补写链接或答案。',
+            : `${QWEN_NOTICES.emptyLibrary}${QWEN_NOTICES.noWebCandidates}`,
       }
     }
     return { ...search, answer: await answerDiaMotifSearch(search, signal), aiStatus: 'answered' }
   })
   if (paid.ok) return paid
   const failure = await paid.json()
-  const code = failure.error?.code
-  const notice =
-    paid.status === 401
-      ? '请先登录后使用 AI 回答；资料检索不受影响。'
-      : code === 'AI_INVITE_REQUIRED'
-        ? 'AI 回答暂向受邀内测账号开放；资料检索不受影响。'
-        : code === 'BUDGET_EXCEEDED'
-          ? '当前 AI 额度不足，未开始新的付费调用；资料检索不受影响。'
-          : code === 'BUDGET_CONFIRMATION_REQUIRED'
-            ? '本次 AI 预留估算超过提醒额度，未开始调用；资料检索仍可使用。'
-            : 'AI 回答暂时不可用，本次没有返回 AI 答案；以下资料仍可使用。'
   return sceneApiJson(request, {
     ...search,
     aiStatus: 'unavailable',
     ...(input.useWeb ? { webStatus: 'unavailable' } : {}),
-    notice: input.useWeb ? `联网检索未完成，未返回在线来源。${notice}` : notice,
+    notice: describeQwenFailure({
+      httpStatus: paid.status,
+      code: failure.error?.code,
+      message: failure.error?.message,
+      localCount: search.results.length,
+    }),
   })
 }

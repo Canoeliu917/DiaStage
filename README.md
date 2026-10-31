@@ -7,6 +7,23 @@
 >
 > DIA 系列的核心知识、推理与训练评测体系。统一收录书籍研究、语言规则、用户实测、实验和内测证据；作为各项 DIA AI 工作的首要接续入口。已验证知识、待读书目、模型输出与人工纠正分别记录。
 
+## 内测投稿与检索核对
+
+把 `/contribute` 发给内测用户。本机用 `启动镜场.ps1` 时是 <http://127.0.0.1:4318/contribute>；`bun dev` 则用当前 `PORT`（默认 3002）下的同一路径。页面免费，不必登录。首页在 `DIASTAGE_MOTIF_BETA` 未设为 `0` 时显示「内测」，不另做一套账号。
+
+投稿只写入数据目录里的 `motif-contributions`，状态固定为待审，不进入公开检索。公开检索只读取已经通过 `publicationReview` 的正式语料。权利尚不明确的材料不收文件，只保留题名、作者、链接和短摘要。话剧百部清单是待核元数据，不是已收录数量；人工一轮见 [DiaMotif/references/manual-intake-round.md](DiaMotif/references/manual-intake-round.md)。
+
+核对：
+
+1. 打开 `/contribute`，用链接提交一条资料，应进入 `/contribute/success`，并写明审核通过前不会公开展示。
+2. 回到首页搜索刚提交的题名，结果应为 0。
+3. 搜索语料中不存在的词（例如 `zzzzqqqq999999`）同样为空，不会用待审或清单卡片补位。
+4. `bun test apps/editor/lib/diamotif-search/contributions.test.ts apps/editor/lib/diamotif-search/daily-intake.test.ts`
+5. `bun scripts/diamotif-daily-intake.ts` 报告当日主动收录，默认不写公开检索。
+6. `bun scripts/diamotif-contribution-queue.ts` 查看投稿队列。`bun scripts/diamotif-manual-intake.ts` 只打印书目卡。
+
+主服务器上的收录是每天可再跑的日课，目录和环境变量见 [DiaMotif/references/preflight-directories.md](DiaMotif/references/preflight-directories.md)。社区投稿和主动打开的网页都先留在审核队列。
+
 DiaStage 咫台以21件标准道具为基础，把文字想法、剧场照片和已有剧本中的场景布置转成可预览、可调整、可保存的三维排练方案。Dia 是统一入口，结合真实模型理解、资产约束和几何检查，先预览，再由人确认采用。
 
 **把戏说给 Dia。** 11月1日版聚焦 **AI置景、照片置景、剧本置景**，复台与语音入口隐藏；已有复台代码与数据保留。长期方向仍为 **Venue → Build → Rehearse → Remount（场地 → 搭台 → 排演 → 复台）**，不把长期结构当作当前全部开放的功能。
@@ -89,6 +106,8 @@ DIASTAGE_AI_BETA_USER_IDS=已核对的受邀账号用户ID
 ```
 
 不配置密钥也可以手动置景、使用确定性文字示例；AI名单按真实用户ID核验，注册不会自动取得资格。选择百炼但缺少密钥时不会借用旧OpenAI配置。首轮最多20名受邀账号，每账号1元/日且5元/月，全站100元/月；属于应用内预算，非供应商最终账单或商业套餐。旧OpenAI路线保留，语音入口隐藏、百炼配置下旧转写路径不启用。上传剧本最多20MB、300页、300,000字符，处理超时60秒；扫描PDF的OCR未包含。
+
+Dia 检索的千问接入、三种失败提示和腾讯云环境变量写法见 [千问检索说明](DiaMotif/references/qwen-search-ops.md)。有已审样本时回答必须引用这些样本；库中没有匹配时写明暂无，不显示空白答案或编造链接。
 
 新舞台高度可以暂不填写，但复台前必须补测。原始音频和剧本不写入项目；项目只保存确认后选用的证据摘录与默认值。
 

@@ -19,7 +19,7 @@ export async function answerDiaMotifSearch(search: SearchResponse, signal: Abort
     throw new AiError('INTERNAL_ERROR', '千问检索回答尚未配置，资料检索仍可使用。', 503)
   const evidence = search.results.filter(isPublishableResource).slice(0, 8)
   if (!search.query || !evidence.length || search.offset !== 0)
-    throw new AiError('PLAN_INVALID', '没有可供回答的检索资料。', 422)
+    throw new AiError('PLAN_INVALID', '已审资料库中暂无与这次查询匹配的记录，没有编造答案。', 422)
   const result = await requestStructuredOutput({
     feature: 'diamotif-search',
     instructions:

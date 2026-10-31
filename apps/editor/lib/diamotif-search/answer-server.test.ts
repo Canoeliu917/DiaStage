@@ -233,6 +233,8 @@ if (process.env.DIAMOTIF_SEARCH_TEST_CHILD !== '1') {
     delete process.env.DASHSCOPE_API_KEY
     const unavailable = await (await POST(request({ query, useAi: true }))).json()
     expect(unavailable.aiStatus).toBe('unavailable')
+    expect(unavailable.notice).toContain('尚未配置')
+    expect(unavailable.answer).toBeNull()
     process.env.DASHSCOPE_API_KEY = 'synthetic-not-a-real-key'
     const gossip = await (await POST(request({ query: '演员八卦绯闻', useAi: true }))).json()
     expect(gossip.results).toHaveLength(0)
