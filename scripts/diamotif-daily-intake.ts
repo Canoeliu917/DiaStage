@@ -1,19 +1,19 @@
 import { readFileSync } from 'node:fs'
 import { DailyIntakeRoundSchema, publicIntakePlan } from '../apps/editor/lib/diamotif-search/daily-intake'
 
+const requested = process.argv.find((arg) => arg.startsWith('--round='))?.slice('--round='.length)
+const fileName = requested ? `daily-intake-${requested}.json` : 'daily-intake-20261101.json'
 const round = DailyIntakeRoundSchema.parse(
-  JSON.parse(
-    readFileSync(
-      new URL('../DiaMotif/knowledge/daily-intake-20261031.json', import.meta.url),
-      'utf8',
-    ),
-  ),
+  JSON.parse(readFileSync(new URL(`../DiaMotif/knowledge/${fileName}`, import.meta.url), 'utf8')),
 )
 const writePublic = process.argv.includes('--write-public')
 const plan = publicIntakePlan(round, writePublic)
 const counts = round.counts
 
 console.log(`日课 ${round.roundId}`)
+console.log(
+  `四格：发现 ${counts.discovered}，已读 ${counts.openedAndRead}，待审 ${counts.pending}，正式新增 ${counts.formalAdded}。`,
+)
 console.log(
   `发现 ${counts.discovered}，已读 ${counts.openedAndRead}，只见索引 ${counts.indexOnly}，待审 ${counts.pending}，不收 ${counts.rejected}，已在库中 ${counts.alreadyInCorpus}，正式新增 ${counts.formalAdded}，托管全文 ${counts.fullTextsHosted}。`,
 )

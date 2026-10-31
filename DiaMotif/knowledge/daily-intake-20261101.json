@@ -1,0 +1,107 @@
+{
+  "roundId": "2026-11-01",
+  "ranAt": "2026-11-01T07:20:00Z",
+  "scope": "大陆现当代话剧。只打开已准入站点的公开页。不扩收港澳。自动高量抓取保持关闭。",
+  "counts": {
+    "discovered": 10,
+    "openedAndRead": 9,
+    "indexOnly": 1,
+    "pending": 1,
+    "rejected": 9,
+    "alreadyInCorpus": 0,
+    "formalAdded": 0,
+    "fullTextsHosted": 0
+  },
+  "items": [
+    {
+      "id": "intake-1101-tianhan-romantic",
+      "url": "http://www.chinawriter.com.cn/n1/2017/1025/c405174-29606942.html",
+      "title": "新浪漫主义与田汉1920年代的话剧创作",
+      "opened": true,
+      "decision": "rejected",
+      "reason": "已读的是创作评论，点到《名优之死》的情节，不是完整剧本。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-tianhan-anecdote",
+      "url": "https://www.chinawriter.com.cn/n1/2023/1207/c404063-40133892.html",
+      "title": "田汉写戏点滴事",
+      "opened": true,
+      "decision": "rejected",
+      "reason": "已读的是创作轶事，没有《名优之死》或其他剧的连续正文。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-mingyou-essay",
+      "url": "http://www.chinawriter.com.cn/n1/2017/1025/c405175-29606944.html",
+      "title": "唯美与现实的缠绕——解读《名优之死》",
+      "opened": true,
+      "decision": "rejected",
+      "reason": "论文引用了个别台词并说明1927至1929的幕次变化，不是三幕全文。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-mingyou-adaptation",
+      "url": "http://www.chinawriter.com.cn/n1/2018/1227/c419389-30490878.html",
+      "title": "《名优之死》：一次戏与剧的成功合作",
+      "opened": true,
+      "decision": "rejected",
+      "reason": "写明北京人艺新版对田汉原作做了大量改编，不收改编演出版。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-mingyou-huwei",
+      "url": "https://wyb.chinawriter.com.cn/content/201905/10/content49477.html",
+      "title": "评北京人艺新版话剧《名优之死》",
+      "opened": true,
+      "decision": "rejected",
+      "reason": "观演文章写明对原作删减增补，不是原作全文。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-xiayan-exhibit",
+      "url": "https://www.chntheatre.edu.cn/cn/mei/detail/24941.html",
+      "title": "夏衍戏剧与电影专题展览",
+      "opened": true,
+      "decision": "pending",
+      "reason": "展览名单点到《上海屋檐下》。本页没有剧本正文，完整本仍待找免费无登录来源。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-xiayan-seminar",
+      "url": "https://www.chntheatre.edu.cn/cn/xue/detail/24212.html",
+      "title": "纪念夏衍诞辰125周年学术研讨会",
+      "opened": true,
+      "decision": "rejected",
+      "reason": "已读的是会议报道和论文题目，没有剧本正文。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-wartime-essay",
+      "url": "https://chntheatre.edu.cn/cn/mei/detail/24286.html",
+      "title": "抗战岁月，戏剧这样回应时代呼唤",
+      "opened": true,
+      "decision": "rejected",
+      "reason": "史述提到《上海屋檐下》的一次演出被现实打断，不是该剧正文。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-roofs-catalog",
+      "url": "https://en.chntheatre.edu.cn/education/stage/7211.html",
+      "title": "中戏英文页《上海屋檐下》舞台设计条目",
+      "opened": false,
+      "decision": "rejected",
+      "reason": "只看到设计条目和地址，没有打开剧本，也不据此收录。",
+      "fullTextHosted": false
+    },
+    {
+      "id": "intake-1101-xiayan-opening",
+      "url": "https://www.chntheatre.edu.cn/cn/xue/detail/24924.html",
+      "title": "夏衍展览开幕报道",
+      "opened": true,
+      "decision": "rejected",
+      "reason": "开幕消息再次点名《上海屋檐下》，仍然没有剧本正文。",
+      "fullTextHosted": false
+    }
+  ]
+}

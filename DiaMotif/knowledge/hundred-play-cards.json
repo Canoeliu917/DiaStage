@@ -1,7 +1,7 @@
 {
   "schema": "diamotif.hundred-play-card/1",
   "program": "话剧百部",
-  "purpose": "优先核验的大陆话剧元数据清单。年份和链接只帮助核对书目，不是已收录数量，不含正文，未审核不得进入公开检索。",
+  "purpose": "百部名单 v1：20 张大陆话剧元数据骨架。年份和链接只帮助核对书目，不含正文。托管未核的题名不进入公开检索。",
   "policy": "仅中国大陆作者与作品。完整原作、已核译本或逐卷核完的剧作集。港澳主动征集暂停。节选、改编、排练删改不收。权利不明只保留题名、作者、链接和短摘要。",
   "cards": [
     {
@@ -291,6 +291,38 @@
       "firstPublishedYear": 1942,
       "copyrightStatus": "hosting-not-cleared",
       "sourceLabel": "中国作家网吴祖光人物页，不是剧本全文"
+    },
+    {
+      "id": "hundred-songzhidi-wuchongqing",
+      "playwright": "宋之的",
+      "title": "雾重庆",
+      "region": "mainland",
+      "workKind": "spoken-drama",
+      "reviewStatus": "candidate",
+      "hosting": "metadata-only",
+      "publicSearch": false,
+      "fullText": null,
+      "firstPublishedYear": 1940,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceUrl": "https://www.chinawriter.com.cn/xdzj/407.shtml",
+      "sourceLabel": "中国作家网宋之的人物页，不是剧本全文",
+      "note": "人物页只列剧名。是否改编与版本未在本卡核完。不托管正文，不进入公开检索。"
+    },
+    {
+      "id": "hundred-ouyang-zhongwang",
+      "playwright": "欧阳予倩",
+      "title": "忠王李秀成",
+      "region": "mainland",
+      "workKind": "spoken-drama",
+      "reviewStatus": "candidate",
+      "hosting": "metadata-only",
+      "publicSearch": false,
+      "fullText": null,
+      "firstPublishedYear": 1941,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404942-28492002.html",
+      "sourceLabel": "中国作家网欧阳予倩人物页，不是剧本全文",
+      "note": "人物页只列剧名。是否改编与版本未在本卡核完。不托管正文，不进入公开检索。"
     }
   ]
 }

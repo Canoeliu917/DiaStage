@@ -126,7 +126,7 @@ test('hundred-play cards are metadata candidates, not a padded corpus', () => {
   const doc = HundredPlayChecklistSchema.parse(checklist)
   const summary = summarizeHundredCards(doc)
   expect(summary.listedCards).toBe(doc.cards.length)
-  expect(summary.listedCards).toBeLessThan(40)
+  expect(summary.listedCards).toBe(20)
   expect(summary.withYear).toBeGreaterThan(0)
   expect(summary.withSourceUrl).toBeGreaterThan(0)
   expect(summary.withSourceUrl).toBeLessThanOrEqual(summary.listedCards)
