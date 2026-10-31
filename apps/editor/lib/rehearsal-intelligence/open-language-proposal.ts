@@ -114,7 +114,7 @@ export function reviseOpenProposal(
   throw new Error('这条口令不是已支持的空间修订。')
 }
 
-/** "左边" in this explicit revision means stage-left (+X) in the current candidate. */
+/** Actor stage-left is audience-right (-X), independent of candidate order or object names. */
 export function keepCurrentStageLeftFixed(
   solution: SpatialSolution,
   parent: DiaBuildProposal,
@@ -125,7 +125,7 @@ export function keepCurrentStageLeftFixed(
   )
   if (previous?.resolvedTransforms.length !== 2) throw new Error('当前方案没有唯一的左右两块景片。')
   const ordered = [...previous.resolvedTransforms].sort(
-    (a, b) => b.transform.position.x - a.transform.position.x,
+    (a, b) => a.transform.position.x - b.transform.position.x,
   )
   if (Math.abs(ordered[0]!.transform.position.x - ordered[1]!.transform.position.x) < 1e-6)
     throw new Error('当前两块景片无法确定台左一片，请先选择候选方案。')

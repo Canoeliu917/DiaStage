@@ -283,8 +283,8 @@ test('shape initialization restores official dimensions, tilt, scale and fold wh
   expect(useScene.getState().nodes[node.id]).toBe(locked)
 })
 
-test('a saved retired single flat keeps its original shape reset and undo support', () => {
-  const asset = CATALOG_ITEMS.find((entry) => entry.id === 'SCN-FLAT-090')!
+test('a saved window flat keeps its original shape reset and undo support', () => {
+  const asset = CATALOG_ITEMS.find((entry) => entry.id === 'SCN-WIN-130')!
   const saved = ItemNode.parse({
     ...node,
     asset: { ...asset, dimensions: [1.8, 2.4, 0.08], boundsCenter: [0, 1.2, 0] },

@@ -273,7 +273,7 @@ export function parseOpenLanguage(rawUtterance: string): StructuredGrounding | n
   if (fixedLeftRevision) {
     g.modifiers.push('wider', 'keep_stage_left_fixed')
     g.references = [ref('current_proposal')]
-  } else if (/^(?:(?:再|稍微)?宽(?:一点|些)|入口加宽一点)$/.test(text)) {
+  } else if (/^(?:入口)?(?:(?:再|稍微)?宽(?:一点|些)|加宽一点)$/.test(text)) {
     g.modifiers.push('wider')
     g.references = [ref('current_proposal')]
   } else if (/^(?:换|看)(?:另一个|另外一个|另一边)(?:方案)?$/.test(text)) {
@@ -419,6 +419,7 @@ export function validateOpenGrounding(
   raw: unknown,
   utterance: string,
   context: OpenLanguageContext,
+  source: 'deterministic' | 'model' = 'deterministic',
 ): ValidatedOpenGrounding {
   const g = StructuredGroundingSchema.parse(raw),
     c = OpenLanguageContextSchema.parse(context)
@@ -436,13 +437,13 @@ export function validateOpenGrounding(
     g.requiresClarification ||
     g.ambiguities.length ||
     g.confidence < 0.8 ||
-    openLanguageSafetyIssue(utterance)
+    (source === 'deterministic' && openLanguageSafetyIssue(utterance))
   )
     throw new Error(
       g.ambiguities[0] ?? openLanguageSafetyIssue(utterance) ?? '请补充一个明确要求。',
     )
   const deterministic = parseOpenLanguage(utterance)
-  if (deterministic) {
+  if (source === 'deterministic' && deterministic) {
     if (deterministic.requiresClarification) throw new Error(deterministic.ambiguities[0])
     for (const field of [
       'subjects',
@@ -539,6 +540,7 @@ export function validateOpenGrounding(
     /^(?:把|将)(.+?)(?:叠放在|放到|放在|摆到|挪到|搬到|移到|叠到)/,
   )?.[1]
   if (
+    source === 'deterministic' &&
     explicitNoun &&
     !/^(?:它|这个|那个|这块|那块|选中的物件)$/.test(explicitNoun) &&
     !g.subjects.some((r) => r.kind === 'named' && r.text === explicitNoun)

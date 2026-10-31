@@ -3,7 +3,7 @@ import type { WallMode } from '@pascal-app/viewer'
 import type { Material, Matrix4, Plane } from 'three'
 
 export function isSceneryPanelAsset(asset: ItemNode['asset']): boolean {
-  return /^SCN-(FLAT|FOLD|DOOR|WIN)-/.test(asset.id)
+  return /^SCN-(FOLD|DOOR|WIN)-/.test(asset.id)
 }
 
 /** Display-only copies: authored catalog materials and saved item slots stay intact. */

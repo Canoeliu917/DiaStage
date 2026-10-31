@@ -42,13 +42,21 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   let metaVersion = 7
   let workspaceQuery = ''
   let panelOpeningAllowed = true
-  const editorState = { activeSidebarPanel: 'theatre-roles' }
+  const editorState = { activeSidebarPanel: 'theatre-roles', isPreviewMode: false }
   let exports = 0,
     retries = 0
   let reloads = 0
   const navigations: string[] = []
+  const documentEvents = Object.assign(new EventTarget(), {
+    hidden: false,
+    createElement: () => ({ click: () => exports++ }),
+  })
+  const setHidden = (hidden: boolean) => {
+    documentEvents.hidden = hidden
+    documentEvents.dispatchEvent(new Event('visibilitychange'))
+  }
   const windowEvents = Object.assign(new EventTarget(), {
-    document: { createElement: () => ({ click: () => exports++ }) },
+    document: documentEvents,
     confirm: () => { throw new Error('server recovery must use the in-page confirmation') },
     location: { reload: () => reloads++ },
   })
@@ -61,7 +69,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     static CLOSED = 2
     readyState = 1
     listeners = new Map<string, (event: Event) => void>()
-    constructor() {
+    constructor(public url: string) {
       sources.push(this)
     }
     addEventListener(name: string, listener: (event: Event) => void) {
@@ -70,10 +78,10 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     close() {
       this.readyState = SceneEvents.CLOSED
     }
-    scene(version: number, graph: SceneGraph) {
+    scene(version: number, graph: SceneGraph, eventId = version * 10) {
       this.listeners.get('scene')?.(
         new MessageEvent('scene', {
-          data: JSON.stringify({ sceneId: 'save-test', version, graph }),
+          data: JSON.stringify({ eventId, sceneId: 'save-test', version, graph }),
         }),
       )
     }
@@ -215,6 +223,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const componentModules = {
     // Save/revision behavior is independent of placement, command execution and selection UI.
     './stage-entry/runtime': ['StageCommandRuntime'],
+    './stage-entry/live-stage-plan': ['LiveStagePlan'],
     './stage-entry/placement-system': ['StagePlacementSystem', 'StagePlacementFloorplan'],
     './stage-entry/plan-preview-system': ['StagePlanPreviewSystem'],
     './stage-entry/stage-selection-panel': ['StageSelectionPanel'],
@@ -249,6 +258,7 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     return respond()
   }
   const { SceneLoader } = await import('./scene-loader')
+  const { DiaDock } = await import('./dia-dock')
   type Element = { type?: unknown; props?: Record<string, unknown> }
   type EditorProps = {
     onLoad: () => Promise<SceneGraph>
@@ -284,6 +294,11 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
       },
     })
     const nodes = elements(tree)
+    assert.equal(
+      nodes.some((node) => node.type === DiaDock),
+      false,
+      'the stage conversation and its reopen button stay unmounted',
+    )
     for (const effect of effects) effect()
     const props = nodes.find((node) => node.type === Editor)?.props as unknown as EditorProps
     assert.equal(
@@ -348,6 +363,17 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
     panelOpeningAllowed = true
     render()
     const ready = render()
+    assert.ok(
+      ready.nodes.some((node) => node.props?.['aria-label'] === '舞台俯视图'),
+      'the live overview stays available without the conversation',
+    )
+    editorState.isPreviewMode = true
+    assert.equal(
+      render().nodes.some((node) => node.props?.['aria-label'] === '舞台俯视图'),
+      false,
+      'immersive viewing keeps editing overlays hidden',
+    )
+    editorState.isPreviewMode = false
     assert.equal(ready.navigation?.group, 'set', 'disabled workspaces normalize to Set after hydration')
     assert.equal(editorState.activeSidebarPanel, expectedPanel, 'the sidebar opens the available workspace')
     const changeGroup = ready.navigation?.onGroupChange as (group: string) => void
@@ -766,6 +792,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const downloads = new Map<SceneGraph, () => void>()
   hydrateAssets = (graph) => new Promise<void>((resolve) => downloads.set(graph, resolve))
   sources.at(-1)!.scene(16, remoteGraph)
+  setHidden(true)
+  setHidden(false)
   sources.at(-1)!.scene(17, dirtyGraph)
   const completions = [...downloads.values()]
   completions[1]!()
@@ -797,6 +825,8 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   await flush()
   assert.equal(applied.length, beforeInitialSse, 'SSE waits until initial graph hydration finishes')
   assert.equal(hydrateCalls, 1, 'the newer event is buffered during initial load')
+  setHidden(true)
+  setHidden(false)
   finishInitialLoad()
   liveGraph = await initialLoading
   render().props.onLoaderChange(false)
@@ -805,5 +835,48 @@ if (!process.env.SCENE_LOADER_SAVE_TEST) {
   const beforeInitialSave = requests.length
   await render().props.onSave(liveGraph)
   assert.equal(requests.length, beforeInitialSave, 'initial hydration cannot echo the stale graph over the newer revision')
+
+  resetHooks()
+  liveGraph = structuredClone(initialScene)
+  hydrateAssets = async () => {}
+  setHidden(true)
+  const beforeHiddenMount = sources.length
+  render().props.onLoaderChange(false)
+  assert.equal(sources.length, beforeHiddenMount, 'a background scene does not occupy an SSE connection')
+  setHidden(false)
+  const firstVisibleSource = sources.at(-1)!
+  assert.equal(sources.length, beforeHiddenMount + 1)
+  firstVisibleSource.scene(20, remoteGraph, 201)
+  await flush()
+  assert.deepEqual(liveGraph, remoteGraph)
+  setHidden(true)
+  assert.equal(firstVisibleSource.readyState, SceneEvents.CLOSED, 'hiding releases the browser connection slot')
+  firstVisibleSource.scene(21, initialScene, 202)
+  firstVisibleSource.listeners.get('error')?.(new Event('error'))
+  await flush()
+  assert.deepEqual(liveGraph, remoteGraph, 'queued events from the closed stream cannot alter the scene')
+  assert.ok(!render().nodes.some((node) => node.props?.children === '场景实时连接已断开，请刷新页面重新连接。'))
+  setHidden(false)
+  const resumedSource = sources.at(-1)!
+  assert.equal(resumedSource.url, '/api/scenes/save-test/events?after=201', 'resume uses the event cursor, not the scene version')
+  setHidden(false)
+  assert.equal(sources.at(-1), resumedSource, 'repeated visibility events do not open duplicate streams')
+  resumedSource.scene(22, initialScene, 209)
+  await flush()
+  assert.deepEqual(liveGraph, initialScene, 'updates missed while hidden are applied after replay')
+  setHidden(true)
+  liveGraph = structuredClone(dirtyGraph)
+  render().props.onDirty()
+  setHidden(false)
+  assert.equal(sources.at(-1)!.url, '/api/scenes/save-test/events?after=209')
+  sources.at(-1)!.scene(23, remoteGraph, 210)
+  await flush()
+  assert.deepEqual(liveGraph, dirtyGraph, 'resumed updates cannot overwrite unsynced local changes')
+  assert.ok(render().nodes.some((node) => node.props?.children === '此场景已在其他窗口更新'))
+  resetHooks()
+  const afterUnmount = sources.length
+  setHidden(true)
+  setHidden(false)
+  assert.equal(sources.length, afterUnmount, 'unmount removes the visibility subscription')
   for (const source of sources) source.close()
 }

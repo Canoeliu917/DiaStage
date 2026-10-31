@@ -1,0 +1,191 @@
+{
+  "version": 1,
+  "updatedAt": "2026-10-31",
+  "scope": "原23条社交与媒体发现保留8条已处理及13条待核/受阻/拒收记录，另2条已按新规则删除；旧通过状态不等于当前公开批准。本文件覆盖旧发现批次中的过时待核指引。",
+  "policy": "只推进符合当前范围的pending及相关来源项；blocked不反复撞验证，rejected不自动重试。可信替代资料不等于原链接已通过。作品须核完整版本、观看入口与许可，知识须原文证据及publicationReview；讲座视频不再推进收录，采访、片段或宣发视频线索不回灌。完整剧本和知识冲突须先通报用户。",
+  "reviewFiles": [
+    "pending-media-review-20261030.json",
+    "pending-video-review-20261030.json"
+  ],
+  "counts": {
+    "originalCandidates": 23,
+    "admittedOriginals": 8,
+    "pending-original-with-related-source": 2,
+    "pending": 4,
+    "blocked": 4,
+    "rejected": 3,
+    "removedByLatestPolicy": 2
+  },
+  "resolved": [
+    {
+      "candidateId": "sd-weibo-hongguo-ai-plan",
+      "resourceId": "dm-resource-hongguo-ai-creation-plan-weibo-2026"
+    },
+    {
+      "candidateId": "sd-weibo-wuzhen-young-2026",
+      "resourceId": "dm-resource-wuzhen-young-selection-weibo-2026"
+    },
+    {
+      "candidateId": "sd-weibo-wuzhen-units",
+      "resourceId": "dm-resource-wuzhen-seven-units-weibo-2026"
+    },
+    {
+      "candidateId": "sd-kuaishou-kling4",
+      "resourceId": "dm-ai-kuaishou-kling4-release-2026"
+    },
+    {
+      "candidateId": "sd-kuaishou-opera-night",
+      "resourceId": "dm-resource-kuaishou-opera-starlight-2024"
+    },
+    {
+      "candidateId": "sd-damai-thunderstorm",
+      "resourceId": "dm-resource-damai-thunderstorm-li-liuyi"
+    },
+    {
+      "candidateId": "sd-lmtw-hongguo-ai",
+      "resourceId": "dm-resource-lmtw-hongguo-ai-plan-20261019"
+    },
+    {
+      "candidateId": "sd-news-tsinghua-festival",
+      "resourceId": "dm-resource-bjd-tsinghua-philosophy-drama-20241116"
+    }
+  ],
+  "items": [
+    {
+      "candidateId": "sd-bili-yixi-xuang",
+      "title": "【一席】《十二公民》话剧导演 徐昂：喜剧的忧伤",
+      "url": "https://www.bilibili.com/video/BV1as41117c1/",
+      "state": "pending-original-with-related-source",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [
+        "dm-resource-yixi-xuang-comedy-speech-2015"
+      ],
+      "reason": "B站只核投稿元数据，未观看视频、核认证或授权。2016-07-25是B站上传日期，2015-06-27是演讲日期，不能合并；不能把《十二公民》说成这份资料提供的话剧剧本。",
+      "nextVerification": "原视频属于讲座，不再推进影像收录；仅保留内部核验记录。优先复审一席原站文字证据，通过publicationReview前不公开，不能据文字批准原视频。"
+    },
+    {
+      "candidateId": "sd-bili-agu-ai-short",
+      "title": "AI短片创作",
+      "url": "https://www.bilibili.com/video/BV1WBiSBTE4R/",
+      "state": "pending",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "账号主体、内容地区、具体AI参与方式、原创与授权情况未确认；不凭标题判定全AI生成，也不声称已看完整作品。",
+      "nextVerification": "取得无需绕过访问控制的创作者公开说明及可核地区依据；作为作品须核完整正片、版本、观看入口与许可，缺项继续待核，不以元数据代替完整性证据。"
+    },
+    {
+      "candidateId": "sd-bili-ai-adaptation",
+      "title": "我让AI把经典电影改编成了漫剧，结果有点上头【B站AI创造公开赛】",
+      "url": "https://www.bilibili.com/video/BV11QgP6JECE/",
+      "state": "pending",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "未核账号、产品效果、内容地区、参赛归属及影视改编权。不能把宣传性产品演示说成一部经核实的AI漫剧作品，也不完整转录其教程。",
+      "nextVerification": "补创作者主体与地区、比赛官方作品页及权利说明，先区分完整作品、创作教程与宣发演示；宣发不收录，作品须核完整版本，教程按资料本体另审，不能仅换标签发布。"
+    },
+    {
+      "candidateId": "sd-bili-ai-three-kingdoms",
+      "title": "我用AI做了一个三国电影短片",
+      "url": "https://www.bilibili.com/video/BV1gH4y1p7me/",
+      "state": "pending",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "未看视频或读取完整教程；内容地区、账号主体、工具实际效果及AI生成/辅助比例未核。只纠正日期，不因中文历史题材或国内平台推断作者在大陆。",
+      "nextVerification": "核创作者公开地区及制作说明，取得完整可公开的内容依据后再决定正式元数据收录。"
+    },
+    {
+      "candidateId": "sd-bili-li-bai-stage",
+      "title": "【人艺｜话剧】- 李白 苏民导演、濮存昕、何冰、郭启宏编剧",
+      "url": "https://www.bilibili.com/video/BV1nWwWeaEhS/",
+      "state": "pending-original-with-related-source",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [
+        "dm-resource-ncpa-li-bai-production-2012"
+      ],
+      "reason": "时长不能证明全剧完整；未核上传传播授权及演出版本，也未核该上传题名中每项演员信息。不将个人投稿说成人艺官方录像。",
+      "nextVerification": "原视频继续待核传播授权、具体版本及完整可观看范围，不以时长证明全剧。相关官方历史制作资料也须通过知识证据复审后才公开，不替原视频背书或承诺全剧链接。"
+    },
+    {
+      "candidateId": "sd-douyin-gansu-dazhaimen",
+      "title": "原汁原味！在家门口重温国话精品剧目《大宅门》！",
+      "url": "https://www.douyin.com/video/7678246994527395705",
+      "state": "blocked",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "原帖正文不可读，账号归属、场次及票务状态未核；Jina的通用Published Time与索引日期冲突，不采用任一日期作为已核发布日。",
+      "nextVerification": "待场馆可公开原公告或原帖恢复后核验，尤其先区分录像放映与现场演出；不声称正在售票或仍有名额。"
+    },
+    {
+      "candidateId": "sd-douyin-lewis-ai",
+      "title": "颤抖吧！这是AI生成的！",
+      "url": "https://jingxuan.douyin.com/m/video/7610059817041939750",
+      "state": "pending",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "没有取得创作者/内容地区依据及完整制作过程，不能从中文和国内平台推断地区，亦不采纳替代三维渲染、单镜头工期和质量的宣传性结论。",
+      "nextVerification": "补可公开地区、账号及具体AI参与说明，先核是否完整作品或合格创作教程；宣传演示不收录，不能仅改中性标题或标创作者经验后发布。"
+    },
+    {
+      "candidateId": "sd-wechat-sta-space",
+      "title": "剧场|上海戏剧学院·新空间",
+      "url": "https://mp.weixin.qq.com/s/3GGI9s4mmX81ziHfKRkM6w",
+      "state": "blocked",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "web工具不能打开；Jina仅返回环境异常与验证码页。未绕过验证，也未据学校引用推断公众号账号归属、正文或发布日期。",
+      "nextVerification": "仅在公开访问条件改变或有合规连接后复核；不绕过验证。"
+    },
+    {
+      "candidateId": "sd-wechat-sta-directors",
+      "title": "2026国际导演大师班（列宁格勒学派）",
+      "url": "https://mp.weixin.qq.com/s/OeNW_HYvaRDGsvrXDyq77A",
+      "state": "blocked",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "原文web不可打开，Jina为验证码页面，未核账号、举办地点、主办及课程原规则；不显示现时可报名。",
+      "nextVerification": "仅在公开访问条件改变或有合规连接后复核；不绕过验证。"
+    },
+    {
+      "candidateId": "sd-wechat-tsinghua-entry",
+      "title": "校外人员观演自行报备进校攻略",
+      "url": "https://mp.weixin.qq.com/s/frV51pN7Bhg8rYTJLTRs-A",
+      "state": "blocked",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [
+        "dm-resource-tsinghua-philosophy-drama-close-2024"
+      ],
+      "reason": "web不可打开；Jina返回环境异常/CAPTCHA即停止。未登录、未绕过。主办院校新闻页提供同届已闭幕的相关历史回顾，不能替代或复原原微信入校规则。",
+      "nextVerification": "仅在公开访问条件改变或有合规连接后复核；不绕过验证。"
+    },
+    {
+      "candidateId": "sd-reject-sensational-stage-claim",
+      "title": "不符合收录准则的来源（已拒收）",
+      "url": "https://www.douyin.com/video/7652728438554389093?source=Baiduspider",
+      "state": "rejected",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "未经核实的耸动人物指控，缺专业评论依据、原始演出证据和来源归属，不入库或进入公开信息流；不据此判定事件真假。",
+      "nextVerification": "不再检索或推荐；除非出现可核实的新事实，不自动重试。"
+    },
+    {
+      "candidateId": "sd-reject-unverified-hongguo-news",
+      "title": "不符合收录准则的来源（已拒收）",
+      "url": "https://ohdnfz.cn/news/",
+      "state": "rejected",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "不得因页面自称官网而加入官方来源域或引用其业务数据；仅记拒收线索，不断言其主体违法。",
+      "nextVerification": "不再检索或推荐；除非出现可核实的新事实，不自动重试。"
+    },
+    {
+      "candidateId": "sd-reject-unverified-hongguo-ai",
+      "title": "不符合收录准则的来源（已拒收）",
+      "url": "https://hongguoaiduanju.com/",
+      "state": "rejected",
+      "checkedAt": "2026-10-30",
+      "relatedResourceIds": [],
+      "reason": "不收其官网或授权身份主张，不推荐注册、付款或提交材料；仅保存内部拒收线索。",
+      "nextVerification": "不再检索或推荐；除非出现可核实的新事实，不自动重试。"
+    }
+  ]
+}

@@ -6,7 +6,7 @@ import {
   stageContactHeight,
   stageFoldGeometry,
 } from '@pascal-app/core/stage'
-import { AiError } from '../ai/api'
+import { AiError } from '../ai/error'
 import { AVAILABLE_STAGE_SCENERY, stagePropCollisionGeometry } from '../stage/prop-assets'
 import { type PhotoStageObject, type PhotoStagePlan, PhotoStagePlanSchema } from './plan'
 
@@ -63,6 +63,43 @@ function collisionObject(object: PhotoStageObject): SceneContextObject {
   }
 }
 
+export function replacePhotoStageAsset(
+  input: PhotoStagePlan,
+  index: number,
+  assetId: string,
+): PhotoStagePlan {
+  const plan = PhotoStagePlanSchema.parse(input)
+  const original = plan.objects[index]
+  const entry = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)
+  if (!original || !entry || ['camera', 'performer-marker'].includes(entry.kind))
+    invalid('请选择有效的标准舞台道具。')
+  const bottom = prepareStageCollision(collisionObject(original)).bounds[1]![0]
+  const [width, height, depth] = entry.asset.dimensions!
+  const replacement: PhotoStageObject = {
+    ...original,
+    assetId,
+    kind: entry.kind as PhotoStageObject['kind'],
+    dimensions: { width, height, depth },
+    profile: undefined,
+    stepCount: undefined,
+    hingeAngles: undefined,
+  }
+  replacement.position = [...original.position]
+  replacement.position[1] +=
+    bottom - prepareStageCollision(collisionObject(replacement)).bounds[1]![0]
+  for (const object of plan.objects) {
+    if (object === original) continue
+    const oldContact = stageContactHeight(collisionObject(object), collisionObject(original))
+    if (oldContact !== null && Math.abs(oldContact - object.position[1]) < 1e-7) {
+      const newContact = stageContactHeight(collisionObject(object), collisionObject(replacement))
+      if (newContact === null || Math.abs(newContact - object.position[1]) >= 1e-7)
+        invalid('该道具正在支撑其他物件，更换会改变支撑；请重新分析这组布置。')
+    }
+  }
+  plan.objects[index] = replacement
+  return PhotoStagePlanSchema.parse(plan)
+}
+
 function requireContactGeometry(object: PhotoStageObject) {
   if (
     object.assetId === null &&
@@ -106,6 +143,31 @@ export function assertPhotoLayout(plan: PhotoStagePlan): void {
         invalid(`「${name}」与「${plan.objects[j]!.name}」外框重叠，请调整摆位。`)
     }
   }
+}
+
+export function assertPhotoGroundedSupports(plan: PhotoStagePlan): void {
+  const objects = plan.objects.map(collisionObject)
+  const unsupported = new Set<number>()
+  const grounded: number[] = []
+  const epsilon = 1e-7
+  objects.forEach((object, index) => {
+    if (Math.abs(prepareStageCollision(object).bounds[1]![0]) <= epsilon) grounded.push(index)
+    else unsupported.add(index)
+  })
+  for (let cursor = 0; cursor < grounded.length; cursor++) {
+    const support = objects[grounded[cursor]!]!
+    for (const index of unsupported) {
+      const object = objects[index]!
+      const contact = stageContactHeight(object, support)
+      if (contact !== null && Math.abs(contact - object.transform.position.y) <= epsilon) {
+        unsupported.delete(index)
+        grounded.push(index)
+      }
+    }
+  }
+  const missing = unsupported.values().next().value
+  if (missing !== undefined)
+    invalid(`「${plan.objects[missing]!.name}」缺少最终落地的实体支撑，请调整布置后再确认。`)
 }
 
 export function groundPhotoSupports(

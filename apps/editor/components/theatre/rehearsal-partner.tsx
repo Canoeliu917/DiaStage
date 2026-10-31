@@ -7,7 +7,10 @@ import { useStore } from 'zustand'
 import { localAccountStorageKey } from '@/lib/auth/local-account'
 import { BETA_REHEARSAL_ENABLED, BETA_REMOUNT_ENABLED } from '@/lib/beta-capabilities'
 import { useProposalGhost } from '@/lib/rehearsal-intelligence/authority'
-import { DiaConversation } from '@/lib/rehearsal-intelligence/conversation-controller'
+import {
+  DiaConversation,
+  SERVICE_REQUEST_FAILURE_NOTICE,
+} from '@/lib/rehearsal-intelligence/conversation-controller'
 import {
   readConversation,
   readProductEvents,
@@ -25,6 +28,7 @@ import { useDiaAttachments } from '../stage-entry/dia-attachments'
 import { LiveStagePlan } from '../stage-entry/live-stage-plan'
 import { PhoneVoiceLink } from '../stage-entry/phone-voice-link'
 import { StagePlanReview } from '../stage-entry/plan-review'
+import { StageTaskCards } from '../stage-entry/stage-first-visit'
 import { openStudioPanel } from '../studio-navigation'
 import { DiaRecords } from './dia-records'
 import { DiaRemoteBridge } from './dia-remote-bridge'
@@ -188,6 +192,7 @@ export function RehearsalPartner({
   const currentProposals = useRef<HTMLDivElement>(null)
   const decision = useRef<HTMLElement>(null)
   const dialogue = useRef<HTMLDivElement>(null)
+  const composerInput = useRef<HTMLTextAreaElement>(null)
   // biome-ignore lint/correctness/useExhaustiveDependencies: A different proposal starts with its editor closed.
   useEffect(() => setEditingProposal(false), [state.thread?.selectedProposalId])
   useEffect(() => {
@@ -272,32 +277,37 @@ export function RehearsalPartner({
       <div ref={dialogue} className="dia-dialogue" role="region" aria-label="本场对话记录">
         {!state.thread?.messages.length && (
           <div className="dia-welcome">
-            <h3>你想试什么？</h3>
-            <p>说说想放入或调整的布景。我们先在舞台上试，再由你决定。</p>
+            <h3>从一件布景开始</h3>
+            <p>先摆一遍，再决定怎样排。</p>
+            <StageTaskCards
+              disabled={!state.ready || state.busy || readOnly}
+              onPrefill={(draft) => {
+                controller.patch({ draft })
+                composerInput.current?.focus()
+              }}
+            />
           </div>
         )}
         <DiaRecords sceneId={sceneId} controller={controller} />
         {build && (
           <section className="dia-proposals" aria-label="Dia预演确认">
-            <p className="dia-section-label">
-              <span className="dia-notation">PROPOSAL</span> 当前提案
-            </p>
+            <p className="dia-section-label">当前布景提案</p>
             {build.knowledgeProposal && (
-              <article className="dia-proposal" aria-label="Knowledge Stage Proposal">
+              <article className="dia-proposal" aria-label="布景提案依据">
                 <p>{build.knowledgeProposal.rationale}</p>
                 <p>
-                  Concepts：
+                  参考概念：
                   {build.knowledgeProposal.resolvedConcepts
                     .map((concept) => concept.canonicalLabel)
                     .join(' · ')}
                 </p>
                 <p>
-                  Actions：
+                  操作：
                   {build.knowledgeProposal.actions.map((action) => action.type).join(' · ')}
                 </p>
                 {build.knowledgeProposal.constraints.length > 0 && (
                   <p>
-                    Constraints：
+                    空间要求：
                     {build.knowledgeProposal.constraints
                       .map((constraint) => constraint.type)
                       .join(' · ')}
@@ -309,7 +319,7 @@ export function RehearsalPartner({
                   </p>
                 ))}
                 <details className="dia-secondary">
-                  <summary>Knowledge 来源</summary>
+                  <summary>参考来源</summary>
                   <p>
                     {build.knowledgeProposal.knowledgeRefs
                       .map((reference) => `${reference.conceptId} · ${reference.sourceId}`)
@@ -320,7 +330,7 @@ export function RehearsalPartner({
               </article>
             )}
             {build.spatialSolution && (
-              <div aria-label="空间候选方案">
+              <div role="group" aria-label="空间候选方案">
                 {build.spatialSolution.warnings.map((warning) => (
                   <p key={warning}>{warning}</p>
                 ))}
@@ -796,6 +806,34 @@ export function RehearsalPartner({
           )}
         <details className="dia-secondary dia-settings">
           <summary>详情与设置</summary>
+          <details className="dia-input-examples">
+            <summary>试着这样说</summary>
+            <div className="dia-shortcut-rows">
+              {SHORTCUTS.map(({ label, items }) => (
+                <section key={label}>
+                  <strong>{label}</strong>
+                  <div className="dia-shortcuts">
+                    {items.map((text) => (
+                      <button
+                        key={text}
+                        type="button"
+                        disabled={state.busy}
+                        onClick={() => {
+                          if (text === '我自己来') controller.cancel('好的，继续手动置景。')
+                          else {
+                            controller.patch({ draft: text })
+                            composerInput.current?.focus()
+                          }
+                        }}
+                      >
+                        {text}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          </details>
           {BETA_REHEARSAL_ENABLED && (
             <label>
               对话信息密度
@@ -972,42 +1010,23 @@ export function RehearsalPartner({
           send()
         }}
       >
-        {!attachments.open && (
-          <p role="status" aria-live="polite" data-dia-state={state.thread?.status ?? 'idle'}>
-            {state.notice || '说说你想怎么调整。'}
+        {!attachments.open && state.notice && (
+          <p
+            className="dia-composer-status"
+            role="status"
+            aria-live="polite"
+            data-dia-state={state.thread?.status ?? 'idle'}
+            title={state.notice}
+          >
+            {state.notice.startsWith('已恢复这场对话。') ? '对话已恢复 · 预览待确认' : state.notice}
           </p>
         )}
         <GhostFeedbackError />
-        <details className="dia-input-examples">
-          <summary>试着这样说</summary>
-          <div className="dia-shortcut-rows">
-            {SHORTCUTS.map(({ label, items }) => (
-              <section key={label}>
-                <strong>{label}</strong>
-                <div className="dia-shortcuts">
-                  {items.map((text) => (
-                    <button
-                      key={text}
-                      type="button"
-                      disabled={state.busy}
-                      onClick={() =>
-                        text === '我自己来'
-                          ? controller.cancel('好的，继续手动置景。')
-                          : controller.patch({ draft: text })
-                      }
-                    >
-                      {text}
-                    </button>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        </details>
-        <div {...attachments.dropProps} className="dia-attachment-drop">
+        <div {...attachments.dropProps} className="dia-attachment-drop dia-composer-box">
           <label>
             <span className="sr-only">你想试什么？</span>
             <textarea
+              ref={composerInput}
               aria-label="你想试什么？"
               rows={2}
               maxLength={2000}
@@ -1025,27 +1044,42 @@ export function RehearsalPartner({
               }}
             />
           </label>
-          {attachments.controls}
-        </div>
-        <div className="dia-actions">
-          <button className="dia-primary" type="submit" disabled={sendDisabled}>
-            {attachments.pending ? '发送生成' : '发送'}
-          </button>
-          {VOICE_INPUT_ENABLED && (
-            <button
-              type="button"
-              disabled={state.busy}
-              aria-expanded={voice}
-              onClick={() => setVoice(!voice)}
-            >
-              {voice ? '收起录音' : '说一句'}
-            </button>
-          )}
-          {controllerState.busy && (
-            <button type="button" onClick={() => controller.cancel()}>
-              停止
-            </button>
-          )}
+          <div className="dia-composer-actions">
+            {attachments.controls}
+            <div className="dia-actions">
+              {controllerState.busy || attachments.busy ? (
+                <button
+                  className="dia-primary"
+                  type="button"
+                  onClick={() => {
+                    if (attachments.busy) attachments.stop()
+                    else controller.cancel()
+                  }}
+                >
+                  停止
+                </button>
+              ) : (
+                <button className="dia-primary" type="submit" disabled={sendDisabled}>
+                  {attachments.pending
+                    ? '发送生成'
+                    : state.thread?.status === 'failed' ||
+                        state.notice === SERVICE_REQUEST_FAILURE_NOTICE
+                      ? '重试'
+                      : '发送'}
+                </button>
+              )}
+              {VOICE_INPUT_ENABLED && (
+                <button
+                  type="button"
+                  disabled={state.busy}
+                  aria-expanded={voice}
+                  onClick={() => setVoice(!voice)}
+                >
+                  {voice ? '收起录音' : '说一句'}
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         {VOICE_INPUT_ENABLED && voice && (
           <div>

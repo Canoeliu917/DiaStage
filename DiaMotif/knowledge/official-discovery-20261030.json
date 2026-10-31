@@ -1,0 +1,632 @@
+[
+  {
+    "id": "dm-ai-shlab-poetry-production-2024",
+    "title": "《千秋诗颂》AIGC制作技术｜上海AI实验室一手说明",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-animation",
+      "ai-techniques"
+    ],
+    "topics": [
+      "千秋诗颂制作",
+      "千秋詩頌製作",
+      "AI动画流程",
+      "AIGC制作",
+      "书生筑梦",
+      "AnimateDiff",
+      "图像驱动",
+      "文生视频"
+    ],
+    "summary": "上海人工智能实验室2024年2月23日介绍其参与《千秋诗颂》的技术工作，提及视频生成、可控图像与图像驱动等方法，说明从美术到后期成片的AIGC辅助流程。这是参与方项目说明，未提供完整可复现教程，不能据此认定任意模型都能达到相同质量或工期。",
+    "organization": "上海人工智能实验室",
+    "url": "https://www.shlab.org.cn/news/5443872",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "上海AI实验室以技术参与方身份说明《千秋诗颂》使用书生·筑梦、AnimateDiff及可控图像生成和图像驱动等技术；原文明确为AIGC辅助动画制作。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "上海AI实验室：《千秋诗颂》与大模型研发共同体",
+        "url": "https://www.shlab.org.cn/news/5443872",
+        "locator": "页面来源及日期2024-02-23；从美术到后期的AIGC辅助说明及“当AI大模型遇到东方审美”小节。"
+      }
+    ],
+    "sourceKind": "research",
+    "publishedAt": "2024-02-23",
+    "applicableYear": "2024",
+    "aiInvolvement": "assisted",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-ai-aliyun-wan3-video-api",
+    "title": "万相3.0视频生成｜阿里云官方API与异步工作流",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-techniques",
+      "ai-techniques"
+    ],
+    "topics": [
+      "万相3.0",
+      "萬相3.0",
+      "AI视频生成",
+      "AI視頻生成",
+      "文生视频",
+      "图生视频",
+      "参考生视频",
+      "异步任务",
+      "视频API"
+    ],
+    "summary": "阿里云万相3.0官方API参考，说明文生、图生及参考生视频的输入方式，以及创建任务、轮询取回结果的异步流程。仅登记工具与制作技术资料，没有调用接口或产生视频；可用模型、地区、限制和收费须查供应商当前文档，资料收录不构成效果保证或产品推荐。",
+    "organization": "阿里云百炼",
+    "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "阿里云官方文档明确万相3.0为视频生成模型，列出文本、图像、视频及音频参考输入和生成任务API，直接涉及AI视听素材制作工作流。",
+    "sourceTier": "platform",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "阿里云：万相3.0视频生成API参考",
+        "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference",
+        "locator": "标题中的3.0版本；适用范围、HTTP调用、创建任务和media输入参数章节。核验读取正文未显示独立发布日期，不从URL或版本推断日期。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "aiInvolvement": "reference",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-ai-nrta-mediaaiac5-2026",
+    "title": "第五届MediaAIAC｜2026广电视听AI应用创新大赛通知",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-industry",
+      "ai-techniques"
+    ],
+    "topics": [
+      "MediaAIAC",
+      "广电视听AI",
+      "AI影视行业",
+      "人工智能应用创新大赛",
+      "内容生成",
+      "智能增强",
+      "分镜设计",
+      "动态预演"
+    ],
+    "summary": "广电总局2026年7月21日发布第五届MediaAIAC通知，内容生成赛道明确涉及剧本、分镜、声画生成与动态预演等视听生产环节。活动年度为2026年，原通知申报截止日期2026年8月31日已过；作为行业活动与技术方向记录，不显示为当前可报名机会。",
+    "organization": "国家广播电视总局办公厅／科技司",
+    "url": "https://www.nrta.gov.cn/art/2026/7/21/art_113_73728.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "广电办发〔2026〕179号明确人工智能应用大赛的内容生成、智能增强、虚拟数字人等赛道，具体覆盖电视剧、网络剧、微短剧的脚本、分镜和视听生成。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "广电总局：第五届MediaAIAC通知",
+        "url": "https://www.nrta.gov.cn/art/2026/7/21/art_113_73728.html",
+        "locator": "页面日期2026-07-21、文件落款2026-07-19；赛道设置“人工智能+内容”；申报截止2026-08-31。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-07-21",
+    "applicableYear": "2026",
+    "aiInvolvement": "reference",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-ai-beijing-jingxi-comic-2026",
+    "title": "京西剧谷AI动漫剧｜北京门头沟2026产业与作品公告",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-comic",
+      "ai-animation",
+      "ai-industry"
+    ],
+    "topics": [
+      "京西剧谷",
+      "京西劇谷",
+      "AI动漫剧",
+      "AI動漫劇",
+      "AI漫剧",
+      "AI漫劇",
+      "门头沟",
+      "数字视听",
+      "剧本生成",
+      "音画合成"
+    ],
+    "summary": "北京市政府门户2026年4月1日刊载门头沟京西剧谷AI动漫剧产业动态，描述AI参与剧本、分镜、角色渲染和音画合成的制作形态。属于发布方对当时作品及产业布局的说明；未据此核验每部作品的完整上线状态，不将年度目标、产量或宣传效果当作独立评测结果。",
+    "organization": "北京市人民政府门户／北京门头沟",
+    "url": "https://www.beijing.gov.cn/fuwu/lqfw/gggs/202604/t20260401_4572056.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "北京市政府门户刊载北京门头沟原始产业信息，正文明确作品采用AI与动漫剧形态，列出剧本生成、分镜设计、角色渲染及音画合成等AI环节。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "首都之窗：京西剧谷首批AI动漫剧集中亮相",
+        "url": "https://www.beijing.gov.cn/fuwu/lqfw/gggs/202604/t20260401_4572056.html",
+        "locator": "页面日期2026-04-01、来源北京门头沟；“人工智能深度赋能”及产教融合段落。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-04-01",
+    "applicableYear": "2026",
+    "aiInvolvement": "reference",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-ai-nrta-comic-production-analysis-2026",
+    "title": "AI漫剧的人机协作与制作｜人民日报海外版2026行业报道",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-comic",
+      "ai-techniques",
+      "ai-industry"
+    ],
+    "topics": [
+      "AI漫剧制作",
+      "AI漫劇製作",
+      "人机协作",
+      "剧本分镜",
+      "画面一致性",
+      "人工创意",
+      "精品化",
+      "AI影视行业"
+    ],
+    "summary": "广电总局2026年3月26日刊载《人民日报海外版》行业报道，介绍AI漫剧的脚本、分镜、画面生成与人工修订，并讨论叙事、连贯性及版权问题。这是政府网站转载的专业媒体报道，不是监管规范或独立实验；文中受访者的成本、工期和播放量不转写为通用结论。",
+    "organization": "人民日报海外版／国家广播电视总局媒体声音栏目",
+    "url": "https://www.nrta.gov.cn/art/2026/3/26/art_3731_72968.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "报道设有“AI漫剧：算力与人工的合力”小节，具名介绍AIGC创作团队的编剧、分镜、生成和人工打磨分工，直接关联AI影视制作实践。",
+    "sourceTier": "professional-media",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "从“拼量”到“提质”——漫剧成为微短剧领域新看点",
+        "url": "https://www.nrta.gov.cn/art/2026/3/26/art_3731_72968.html",
+        "locator": "页面日期2026-03-26、来源人民日报海外版；“AI漫剧：算力与人工的合力”及精品化讨论。"
+      }
+    ],
+    "sourceKind": "professional-media",
+    "publishedAt": "2026-03-26",
+    "applicableYear": "2026",
+    "aiInvolvement": "reference",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-chinatheatre-beijing-festival-2026",
+    "title": "2026当代国际戏剧节暨剧荟北京｜主办方届次说明",
+    "category": "festivals",
+    "subtopics": [
+      "festival"
+    ],
+    "topics": [
+      "2026当代国际戏剧节",
+      "2026當代國際戲劇節",
+      "剧荟北京",
+      "劇薈北京",
+      "北京戏剧节",
+      "戏曲",
+      "音乐剧",
+      "木偶剧",
+      "世界戏剧人论坛"
+    ],
+    "summary": "中国剧协2026年9月2日发布北京戏剧节及艺术季说明，包含北京场地的剧目展演、论坛、演后谈和讲座安排。条目限定在中国大陆举办的这一届活动；国际剧团来华演出仍以本地官方版本为准，不扩展海外站点，也不凭发布时排期推定当前余票或实际举行状态。",
+    "organization": "中国戏剧家协会",
+    "url": "https://www.chinatheatre.org.cn/jxhd/202610/t20261011_1363010.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "中国剧协作为主办方在官网列出2026当代国际戏剧节的北京举办地点、戏剧门类及专业交流活动；地域依据为正文北京剧场与主办单位，不以参演剧团国籍决定来源范围。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国剧协：2026当代国际戏剧节暨剧荟北京艺术季",
+        "url": "https://www.chinatheatre.org.cn/jxhd/202610/t20261011_1363010.html",
+        "locator": "原页“时间：2026.09.02”；主办承办、2026年9至11月北京活动及十大剧场段落。URL中的年月不作为发布日期。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-09-02",
+    "applicableYear": "2026",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-chinatheatre-small-stage-call-2026",
+    "title": "第三届全国小剧场戏剧展演｜中国剧协2026征集通知",
+    "category": "festivals",
+    "subtopics": [
+      "festival-open-call"
+    ],
+    "topics": [
+      "全国小剧场戏剧展演",
+      "全國小劇場戲劇展演",
+      "第三届",
+      "剧目征集",
+      "劇目徵集",
+      "小剧场",
+      "原创戏剧",
+      "儿童剧",
+      "苏州"
+    ],
+    "summary": "中国剧协2026年5月8日发布第三届全国小剧场戏剧展演征集通知，列明剧目类别、原创或改编要求、权利归属及申报材料。原通知的2026年5月22日截止日期已过；作为展演征集制度与历史届次资料，不显示为仍可申报或已经入选。",
+    "organization": "中国戏剧家协会",
+    "url": "https://www.chinatheatre.org.cn/jxgg/202605/t20260508_1359473.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "中国剧协官方通知为江苏苏州小剧场戏剧展演征集，明确话剧、戏曲、舞剧、音乐剧、儿童剧与木偶剧等门类，以及合法申报和演出权要求。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国剧协：第三届全国小剧场戏剧优秀剧目展演征集",
+        "url": "https://www.chinatheatre.org.cn/jxgg/202605/t20260508_1359473.html",
+        "locator": "原页日期2026-05-08；剧目要求、申报材料与2026-05-22截止日期。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-05-08",
+    "applicableYear": "2026",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-nanjing-directing-acting-workshop-2026",
+    "title": "南京青年戏剧表导演工作坊｜2026专业活动记录",
+    "category": "festivals",
+    "subtopics": [
+      "workshop"
+    ],
+    "topics": [
+      "南京戏剧工作坊",
+      "南京戲劇工作坊",
+      "表导演工作坊",
+      "表導演工作坊",
+      "贺坪",
+      "林溪儿",
+      "文本分析",
+      "人物关系",
+      "角色塑造",
+      "金陵剧本汇"
+    ],
+    "summary": "南京市文联2026年7月2日发布青年戏剧表导演工作坊，介绍贺坪、林溪儿及文本分析、人物关系、角色塑造和表导演协作内容。活动原定同年7月6至7日，核验时日期已过；保留专业活动及方法主题，不把旧报名二维码当作当前课程或复制讲授内容。",
+    "organization": "南京市文学艺术界联合会／南京市剧协",
+    "url": "https://wl.nanjing.gov.cn/fwdt/zjsb/202607/t20260702_5870221.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "南京市文联官网发布、南京市剧协供稿，具名列出青年戏剧工作坊导师、话剧作品及南京市文联小剧场场地，明确属于戏剧表导演专业实践。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "南京市文联：贺坪×林溪儿青年戏剧表导演工作坊",
+        "url": "https://wl.nanjing.gov.cn/fwdt/zjsb/202607/t20260702_5870221.html",
+        "locator": "原页发布日期2026-07-02；工作坊日程2026-07-06至07、适合人群、场地及市剧协供稿署名。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-07-02",
+    "applicableYear": "2026",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-cntc-children-festival15",
+    "title": "第十五届中国儿童戏剧节｜中国儿艺官方专题",
+    "category": "festivals",
+    "subtopics": [
+      "festival"
+    ],
+    "topics": [
+      "中国儿童戏剧节",
+      "中國兒童戲劇節",
+      "第十五届",
+      "儿童戏剧节",
+      "儿童剧",
+      "北京",
+      "嘉兴秀洲",
+      "花木兰",
+      "夜莺"
+    ],
+    "summary": "中国儿童艺术剧院第十五届戏剧节专题，介绍北京、嘉兴秀洲等会场、儿童剧目及戏剧体验活动。原页写明7月10日至8月底的活动区间，未见独立发布日期；保留届次，不据“今年”等表述补造发布时间，也不显示为当前仍在举办或保证线上展播可访问。",
+    "organization": "中国儿童艺术剧院",
+    "url": "https://www.cntc.org.cn/Column-193.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "theatreEvidence": "中国儿艺主办方专题列明第十五届中国儿童戏剧节、北京及嘉兴秀洲主会场、儿童话剧和音乐剧作品及专业延伸活动，均为中国大陆举办的戏剧节资料。",
+    "sourceTier": "official",
+    "status": "source-directory",
+    "sourceRefs": [
+      {
+        "title": "中国儿童艺术剧院：第十五届中国儿童戏剧节",
+        "url": "https://www.cntc.org.cn/Column-193.html",
+        "locator": "专题首段主办方和7月10日至8月底区间；中外精品剧目同台展演及全域戏剧体验小节。原站经网页读取代理取得正文，未独立核验每一场演出。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-hkrep-script-publications",
+    "title": "香港话剧团剧本与戏剧文学刊物｜官方书目及订购入口",
+    "category": "scripts",
+    "subtopics": [
+      "script-play"
+    ],
+    "topics": [
+      "香港话剧团剧本",
+      "香港話劇團劇本",
+      "香港剧本",
+      "香港劇本",
+      "黑盒剧场原创剧本集",
+      "黑盒劇場原創劇本集",
+      "郑国伟",
+      "都是龙袍惹的祸",
+      "剧本文学"
+    ],
+    "summary": "香港话剧团官方剧本及戏剧文学刊物目录，列有原创剧本集、版本编号、订购方式及部分售罄标记。可查合法出版来源和作品版本；本条未提供或入库剧本全文，当前库存、售价和演出改编授权需向原发布方另核，不把购买书籍等同于取得演出许可。",
+    "organization": "香港话剧团",
+    "url": "https://www.hkrep.com/tc/About-Us/Publication-research.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "theatreEvidence": "香港话剧团官网列出戏剧文学研究刊物、具名剧本集、版本编号及原机构订购方式，直接关联香港话剧创作与出版，而非泛影视读物。",
+    "sourceTier": "official",
+    "status": "source-directory",
+    "sourceRefs": [
+      {
+        "title": "香港话剧团：戏剧文学研究及刊物",
+        "url": "https://www.hkrep.com/tc/About-Us/Publication-research.html",
+        "locator": "开头出版与订购说明；《都是龙袍惹的祸》三语版、《暧昧日子》《黑盒剧场原创剧本集》等条目及版本编号。未见独立发布日期。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "hong-kong"
+  },
+  {
+    "id": "dm-resource-hkrep-professional-jobs",
+    "title": "香港话剧团职位空缺｜剧场后台与戏剧教育岗位入口",
+    "category": "opportunities",
+    "topics": [
+      "香港话剧团招聘",
+      "香港話劇團招聘",
+      "戏剧招聘",
+      "戲劇招聘",
+      "后台招聘",
+      "後台招聘",
+      "兼职",
+      "兼職",
+      "剧场岗位"
+    ],
+    "summary": "香港话剧团官方职位目录，核验页面列有兼职后台人员及戏剧课程助教等条目，条目日期显示2025年7月22日。仅提供原机构招聘入口；未核实每项岗位是否仍招募、资格与截止日期，不把旧职位页标成最新招聘或替申请人提交资料。",
+    "organization": "香港话剧团",
+    "url": "https://www.hkrep.com/tc/About-Us/Job-Vacancies.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "theatreEvidence": "香港话剧团官网职位空缺目录具名列出剧场后台及戏剧教育助教岗位，发布主体与剧团直接相关；只登记专业岗位入口不采集申请者个人资料。",
+    "sourceTier": "official",
+    "status": "source-directory",
+    "sourceRefs": [
+      {
+        "title": "香港话剧团：职位空缺",
+        "url": "https://www.hkrep.com/tc/About-Us/Job-Vacancies.html",
+        "locator": "目录中的兼职后台工作人员、幼儿及儿童戏剧课程助教条目与2025-07-22日期；未读取各岗位完整招聘条件。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "hong-kong"
+  },
+  {
+    "id": "dm-resource-hkrep-kite-script-call-2627",
+    "title": "香港话剧团风筝计划2026—27｜原创剧本孵化征稿",
+    "category": "opportunities",
+    "topics": [
+      "风筝计划",
+      "風箏計劃",
+      "2026-27",
+      "剧本征稿",
+      "劇本徵稿",
+      "原创剧本",
+      "原創劇本",
+      "剧本孵化",
+      "公开演读",
+      "逆转"
+    ],
+    "summary": "香港话剧团2026—27年度原创剧本孕育计划，说明征稿、公开演读与修订、作品精炼三阶段。原页征稿截至2026年8月9日，核验时已过；作为华语剧作者发展机会的历史制度资料，不表示目前仍收稿，也不将影视或音乐剧作品误列为该轮可接受类型。",
+    "organization": "香港话剧团",
+    "url": "https://www.hkrep.com/tc/Season-Programme/Project-Kite/2627.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "香港话剧团官方2026—27风筝计划明确征集未公开发表原创舞台剧本，并安排演读、剧本修订及艺术团队辅导；这是戏剧创作人才孵化机会。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "香港话剧团：2026—27年度风筝计划公开征稿",
+        "url": "https://www.hkrep.com/tc/Season-Programme/Project-Kite/2627.html",
+        "locator": "年度与“逆．转”主题；第一阶段征稿日期2026-08-09、作品要求；第二和第三阶段演读、修订与精炼说明。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": "2026-27",
+    "contentRegion": "hong-kong"
+  },
+  {
+    "id": "dm-resource-hkrep-operation-oops-2026",
+    "title": "音乐剧《狼狈行动》2026香港版｜官方排期与制作资料",
+    "category": "events",
+    "topics": [
+      "狼狈行动",
+      "狼狽行動",
+      "Operation Oops",
+      "香港音乐剧",
+      "香港音樂劇",
+      "2026香港演出",
+      "李宇梁",
+      "李宇樑",
+      "高世章",
+      "方俊杰",
+      "香港大会堂"
+    ],
+    "summary": "香港话剧团公布音乐剧《狼狈行动》在香港大会堂剧院2026年11月22日至12月13日的排期，附主创、分组演出及官方票务入口。仅记录这一香港制作版本；场次变更、卡司与余票以原站及售票系统为准，未查询实时库存或承诺当前票价。",
+    "organization": "香港话剧团",
+    "url": "https://www.hkrep.com/tc/Season-Programme/Main-Stage-Productions/Operation-Oops.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "production",
+    "theatreEvidence": "剧团官网具名说明音乐剧《狼狈行动》的香港大会堂场地、2026演出日期、编剧李宇樑、导演方俊杰及舞台制作人员；为香港具体戏剧演出版本。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "香港话剧团：音乐剧《狼狈行动》",
+        "url": "https://www.hkrep.com/tc/Season-Programme/Main-Stage-Productions/Operation-Oops.html",
+        "locator": "页首香港大会堂及2026-11-22至12-13区间；演出日期及地点、门票资料、幕前及幕后工作人员栏目。未见独立发布日期。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": "2026",
+    "contentRegion": "hong-kong"
+  },
+  {
+    "id": "dm-resource-cntc-company-profile",
+    "title": "中国儿童艺术剧院｜院团与大小剧场介绍",
+    "category": "venues",
+    "topics": [
+      "中国儿童艺术剧院",
+      "中國兒童藝術劇院",
+      "中国儿艺",
+      "中國兒藝",
+      "儿童剧团",
+      "儿童剧场",
+      "假日经典小剧场",
+      "马兰花",
+      "花木兰"
+    ],
+    "summary": "中国儿童艺术剧院官方介绍，说明国家儿童戏剧院团定位、创演作品及中国儿童剧场和假日经典小剧场。用于了解机构和儿童戏剧创作方向，不据机构自述推断当前所有人员、完整剧目档案、场馆容量或可用档期。",
+    "organization": "中国儿童艺术剧院",
+    "url": "https://www.cntc.org.cn/Column-2.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "剧院官网自述为文化和旅游部直属国家艺术院团，列出儿童戏剧作品、创作业务及中国儿童剧场、假日经典小剧场，确认中国大陆戏剧院团关联。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国儿童艺术剧院：剧院介绍",
+        "url": "https://www.cntc.org.cn/Column-2.html",
+        "locator": "剧院简介首段院团归属；作品介绍；附属中国儿童剧场及假日经典小剧场段落。原站经网页读取代理取得正文，未见独立发布日期。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-cntc-official-ticket-entry",
+    "title": "中国儿艺演出购票｜官方儿童剧票务入口",
+    "category": "events",
+    "topics": [
+      "中国儿艺购票",
+      "中國兒藝購票",
+      "儿童剧购票",
+      "兒童劇購票",
+      "中国儿童剧场",
+      "马兰花",
+      "小布头奇遇记",
+      "西游记"
+    ],
+    "summary": "中国儿童艺术剧院官网演出购票入口，会转至其链接的售票平台，页面可按儿童剧和场馆浏览项目。本条只核实官方入口及跳转关系；读取时部分日期字段未完整呈现，未据此抄录票价、场次或库存，购票前须在原站核对实际排期与服务条件。",
+    "organization": "中国儿童艺术剧院",
+    "url": "https://www.cntc.org.cn/Column-143.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "theatreEvidence": "中国儿童艺术剧院官网导航直接提供在线购票入口，跳转页按儿童剧及中国儿童艺术剧院场馆展示舞台演出项目；只作为院团票务来源入口。",
+    "sourceTier": "official",
+    "status": "source-directory",
+    "sourceRefs": [
+      {
+        "title": "中国儿童艺术剧院：在线购票",
+        "url": "https://www.cntc.org.cn/Column-143.html",
+        "locator": "官网“演出购票—在线购票”栏目；读取代理记录原站跳转至院团链接的售票系统，部分日期为不完整字段，未作实时票务核验。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-chinawriter-cao-yu-profile",
+    "title": "曹禺｜中国作家网戏剧生平与作品目录",
+    "category": "people",
+    "topics": [
+      "曹禺",
+      "雷雨",
+      "日出",
+      "北京人",
+      "原野",
+      "剧作家",
+      "劇作家",
+      "话剧编剧",
+      "中国现代戏剧"
+    ],
+    "summary": "中国作家网曹禺档案，具名列出《雷雨》《日出》《北京人》《原野》等剧作及其历史戏剧任职。用于核对剧作家与作品的关联；页面未显示独立发布日期，不将历史职务写作现任，也不代表提供所列剧本全文或已解决各版本使用许可。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/fwzj/wxds/7.shtml",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "中国作家网曹禺生平档案明确列出《雷雨》《日出》《北京人》《原野》等话剧作品，以及中央戏剧学院和北京人民艺术剧院的历史职务，人物与戏剧创作关联可定位。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网：曹禺生平与作品荟萃",
+        "url": "https://www.chinawriter.com.cn/fwzj/wxds/7.shtml",
+        "locator": "“曹禺生平介绍”中的戏剧任职与著作段落；“作品荟萃—其他作品”剧本目录。页面未显示独立发布日期。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland"
+  }
+]

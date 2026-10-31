@@ -3,10 +3,10 @@
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { type AccountUser, HomeAccountPanel } from '@/components/account-panel'
-import { DIASTAGE_BRAND } from '@/lib/brand'
+import type { AccountUser } from '@/components/account-panel'
+import { TheatreSearchHome } from '@/components/diamotif-search/theatre-search-home'
 import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
-import { CoordinateField, type HomeSpaceAction } from './coordinate-field'
+import type { HomeSpaceAction } from './coordinate-field'
 import './stage-entry.css'
 
 const StageCommandInput = dynamic(
@@ -33,20 +33,21 @@ const entries = {
 
 export function HomeStageSpace({
   initialEntry,
-  initiallyLit = false,
-  emailEnabled = false,
+  initialQuery,
+  initialCategory,
+  initialTopic,
   modelConfigured = false,
   user,
 }: {
   initialEntry?: string
-  initiallyLit?: boolean
-  emailEnabled?: boolean
+  initialQuery?: string
+  initialCategory?: string
+  initialTopic?: string
   modelConfigured?: boolean
   user: AccountUser | null
 }) {
   const [entry, setEntry] = useState<Entry | null>(null)
   const [draft, setDraft] = useState('')
-  const [illuminated, setIlluminated] = useState(initiallyLit)
   const dialog = useRef<HTMLDialogElement>(null)
   const opener = useRef<HTMLElement | null>(null)
 
@@ -81,45 +82,15 @@ export function HomeStageSpace({
   }
 
   return (
-    <div className="dia-home-space" data-illuminated={illuminated}>
-      {!illuminated && <p className="dia-space-tagline">咫尺之外，自在舞台。</p>}
-      {illuminated && <HomeAccountPanel user={user} emailEnabled={emailEnabled} />}
-      <CoordinateField
-        accountId={user?.id}
-        onSelect={open}
-        illuminated={illuminated}
-        onToggleLight={() => setIlluminated((current) => !current)}
+    <div className="motif-home-space">
+      <TheatreSearchHome
+        user={user}
+        initialQuery={initialQuery}
+        initialCategory={initialCategory}
+        initialTopic={initialTopic}
+        openStage={() => open('manual')}
+        openScript={() => open('script')}
       />
-      <section className="dia-space-footer" aria-labelledby="dia-about-title">
-        <h2 id="dia-about-title">
-          <span className="dia-home-simplified" lang="zh-CN">
-            认识
-          </span>{' '}
-          Dia 与 DiaStage
-          <span aria-hidden="true">↓</span>
-        </h2>
-        <div className="dia-space-details">
-          <p className="dia-space-companion">{DIASTAGE_BRAND.companion}</p>
-          <dl>
-            {DIASTAGE_BRAND.capabilities.map(([name, description]) => (
-              <div key={name}>
-                <dt>{name}</dt>
-                <dd>{description}</dd>
-              </div>
-            ))}
-          </dl>
-          <div className="dia-space-introduction">
-            <p>{DIASTAGE_BRAND.nameMeaning}</p>
-          </div>
-          <p className="dia-space-motto">AI虽能完成想象，但还请相信直觉。</p>
-        </div>
-      </section>
-      <footer className="dia-space-registration flex-wrap gap-x-4">
-        <a href="mailto:21@diastage.art">联系：21@diastage.art</a>
-        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
-          粤ICP备2026162365号
-        </a>
-      </footer>
       {entry && (
         <dialog
           ref={dialog}

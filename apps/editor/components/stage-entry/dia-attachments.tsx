@@ -1,5 +1,6 @@
 'use client'
 
+import { Plus, X } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { type DragEvent, useRef, useState } from 'react'
 import { classifyDiaAttachment } from './attachment-files'
@@ -67,6 +68,14 @@ export function useDiaAttachments({
     open: attachment !== null,
     pending: attachment !== null && submission === null,
     busy,
+    stop: () => {
+      // Unmounting the preview aborts its request; keep the attachment and draft for retry.
+      setSubmission(null)
+      setBusy(false)
+    },
+    pick: () => {
+      if (!disabled && !attachment) input.current?.click()
+    },
     send: (note: string) => {
       if (disabled || !attachment || submission || busy) return
       if (note.trim().length > 2000) {
@@ -98,31 +107,40 @@ export function useDiaAttachments({
           <div className="dia-attachment-file">
             <span title={attachment.file.name}>{attachment.file.name}</span>
             <button type="button" disabled={busy} onClick={remove} aria-label="移除附件">
-              ×
+              <X size={18} aria-hidden="true" />
             </button>
           </div>
         ) : (
-          <button type="button" disabled={disabled} onClick={() => input.current?.click()}>
-            添加图片 / PDF
+          <button
+            type="button"
+            className="dia-attachment-add"
+            aria-label="添加图片或 PDF"
+            title="添加图片或 PDF"
+            disabled={disabled}
+            onClick={() => input.current?.click()}
+          >
+            <Plus size={20} aria-hidden="true" />
           </button>
         )}
-        <p className="dia-attachment-hint">
-          <span>
-            {submission
-              ? '确认采用后，才会保存布景。'
-              : attachment
-                ? '可补充要求，发送后生成布景预览。'
-                : '拖入图片或 PDF，发送生成布景。'}
-          </span>
-          <span role={error ? 'alert' : undefined}>
-            {error ||
-              (attachment?.kind === 'photo'
-                ? modelConfigured
-                  ? '图片将交由 AI 识别，尺寸为估算。'
-                  : '照片 AI 尚未启用，暂时无法生成。'
-                : '仅保存采纳片段，不保存原 PDF。')}
-          </span>
-        </p>
+        {(attachment || error) && (
+          <p className="dia-attachment-hint">
+            <span>
+              {submission
+                ? '确认采用后，才会保存布景。'
+                : attachment
+                  ? '可补充要求，发送后生成布景预览。'
+                  : '拖入图片或 PDF，发送生成布景。'}
+            </span>
+            <span role={error ? 'alert' : undefined}>
+              {error ||
+                (attachment?.kind === 'photo'
+                  ? modelConfigured
+                    ? '图片将交由 AI 识别，尺寸为估算。'
+                    : '照片 AI 尚未启用，暂时无法生成。'
+                  : '仅保存采纳片段，不保存原 PDF。')}
+            </span>
+          </p>
+        )}
       </div>
     ),
     panel: attachment && submission && (

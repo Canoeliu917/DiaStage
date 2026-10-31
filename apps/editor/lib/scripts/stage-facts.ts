@@ -129,6 +129,21 @@ const samePlacement = (a: StageItemProposal, b: StageItemProposal) =>
   JSON.stringify(a.dimensionsMeters) === JSON.stringify(b.dimensionsMeters) &&
   JSON.stringify(a.transform) === JSON.stringify(b.transform)
 
+function explicitItemCount(excerpt: string, item: StageItemProposal): number {
+  const words = sceneryWords[item.kind]
+  if (!words) return 0
+  const name = item.displayName.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+  const noun = `(?:${name}|${words.source})`
+  if (new RegExp(`同一(?:把|张|件|块|扇|个|组)?${noun}`, 'u').test(excerpt)) return 0
+  const count = excerpt.match(
+    new RegExp(
+      `(?:^|[^\\d])([2-9]|[1-9]\\d|二|两|三|四|五|六|七|八|九|十)\\s*[把张件块扇个组]\\s*${noun}`,
+      'u',
+    ),
+  )?.[1]
+  return count ? Number(count) || '一二三四五六七八九十'.indexOf(count.replace('两', '二')) + 1 : 0
+}
+
 export function emptyScriptPlan(): StagePlan {
   return {
     schemaVersion: 1,
@@ -184,6 +199,7 @@ export function mergeStageFacts(inputs: StagePlan[]): StagePlan {
           options: [],
         })
     }
+    const chunkItems = new Set<string>()
     for (const item of plan.items) {
       const candidate: StageItemProposal = {
         ...item,
@@ -204,7 +220,18 @@ export function mergeStageFacts(inputs: StagePlan[]): StagePlan {
         map.set(item.proposalId, candidate.proposalId)
         result.items.push(candidate)
         const previous = same[0]
-        if (previous)
+        const separateItems = same.every(
+          (other) =>
+            chunkItems.has(other.proposalId) &&
+            plan.evidence.some(
+              (evidence) =>
+                item.evidenceIds.includes(evidence.id) &&
+                other.evidenceIds.includes(map.get(evidence.id) ?? evidence.id) &&
+                explicitItemCount(evidence.excerpt, item) >= same.length + 1,
+            ),
+        )
+        chunkItems.add(candidate.proposalId)
+        if (previous && !separateItems)
           result.questions.push({
             id: `script-item-conflict|${previous.proposalId}|${candidate.proposalId}`,
             message: `“${item.displayName}”出现不同尺寸或台位。请选择本次舞台需要的状态。`,

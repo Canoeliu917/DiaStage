@@ -5,8 +5,11 @@ import {
   withSceneApiHeaders,
 } from '../scene-api-security'
 import { SceneContextTooLargeError } from '../stage/relevant-context'
+import { AiError, type ApiErrorBody } from './error'
 import { ModelBudgetError } from './model-budget'
 import { aiRequestContext } from './usage'
+
+export { AiError, type ApiErrorBody } from './error'
 
 export const AI_LIMITS = {
   jsonBytes: 1024 * 1024,
@@ -14,42 +17,6 @@ export const AI_LIMITS = {
   requestsPerMinute: 12,
   maxRateBuckets: 1000,
 } as const
-
-export interface ApiErrorBody {
-  requestId: string
-  error: {
-    code:
-      | 'UNSUPPORTED_FILE'
-      | 'FILE_TOO_LARGE'
-      | 'SCANNED_PDF'
-      | 'CORRUPT_DOCUMENT'
-      | 'AUDIO_UNSUPPORTED'
-      | 'TRANSCRIPTION_FAILED'
-      | 'PLAN_INVALID'
-      | 'AMBIGUOUS_COMMAND'
-      | 'RATE_LIMITED'
-      | 'INTERNAL_ERROR'
-      | 'BUDGET_CONFIRMATION_REQUIRED'
-      | 'BUDGET_EXCEEDED'
-      | 'AI_INVITE_REQUIRED'
-    message: string
-    retryable: boolean
-    estimateCny?: number
-  }
-}
-
-export class AiError extends Error {
-  constructor(
-    readonly code: ApiErrorBody['error']['code'],
-    message: string,
-    readonly status = 400,
-    readonly retryable = false,
-    readonly estimateCny?: number,
-  ) {
-    super(message)
-    this.name = 'AiError'
-  }
-}
 
 const rateBuckets = new Map<string, { count: number; resetAt: number }>()
 

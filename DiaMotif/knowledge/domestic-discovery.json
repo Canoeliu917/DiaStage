@@ -1,0 +1,3632 @@
+[
+  {
+    "id": "dm-ai-shlab-poetry-production-2024",
+    "title": "《千秋诗颂》AIGC制作技术｜上海AI实验室一手说明",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-animation",
+      "ai-techniques"
+    ],
+    "topics": [
+      "千秋诗颂制作",
+      "千秋詩頌製作",
+      "AI动画流程",
+      "AIGC制作",
+      "书生筑梦",
+      "AnimateDiff",
+      "图像驱动",
+      "文生视频"
+    ],
+    "summary": "上海人工智能实验室2024年2月23日介绍其参与《千秋诗颂》的技术工作，提及视频生成、可控图像与图像驱动等方法，说明从美术到后期成片的AIGC辅助流程。这是参与方项目说明，未提供完整可复现教程，不能据此认定任意模型都能达到相同质量或工期。",
+    "organization": "上海人工智能实验室",
+    "url": "https://www.shlab.org.cn/news/5443872",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "上海AI实验室以技术参与方身份说明《千秋诗颂》使用书生·筑梦、AnimateDiff及可控图像生成和图像驱动等技术；原文明确为AIGC辅助动画制作。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "上海AI实验室：《千秋诗颂》与大模型研发共同体",
+        "url": "https://www.shlab.org.cn/news/5443872",
+        "locator": "页面来源及日期2024-02-23；从美术到后期的AIGC辅助说明及“当AI大模型遇到东方审美”小节。"
+      }
+    ],
+    "sourceKind": "research",
+    "publishedAt": "2024-02-23",
+    "applicableYear": "2024",
+    "aiInvolvement": "assisted",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-ai-aliyun-wan3-video-api",
+    "title": "万相3.0视频生成｜阿里云官方API与异步工作流",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-techniques",
+      "ai-techniques"
+    ],
+    "topics": [
+      "万相3.0",
+      "萬相3.0",
+      "AI视频生成",
+      "AI視頻生成",
+      "文生视频",
+      "图生视频",
+      "参考生视频",
+      "异步任务",
+      "视频API"
+    ],
+    "summary": "阿里云万相3.0官方API参考，说明文生、图生及参考生视频的输入方式，以及创建任务、轮询取回结果的异步流程。仅登记工具与制作技术资料，没有调用接口或产生视频；可用模型、地区、限制和收费须查供应商当前文档，资料收录不构成效果保证或产品推荐。",
+    "organization": "阿里云百炼",
+    "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "阿里云官方文档明确万相3.0为视频生成模型，列出文本、图像、视频及音频参考输入和生成任务API，直接涉及AI视听素材制作工作流。",
+    "sourceTier": "platform",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "阿里云：万相3.0视频生成API参考",
+        "url": "https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference",
+        "locator": "标题中的3.0版本；适用范围、HTTP调用、创建任务和media输入参数章节。核验读取正文未显示独立发布日期，不从URL或版本推断日期。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "aiInvolvement": "reference",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-ai-nrta-mediaaiac5-2026",
+    "title": "第五届MediaAIAC｜2026广电视听AI应用创新大赛通知",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-industry",
+      "ai-techniques"
+    ],
+    "topics": [
+      "MediaAIAC",
+      "广电视听AI",
+      "AI影视行业",
+      "人工智能应用创新大赛",
+      "内容生成",
+      "智能增强",
+      "分镜设计",
+      "动态预演"
+    ],
+    "summary": "广电总局2026年7月21日发布第五届MediaAIAC通知，内容生成赛道明确涉及剧本、分镜、声画生成与动态预演等视听生产环节。活动年度为2026年，原通知申报截止日期2026年8月31日已过；作为行业活动与技术方向记录，不显示为当前可报名机会。",
+    "organization": "国家广播电视总局办公厅／科技司",
+    "url": "https://www.nrta.gov.cn/art/2026/7/21/art_113_73728.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "广电办发〔2026〕179号明确人工智能应用大赛的内容生成、智能增强、虚拟数字人等赛道，具体覆盖电视剧、网络剧、微短剧的脚本、分镜和视听生成。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "广电总局：第五届MediaAIAC通知",
+        "url": "https://www.nrta.gov.cn/art/2026/7/21/art_113_73728.html",
+        "locator": "页面日期2026-07-21、文件落款2026-07-19；赛道设置“人工智能+内容”；申报截止2026-08-31。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-07-21",
+    "applicableYear": "2026",
+    "aiInvolvement": "reference",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-ai-beijing-jingxi-comic-2026",
+    "title": "京西剧谷AI动漫剧｜北京门头沟2026产业与作品公告",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-comic",
+      "ai-animation",
+      "ai-industry"
+    ],
+    "topics": [
+      "京西剧谷",
+      "京西劇谷",
+      "AI动漫剧",
+      "AI動漫劇",
+      "AI漫剧",
+      "AI漫劇",
+      "门头沟",
+      "数字视听",
+      "剧本生成",
+      "音画合成"
+    ],
+    "summary": "北京市政府门户2026年4月1日刊载门头沟京西剧谷AI动漫剧产业动态，描述AI参与剧本、分镜、角色渲染和音画合成的制作形态。属于发布方对当时作品及产业布局的说明；未据此核验每部作品的完整上线状态，不将年度目标、产量或宣传效果当作独立评测结果。",
+    "organization": "北京市人民政府门户／北京门头沟",
+    "url": "https://www.beijing.gov.cn/fuwu/lqfw/gggs/202604/t20260401_4572056.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "北京市政府门户刊载北京门头沟原始产业信息，正文明确作品采用AI与动漫剧形态，列出剧本生成、分镜设计、角色渲染及音画合成等AI环节。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "首都之窗：京西剧谷首批AI动漫剧集中亮相",
+        "url": "https://www.beijing.gov.cn/fuwu/lqfw/gggs/202604/t20260401_4572056.html",
+        "locator": "页面日期2026-04-01、来源北京门头沟；“人工智能深度赋能”及产教融合段落。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-04-01",
+    "applicableYear": "2026",
+    "aiInvolvement": "reference",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-ai-nrta-comic-production-analysis-2026",
+    "title": "AI漫剧的人机协作与制作｜人民日报海外版2026行业报道",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-comic",
+      "ai-techniques",
+      "ai-industry"
+    ],
+    "topics": [
+      "AI漫剧制作",
+      "AI漫劇製作",
+      "人机协作",
+      "剧本分镜",
+      "画面一致性",
+      "人工创意",
+      "精品化",
+      "AI影视行业"
+    ],
+    "summary": "广电总局2026年3月26日刊载《人民日报海外版》行业报道，介绍AI漫剧的脚本、分镜、画面生成与人工修订，并讨论叙事、连贯性及版权问题。这是政府网站转载的专业媒体报道，不是监管规范或独立实验；文中受访者的成本、工期和播放量不转写为通用结论。",
+    "organization": "人民日报海外版／国家广播电视总局媒体声音栏目",
+    "url": "https://www.nrta.gov.cn/art/2026/3/26/art_3731_72968.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "aiEvidence": "报道设有“AI漫剧：算力与人工的合力”小节，具名介绍AIGC创作团队的编剧、分镜、生成和人工打磨分工，直接关联AI影视制作实践。",
+    "sourceTier": "professional-media",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "从“拼量”到“提质”——漫剧成为微短剧领域新看点",
+        "url": "https://www.nrta.gov.cn/art/2026/3/26/art_3731_72968.html",
+        "locator": "页面日期2026-03-26、来源人民日报海外版；“AI漫剧：算力与人工的合力”及精品化讨论。"
+      }
+    ],
+    "sourceKind": "professional-media",
+    "publishedAt": "2026-03-26",
+    "applicableYear": "2026",
+    "aiInvolvement": "reference",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-chinatheatre-beijing-festival-2026",
+    "title": "2026当代国际戏剧节暨剧荟北京｜主办方届次说明",
+    "category": "festivals",
+    "subtopics": [
+      "festival"
+    ],
+    "topics": [
+      "2026当代国际戏剧节",
+      "2026當代國際戲劇節",
+      "剧荟北京",
+      "劇薈北京",
+      "北京戏剧节",
+      "戏曲",
+      "音乐剧",
+      "木偶剧",
+      "世界戏剧人论坛"
+    ],
+    "summary": "中国剧协2026年9月2日发布北京戏剧节及艺术季说明，包含北京场地的剧目展演、论坛、演后谈和讲座安排。条目限定在中国大陆举办的这一届活动；国际剧团来华演出仍以本地官方版本为准，不扩展海外站点，也不凭发布时排期推定当前余票或实际举行状态。",
+    "organization": "中国戏剧家协会",
+    "url": "https://www.chinatheatre.org.cn/jxhd/202610/t20261011_1363010.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "中国剧协作为主办方在官网列出2026当代国际戏剧节的北京举办地点、戏剧门类及专业交流活动；地域依据为正文北京剧场与主办单位，不以参演剧团国籍决定来源范围。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国剧协：2026当代国际戏剧节暨剧荟北京艺术季",
+        "url": "https://www.chinatheatre.org.cn/jxhd/202610/t20261011_1363010.html",
+        "locator": "原页“时间：2026.09.02”；主办承办、2026年9至11月北京活动及十大剧场段落。URL中的年月不作为发布日期。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-09-02",
+    "applicableYear": "2026",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-chinatheatre-small-stage-call-2026",
+    "title": "第三届全国小剧场戏剧展演｜中国剧协2026征集通知",
+    "category": "festivals",
+    "subtopics": [
+      "festival-open-call"
+    ],
+    "topics": [
+      "全国小剧场戏剧展演",
+      "全國小劇場戲劇展演",
+      "第三届",
+      "剧目征集",
+      "劇目徵集",
+      "小剧场",
+      "原创戏剧",
+      "儿童剧",
+      "苏州"
+    ],
+    "summary": "中国剧协2026年5月8日发布第三届全国小剧场戏剧展演征集通知，列明剧目类别、原创或改编要求、权利归属及申报材料。原通知的2026年5月22日截止日期已过；作为展演征集制度与历史届次资料，不显示为仍可申报或已经入选。",
+    "organization": "中国戏剧家协会",
+    "url": "https://www.chinatheatre.org.cn/jxgg/202605/t20260508_1359473.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "中国剧协官方通知为江苏苏州小剧场戏剧展演征集，明确话剧、戏曲、舞剧、音乐剧、儿童剧与木偶剧等门类，以及合法申报和演出权要求。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国剧协：第三届全国小剧场戏剧优秀剧目展演征集",
+        "url": "https://www.chinatheatre.org.cn/jxgg/202605/t20260508_1359473.html",
+        "locator": "原页日期2026-05-08；剧目要求、申报材料与2026-05-22截止日期。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-05-08",
+    "applicableYear": "2026",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-nanjing-directing-acting-workshop-2026",
+    "title": "南京青年戏剧表导演工作坊｜2026专业活动记录",
+    "category": "festivals",
+    "subtopics": [
+      "workshop"
+    ],
+    "topics": [
+      "南京戏剧工作坊",
+      "南京戲劇工作坊",
+      "表导演工作坊",
+      "表導演工作坊",
+      "贺坪",
+      "林溪儿",
+      "文本分析",
+      "人物关系",
+      "角色塑造",
+      "金陵剧本汇"
+    ],
+    "summary": "南京市文联2026年7月2日发布青年戏剧表导演工作坊，介绍贺坪、林溪儿及文本分析、人物关系、角色塑造和表导演协作内容。活动原定同年7月6至7日，核验时日期已过；保留专业活动及方法主题，不把旧报名二维码当作当前课程或复制讲授内容。",
+    "organization": "南京市文学艺术界联合会／南京市剧协",
+    "url": "https://wl.nanjing.gov.cn/fwdt/zjsb/202607/t20260702_5870221.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "南京市文联官网发布、南京市剧协供稿，具名列出青年戏剧工作坊导师、话剧作品及南京市文联小剧场场地，明确属于戏剧表导演专业实践。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "南京市文联：贺坪×林溪儿青年戏剧表导演工作坊",
+        "url": "https://wl.nanjing.gov.cn/fwdt/zjsb/202607/t20260702_5870221.html",
+        "locator": "原页发布日期2026-07-02；工作坊日程2026-07-06至07、适合人群、场地及市剧协供稿署名。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": "2026-07-02",
+    "applicableYear": "2026",
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-cntc-children-festival15",
+    "title": "第十五届中国儿童戏剧节｜中国儿艺官方专题",
+    "category": "festivals",
+    "subtopics": [
+      "festival"
+    ],
+    "topics": [
+      "中国儿童戏剧节",
+      "中國兒童戲劇節",
+      "第十五届",
+      "儿童戏剧节",
+      "儿童剧",
+      "北京",
+      "嘉兴秀洲",
+      "花木兰",
+      "夜莺"
+    ],
+    "summary": "中国儿童艺术剧院第十五届戏剧节专题，介绍北京、嘉兴秀洲等会场、儿童剧目及戏剧体验活动。原页写明7月10日至8月底的活动区间，未见独立发布日期；保留届次，不据“今年”等表述补造发布时间，也不显示为当前仍在举办或保证线上展播可访问。",
+    "organization": "中国儿童艺术剧院",
+    "url": "https://www.cntc.org.cn/Column-193.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "theatreEvidence": "中国儿艺主办方专题列明第十五届中国儿童戏剧节、北京及嘉兴秀洲主会场、儿童话剧和音乐剧作品及专业延伸活动，均为中国大陆举办的戏剧节资料。",
+    "sourceTier": "official",
+    "status": "source-directory",
+    "sourceRefs": [
+      {
+        "title": "中国儿童艺术剧院：第十五届中国儿童戏剧节",
+        "url": "https://www.cntc.org.cn/Column-193.html",
+        "locator": "专题首段主办方和7月10日至8月底区间；中外精品剧目同台展演及全域戏剧体验小节。原站经网页读取代理取得正文，未独立核验每一场演出。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-resource-hkrep-script-publications",
+    "title": "香港话剧团剧本与戏剧文学刊物｜官方书目及订购入口",
+    "category": "scripts",
+    "subtopics": [
+      "script-play"
+    ],
+    "topics": [
+      "香港话剧团剧本",
+      "香港話劇團劇本",
+      "香港剧本",
+      "香港劇本",
+      "黑盒剧场原创剧本集",
+      "黑盒劇場原創劇本集",
+      "郑国伟",
+      "都是龙袍惹的祸",
+      "剧本文学"
+    ],
+    "summary": "香港话剧团官方剧本及戏剧文学刊物目录，列有原创剧本集、版本编号、订购方式及部分售罄标记。可查合法出版来源和作品版本；本条未提供或入库剧本全文，当前库存、售价和演出改编授权需向原发布方另核，不把购买书籍等同于取得演出许可。",
+    "organization": "香港话剧团",
+    "url": "https://www.hkrep.com/tc/About-Us/Publication-research.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "theatreEvidence": "香港话剧团官网列出戏剧文学研究刊物、具名剧本集、版本编号及原机构订购方式，直接关联香港话剧创作与出版，而非泛影视读物。",
+    "sourceTier": "official",
+    "status": "source-directory",
+    "sourceRefs": [
+      {
+        "title": "香港话剧团：戏剧文学研究及刊物",
+        "url": "https://www.hkrep.com/tc/About-Us/Publication-research.html",
+        "locator": "开头出版与订购说明；《都是龙袍惹的祸》三语版、《暧昧日子》《黑盒剧场原创剧本集》等条目及版本编号。未见独立发布日期。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "hong-kong"
+  },
+  {
+    "id": "dm-resource-hkrep-professional-jobs",
+    "title": "香港话剧团职位空缺｜剧场后台与戏剧教育岗位入口",
+    "category": "opportunities",
+    "topics": [
+      "香港话剧团招聘",
+      "香港話劇團招聘",
+      "戏剧招聘",
+      "戲劇招聘",
+      "后台招聘",
+      "後台招聘",
+      "兼职",
+      "兼職",
+      "剧场岗位"
+    ],
+    "summary": "香港话剧团官方职位目录，核验页面列有兼职后台人员及戏剧课程助教等条目，条目日期显示2025年7月22日。仅提供原机构招聘入口；未核实每项岗位是否仍招募、资格与截止日期，不把旧职位页标成最新招聘或替申请人提交资料。",
+    "organization": "香港话剧团",
+    "url": "https://www.hkrep.com/tc/About-Us/Job-Vacancies.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "theatreEvidence": "香港话剧团官网职位空缺目录具名列出剧场后台及戏剧教育助教岗位，发布主体与剧团直接相关；只登记专业岗位入口不采集申请者个人资料。",
+    "sourceTier": "official",
+    "status": "source-directory",
+    "sourceRefs": [
+      {
+        "title": "香港话剧团：职位空缺",
+        "url": "https://www.hkrep.com/tc/About-Us/Job-Vacancies.html",
+        "locator": "目录中的兼职后台工作人员、幼儿及儿童戏剧课程助教条目与2025-07-22日期；未读取各岗位完整招聘条件。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "hong-kong"
+  },
+  {
+    "id": "dm-resource-hkrep-kite-script-call-2627",
+    "title": "香港话剧团风筝计划2026—27｜原创剧本孵化征稿",
+    "category": "festivals",
+    "topics": [
+      "风筝计划",
+      "風箏計劃",
+      "2026-27",
+      "剧本征稿",
+      "劇本徵稿",
+      "原创剧本",
+      "原創劇本",
+      "剧本孵化",
+      "公开演读",
+      "逆转"
+    ],
+    "summary": "香港话剧团2026—27年度原创剧本孕育计划，说明征稿、公开演读与修订、作品精炼三阶段。原页征稿截至2026年8月9日，核验时已过；作为华语剧作者发展机会的历史制度资料，不表示目前仍收稿，也不将影视或音乐剧作品误列为该轮可接受类型。",
+    "organization": "香港话剧团",
+    "url": "https://www.hkrep.com/tc/Season-Programme/Project-Kite/2627.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "香港话剧团官方2026—27风筝计划明确征集未公开发表原创舞台剧本，并安排演读、剧本修订及艺术团队辅导；这是戏剧创作人才孵化机会。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "香港话剧团：2026—27年度风筝计划公开征稿",
+        "url": "https://www.hkrep.com/tc/Season-Programme/Project-Kite/2627.html",
+        "locator": "年度与“逆．转”主题；第一阶段征稿日期2026-08-09、作品要求；第二和第三阶段演读、修订与精炼说明。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": "2026-27",
+    "contentRegion": "hong-kong",
+    "subtopics": [
+      "festival-incubation",
+      "festival-open-call"
+    ]
+  },
+  {
+    "id": "dm-resource-hkrep-operation-oops-2026",
+    "title": "音乐剧《狼狈行动》2026香港版｜官方排期与制作资料",
+    "category": "events",
+    "topics": [
+      "狼狈行动",
+      "狼狽行動",
+      "Operation Oops",
+      "香港音乐剧",
+      "香港音樂劇",
+      "2026香港演出",
+      "李宇梁",
+      "李宇樑",
+      "高世章",
+      "方俊杰",
+      "香港大会堂"
+    ],
+    "summary": "香港话剧团公布音乐剧《狼狈行动》在香港大会堂剧院2026年11月22日至12月13日的排期，附主创、分组演出及官方票务入口。仅记录这一香港制作版本；场次变更、卡司与余票以原站及售票系统为准，未查询实时库存或承诺当前票价。",
+    "organization": "香港话剧团",
+    "url": "https://www.hkrep.com/tc/Season-Programme/Main-Stage-Productions/Operation-Oops.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "production",
+    "theatreEvidence": "剧团官网具名说明音乐剧《狼狈行动》的香港大会堂场地、2026演出日期、编剧李宇樑、导演方俊杰及舞台制作人员；为香港具体戏剧演出版本。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "香港话剧团：音乐剧《狼狈行动》",
+        "url": "https://www.hkrep.com/tc/Season-Programme/Main-Stage-Productions/Operation-Oops.html",
+        "locator": "页首香港大会堂及2026-11-22至12-13区间；演出日期及地点、门票资料、幕前及幕后工作人员栏目。未见独立发布日期。"
+      }
+    ],
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": "2026",
+    "contentRegion": "hong-kong",
+    "subtopics": [
+      "event-musical"
+    ]
+  },
+  {
+    "id": "dm-resource-cntc-company-profile",
+    "title": "中国儿童艺术剧院｜院团与大小剧场介绍",
+    "category": "venues",
+    "topics": [
+      "中国儿童艺术剧院",
+      "中國兒童藝術劇院",
+      "中国儿艺",
+      "中國兒藝",
+      "儿童剧团",
+      "儿童剧场",
+      "假日经典小剧场",
+      "马兰花",
+      "花木兰"
+    ],
+    "summary": "中国儿童艺术剧院官方介绍，说明国家儿童戏剧院团定位、创演作品及中国儿童剧场和假日经典小剧场。用于了解机构和儿童戏剧创作方向，不据机构自述推断当前所有人员、完整剧目档案、场馆容量或可用档期。",
+    "organization": "中国儿童艺术剧院",
+    "url": "https://www.cntc.org.cn/Column-2.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "剧院官网自述为文化和旅游部直属国家艺术院团，列出儿童戏剧作品、创作业务及中国儿童剧场、假日经典小剧场，确认中国大陆戏剧院团关联。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国儿童艺术剧院：剧院介绍",
+        "url": "https://www.cntc.org.cn/Column-2.html",
+        "locator": "剧院简介首段院团归属；作品介绍；附属中国儿童剧场及假日经典小剧场段落。原站经网页读取代理取得正文，未见独立发布日期。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland",
+    "subtopics": [
+      "venue-state",
+      "venue-space",
+      "venue-organization"
+    ]
+  },
+  {
+    "id": "dm-resource-cntc-official-ticket-entry",
+    "title": "中国儿艺演出购票｜官方儿童剧票务入口",
+    "category": "events",
+    "topics": [
+      "中国儿艺购票",
+      "中國兒藝購票",
+      "儿童剧购票",
+      "兒童劇購票",
+      "中国儿童剧场",
+      "马兰花",
+      "小布头奇遇记",
+      "西游记"
+    ],
+    "summary": "中国儿童艺术剧院官网演出购票入口，会转至其链接的售票平台，页面可按儿童剧和场馆浏览项目。本条只核实官方入口及跳转关系；读取时部分日期字段未完整呈现，未据此抄录票价、场次或库存，购票前须在原站核对实际排期与服务条件。",
+    "organization": "中国儿童艺术剧院",
+    "url": "https://www.cntc.org.cn/Column-143.html",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "theatreEvidence": "中国儿童艺术剧院官网导航直接提供在线购票入口，跳转页按儿童剧及中国儿童艺术剧院场馆展示舞台演出项目；只作为院团票务来源入口。",
+    "sourceTier": "official",
+    "status": "source-directory",
+    "sourceRefs": [
+      {
+        "title": "中国儿童艺术剧院：在线购票",
+        "url": "https://www.cntc.org.cn/Column-143.html",
+        "locator": "官网“演出购票—在线购票”栏目；读取代理记录原站跳转至院团链接的售票系统，部分日期为不完整字段，未作实时票务核验。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland",
+    "subtopics": [
+      "event-children"
+    ]
+  },
+  {
+    "id": "dm-resource-chinawriter-cao-yu-profile",
+    "title": "曹禺｜中国作家网戏剧生平与作品目录",
+    "category": "people",
+    "topics": [
+      "曹禺",
+      "雷雨",
+      "日出",
+      "北京人",
+      "原野",
+      "剧作家",
+      "劇作家",
+      "话剧编剧",
+      "中国现代戏剧"
+    ],
+    "summary": "中国作家网曹禺档案，具名列出《雷雨》《日出》《北京人》《原野》等剧作及其历史戏剧任职。用于核对剧作家与作品的关联；页面未显示独立发布日期，不将历史职务写作现任，也不代表提供所列剧本全文或已解决各版本使用许可。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/fwzj/wxds/7.shtml",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "中国作家网曹禺生平档案明确列出《雷雨》《日出》《北京人》《原野》等话剧作品，以及中央戏剧学院和北京人民艺术剧院的历史职务，人物与戏剧创作关联可定位。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网：曹禺生平与作品荟萃",
+        "url": "https://www.chinawriter.com.cn/fwzj/wxds/7.shtml",
+        "locator": "“曹禺生平介绍”中的戏剧任职与著作段落；“作品荟萃—其他作品”剧本目录。页面未显示独立发布日期。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland",
+    "subtopics": [
+      "person-director-writer"
+    ]
+  },
+  {
+    "id": "dm-resource-damai-thunderstorm-li-liuyi",
+    "title": "话剧《雷雨》李六乙版｜大麦历史项目（已下架）",
+    "category": "events",
+    "subtopics": [
+      "event-play"
+    ],
+    "topics": [
+      "雷雨",
+      "李六乙",
+      "胡军",
+      "国家大剧院",
+      "北京",
+      "话剧"
+    ],
+    "summary": "大麦具体项目页面关联李六乙导演、胡军主演及北京国家大剧院戏剧场。核验时已下架，演出时间和价格待定；仅保存该版本与平台来源，不表示当前在售，也不推断下一轮日期、票价或余票。",
+    "organization": "大麦网",
+    "url": "https://detail.damai.cn/item.htm?id=854344259092",
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "production",
+    "sourceTier": "platform",
+    "sourceKind": "announcement",
+    "theatreEvidence": "平台项目原页明确关联话剧《雷雨》、李六乙导演、胡军主演、北京国家大剧院戏剧场；页面buyBtnText为已下架，场次时间和价格待定。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "大麦：北京李六乙导演、胡军主演话剧《雷雨》",
+        "url": "https://detail.damai.cn/item.htm?id=854344259092",
+        "locator": "项目标题；venueName及北京场馆信息；buyBtnText已下架；showTime时间待定、priceRange价格待定。核验于2026-10-30。"
+      }
+    ]
+  },
+  {
+    "id": "dm-ai-kuaishou-kling4-release-2026",
+    "title": "可灵Kling 4.0视频生成｜快手原始技术发布",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-techniques",
+      "ai-techniques",
+      "ai-industry"
+    ],
+    "topics": [
+      "可灵AI",
+      "Kling 4.0",
+      "视频生成",
+      "故事板",
+      "影视制作",
+      "快手"
+    ],
+    "summary": "快手科技2026年10月17日在香港发布的可灵Kling 4.0视频生成说明，介绍参考素材、故事板与影视制作流程。属于厂商技术资料；性能、效果及奖项为发布方陈述，本站未调用或独立实测，也不将其当作某部作品由AI生成的证明。",
+    "organization": "快手科技",
+    "url": "https://ir.kuaishou.com/zh-hans/news-releases/news-release-details/kelingaixinyidaimoxingklin1g-40zhengshishangxian/",
+    "publishedAt": "2026-10-17",
+    "applicableYear": "2026",
+    "contentRegion": "hong-kong",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "platform",
+    "sourceKind": "announcement",
+    "aiInvolvement": "reference",
+    "aiEvidence": "快手投资者关系原站以香港2026年10月17日为发布地和日期，正文介绍可灵AI视频生成、故事板、表演参考与影视制作流程，属于AI影像工具的参与方原始发布。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "快手科技：可灵AI新一代模型Kling 4.0正式上线",
+        "url": "https://ir.kuaishou.com/zh-hans/news-releases/news-release-details/kelingaixinyidaimoxingklin1g-40zhengshishangxian/",
+        "locator": "标题与2026.10.17日期；香港发布段；全能参考和多关键帧控制段；AI影视、短剧、动画应用及MCP/CLI/API说明；性能与前瞻性声明归属发布方。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-cao-yu-writing-talks-2010",
+    "title": "曹禺谈剧本创作｜1950—1951年讲话记录",
+    "url": "https://wyb.chinawriter.com.cn/Pad/content/201011/22/content19295.html",
+    "organization": "文艺报；鲁煤记录",
+    "category": "knowledge",
+    "subtopics": [
+      "dramaturgy",
+      "directing",
+      "history-theory"
+    ],
+    "topics": [
+      "曹禺",
+      "编剧",
+      "剧本创作",
+      "舞台感觉",
+      "戏剧动作",
+      "观众",
+      "悬念",
+      "台词"
+    ],
+    "summary": "鲁煤整理的两次曹禺编剧报告记录，涉及观众意识、行动性台词、结构与创作感受。2010年发表，谈话时间为1950年及1951年；作为特定历史语境下的创作观点，不当作适用于所有戏剧的硬性规则。",
+    "publishedAt": "2010-11-22",
+    "sourceTier": "professional-media",
+    "sourceKind": "creator-experience",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "曹禺谈剧本创作｜1950—1951年讲话记录",
+        "url": "https://wyb.chinawriter.com.cn/Pad/content/201011/22/content19295.html",
+        "locator": "文首日期、鲁煤“记录者说明”及《关于编剧技巧》《关于戏剧诸问题》两节；保留记录者身份，非曹禺新写文章。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-cad-cultural-theatre-symposium-2025",
+    "title": "中国演剧：文化与社会｜中戏2025研讨会观点记录",
+    "url": "https://www.chntheatre.edu.cn/cn/xue/detail/24932.html",
+    "organization": "中央戏剧学院导演系、当代演剧文化研究中心",
+    "category": "knowledge",
+    "subtopics": [
+      "directing",
+      "dramaturgy",
+      "stage-design",
+      "history-theory"
+    ],
+    "topics": [
+      "杨硕",
+      "观演关系",
+      "剧场空间",
+      "文旅演出",
+      "场域",
+      "陌生化",
+      "中国演剧"
+    ],
+    "summary": "学院记录“中国演剧：文化与社会”研讨，列出文本到空间、文旅场域、实验昆曲及观演关系等发言。仅收会议报道和观点定位，不冒充论文全文或学界统一结论，也不作当前活动报名。",
+    "publishedAt": "2025-12-09",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "中国演剧：文化与社会｜中戏2025研讨会观点记录",
+        "url": "https://www.chntheatre.edu.cn/cn/xue/detail/24932.html",
+        "locator": "正文日期2025-12-09；主旨演讲的杨硕、牟森发言及观演、媒介与空间各专题；报告中区分不同学者观点。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-jiao-juyin-rehearsal-zhao-2013",
+    "title": "焦菊隐与《钗头凤》排练｜赵大民的导演实践回忆",
+    "url": "https://www.chinawriter.com.cn/wxpl/2013/2013-02-28/155181.html",
+    "organization": "中国作家网；原载中华读书报，赵大民",
+    "category": "knowledge",
+    "subtopics": [
+      "performance",
+      "directing",
+      "stage-design",
+      "history-theory"
+    ],
+    "topics": [
+      "焦菊隐",
+      "钗头凤",
+      "人物塑造",
+      "心象",
+      "排练",
+      "话剧民族化",
+      "诗意"
+    ],
+    "summary": "赵大民回忆焦菊隐指导《钗头凤》的角色分析、灯光处理与生活观察实践。保留作者亲历回忆的性质及原载媒体，不收私人生活延伸，也不把艺术家的经验表述当作唯一训练标准。",
+    "publishedAt": "2013-02-28",
+    "sourceTier": "professional-media",
+    "sourceKind": "creator-experience",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "焦菊隐与《钗头凤》排练｜赵大民的导演实践回忆",
+        "url": "https://www.chinawriter.com.cn/wxpl/2013/2013-02-28/155181.html",
+        "locator": "页首署名、日期及“来源：中华读书报”；正文排练《钗头凤》、观察生活与心象的段落。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-lan-tianye-yedian-2015",
+    "title": "蓝天野回忆《夜店》｜角色创造与排练代用景",
+    "url": "https://wyb.chinawriter.com.cn/content/201501/26/content15821.html",
+    "organization": "文艺报；蓝天野、罗琦",
+    "category": "knowledge",
+    "subtopics": [
+      "performance",
+      "directing",
+      "stage-design",
+      "history-theory"
+    ],
+    "topics": [
+      "蓝天野",
+      "焦菊隐",
+      "夜店",
+      "代用景",
+      "排练场",
+      "人物行动",
+      "布景",
+      "生活真实"
+    ],
+    "summary": "节选回忆《夜店》排练中的生活体验、角色创造困难和布景细节，包含排练场使用代用景的具体描述。仅收专业创作经验与原书定位，未收录整本《烟雨平生蓝天野》。",
+    "publishedAt": "2015-01-26",
+    "sourceTier": "professional-media",
+    "sourceKind": "creator-experience",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "蓝天野回忆《夜店》｜角色创造与排练代用景",
+        "url": "https://wyb.chinawriter.com.cn/content/201501/26/content15821.html",
+        "locator": "文首日期与署名；正文“排练场…代用景”及布景细节段；文末注明摘自三联书店2014年12月出版书籍。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-zhu-xu-lines-2018",
+    "title": "朱旭谈话剧表演｜台词、潜台词与角色形象",
+    "url": "https://wyb.chinawriter.com.cn/Pad/content/201811/30/content47279.html",
+    "organization": "文艺报；朱旭口述，孟姗姗整理",
+    "category": "knowledge",
+    "subtopics": [
+      "performance",
+      "voice",
+      "directing"
+    ],
+    "topics": [
+      "朱旭",
+      "台词",
+      "潜台词",
+      "发声",
+      "戏剧语言",
+      "人物形象",
+      "第二计划"
+    ],
+    "summary": "朱旭口述谈话剧演员的台词经验、潜台词与形象思维，结合北京人艺作品举例。保留口述经验与原文语境，聚焦台词艺术表达，不据此补写发声生理结论。",
+    "publishedAt": "2018-11-30",
+    "sourceTier": "professional-media",
+    "sourceKind": "creator-experience",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "朱旭谈话剧表演｜台词、潜台词与角色形象",
+        "url": "https://wyb.chinawriter.com.cn/Pad/content/201811/30/content47279.html",
+        "locator": "文首口述与整理署名；“台词的吐字、发声”“台词的动作性、形象性、音乐性”两节。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-cad-hkapa-scenography-exchange-2025",
+    "title": "京港舞台美术交流｜空间、布景与制作实践",
+    "url": "https://www.chntheatre.edu.cn/cn/xue/detail/24246.html",
+    "organization": "中央戏剧学院",
+    "category": "knowledge",
+    "subtopics": [
+      "stage-design",
+      "production"
+    ],
+    "topics": [
+      "香港演艺学院",
+      "舞台美术",
+      "空间组织",
+      "布景造型",
+      "场景转换",
+      "服装道具",
+      "绘景"
+    ],
+    "summary": "记录中戏与香港演艺学院2025年的舞美交流，涉及服装道具制作间、绘景、空间组织、场景转换与技术构成。收录的是交流报道，未将所展示作品拆成多条资料，也不是课程或参观报名入口。",
+    "publishedAt": "2025-07-12",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "contentRegion": "hong-kong",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "京港舞台美术交流｜空间、布景与制作实践",
+        "url": "https://www.chntheatre.edu.cn/cn/xue/detail/24246.html",
+        "locator": "日期2025-07-12；正文6月29日至7月3日赴港交流、湾仔校区制作空间与学生作品展的段落。"
+      }
+    ]
+  },
+  {
+    "id": "dm-person-cad-lu-ning-scenography",
+    "title": "鲁宁｜舞台设计、戏剧研究与作品履历",
+    "url": "https://www.chntheatre.edu.cn/cn/ofthedetailed/detail/8054.html",
+    "organization": "中央戏剧学院舞台美术系",
+    "category": "people",
+    "subtopics": [
+      "person-design-tech"
+    ],
+    "topics": [
+      "鲁宁",
+      "舞台设计",
+      "舞台美术",
+      "什么是舞台美术",
+      "偶",
+      "物件",
+      "北京人",
+      "三毛钱歌剧"
+    ],
+    "summary": "学院个人页列出舞台设计教学研究、中文译著《什么是舞台美术？》及话剧、音乐剧、舞剧设计作品。仅收可核专业履历，不延伸私人信息；页面没有独立发布日期，核验时间不冒充更新日期。",
+    "publishedAt": null,
+    "sourceTier": "official",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "院校原始个人页明确舞台美术教学研究及话剧、音乐剧和舞剧设计作品，符合戏剧舞台专业履历边界。",
+    "sourceRefs": [
+      {
+        "title": "鲁宁｜舞台设计、戏剧研究与作品履历",
+        "url": "https://www.chntheatre.edu.cn/cn/ofthedetailed/detail/8054.html",
+        "locator": "个人页正文“主要理论研究成果”“主要舞台设计作品”；《北京人》《三毛钱歌剧》等作品关联与译著条目。"
+      }
+    ]
+  },
+  {
+    "id": "dm-book-cucp-1347",
+    "title": "《表演艺术概论》｜林洪桐·出版社书目与目录",
+    "category": "knowledge",
+    "subtopics": [
+      "performance",
+      "history-theory"
+    ],
+    "topics": [
+      "表演艺术概论",
+      "林洪桐",
+      "978-7-5657-3201-0",
+      "表演创作",
+      "演员与角色",
+      "观众与排演阶段"
+    ],
+    "organization": "中国传媒大学出版社",
+    "url": "https://www.cucp.com.cn/Book/Details/1347",
+    "summary": "出版社书目核对林洪桐著作、ISBN与2023-04出版信息，专业范围为表演创作、演员与角色、观众与排演阶段。仅登记公开书目信息和可见目录，未读全书或保存正文；电子书、试读及附属资源按原站权限访问。",
+    "publishedAt": null,
+    "sourceTier": "official",
+    "access": "mixed",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "《表演艺术概论》｜林洪桐·出版社书目与目录",
+        "url": "https://www.cucp.com.cn/Book/Details/1347",
+        "locator": "书目标题、作者、ISBN 978-7-5657-3201-0、出版时间2023-04及公开目录／简介。书目仅给年月，不补造出版日；没有点击购买、登录或读取受限章节。"
+      }
+    ]
+  },
+  {
+    "id": "dm-book-cucp-2388",
+    "title": "《表演基础教程（第2版）》｜张晰·书目与出版社说明",
+    "category": "knowledge",
+    "subtopics": [
+      "performance"
+    ],
+    "topics": [
+      "表演基础教程（第2版）",
+      "张晰",
+      "978-7-5657-4013-8",
+      "表演元素",
+      "行动",
+      "生活观察和小品"
+    ],
+    "organization": "中国传媒大学出版社",
+    "url": "https://www.cucp.com.cn/Book/Details/2388",
+    "summary": "出版社书目核对张晰著作、ISBN与2025-10出版信息，出版社说明涉及表演元素、行动、生活观察和小品。详情未显示目录，仅登记书目与公开简介，未读全书或保存正文。",
+    "publishedAt": null,
+    "sourceTier": "official",
+    "access": "mixed",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "《表演基础教程（第2版）》｜张晰·出版社书目与目录",
+        "url": "https://www.cucp.com.cn/Book/Details/2388",
+        "locator": "书目标题、作者、ISBN 978-7-5657-4013-8、出版时间2025-10及公开目录／简介。书目仅给年月，不补造出版日；作者张晰由同站2026-10-24教材说明交叉核实；本详情未显示目录。"
+      }
+    ]
+  },
+  {
+    "id": "dm-book-cucp-2389",
+    "title": "《表演片段教程（第2版）》｜黄迎·书目与出版社说明",
+    "category": "knowledge",
+    "subtopics": [
+      "performance",
+      "dramaturgy"
+    ],
+    "topics": [
+      "表演片段教程（第2版）",
+      "黄迎",
+      "978-7-5657-4040-4",
+      "片段表演与角色创作"
+    ],
+    "organization": "中国传媒大学出版社",
+    "url": "https://www.cucp.com.cn/Book/Details/2389",
+    "summary": "出版社书目核对黄迎著作、ISBN与2025-10出版信息，出版社说明涉及片段表演与角色创作。详情未显示目录，仅登记书目与公开简介，未读全书或保存正文。",
+    "publishedAt": null,
+    "sourceTier": "official",
+    "access": "mixed",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "《表演片段教程（第2版）》｜黄迎·出版社书目与目录",
+        "url": "https://www.cucp.com.cn/Book/Details/2389",
+        "locator": "书目标题、作者、ISBN 978-7-5657-4040-4、出版时间2025-10及公开目录／简介。书目仅给年月，不补造出版日；详情未显示目录，专业内容仅用同站教材说明定位。"
+      }
+    ]
+  },
+  {
+    "id": "dm-book-cucp-1205",
+    "title": "《台词教程：对白与独白》｜黄凯·出版社书目与目录",
+    "category": "knowledge",
+    "subtopics": [
+      "voice",
+      "performance"
+    ],
+    "topics": [
+      "台词教程：对白与独白",
+      "黄凯",
+      "978-7-5657-2960-7",
+      "对白和独白的分析",
+      "相互行动",
+      "潜台词与节奏"
+    ],
+    "organization": "中国传媒大学出版社",
+    "url": "https://www.cucp.com.cn/Book/Details/1205",
+    "summary": "出版社书目核对黄凯著作、ISBN与2021-10出版信息，专业范围为对白和独白的分析、相互行动、潜台词与节奏。仅登记公开书目信息和可见目录，未读全书或保存正文；电子书、试读及附属资源按原站权限访问。",
+    "publishedAt": null,
+    "sourceTier": "official",
+    "access": "mixed",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "《台词教程：对白与独白》｜黄凯·出版社书目与目录",
+        "url": "https://www.cucp.com.cn/Book/Details/1205",
+        "locator": "书目标题、作者、ISBN 978-7-5657-2960-7、出版时间2021-10及公开目录／简介。书目仅给年月，不补造出版日；没有点击购买、登录或读取受限章节。"
+      }
+    ]
+  },
+  {
+    "id": "dm-book-cucp-3299",
+    "title": "《戏剧影视形体表演基础》｜杨扬·出版社书目与目录",
+    "category": "knowledge",
+    "subtopics": [
+      "performance"
+    ],
+    "topics": [
+      "戏剧影视形体表演基础",
+      "杨扬",
+      "978-7-5657-2641-5",
+      "形体基训",
+      "舞台动作",
+      "器械道具和空间方位"
+    ],
+    "organization": "中国传媒大学出版社",
+    "url": "https://www.cucp.com.cn/Book/Details/3299",
+    "summary": "出版社书目核对杨扬著作、ISBN与2021-02出版信息，专业范围为形体基训、舞台动作、器械道具和空间方位。仅登记公开书目信息和可见目录，未读全书或保存正文；电子书、试读及附属资源按原站权限访问。",
+    "publishedAt": null,
+    "sourceTier": "official",
+    "access": "mixed",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "《戏剧影视形体表演基础》｜杨扬·出版社书目与目录",
+        "url": "https://www.cucp.com.cn/Book/Details/3299",
+        "locator": "书目标题、作者、ISBN 978-7-5657-2641-5、出版时间2021-02及公开目录／简介。书目仅给年月，不补造出版日；未采用页面标注为AI生成的内容简介，仅使用书目与目录。"
+      }
+    ]
+  },
+  {
+    "id": "dm-book-cucp-1866",
+    "title": "《戏剧影视形体表演创作》｜杨扬·出版社书目与目录",
+    "category": "knowledge",
+    "subtopics": [
+      "performance",
+      "directing"
+    ],
+    "topics": [
+      "戏剧影视形体表演创作",
+      "杨扬",
+      "978-7-5657-2268-4",
+      "形体表演创作与舞台身体表达"
+    ],
+    "organization": "中国传媒大学出版社",
+    "url": "https://www.cucp.com.cn/Book/Details/1866",
+    "summary": "出版社书目核对杨扬著作、ISBN与2021-11出版信息，专业范围为形体表演创作与舞台身体表达。仅登记公开书目信息和可见目录，未读全书或保存正文；电子书、试读及附属资源按原站权限访问。",
+    "publishedAt": null,
+    "sourceTier": "official",
+    "access": "mixed",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "《戏剧影视形体表演创作》｜杨扬·出版社书目与目录",
+        "url": "https://www.cucp.com.cn/Book/Details/1866",
+        "locator": "书目标题、作者、ISBN 978-7-5657-2268-4、出版时间2021-11及公开目录／简介。书目仅给年月，不补造出版日；没有点击购买、登录或读取受限章节。"
+      }
+    ]
+  },
+  {
+    "id": "dm-book-cucp-1248",
+    "title": "《戏剧影视演员声乐教程》｜张小群·出版社书目与目录",
+    "category": "knowledge",
+    "subtopics": [
+      "voice",
+      "performance"
+    ],
+    "topics": [
+      "戏剧影视演员声乐教程",
+      "张小群",
+      "978-7-5657-2961-4",
+      "表演专业的声乐基础",
+      "音乐知识与演唱训练"
+    ],
+    "organization": "中国传媒大学出版社",
+    "url": "https://www.cucp.com.cn/Book/Details/1248",
+    "summary": "出版社书目核对张小群著作、ISBN与2021-07出版信息，专业范围为表演专业的声乐基础、音乐知识与演唱训练。仅登记公开书目信息和可见目录，未读全书或保存正文；电子书、试读及附属资源按原站权限访问。",
+    "publishedAt": null,
+    "sourceTier": "official",
+    "access": "mixed",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
+    "sourceRefs": [
+      {
+        "title": "《戏剧影视演员声乐教程》｜张小群·出版社书目与目录",
+        "url": "https://www.cucp.com.cn/Book/Details/1248",
+        "locator": "书目标题、作者、ISBN 978-7-5657-2961-4、出版时间2021-07及公开目录／简介。书目仅给年月，不补造出版日；没有点击购买、登录或读取受限章节。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-sdzk-arts-exam-2027-announcement",
+    "title": "山东2027年艺术类专业统考公告（表导演方向）",
+    "category": "arts-exams",
+    "topics": [
+      "山东",
+      "2027艺考",
+      "表导演",
+      "戏剧影视表演",
+      "戏剧影视导演"
+    ],
+    "subtopics": [
+      "exam-unified",
+      "exam-policy"
+    ],
+    "summary": "山东省教育招生考试院公布2027年艺术统考要求，区分戏剧影视表演与导演的考试方式。本文保留政策及附件入口；日期表为图片，未据此转录具体考试时间。",
+    "organization": "山东省教育招生考试院",
+    "url": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7377",
+    "publishedAt": "2026-10-16",
+    "applicableYear": "2027",
+    "contentRegion": "mainland",
+    "theatreEvidence": "原公告明确列出表（导）演类的戏剧影视表演、戏剧影视导演方向，正文说明笔试与现场面试安排。",
+    "sourceRefs": [
+      {
+        "url": "https://www.sdzk.cn/NewsInfo.aspx?NewsID=7377",
+        "title": "2027年山东省普通高校招生艺术类专业统一考试公告",
+        "locator": "正文表（导）演类考试方式、附件6目录及末尾2026年10月16日署名；附件考试说明未全文核验。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-sceea-arts-exam-2027-policy",
+    "title": "四川2027年艺术体育类报名考试办法（表导演及戏剧专业）",
+    "category": "arts-exams",
+    "topics": [
+      "四川",
+      "2027艺考",
+      "表导演",
+      "专业统考",
+      "文化报名",
+      "戏剧影视文学"
+    ],
+    "subtopics": [
+      "exam-unified",
+      "exam-registration-results",
+      "exam-policy"
+    ],
+    "summary": "2027年四川艺体招生报名考试办法，说明表导演三方向兼报、文化与专业报名衔接及校考条件。戏剧学、戏剧影视文学等专业的规则仅适用于该公告范围，不能代替其他省份或院校简章。",
+    "organization": "四川省教育考试院",
+    "url": "https://www.sceea.cn/Html/202610/Newsdetail_4985.html",
+    "publishedAt": "2026-10-15",
+    "applicableYear": "2027",
+    "contentRegion": "mainland",
+    "theatreEvidence": "原文允许表（导）演类考生按规定单报或兼报戏剧影视表演、服装表演、戏剧影视导演，并列出部分戏剧专业的报名规则。",
+    "sourceRefs": [
+      {
+        "url": "https://www.sceea.cn/Html/202610/Newsdetail_4985.html",
+        "title": "四川省2027年普通高等学校艺术体育类专业报名考试办法",
+        "locator": "正文发布时间2026/10/15；报名、专业考试及相关专业说明；附件3表导演招生简介仅保留入口，未全文核验。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "source-directory",
+    "id": "dm-resource-zjzs-arts-exam-2027-guide",
+    "title": "浙江2027年艺术类省统考简章发布与表导演附件",
+    "category": "arts-exams",
+    "topics": [
+      "浙江",
+      "2027艺考",
+      "省统考",
+      "表导演",
+      "戏剧影视表演",
+      "戏剧影视导演"
+    ],
+    "subtopics": [
+      "exam-unified",
+      "exam-policy"
+    ],
+    "summary": "浙江2027年艺术省统考简章发布通知，说明报考方向与院校校考的衔接，并提供戏剧影视表演、导演等方向附件。已核通知正文和附件名称，未将附件全文视为已审读。",
+    "organization": "浙江省教育考试院",
+    "url": "https://www.zjzs.net/art/2026/10/22/art_47_12699.html",
+    "publishedAt": "2026-10-22",
+    "applicableYear": "2027",
+    "contentRegion": "mainland",
+    "theatreEvidence": "附件目录明确列出表（导）演类戏剧影视表演、戏剧影视导演的2027年省级统考简章。",
+    "sourceRefs": [
+      {
+        "url": "https://www.zjzs.net/art/2026/10/22/art_47_12699.html",
+        "title": "关于发布2027年艺术类专业省统考各类别考试招生简章的通知",
+        "locator": "页面发布2026-10-22，正文署名2026-10-21；正文及附件4、6目录，未审读DOC附件全文。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-hbea-arts-exam-2027-notice",
+    "title": "湖北2027年艺术类专业考试报考须知（表导演）",
+    "category": "arts-exams",
+    "topics": [
+      "湖北",
+      "2027艺考",
+      "表导演",
+      "文化报名",
+      "专业统考",
+      "校考"
+    ],
+    "subtopics": [
+      "exam-unified",
+      "exam-registration-results",
+      "exam-policy"
+    ],
+    "summary": "说明2027年湖北艺术统考、戏曲省际联考与校考边界，以及表导演各方向报考路径。文化报名信息填报阶段截至2026年10月29日，核验时已过；专业统考另按原公告办理，不能一并视为结束。",
+    "organization": "湖北省教育考试院",
+    "url": "https://www.hbea.edu.cn/html/2026-10/16214.html",
+    "publishedAt": null,
+    "applicableYear": "2027",
+    "contentRegion": "mainland",
+    "theatreEvidence": "正文明确列出表（导）演类戏剧影视表演、服装表演、戏剧影视导演，并给出相应主考院校与考试安排。",
+    "sourceRefs": [
+      {
+        "url": "https://www.hbea.edu.cn/html/2026-10/16214.html",
+        "title": "湖北省2027年艺术类专业考试报考须知",
+        "locator": "考试类型、报考程序及表（导）演类安排表；正文未显示可独立确认的发布日期，保留为空。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-jseea-arts-exam-2027-faq",
+    "title": "江苏2027年高考报名问答（二）：艺术统考与表导演",
+    "category": "arts-exams",
+    "topics": [
+      "江苏",
+      "2027艺考",
+      "表导演",
+      "音乐剧",
+      "戏剧教育",
+      "统考校考",
+      "报名缴费"
+    ],
+    "subtopics": [
+      "exam-unified",
+      "exam-registration-results",
+      "exam-policy"
+    ],
+    "summary": "江苏2027年艺术报考问答，解释统考、校考和戏曲联考关系，列出表导演对应专业及报名缴费要求。院校跨类对应与具体考试时间仍以当年院校要求、准考证为准。",
+    "organization": "江苏省教育考试院",
+    "url": "https://www.jseea.cn/webfile/index/index_zkxx/2026-10-21/7518501805815238656.html",
+    "publishedAt": null,
+    "applicableYear": "2027",
+    "contentRegion": "mainland",
+    "theatreEvidence": "问答列出表演、戏剧教育、音乐剧等专业与表（导）演类统考的对应关系，并说明表导演专业考试安排。",
+    "sourceRefs": [
+      {
+        "url": "https://www.jseea.cn/webfile/index/index_zkxx/2026-10-21/7518501805815238656.html",
+        "title": "2027年普通高考报名问答（二）",
+        "locator": "艺术类问答第3、5、9、22问；未从URL中的日期推定发布日期。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-cad-masters-admissions-2027",
+    "title": "中央戏剧学院2027年硕士研究生招生简章",
+    "category": "admissions",
+    "topics": [
+      "中央戏剧学院",
+      "中戏",
+      "2027硕士",
+      "表演",
+      "导演",
+      "舞台美术",
+      "戏剧影视"
+    ],
+    "subtopics": [
+      "admission-postgraduate"
+    ],
+    "summary": "中戏2027年硕士招生简章，含戏剧相关院系、报考条件及程序。全国网上报名截至2026年10月24日，核验时该阶段已过；专业方向和计划需结合正式专业目录，不能据此推定补报名或录取名额。",
+    "organization": "中央戏剧学院",
+    "url": "https://www.chntheatre.edu.cn/cn/recruit/shuoshi/detail/25886.html",
+    "publishedAt": "2026-10-09",
+    "applicableYear": "2027",
+    "contentRegion": "mainland",
+    "theatreEvidence": "招生简章PDF列出表演、导演、舞台美术、戏剧文学、音乐剧等院系，以及戏剧与影视等相关学位招生信息。",
+    "sourceRefs": [
+      {
+        "url": "https://www.chntheatre.edu.cn/cn/recruit/shuoshi/detail/25886.html",
+        "title": "中央戏剧学院2027年硕士研究生招生简章发布页",
+        "locator": "发布页2026-10-09及简章PDF第1—4页，重点核验院系、专业计划说明与网报程序。"
+      },
+      {
+        "url": "https://www.chntheatre.edu.cn/Uploads/Cad/Picture/2026/10/09/%E4%B8%AD%E5%A4%AE%E6%88%8F%E5%89%A7%E5%AD%A6%E9%99%A22027%E5%B9%B4%E7%A1%95%E5%A3%AB%E7%A0%94%E7%A9%B6%E7%94%9F%E6%8B%9B%E7%94%9F%E7%AE%80%E7%AB%A0.20261009134028.pdf",
+        "title": "2027年硕士研究生招生简章PDF",
+        "locator": "原始11页PDF；报名程序所列2026-10-15至24为网报阶段。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "source-directory",
+    "id": "dm-resource-hkapa-postgrad-admissions-2728",
+    "title": "香港演艺学院2027/28研究生申请：戏剧与舞台制作",
+    "category": "admissions",
+    "topics": [
+      "香港演艺学院",
+      "2027/28",
+      "戏剧艺术硕士",
+      "舞台及制作艺术硕士",
+      "香港招生"
+    ],
+    "subtopics": [
+      "admission-postgraduate",
+      "admission-hk-macao"
+    ],
+    "summary": "香港演艺学院2027/28研究生申请入口，包含戏剧艺术及舞台与制作艺术硕士。页面列出申请开始安排，具体课程资格和截止日须继续查对应学院重要日期，不将总入口等同所有课程正在接受申请。",
+    "organization": "香港演艺学院",
+    "url": "https://www.hkapa.edu/tch/postgrad/admission/application-for-admission",
+    "publishedAt": null,
+    "applicableYear": "2027/28",
+    "contentRegion": "hong-kong",
+    "theatreEvidence": "原申请页列出戏剧艺术硕士、舞台及制作艺术硕士的课程入口；本记录仅收录相关戏剧专业，不扩大至无关影视或音乐课程。",
+    "sourceRefs": [
+      {
+        "url": "https://www.hkapa.edu/tch/postgrad/admission/application-for-admission",
+        "title": "入学申请：2027/28研究生课程",
+        "locator": "2027/28标题、2026-09-07起申请说明及戏剧、舞台及制作艺术课程列表；各课程截止日未在本批逐项核验。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-hkapa-stage-intensive-2728",
+    "title": "香港演艺学院2027/28舞台及制作艺术短期精研课程",
+    "category": "admissions",
+    "topics": [
+      "香港演艺学院",
+      "舞台技术",
+      "灯光",
+      "声音",
+      "舞台及制作艺术",
+      "短期精研课程",
+      "2027/28"
+    ],
+    "subtopics": [
+      "admission-hk-macao"
+    ],
+    "summary": "舞台技术相关的短期精研课程，涵盖灯光、声音等训练；属于短期课程，不是学位。原页明确2027/28申请将于2027年2月展开，核验时尚未开放；报名详情待学院后续公布。",
+    "organization": "香港演艺学院舞台及制作艺术学院",
+    "url": "https://www.hkapa.edu/tch/tea/study-with-us/programme/fast-track-intensive-training-programme",
+    "publishedAt": null,
+    "applicableYear": "2027/28",
+    "contentRegion": "hong-kong",
+    "theatreEvidence": "学院原页介绍舞台及制作艺术短期精研课程的舞台技术训练、灯光与声音方向以及两个阶段的修读安排。",
+    "sourceRefs": [
+      {
+        "url": "https://www.hkapa.edu/tch/tea/study-with-us/programme/fast-track-intensive-training-programme",
+        "title": "短期精研课程",
+        "locator": "入学申请一节明确2027年2月展开2027/28申请；课程结构与学期安排，课程内容仅标2026年4月定稿，未虚构具体发布日期。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-must-performing-arts-interview-2627",
+    "title": "澳门科技大学2026/27表演艺术学士入学面试须知",
+    "category": "admissions",
+    "topics": [
+      "澳门科技大学",
+      "澳门招生",
+      "2026/27",
+      "表演艺术",
+      "台词",
+      "形体",
+      "即兴表演",
+      "面试"
+    ],
+    "subtopics": [
+      "admission-undergraduate",
+      "admission-hk-macao"
+    ],
+    "summary": "澳门科技大学2026/27表演艺术学士面试须知，列出台词、形体和即兴表演等考核要求。此为该学年PDF版本，不能当作2027/28新简章或当前招生开放证明；具体面试时间按学院邀请。",
+    "organization": "澳门科技大学",
+    "url": "https://www.must.edu.mo/images/Admission/Guidelines/Notes_for_examinations_BAA_For_Mainland_China.pdf",
+    "publishedAt": null,
+    "applicableYear": "2026/2027",
+    "contentRegion": "macao",
+    "theatreEvidence": "原PDF表演艺术面试内容包括诗歌散文或独白台词、戏曲身段或音乐剧相关展示，以及即兴场景表演，具有直接戏剧表演关联。",
+    "sourceRefs": [
+      {
+        "url": "https://www.must.edu.mo/images/Admission/Guidelines/Notes_for_examinations_BAA_For_Mainland_China.pdf",
+        "title": "2026/2027学年表演艺术学士学位课程入学面试考生须知",
+        "locator": "PDF页眉版本2025/09；第2页考核内容表及后续面试技术须知；月份版本不是完整发布日期。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-changzhi-theatre-jobs-2026",
+    "title": "长治文化艺术学校歌舞剧团2026演职员与舞美招聘（历史）",
+    "category": "opportunities",
+    "topics": [
+      "长治",
+      "歌舞剧团",
+      "话剧演员",
+      "舞美装置",
+      "招聘",
+      "2026"
+    ],
+    "subtopics": [
+      "opportunity-casting",
+      "opportunity-design-tech"
+    ],
+    "summary": "长治人社部门发布学校所属歌舞剧团招聘，含话剧演员、舞美装置等岗位。原公告报名面试日期为2026年4月14日，核验时已过；作为岗位要求与历史招聘资料，不提供仍在招的承诺。",
+    "organization": "长治市人力资源和社会保障局／长治文化艺术学校",
+    "url": "https://rsj.changzhi.gov.cn/zwxx/rsjtzgg/202604/t20260408_3155079.html",
+    "publishedAt": "2026-04-08",
+    "applicableYear": "2026",
+    "contentRegion": "mainland",
+    "theatreEvidence": "原招聘正文说明所属歌舞剧团兼有话剧业务，并明确列出话剧演员与舞美装置岗位及资格、面试安排。",
+    "sourceRefs": [
+      {
+        "url": "https://rsj.changzhi.gov.cn/zwxx/rsjtzgg/202604/t20260408_3155079.html",
+        "title": "长治文化艺术学校2026年招聘演职人员公告",
+        "locator": "页面2026-04-08、岗位表中话剧演员与舞美装置条目及报名面试安排；不转存个人电话或报名者信息。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "directory",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "source-directory",
+    "id": "dm-resource-hkapa-excel-theatre-instructors-2026",
+    "title": "香港演艺进修学院EXCEL2026戏剧与舞台制作导师申请库",
+    "category": "opportunities",
+    "topics": [
+      "香港演艺进修学院",
+      "EXCEL",
+      "2026招聘",
+      "兼职导师",
+      "戏剧教学",
+      "音乐剧",
+      "舞台及制作艺术"
+    ],
+    "summary": "EXCEL原页招聘2026年短期及特制课程兼职导师，包含戏剧、中国戏曲、音乐剧和舞台制作。原页说明全年接收、仅适用2026岗位，合适职位出现时才考虑；提交申请不等于已有对应空缺或录用。",
+    "organization": "香港演艺学院演艺进修学院（EXCEL）",
+    "url": "https://www.excel.hkapa.edu/zh/join-us",
+    "publishedAt": null,
+    "applicableYear": "2026",
+    "contentRegion": "hong-kong",
+    "theatreEvidence": "原招聘的2026年兼职教学团队覆盖剧演、中国戏曲、舞台及制作艺术和音乐剧；机构自述为香港演艺学院非牟利附属机构。",
+    "sourceRefs": [
+      {
+        "url": "https://www.excel.hkapa.edu/zh/join-us",
+        "title": "加入我们：兼職導師—教授短期課程和特製服務課程",
+        "locator": "招聘页2026年兼职教学团队、课程领域、资格及申请资料保留至2026年底；本记录不收录无戏剧关联的影视、行政职位。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-hkapa-assistant-scenic-artist-2026",
+    "title": "香港演艺学院助理绘景师ASA招聘（原公告截止2026-10-30）",
+    "category": "opportunities",
+    "topics": [
+      "香港演艺学院",
+      "助理绘景师",
+      "Assistant Scenic Artist",
+      "ASA",
+      "舞美",
+      "布景绘制",
+      "招聘"
+    ],
+    "subtopics": [
+      "opportunity-design-tech"
+    ],
+    "summary": "全职助理绘景师负责绘景工场、材料工具、教学与学生演出资源等。英文原公告截止2026年10月30日，核验当天正值截止日；具体受理状态须即时查原站或向人资确认，不保证仍有名额。",
+    "organization": "香港演艺学院",
+    "url": "https://www.hkapa.edu/job-opportunity/assistant-scenic--artist",
+    "publishedAt": null,
+    "applicableYear": "2026",
+    "contentRegion": "hong-kong",
+    "theatreEvidence": "英文岗位原文明确绘景工场管理、学生演出资源、绘景实践指导及制作监督工作，直属舞台绘景教学岗位。",
+    "sourceRefs": [
+      {
+        "url": "https://www.hkapa.edu/job-opportunity/assistant-scenic--artist",
+        "title": "ASSISTANT SCENIC ARTIST（Ref: ASA）",
+        "locator": "英文职位正文职责、相关学历训练、经验要求与on or before 30 October 2026截止句；中文页要求参阅英文，故保留英文原文作为主来源。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-gba-theatre-festival6-2026",
+    "title": "第六届粤港澳大湾区中国戏剧文化节2026（历史节展）",
+    "category": "festivals",
+    "topics": [
+      "粤港澳大湾区",
+      "中国戏剧文化节",
+      "第六届",
+      "香港",
+      "深圳",
+      "广州",
+      "澳门",
+      "2026"
+    ],
+    "subtopics": [
+      "festival"
+    ],
+    "summary": "主办方介绍第六届粤港澳大湾区中国戏剧文化节，2026年4至6月联动香港、深圳、广州及澳门。该届活动时段核验时已过，保留为节展与区域合作资料，不能用作当前排期或票务。",
+    "organization": "中国戏剧家协会等主办方",
+    "url": "https://www.chinatheatre.org.cn/jxhd/202604/t20260416_1358898.html",
+    "publishedAt": "2026-04-13",
+    "applicableYear": "2026",
+    "contentRegion": null,
+    "theatreEvidence": "主办方正文介绍第六届中国戏剧文化节及香港、深圳、广州、澳门四城联动的戏剧展演安排，具有直接专业戏剧节展关联。",
+    "sourceRefs": [
+      {
+        "url": "https://www.chinatheatre.org.cn/jxhd/202604/t20260416_1358898.html",
+        "title": "第六届粤港澳大湾区中国戏剧文化节主办方介绍",
+        "locator": "正文标注2026.04.13，介绍4—6月四城联动与主办方；URL中的4月16日不作为发布日期。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-chinatheatre-suzhou-incubation-2026",
+    "title": "2026苏州小剧场新作孵化与第五届创演培训班成果",
+    "category": "festivals",
+    "topics": [
+      "苏州",
+      "小剧场",
+      "戏剧新作",
+      "孵化",
+      "剧本修改",
+      "创演培训",
+      "舞台制作",
+      "2026"
+    ],
+    "subtopics": [
+      "festival-incubation",
+      "workshop"
+    ],
+    "summary": "中国剧协报道苏州小剧场新作孵化及第五届创演培训班，涉及剧本修改、舞台实践与创作交流。试演及培训发生在2026年7月，核验时已结束；这是项目成果资料，并非正在开放的培训报名。",
+    "organization": "中国戏剧家协会",
+    "url": "https://www.chinatheatre.org.cn/jxhd/202608/t20260807_1361543.html",
+    "publishedAt": "2026-07-22",
+    "applicableYear": "2026",
+    "contentRegion": "mainland",
+    "theatreEvidence": "原文介绍小剧场剧本孵化、导师辅导、试演以及第五届创演培训班的专业戏剧创作实践，明确2026年7月活动时段。",
+    "sourceRefs": [
+      {
+        "url": "https://www.chinatheatre.org.cn/jxhd/202608/t20260807_1361543.html",
+        "title": "2026苏州小剧场新作孵化与创演培训班成果报道",
+        "locator": "正文日期2026.07.22，六部孵化新作7月17日试演收官及7月10—17日培训；不采用URL中的8月7日作为发布日期。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "status": "verified",
+    "id": "dm-resource-macao-theatre-workshop-wk260216",
+    "title": "澳门台前幕后戏剧全接触工作坊WK26-0216（报名已过）",
+    "category": "festivals",
+    "topics": [
+      "澳门",
+      "戏剧工作坊",
+      "戏剧农庄",
+      "台前幕后",
+      "青年戏剧",
+      "表演",
+      "舞台制作",
+      "2026"
+    ],
+    "subtopics": [
+      "workshop"
+    ],
+    "summary": "澳门教青局外港活动中心与戏剧农庄合作，面向本澳13至35岁学生及青年，内容含表演、剧本与幕后岗位。原定2026年11月3日至12月10日；正式报名10月28日结束，不推定仍可补报。",
+    "organization": "澳门教育及青年发展局外港活动中心／戏剧农庄",
+    "url": "https://portal.dsedj.gov.mo/actregspace/gensystem/actreg/actreg/ActReg_view_page_2.jsp?langsel=C&search_id=37713",
+    "publishedAt": null,
+    "applicableYear": "2026",
+    "contentRegion": "macao",
+    "theatreEvidence": "官方活动页明确戏剧农庄合作，教授声音形体、角色剧本分析、台前幕后分工及化妆等戏剧实践内容，活动编号WK26-0216。",
+    "sourceRefs": [
+      {
+        "url": "https://portal.dsedj.gov.mo/actregspace/gensystem/actreg/actreg/ActReg_view_page_2.jsp?langsel=C&search_id=37713",
+        "title": "艺术教育雪球计划—戏剧全接触：台前幕后戏剧全接触工作坊",
+        "locator": "活动编号WK26-0216；对象、12节活动时间、抽签及正式报名日期；适龄青年活动不等同专业资格认证。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "id": "dm-resource-hongguo-ai-creation-plan-weibo-2026",
+    "title": "红果短剧AI短剧创作计划｜平台账号公告",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-short-drama",
+      "ai-industry"
+    ],
+    "topics": [
+      "红果短剧",
+      "AI短剧",
+      "AIGC",
+      "创作计划",
+      "投稿",
+      "IP授权"
+    ],
+    "organization": "红果短剧app（微博认证主体：北京笔墨留香科技有限公司）",
+    "url": "https://weibo.com/2/detail/5354406397875235",
+    "summary": "红果短剧账号公告列明开放与IP两类AI短剧创作赛道，原帖征稿截止为2027年1月6日，可在APP搜索活动名称进入投稿。这里只登记已核原公告；具体资格、授权条件及后续变更以平台完整规则为准。",
+    "aiEvidence": "原帖正文明确征集AI短剧作品、开放赛道与IP赛道，以及红果短剧APP投稿路径；这是AI影视创作活动资料，不是AI已生成作品。",
+    "aiInvolvement": "reference",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": "2026–2027",
+    "sourceRefs": [
+      {
+        "title": "红果短剧app：AI短剧创作计划公告",
+        "url": "https://weibo.com/2/detail/5354406397875235",
+        "locator": "原页账号名及10-15月日；正文AI创作计划、开放/IP赛道、APP投稿路径。仅记录公告，不补发帖年份。"
+      },
+      {
+        "title": "红果短剧app微博账号资料",
+        "url": "https://www.weibo.com/u/7923525723",
+        "locator": "账号头部显示红果短剧官方微博、北京笔墨留香科技有限公司及2025-12-31审核时间；用于发布主体与大陆地域核验，不引用周边剧集宣传。"
+      },
+      {
+        "title": "流媒体网／DataEye：红果AI短剧计划报道",
+        "url": "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1",
+        "locator": "标题、2026-10-19署名栏及正文说明2026–2027活动届次；不替代平台最新规则。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "id": "dm-resource-wuzhen-young-selection-weibo-2026",
+    "title": "第十三届乌镇戏剧节青年竞演入围公告｜2026届",
+    "category": "festivals",
+    "subtopics": [
+      "festival",
+      "festival-open-call"
+    ],
+    "topics": [
+      "乌镇戏剧节",
+      "青年竞演",
+      "2026戏剧节",
+      "入围公告",
+      "原创剧目"
+    ],
+    "organization": "乌镇戏剧节（微博账号）",
+    "url": "https://weibo.com/2/detail/5345230930577273",
+    "summary": "第十三届乌镇戏剧节青年竞演的历史入围公告，说明该届作品征集与入围阶段。正文排期为2026年10月15日至25日，核验时已过；此条不能作为当前征集、预约或在售入口。原帖显示9-20，未补发帖年份。",
+    "theatreEvidence": "原帖明确2026第十三届乌镇戏剧节青年竞演、作品入围及剧节公演安排；由乌镇戏剧节账号发布，关联具体戏剧节届次。",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": "2026",
+    "sourceRefs": [
+      {
+        "title": "乌镇戏剧节：青年竞演入围公告",
+        "url": "https://weibo.com/2/detail/5345230930577273",
+        "locator": "账号乌镇戏剧节；正文2026届标题、报名截止与入围阶段、10月15—25日活动排期；原帖仅月日。"
+      },
+      {
+        "title": "乌镇戏剧节微博主页",
+        "url": "https://weibo.com/wuzhenfestival",
+        "locator": "Jina返回非空账号页面，头部显示乌镇戏剧节官方微博；只核账号资料，不收推荐区。"
+      },
+      {
+        "title": "中国旅游报：乌镇戏剧节演艺在街头",
+        "url": "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html",
+        "locator": "2026-10-19作者日期栏及首段明确浙江嘉兴乌镇西栅、10月15日第十三届开幕；用于本届地域交叉核验。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "id": "dm-resource-wuzhen-seven-units-weibo-2026",
+    "title": "第十三届乌镇戏剧节七大单元｜2026历史活动介绍",
+    "category": "festivals",
+    "subtopics": [
+      "festival"
+    ],
+    "topics": [
+      "乌镇戏剧节",
+      "特邀剧目",
+      "青年竞演",
+      "古镇嘉年华",
+      "小镇对话",
+      "戏梦粮仓",
+      "起跑戏剧"
+    ],
+    "organization": "乌镇戏剧节（微博账号）",
+    "url": "https://weibo.com/2/detail/5352120674160540",
+    "summary": "乌镇戏剧节账号对2026届七个单元的介绍，可用于了解剧节结构和活动类型。原帖明确该届排期2026年10月15日至25日，核验时已结束；不表示单场演出、现有预约、余票或新届安排。发帖日期仅显示月日，因此留空。",
+    "theatreEvidence": "原帖列举特邀剧目、青年竞演、古镇嘉年华、戏梦粮仓、小镇对话、戏剧集市、起跑戏剧七个专业节展单元并给出2026届排期。",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "publishedAt": null,
+    "applicableYear": "2026",
+    "sourceRefs": [
+      {
+        "title": "乌镇戏剧节：七大单元与活动安排",
+        "url": "https://weibo.com/2/detail/5352120674160540",
+        "locator": "原页账号、10-9月日及七单元正文；文末2026.10.15—10.25。"
+      },
+      {
+        "title": "乌镇戏剧节微博主页",
+        "url": "https://weibo.com/wuzhenfestival",
+        "locator": "Jina非空账号主页头部官方微博标识，仅用于发布主体交叉核验。"
+      },
+      {
+        "title": "中国旅游报：乌镇戏剧节演艺在街头",
+        "url": "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html",
+        "locator": "正文首段第十三届开幕及浙江嘉兴乌镇地点，支持本届地域信息。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "id": "dm-resource-kuaishou-opera-starlight-2024",
+    "title": "非遗戏曲星光夜｜2024快手戏曲直播活动报道",
+    "category": "events",
+    "subtopics": [
+      "event-opera-dance"
+    ],
+    "topics": [
+      "非遗戏曲星光夜",
+      "京剧",
+      "豫剧",
+      "秦腔",
+      "快手艺术",
+      "央视文艺",
+      "戏曲直播"
+    ],
+    "organization": "中国网娱乐（快手科技投资者关系网站转载）",
+    "url": "https://ir.kuaishou.com/zh-hans/news-releases/news-release-details-130",
+    "summary": "快手科技原站转载的2024年戏曲直播活动报道，说明快手艺术与央视文艺围绕京剧、豫剧、秦腔等开展连麦演出。仅为历史活动资料，不是直播回放或当前票务；平台生态统计属于原报道口径，本站未独立验证。",
+    "theatreEvidence": "原站2024-11-25转载页正文明确非遗戏曲星光夜、戏曲创作者连麦演出及京剧、豫剧、秦腔等剧种，属于具体中国戏曲线上演出活动。",
+    "sourceTier": "professional-media",
+    "sourceKind": "professional-media",
+    "publishedAt": "2024-11-25",
+    "applicableYear": "2024",
+    "sourceRefs": [
+      {
+        "title": "快手科技转载：中国网娱乐非遗戏曲星光夜报道",
+        "url": "https://ir.kuaishou.com/zh-hans/news-releases/news-release-details-130",
+        "locator": "2024.11.25日期；来源行中国网娱乐；正文11月21日直播活动与三类戏曲剧种。该页为转载，不按快手原创新闻处理。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "id": "dm-resource-tsinghua-philosophy-drama-close-2024",
+    "title": "清华第二届哲学-戏剧节闭幕｜2024历史回顾",
+    "category": "festivals",
+    "subtopics": [
+      "festival",
+      "festival-forum"
+    ],
+    "topics": [
+      "清华哲学戏剧节",
+      "校园戏剧",
+      "哲学戏剧",
+      "风的雾月玫瑰日",
+      "创作者对谈",
+      "2024"
+    ],
+    "organization": "清华大学新闻网（转载光明日报客户端／卢璐）",
+    "url": "https://www.tsinghua.edu.cn/info/1182/116238.htm",
+    "summary": "清华大学新闻网转载的第二届哲学-戏剧节闭幕报道，回顾邀请剧目、校园原创、创作者对谈和京沪高校联动。原文明确该届已闭幕。本条是受阻入校微信候选的相关主办院校资料，不是原微信全文，也不能说明当前进校、购票或预约办法。",
+    "theatreEvidence": "清华新闻网2024-12-25报道明确第二届哲学戏剧节在京闭幕、原创哲学戏剧展演及创作者对谈，具体关联校园戏剧作品和活动。",
+    "sourceTier": "professional-media",
+    "sourceKind": "professional-media",
+    "publishedAt": "2024-12-25",
+    "applicableYear": "2024",
+    "sourceRefs": [
+      {
+        "title": "清华大学：第二届哲学-戏剧节圆满闭幕",
+        "url": "https://www.tsinghua.edu.cn/info/1182/116238.htm",
+        "locator": "来源栏光明日报客户端／卢璐；首段在京闭幕；正文邀请及校园剧目与创作者对谈；页尾2024-12-25。此页并非入校攻略。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "id": "dm-resource-lmtw-hongguo-ai-plan-20261019",
+    "title": "红果AI短剧创作计划｜流媒体网DataEye报道",
+    "category": "ai-screen",
+    "subtopics": [
+      "ai-short-drama",
+      "ai-industry"
+    ],
+    "topics": [
+      "AI短剧",
+      "红果短剧",
+      "DataEye",
+      "创作计划",
+      "IP创作",
+      "2026"
+    ],
+    "organization": "流媒体网／DataEye研究院・DataEye短剧观察",
+    "url": "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1",
+    "summary": "流媒体网于2026年10月19日刊载DataEye署名的红果AI短剧创作计划报道，介绍创作赛道与平台协作。本文是行业媒体报道，不是活动完整规则；资格、IP授权、奖励和截止状态须回到平台最新公告确认。仅存书目信息与自写简要说明。",
+    "aiEvidence": "媒体正文明确AI短剧作品征集、创作者身份、IP库与即梦等AI创作生态的活动关系，属于AI影视行业资料而非普通真人短剧宣传。",
+    "aiInvolvement": "reference",
+    "sourceTier": "professional-media",
+    "sourceKind": "professional-media",
+    "publishedAt": "2026-10-19",
+    "applicableYear": "2026–2027",
+    "sourceRefs": [
+      {
+        "title": "流媒体网：红果AI短剧创作计划报道",
+        "url": "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1",
+        "locator": "标题、DataEye研究院/DataEye短剧观察署名与2026-10-19日期；正文AI创作赛道。页脚北京创世路信息技术有限公司及京ICP备案证明网站发布机构地域。"
+      },
+      {
+        "title": "红果短剧app平台公告",
+        "url": "https://weibo.com/2/detail/5354406397875235",
+        "locator": "仅交叉核对AI短剧创作计划及APP投稿路径；不以媒体转载代替最新官方完整规则。"
+      }
+    ]
+  },
+  {
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "id": "dm-resource-bjd-tsinghua-philosophy-drama-20241116",
+    "title": "清华第二届哲学-戏剧节启动｜北京日报2024报道",
+    "category": "festivals",
+    "subtopics": [
+      "festival",
+      "festival-forum"
+    ],
+    "topics": [
+      "清华哲学戏剧节",
+      "校园戏剧",
+      "等待戈多",
+      "威廉与我",
+      "象棋的故事",
+      "2024"
+    ],
+    "organization": "北京日报客户端／记者何蕊",
+    "url": "https://xinwen.bjd.com.cn/content/s673823aee4b0e1ace8a86f31.html",
+    "summary": "北京日报2024年11月16日关于清华第二届哲学-戏剧节的报道，介绍邀请剧目、校园创作及讲座工作坊。仅供历史节展研究。文中入校微信原链接当前受验证码限制，本条不提供或推断2026年的进校、预约及票务要求。",
+    "theatreEvidence": "媒体原文具体列出第二届清华哲学戏剧节、演出空间、导演及剧目、哲学讲座和工作坊，明确是校园戏剧专业活动而非普通校园新闻。",
+    "sourceTier": "professional-media",
+    "sourceKind": "professional-media",
+    "publishedAt": "2024-11-16",
+    "applicableYear": "2024",
+    "sourceRefs": [
+      {
+        "title": "北京日报：清华第二届哲学-戏剧节启动",
+        "url": "https://xinwen.bjd.com.cn/content/s673823aee4b0e1ace8a86f31.html",
+        "locator": "原页标题、记者何蕊、2024-11-16日期；正文前4段邀请与校园剧目、活动；文末列入校微信，但原微信正文未读取。"
+      },
+      {
+        "title": "清华大学：该届戏剧节已闭幕",
+        "url": "https://www.tsinghua.edu.cn/info/1182/116238.htm",
+        "locator": "首段在京闭幕及页尾2024-12-25，用于确认活动为历史届次，不以2024办法推定当前状态。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-yixi-xuang-comedy-speech-2015",
+    "title": "徐昂《喜剧的忧伤》｜一席2015深圳演讲文本",
+    "category": "knowledge",
+    "subtopics": [
+      "directing",
+      "performance",
+      "dramaturgy"
+    ],
+    "topics": [
+      "徐昂",
+      "喜剧的忧伤",
+      "喜劇的憂傷",
+      "北京人艺",
+      "一席",
+      "导演与演员沟通",
+      "文本修订",
+      "喜剧排练"
+    ],
+    "summary": "一席原站公开徐昂2015年6月27日在深圳的演讲文本，涉及北京人艺的文本修订、导演与演员沟通及喜剧排练。仅收元数据与自编摘要，观点按讲者创作经验理解，不作为普遍导演准则；页面未见独立发布日期。",
+    "organization": "一席／讲者徐昂",
+    "url": "https://admin.yixi.tv/h5/speech/366/",
+    "verifiedAt": "2026-10-30",
+    "publishedAt": null,
+    "applicableYear": "2015",
+    "contentRegion": "mainland",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "professional-media",
+    "sourceKind": "creator-experience",
+    "theatreEvidence": "一席原站文本页明确讲者徐昂、深圳演讲日期及北京人艺导演经历，正文围绕话剧《喜剧的忧伤》的文本与排练沟通；电影《十二公民》仅为开场话题。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "一席：徐昂《喜剧的忧伤》",
+        "url": "https://admin.yixi.tv/h5/speech/366/",
+        "locator": "经curl/Jina取得原站完整演讲文本；页首徐昂、2015-06-27、深圳；正文文本修订与导演演员沟通段落。事件日期不充作网页发布日期，未导入全文或视频。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-ncpa-li-bai-production-2012",
+    "title": "话剧《李白》2012国家大剧院演出｜官方历史制作资料",
+    "category": "knowledge",
+    "subtopics": [
+      "directing",
+      "performance",
+      "history-theory"
+    ],
+    "topics": [
+      "李白",
+      "话剧李白",
+      "話劇李白",
+      "北京人艺",
+      "苏民",
+      "唐烨",
+      "郭启宏",
+      "濮存昕",
+      "龚丽君",
+      "历史制作"
+    ],
+    "summary": "国家大剧院2012年7月4日原文介绍北京人艺《李白》来院演出及主创的导演、表演思考。仅作历史制作资料，不是当前票讯，也不证明B站个人上传录像的版本、完整度或授权；不提供全剧视频。",
+    "organization": "国家大剧院",
+    "url": "https://www.chncpa.org/zxdt_331/zxdtlm/yczx_332/201608/t20160823_110282.shtml",
+    "verifiedAt": "2026-10-30",
+    "publishedAt": "2012-07-04",
+    "applicableYear": "2012",
+    "contentRegion": "mainland",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "production",
+    "sourceTier": "official",
+    "sourceKind": "announcement",
+    "theatreEvidence": "国家大剧院原文具名记录北京人艺话剧《李白》、苏民与唐烨导演、郭启宏编剧及濮存昕等主创，并讨论角色塑造和舞台创作；对应2012年北京演出。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "国家大剧院：经典话剧《李白》首登国家大剧院",
+        "url": "https://www.chncpa.org/zxdt_331/zxdtlm/yczx_332/201608/t20160823_110282.shtml",
+        "locator": "正文标题下来源及日期国家大剧院2012/07/04；首段主创及北京演出；《李白》二十载与首登大剧院段落。URL中的201608不是发布日期。"
+      }
+    ]
+  },
+  {
+    "id": "dm-script-peiyuan-voices-640",
+    "title": "音乐剧《你的声音》｜祁岩峰剧本版本与阅读申请",
+    "category": "scripts",
+    "subtopics": [
+      "script-musical"
+    ],
+    "topics": [
+      "你的声音",
+      "你的聲音",
+      "祁岩峰",
+      "音乐剧剧本",
+      "音樂劇劇本"
+    ],
+    "summary": "培源网登记祁岩峰原创音乐剧《你的声音》，公开作者、类型、发布日期及剧本文件登记。完整剧本须经作者同意后供认证企业浏览；本条只核对公开版本与申请条件，未取得正文，不作为完整剧本、唱词或免费全文提供。",
+    "organization": "培源网／作者祁岩峰",
+    "url": "https://www.peiyuanproject.com/home/dramascript_view/640",
+    "access": "institution",
+    "recordType": "resource",
+    "theatreEvidence": "原页明确艺术类型为音乐剧、创作类型为原创，作者祁岩峰；列有完整剧本文件登记及作者同意、认证企业浏览条件。",
+    "sourceTier": "creator",
+    "sourceKind": "creator-experience",
+    "publishedAt": "2021-01-21",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "sourceRefs": [
+      {
+        "title": "音乐剧《你的声音》｜祁岩峰剧本版本与阅读申请",
+        "url": "https://www.peiyuanproject.com/home/dramascript_view/640",
+        "locator": "作品名称、艺术类型、作者、发布日期、文件登记及“经作者本人同意后，仅供认证企业浏览”；未读取附件正文。"
+      },
+      {
+        "title": "培源平台背景与版权说明",
+        "url": "https://www.peiyuanproject.com/home/about",
+        "locator": "北京文化艺术基金发起、宽友（北京）承办；版权归创作者，不由平台占有。"
+      }
+    ]
+  },
+  {
+    "id": "dm-script-peiyuan-nine-color-deer-329",
+    "title": "儿童剧《九色鹿》｜温丽洁改编剧本与阅读申请",
+    "category": "scripts",
+    "subtopics": [
+      "script-children",
+      "script-adaptation"
+    ],
+    "topics": [
+      "九色鹿",
+      "温丽洁",
+      "溫麗潔",
+      "儿童剧本",
+      "兒童劇本",
+      "敦煌壁画",
+      "敦煌壁畫",
+      "改编剧本"
+    ],
+    "summary": "培源网登记温丽洁儿童剧《九色鹿》，注明改编类型与敦煌壁画故事来源。公开页可查作者、版本与阅读申请条件；剧本须经作者同意供认证企业浏览。没有读取受限正文，不把简介和平台评语当作剧本选段或独白。",
+    "organization": "培源网／作者温丽洁",
+    "url": "https://peiyuanproject.com/home/dramascript_view/329",
+    "access": "institution",
+    "recordType": "resource",
+    "theatreEvidence": "原页艺术类型为儿童剧、创作类型为改编，原著出处列敦煌壁画《九色鹿》，作者温丽洁；正文附件受作者同意及机构认证限制。",
+    "sourceTier": "creator",
+    "sourceKind": "creator-experience",
+    "publishedAt": "2020-04-29",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "sourceRefs": [
+      {
+        "title": "儿童剧《九色鹿》｜温丽洁改编剧本与阅读申请",
+        "url": "https://peiyuanproject.com/home/dramascript_view/329",
+        "locator": "作品信息区：儿童剧、改编、原著出处、作者、发布日期及完整剧本访问条件；评论是平台评语，不作独立事实。"
+      },
+      {
+        "title": "培源平台背景与版权说明",
+        "url": "https://www.peiyuanproject.com/home/about",
+        "locator": "北京文化艺术基金发起、宽友（北京）承办；版权归创作者，不由平台占有。"
+      }
+    ]
+  },
+  {
+    "id": "dm-script-peiyuan-embroidered-robe-1096",
+    "title": "昆曲《绣襦记》｜何晗改编版本与剧本代理入口",
+    "category": "scripts",
+    "subtopics": [
+      "script-opera",
+      "script-adaptation"
+    ],
+    "topics": [
+      "绣襦记",
+      "繡襦記",
+      "何晗",
+      "徐霖",
+      "昆曲剧本",
+      "昆曲劇本",
+      "李娃传",
+      "李娃傳",
+      "改编本"
+    ],
+    "summary": "培源网登记何晗2021年昆曲改编本《绣襦记》，原著出处注明明代徐霖同名传奇。原页声明由培源优选独家代理，剧本阅读须作者同意并认证企业身份。此处保存版本来源，不提供受限文件，也不把现代改编本等同于古代原作或取得演出授权。",
+    "organization": "培源网／作者何晗",
+    "url": "https://www.peiyuanproject.com/home/dramascript_view/1096",
+    "access": "institution",
+    "recordType": "resource",
+    "theatreEvidence": "原页明确昆曲、改编、何晗及徐霖《绣襦记》的原著关系，并列独家代理声明和剧本阅读条件，支持戏曲文本版本定位。",
+    "sourceTier": "creator",
+    "sourceKind": "creator-experience",
+    "publishedAt": "2021-02-28",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "sourceRefs": [
+      {
+        "title": "昆曲《绣襦记》｜何晗改编版本与剧本代理入口",
+        "url": "https://www.peiyuanproject.com/home/dramascript_view/1096",
+        "locator": "标题下代理声明；艺术类型、创作类型、原著出处、作者、日期与剧本访问条件。"
+      },
+      {
+        "title": "培源平台背景与版权说明",
+        "url": "https://www.peiyuanproject.com/home/about",
+        "locator": "北京文化艺术基金发起、宽友（北京）承办；版权归创作者，不由平台占有。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-ncpa-wang-jane-eyre-20210309",
+    "title": "王晓鹰谈话剧《简·爱》｜选角与人物塑造",
+    "category": "knowledge",
+    "subtopics": [
+      "performance",
+      "directing"
+    ],
+    "topics": [
+      "简·爱",
+      "簡·愛",
+      "王晓鹰",
+      "王曉鷹",
+      "人物塑造",
+      "选角",
+      "選角"
+    ],
+    "summary": "国家大剧院线上讲堂公开王晓鹰对本院话剧《简·爱》的创作讲解，涉及选角、角色与演员年龄关系及人物塑造。归为导演个人创作经验，非所有流派通则。本轮读取图文内容，未确认独立视频可播放，不按演出录像或讲座视频收录。",
+    "organization": "国家大剧院／王晓鹰",
+    "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxj/202103/t20210310_227082.shtml",
+    "access": "public",
+    "recordType": "resource",
+    "theatreEvidence": "国家大剧院原页注明王晓鹰主讲，以本院话剧《简·爱》为例分节讨论选角及人物塑造；内容为舞台创作而非同名电影资料。",
+    "sourceTier": "official",
+    "sourceKind": "creator-experience",
+    "publishedAt": "2021-03-09",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "sourceRefs": [
+      {
+        "title": "王晓鹰谈话剧《简·爱》｜选角与人物塑造",
+        "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxj/202103/t20210310_227082.shtml",
+        "locator": "主讲人与正文日期；“演员选择”“演员的年龄与角色年龄”章节。只核图文，未确认播放。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-ncpa-yip-love-20220225",
+    "title": "叶锦添谈话剧《倾城之恋》｜空间、服装与角色创作",
+    "category": "knowledge",
+    "subtopics": [
+      "directing",
+      "stage-design",
+      "performance"
+    ],
+    "topics": [
+      "倾城之恋",
+      "傾城之戀",
+      "叶锦添",
+      "葉錦添",
+      "舞台空间",
+      "舞台空間",
+      "服装",
+      "服裝",
+      "人物关系"
+    ],
+    "summary": "国家大剧院发布叶锦添围绕话剧《倾城之恋》的创作讲解，涉及文本层次、角色塑造、服装与舞台空间。只整理其个人创作观点与具体版本背景，不延伸为原著全文或影视资讯。读取图文，未确认视频可播放。",
+    "organization": "国家大剧院／叶锦添",
+    "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxj/202202/t20220224_241001.shtml",
+    "access": "public",
+    "recordType": "resource",
+    "theatreEvidence": "原页标题、主讲人与正文明确话剧《倾城之恋》，具体讲解角色训练、服装和空间创作，是舞台艺术经验资料。",
+    "sourceTier": "official",
+    "sourceKind": "creator-experience",
+    "publishedAt": "2022-02-25",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "sourceRefs": [
+      {
+        "title": "叶锦添谈话剧《倾城之恋》｜空间、服装与角色创作",
+        "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxj/202202/t20220224_241001.shtml",
+        "locator": "正文主讲人、2022/02/25日期及“简单演员塑造复杂角色”“从服装设计解密白流苏”等章节；未确认播放。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-ncpa-yu-jiake-20210630",
+    "title": "喻荣军谈《家客》｜剧作构思与空间叙事",
+    "category": "knowledge",
+    "subtopics": [
+      "dramaturgy",
+      "directing"
+    ],
+    "topics": [
+      "家客",
+      "喻荣军",
+      "喻榮軍",
+      "戏剧构思",
+      "戲劇構思",
+      "老房子",
+      "空间叙事",
+      "空間敘事"
+    ],
+    "summary": "国家大剧院公开喻荣军从话剧《家客》谈创作与欣赏的讲堂图文，讨论人物、时代及上海老宅空间的构思。归为创作者观点，文中的“今年”等时间词按2021年背景理解。未读取剧本，未将图文当作完整演出或讲座视频。",
+    "organization": "国家大剧院／喻荣军",
+    "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxj/202106/t20210630_233405.shtml",
+    "access": "public",
+    "recordType": "resource",
+    "theatreEvidence": "原页主讲人为话剧编剧喻荣军，以舞台作品《家客》讨论人物和社会关系、老房子空间及剧作创作，属于戏剧构作经验。",
+    "sourceTier": "official",
+    "sourceKind": "creator-experience",
+    "publishedAt": "2021-06-30",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "sourceRefs": [
+      {
+        "title": "喻荣军谈《家客》｜剧作构思与空间叙事",
+        "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxj/202106/t20210630_233405.shtml",
+        "locator": "主讲人与日期；《家客》的创作起源及上海老房子精神家园段落；视频播放尚未确认。"
+      }
+    ]
+  },
+  {
+    "id": "dm-knowledge-ncpa-chang-nianbai-20200629",
+    "title": "常秋月谈京剧花旦三种念白｜京白、韵白与谐白",
+    "category": "knowledge",
+    "subtopics": [
+      "voice",
+      "performance"
+    ],
+    "topics": [
+      "常秋月",
+      "京剧花旦",
+      "京劇花旦",
+      "念白",
+      "京白",
+      "韵白",
+      "韻白",
+      "台词",
+      "臺詞",
+      "谐白",
+      "諧白"
+    ],
+    "summary": "国家大剧院原文列京白、韵白、谐白三种念白，主讲常秋月，2020年6月29日。仅作京剧花旦表演与台词文字资料，保留原作者观点，不替代话剧训练规范；不收讲座视频。",
+    "organization": "国家大剧院／常秋月",
+    "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxq/202011/t20201130_223439.shtml",
+    "access": "public",
+    "recordType": "resource",
+    "theatreEvidence": "原页明确主讲常秋月及京剧花旦念白主题，结合《金玉奴》等戏曲人物说明声音与表演，是戏曲专业知识而非课程营销。",
+    "sourceTier": "official",
+    "sourceKind": "creator-experience",
+    "publishedAt": "2020-06-29",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "contentRegion": "mainland",
+    "applicableYear": null,
+    "sourceRefs": [
+      {
+        "title": "常秋月谈京剧花旦三种念白｜京白、韵白与谐白",
+        "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxq/202011/t20201130_223439.shtml",
+        "locator": "原页主讲人与2020/06/29日期；京白及后续念白讲解章节。只读取图文，未确认播放器。"
+      }
+    ]
+  },
+  {
+    "id": "dm-script-lcsd-butterfly-lovers-en-v1",
+    "title": "《梁祝恨史》｜伍榮仲（NG Wing Chung）英译完整剧本（Version 1.0）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-translation",
+      "script-opera"
+    ],
+    "topics": [
+      "梁祝恨史",
+      "梁祝恨史",
+      "Butterfly Lovers",
+      "潘一帆",
+      "伍榮仲（NG Wing Chung）",
+      "粤剧",
+      "粵劇",
+      "英译剧本",
+      "英语译本",
+      "完整剧本"
+    ],
+    "summary": "康文署公开的香港粤剧英译剧本：潘一帆编剧，伍榮仲（NG Wing Chung）翻译，基于芳艷芬1955演出本，译本标记2012年Version 1.0。共61页，六幕正文至终幕可读；这是该演出版本的英语全文，不是中文原本或音乐剧。本站只存元数据与原站链接；原PDF标示CC BY-NC 3.0及商业英文字幕用途的特殊条件，其他使用须按原许可另核。",
+    "organization": "香港康乐及文化事务署／岭南大学香港粤剧经典剧目翻译计划",
+    "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Butterfly_Lovers.pdf",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": null,
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "hong-kong",
+    "status": "verified",
+    "theatreEvidence": "康文署剧本英译本栏目直接链接岭南大学香港粤剧经典剧目翻译计划PDF，文件有角色、唱白、舞台提示、连续幕次与终幕。",
+    "sourceRefs": [
+      {
+        "title": "梁祝恨史英译剧本PDF",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Butterfly_Lovers.pdf",
+        "locator": "PDF共61页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+      },
+      {
+        "title": "康文署：粤剧剧本字幕及英译本",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/tc/misc.html",
+        "locator": "剧本英译本标签下，香港粤剧经典剧目翻译计划栏目所列具体PDF；与字幕折子戏栏目区分。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "cantonese-opera-butterfly-lovers",
+      "versionKey": "fong-yim-fun-1955-en-v1-2012",
+      "author": "潘一帆",
+      "language": "en",
+      "edition": "芳艷芬1955演出本；伍榮仲（NG Wing Chung）英译Version 1.0（2012）",
+      "coverage": "full"
+    }
+  },
+  {
+    "id": "dm-script-lcsd-forsaken-woman-en-v1",
+    "title": "《程大嫂》｜YEE Siu Ying Grace英译完整剧本（Version 1.0）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-translation",
+      "script-opera"
+    ],
+    "topics": [
+      "程大嫂",
+      "程大嫂",
+      "The Forsaken Woman",
+      "唐滌生",
+      "YEE Siu Ying Grace",
+      "粤剧",
+      "粵劇",
+      "英译剧本",
+      "英语译本",
+      "完整剧本"
+    ],
+    "summary": "康文署公开的香港粤剧英译剧本：唐滌生编剧，YEE Siu Ying Grace翻译，基于芳艷芬1954演出本，译本标记2012年Version 1.0。共74页，六幕正文至终幕可读；这是该演出版本的英语全文，不是中文原本或音乐剧。本站只存元数据与原站链接；原PDF标示CC BY-NC 3.0及商业英文字幕用途的特殊条件，其他使用须按原许可另核。",
+    "organization": "香港康乐及文化事务署／岭南大学香港粤剧经典剧目翻译计划",
+    "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Forsaken_Woman.pdf",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": null,
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "hong-kong",
+    "status": "verified",
+    "theatreEvidence": "康文署剧本英译本栏目直接链接岭南大学香港粤剧经典剧目翻译计划PDF，文件有角色、唱白、舞台提示、连续幕次与终幕。",
+    "sourceRefs": [
+      {
+        "title": "程大嫂英译剧本PDF",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Forsaken_Woman.pdf",
+        "locator": "PDF共74页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+      },
+      {
+        "title": "康文署：粤剧剧本字幕及英译本",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/tc/misc.html",
+        "locator": "剧本英译本标签下，香港粤剧经典剧目翻译计划栏目所列具体PDF；与字幕折子戏栏目区分。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "cantonese-opera-forsaken-woman",
+      "versionKey": "fong-yim-fun-1954-en-v1-2012",
+      "author": "唐滌生",
+      "language": "en",
+      "edition": "芳艷芬1954演出本；YEE Siu Ying Grace英译Version 1.0（2012）",
+      "coverage": "full"
+    }
+  },
+  {
+    "id": "dm-script-lcsd-snow-in-june-en-v1",
+    "title": "《六月雪》｜Frederick Lau英译完整剧本（Version 1.0）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-translation",
+      "script-opera"
+    ],
+    "topics": [
+      "六月雪",
+      "六月雪",
+      "Snow in June",
+      "唐滌生",
+      "Frederick Lau",
+      "粤剧",
+      "粵劇",
+      "英译剧本",
+      "英语译本",
+      "完整剧本"
+    ],
+    "summary": "康文署公开的香港粤剧英译剧本：唐滌生编剧，Frederick Lau翻译，基于芳艷芬1956演出本，译本标记2012年Version 1.0。共72页，六幕正文至终幕可读；这是该演出版本的英语全文，不是中文原本或音乐剧。本站只存元数据与原站链接；原PDF标示CC BY-NC 3.0及商业英文字幕用途的特殊条件，其他使用须按原许可另核。",
+    "organization": "香港康乐及文化事务署／岭南大学香港粤剧经典剧目翻译计划",
+    "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Snow_in_June.pdf",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": null,
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "hong-kong",
+    "status": "verified",
+    "theatreEvidence": "康文署剧本英译本栏目直接链接岭南大学香港粤剧经典剧目翻译计划PDF，文件有角色、唱白、舞台提示、连续幕次与终幕。",
+    "sourceRefs": [
+      {
+        "title": "六月雪英译剧本PDF",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Snow_in_June.pdf",
+        "locator": "PDF共72页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+      },
+      {
+        "title": "康文署：粤剧剧本字幕及英译本",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/tc/misc.html",
+        "locator": "剧本英译本标签下，香港粤剧经典剧目翻译计划栏目所列具体PDF；与字幕折子戏栏目区分。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "cantonese-opera-snow-in-june",
+      "versionKey": "fong-yim-fun-1956-en-v1-2012",
+      "author": "唐滌生",
+      "language": "en",
+      "edition": "芳艷芬1956演出本；Frederick Lau英译Version 1.0（2012）",
+      "coverage": "full"
+    }
+  },
+  {
+    "id": "dm-script-lcsd-red-phoenix-en-v1",
+    "title": "《红鸾喜》｜Alice Chow（周陳燕雯）、Siu Leung LI（李小良）英译完整剧本（Version 1.0）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-translation",
+      "script-opera"
+    ],
+    "topics": [
+      "红鸾喜",
+      "紅鸞喜",
+      "The Happy Marriage of Red Phoenix",
+      "李少芸",
+      "Alice Chow（周陳燕雯）、Siu Leung LI（李小良）",
+      "粤剧",
+      "粵劇",
+      "英译剧本",
+      "英语译本",
+      "完整剧本"
+    ],
+    "summary": "康文署公开的香港粤剧英译剧本：李少芸编剧，Alice Chow（周陳燕雯）、Siu Leung LI（李小良）翻译，基于芳艷芬1957演出本，译本标记2014年Version 1.0。共72页，四幕正文至终幕可读；这是该演出版本的英语全文，不是中文原本或音乐剧。本站只存元数据与原站链接；原PDF标示CC BY-NC 3.0及商业英文字幕用途的特殊条件，其他使用须按原许可另核。",
+    "organization": "香港康乐及文化事务署／岭南大学香港粤剧经典剧目翻译计划",
+    "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/TheHappyMarriageofRedPhoenix.pdf",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": null,
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "hong-kong",
+    "status": "verified",
+    "theatreEvidence": "康文署剧本英译本栏目直接链接岭南大学香港粤剧经典剧目翻译计划PDF，文件有角色、唱白、舞台提示、连续幕次与终幕。",
+    "sourceRefs": [
+      {
+        "title": "紅鸞喜英译剧本PDF",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/TheHappyMarriageofRedPhoenix.pdf",
+        "locator": "PDF共72页；第1页署名、演出本年份及Version 1.0；第2页许可；四幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+      },
+      {
+        "title": "康文署：粤剧剧本字幕及英译本",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/tc/misc.html",
+        "locator": "剧本英译本标签下，香港粤剧经典剧目翻译计划栏目所列具体PDF；与字幕折子戏栏目区分。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "cantonese-opera-red-phoenix",
+      "versionKey": "fong-yim-fun-1957-en-v1-2014",
+      "author": "李少芸",
+      "language": "en",
+      "edition": "芳艷芬1957演出本；Alice Chow（周陳燕雯）、Siu Leung LI（李小良）英译Version 1.0（2014）",
+      "coverage": "full"
+    }
+  },
+  {
+    "id": "dm-book-sarah-kane-hu-2006",
+    "title": "《萨拉·凯恩戏剧集》｜胡开奇译·新星出版社2006年版书目",
+    "category": "knowledge",
+    "subtopics": [
+      "dramaturgy",
+      "history-theory"
+    ],
+    "topics": [
+      "萨拉凯恩戏剧集",
+      "萨拉·凯恩戏剧集",
+      "Sarah Kane",
+      "胡开奇",
+      "新星出版社",
+      "7801488652",
+      "戏剧译本",
+      "剧本集书目"
+    ],
+    "summary": "对外经济贸易大学图书馆公开书目登记：萨拉·凯恩著，胡开奇译，新星出版社2006年版，ISBN 7-80148-865-2，属“剧场和戏丛书”。本条只核书名、责任者、版本与馆藏书目信息；没有读到《摧毁》等剧本正文，不计为已核完整剧本，也不据内容提要提炼整书理论或授权转载。",
+    "organization": "对外经济贸易大学图书馆",
+    "url": "https://opac.uibe.edu.cn/opac/book/6945bc638dfe002fed066e92e45ee465",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": "2006",
+    "access": "mixed",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "theatreEvidence": "大学图书馆将本书登记为英国现代戏剧文学剧本作品集，题名责任者明确作者及胡开奇译本，属于戏剧译本书目。",
+    "sourceTier": "official",
+    "contentRegion": "mainland",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "萨拉·凯恩戏剧集：大学图书馆书目",
+        "url": "https://opac.uibe.edu.cn/opac/book/6945bc638dfe002fed066e92e45ee465",
+        "locator": "书目详细信息：题名责任者、ISBN/价格、出版发行项、载体形态项、丛编项及内容提要。只核公开书目，没有取得书内正文。"
+      }
+    ]
+  },
+  {
+    "id": "dm-person-chinawriter-shen-ximeng",
+    "title": "沈西蒙｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "沈西蒙",
+      "沈西门",
+      "重庆交响乐",
+      "买卖公平",
+      "杨根思",
+      "甲申记",
+      "话剧编剧",
+      "歌剧编剧"
+    ],
+    "summary": "中国作家网会员辞典列出沈西蒙的笔名及话剧、歌剧作品，包含《重庆交响乐》《杨根思》《买卖公平》；《甲申记》明确标注合作。用于核对作者与舞台剧目的关联，不提供剧本全文，也不将历史任职当作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404946-28492854.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "官方辞典正文明确其创作歌剧剧本《买卖公平》、话剧《重庆交响乐》《杨根思》等舞台剧目，并区分《甲申记》的合作署名。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：沈西蒙",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404946-28492854.html",
+        "locator": "人物标题“沈西蒙”；正文笔名段及“著有歌剧剧本”“话剧剧本”作品段。《甲申记》标合作；电影文学剧本不混作舞台剧本。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-cao-yumei",
+    "title": "曹雨煤｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "曹雨煤",
+      "雨煤",
+      "泥巴路，茅草房",
+      "乌江云，巴山雨",
+      "母亲河",
+      "姊妹崖",
+      "夜郎悲歌",
+      "雨煤剧作选",
+      "剧作家"
+    ],
+    "summary": "中国作家网会员辞典将曹雨煤与《乌江云，巴山雨》《母亲河》《姊妹崖》《泥巴路，茅草房》等戏剧文学作品关联，另列《雨煤剧作选》。只登记专业创作资料，不代表已取得剧作集或完整剧本；历史工作履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487971.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "官方辞典明确曹雨煤笔名雨煤、上海戏剧学院戏剧文学学习经历及戏剧文学作品，所列舞台剧目包括《母亲河》《姊妹崖》《泥巴路，茅草房》。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：曹雨煤",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487971.html",
+        "locator": "人物标题“曹雨煤”；正文笔名、戏剧文学专业及戏剧作品清单。小说、电视剧与戏剧作品分别列示；未把剧作选书目当完整剧本。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-chen-baichen",
+    "title": "陈白尘｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "陈白尘",
+      "升官图",
+      "大地回春",
+      "大渡河",
+      "第二个回合",
+      "大风歌"
+    ],
+    "summary": "辞典正文明确列出《升官图》《大地回春》《大渡河》《第二个回合》《大风歌》等剧本，并与电影文学作品分列。这里只登记人物与作品关联及原页链接，不代表取得完整剧本或全集；历史履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487929.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典正文明确列出《升官图》《大地回春》《大渡河》《第二个回合》《大风歌》等剧本，并与电影文学作品分列。所列舞台剧目支持戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：陈白尘",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487929.html",
+        "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-li-jianwu",
+    "title": "李健吾｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "李健吾",
+      "刘西渭",
+      "这不过是春天",
+      "以身作则",
+      "黄花",
+      "青春",
+      "母亲的梦"
+    ],
+    "summary": "辞典正文明确笔名刘西渭，列出《母亲的梦》《以身作则》《这不过是春天》《黄花》等舞台剧目；戏剧创作、改编与译著须逐剧区分。这里只登记人物与作品关联及原页链接，不代表取得完整剧本或全集；历史履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491139.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典正文明确笔名刘西渭，列出《母亲的梦》《以身作则》《这不过是春天》《黄花》等舞台剧目；戏剧创作、改编与译著须逐剧区分。所列舞台剧目支持戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：李健吾",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491139.html",
+        "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-laoshe",
+    "title": "老舍｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "老舍",
+      "舒庆春",
+      "茶馆",
+      "龙须沟",
+      "张自忠",
+      "女店员",
+      "全家福"
+    ],
+    "summary": "辞典正文将《茶馆》《龙须沟》《张自忠》《女店员》《全家福》等列为剧本，与小说和文集书目分列。这里只登记人物与作品关联及原页链接，不代表取得完整剧本或全集；历史履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491384.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典正文将《茶馆》《龙须沟》《张自忠》《女店员》《全家福》等列为剧本，与小说和文集书目分列。所列舞台剧目支持戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：老舍",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491384.html",
+        "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-li-bozhao",
+    "title": "李伯钊｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "李伯钊",
+      "长征",
+      "红军不怕远征难",
+      "歌剧编剧"
+    ],
+    "summary": "辞典正文明确其创作舞台歌剧《长征》及《红军不怕远征难》，后者标注合作；不能把合作剧目写成独著。这里只登记人物与作品关联及原页链接，不代表取得完整剧本或全集；历史履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491310.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典正文明确其创作舞台歌剧《长征》及《红军不怕远征难》，后者标注合作；不能把合作剧目写成独著。所列舞台剧目支持戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：李伯钊",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491310.html",
+        "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。《红军不怕远征难》明确标合作。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-wu-zuguang",
+    "title": "吴祖光｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "吴祖光",
+      "风雪夜归人",
+      "凤凰城",
+      "正气歌",
+      "话剧编剧"
+    ],
+    "summary": "中国作家网《文艺报》文章明确《风雪夜归人》由吴祖光创作于四川江安时期，并联系其前作《凤凰城》《正气歌》。这里只登记人物与舞台作品关联及原页链接，不代表取得完整剧本、初版或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2017/0531/c405174-29307870.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "《文艺报》文章明确吴祖光创作话剧《风雪夜归人》，讨论序幕、三幕与尾声及其戏剧结构，并列《凤凰城》《正气歌》为先前剧作。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "《文艺报》：《风雪夜归人》问世与反响",
+        "url": "https://www.chinawriter.com.cn/n1/2017/0531/c405174-29307870.html",
+        "locator": "2017-05-31文章首段、四川江安创作段与序幕/三幕/尾声结构段；仅专业人物—舞台作品关联，不将演出、电影或转载文本当完整原作。"
+      }
+    ],
+    "publishedAt": "2017-05-31",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-xia-yan",
+    "title": "夏衍｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "夏衍",
+      "上海屋檐下",
+      "法西斯细菌",
+      "芳草天涯",
+      "心防"
+    ],
+    "summary": "会员辞典明确将《上海屋檐下》《法西斯细菌》《芳草天涯》《心防》等列为话剧剧本，并与电影剧本、报告文学和译著分列。这里只登记人物及作品关联和原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404951-28495120.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "会员辞典明确将《上海屋檐下》《法西斯细菌》《芳草天涯》《心防》等列为话剧剧本，并与电影剧本、报告文学和译著分列。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：夏衍",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404951-28495120.html",
+        "locator": "人物标题及正文25行话剧剧本清单；仅专业身份与舞台作品关联，原名/历史任职等未采集。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-hong-shen",
+    "title": "洪深｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "洪深",
+      "五奎桥",
+      "香稻米",
+      "飞将军",
+      "包得行"
+    ],
+    "summary": "会员辞典将《五奎桥》《香稻米》《飞将军》《包得行》等列为话剧剧本，与电影、译著及论著分列。这里只登记人物及作品关联和原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404935-28488703.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "会员辞典将《五奎桥》《香稻米》《飞将军》《包得行》等列为话剧剧本，与电影、译著及论著分列。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：洪深",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404935-28488703.html",
+        "locator": "人物标题及正文25行话剧剧本清单；不将《少奶奶的扇子》等译改本冒充原创，赵阎王底本关系仍另留待核。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-guo-moruo",
+    "title": "郭沫若｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "郭沫若",
+      "屈原",
+      "棠棣之花",
+      "虎符",
+      "孔雀胆",
+      "蔡文姬"
+    ],
+    "summary": "现代作家辞典著作书目列有《屈原》《棠棣之花》《虎符》《孔雀胆》《蔡文姬》等剧本，并与诗集、小说、史论和翻译书目区分。这里只登记人物及作品关联和原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/xdzj/302.shtml",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "现代作家辞典著作书目列有《屈原》《棠棣之花》《虎符》《孔雀胆》《蔡文姬》等剧本，并与诗集、小说、史论和翻译书目区分。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网现代作家辞典：郭沫若",
+        "url": "https://www.chinawriter.com.cn/xdzj/302.shtml",
+        "locator": "著作书目41/43/44/47/77行剧本项目；仅舞台作品关联，不将列表当取得剧本，改编《西厢》和电影不填作同类原创。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-ding-xilin",
+    "title": "丁西林｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "丁西林",
+      "一只马蜂",
+      "瞎了一只眼",
+      "独幕喜剧"
+    ],
+    "summary": "《光明日报》阎晶明的观剧评论明确丁西林的剧作家身份，并关联《一只马蜂》《瞎了一只眼》等独幕喜剧。这里只登记人物及作品关联和原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/wutai/2016/2016-07-04/275598.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "《光明日报》阎晶明的观剧评论明确丁西林的剧作家身份，并关联《一只马蜂》《瞎了一只眼》等独幕喜剧。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网《光明日报》：戏外思考——观《丁西林民国喜剧三则》",
+        "url": "https://www.chinawriter.com.cn/wutai/2016/2016-07-04/275598.html",
+        "locator": "2016-07-04评论10/13/16行；观剧评论非采访，仅采专业身份/舞台剧目关联，不把当次舞台文本当原版剧本。"
+      }
+    ],
+    "publishedAt": "2016-07-04",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-song-zhidi",
+    "title": "宋之的｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "宋之的",
+      "雾重庆",
+      "保卫和平"
+    ],
+    "summary": "中国作家网现代作家辞典记载宋之的创作话剧《雾重庆》《保卫和平》。舞台剧本与电影、报告文学分列；这里只登记专业人物、作品关联及原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/xdzj/407.shtml",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "中国作家网现代作家辞典记载宋之的创作话剧《雾重庆》《保卫和平》。舞台剧本与电影、报告文学分列；这里只登记专业人物、作品关联及原页链接，不代表取得完整剧本或全集。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网：宋之的",
+        "url": "https://www.chinawriter.com.cn/xdzj/407.shtml",
+        "locator": "现代作家辞典5行明确《雾重庆》为五幕话剧、《保卫和平》为话剧，9–24/40行的著作书目区分舞台与电影；这里只采雾重庆/保卫和平的专业作品关联，不采出生年份残缺等字段。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-ouyang-yuqian",
+    "title": "欧阳予倩｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "欧阳予倩",
+      "潘金莲",
+      "忠王李秀成"
+    ],
+    "summary": "中国作家网会员辞典列欧阳予倩所著话剧剧本《潘金莲》《忠王李秀成》，支持其剧作家身份。这里只登记专业人物、作品关联及原页链接，具体原作、改编和版本仍须逐剧核验。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404942-28492002.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "中国作家网会员辞典列欧阳予倩所著话剧剧本《潘金莲》《忠王李秀成》，支持其剧作家身份。这里只登记专业人物、作品关联及原页链接，具体原作、改编和版本仍须逐剧核验。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网：欧阳予倩",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404942-28492002.html",
+        "locator": "会员辞典25行明确话剧剧本《潘金莲》《忠王李秀成》；仅采专业作者及作品关系，不把其他京剧/桂剧/电影混为同一文本或宣称均属原作。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-lu-jun",
+    "title": "陆军｜正式剧本署名与舞台作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "陆军",
+      "护士日记（合作）",
+      "还你半个月亮"
+    ],
+    "summary": "陆军的专业剧作身份与作品署名已据正式刊物资料核对。《护士日记》为与袁香荷合作剧本，不能计为独著。本条只登记专业作者与作品关联，不代表其完整剧本已公开收录或已取得转载许可。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28489858.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典22行剧作家与剧作选；上戏校报印5编剧署名明确与袁香荷共同创作护士日记。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "陆军的正式戏剧作品署名与专业关联",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28489858.html",
+        "locator": "辞典22行剧作家与剧作选；上戏校报印5编剧署名明确与袁香荷共同创作护士日记。"
+      },
+      {
+        "title": "护士日记上戏校报修定稿署名",
+        "url": "https://www.sta.edu.cn/_upload/article/files/ee/9b/de3d8a5648bbac5cb67a5c90eefe/6c0329f6-6040-4a83-9319-c0eebae574ba.pdf",
+        "locator": "PDF4/印5编剧陆军、袁香荷；PDF7/印8专业作者介绍，仅核合作署名，不合并版本。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-yuan-xianghe",
+    "title": "袁香荷｜正式剧本署名与舞台作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "袁香荷",
+      "护士日记（合作）"
+    ],
+    "summary": "袁香荷的专业剧作身份与作品署名已据正式刊物资料核对。《护士日记》为与陆军合作剧本，不能计为独著。本条只登记专业作者与作品关联，不代表其完整剧本已公开收录或已取得转载许可。",
+    "organization": "中国作家网／江南编辑部",
+    "url": "https://www.chinawriter.com.cn/n1/2020/0426/c418957-31688781.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "江南2020年第2期目录28行、74行列话剧护士日记，陆军与袁香荷合作署名；上戏校报印5、8可交叉核编剧姓名。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "袁香荷的正式戏剧作品署名与专业关联",
+        "url": "https://www.chinawriter.com.cn/n1/2020/0426/c418957-31688781.html",
+        "locator": "江南2020年第2期目录28行、74行列话剧护士日记，陆军与袁香荷合作署名；上戏校报印5、8可交叉核编剧姓名。"
+      },
+      {
+        "title": "护士日记上戏校报修定稿署名",
+        "url": "https://www.sta.edu.cn/_upload/article/files/ee/9b/de3d8a5648bbac5cb67a5c90eefe/6c0329f6-6040-4a83-9319-c0eebae574ba.pdf",
+        "locator": "PDF4/印5编剧陆军、袁香荷；PDF7/印8专业作者介绍，仅核合作署名，不合并版本。"
+      }
+    ],
+    "publishedAt": "2020-04-26",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-hong-tianyi",
+    "title": "洪天贻｜正式剧本署名与舞台作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "洪天贻",
+      "湖边假期",
+      "你喜欢高椰子树，还是矮椰子树？"
+    ],
+    "summary": "洪天贻的专业剧作身份与作品署名已据正式刊物资料核对。关联作品：湖边假期、你喜欢高椰子树，还是矮椰子树？。本条只登记专业作者与作品关联，不代表其完整剧本已公开收录或已取得转载许可。",
+    "organization": "中国作家网／花城编辑部",
+    "url": "https://www.chinawriter.com.cn/n1/2024/0508/c418960-40231496.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "花城2024年第3期目录62行明确湖边假期为剧本、洪天贻署名；培源本人专业页10/14行明确北京工作与刊发关联。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "洪天贻的正式戏剧作品署名与专业关联",
+        "url": "https://www.chinawriter.com.cn/n1/2024/0508/c418960-40231496.html",
+        "locator": "花城2024年第3期目录62行明确湖边假期为剧本、洪天贻署名；培源本人专业页10/14行明确北京工作与刊发关联。"
+      },
+      {
+        "title": "培源洪天贻专业作品页",
+        "url": "https://peiyuanproject.com/home/membership/1015",
+        "locator": "10/14行明确北京专业工作和两部剧本的正式刊发，受限文件未取。"
+      }
+    ],
+    "publishedAt": "2024-05-08",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-zou-jingzhi",
+    "title": "邹静之｜正式剧本署名与舞台作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "邹静之",
+      "断金"
+    ],
+    "summary": "邹静之的专业剧作身份与作品署名已据正式刊物资料核对。关联作品：断金。本条只登记专业作者与作品关联，不代表其完整剧本已公开收录或已取得转载许可。",
+    "organization": "文艺报／中国作家网",
+    "url": "https://wyb.chinawriter.com.cn/content/202502/26/content78274.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2025-02-26文艺报40行明确邹静之断金刊发北京文学2024年第10期，为同名话剧文学剧本。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "邹静之的正式戏剧作品署名与专业关联",
+        "url": "https://wyb.chinawriter.com.cn/content/202502/26/content78274.html",
+        "locator": "2025-02-26文艺报40行明确邹静之断金刊发北京文学2024年第10期，为同名话剧文学剧本。"
+      }
+    ],
+    "publishedAt": "2025-02-26",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-sta-gu-yueyun",
+    "title": "顾月云｜生命行歌合作剧作署名",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "顾月云",
+      "生命行歌"
+    ],
+    "summary": "上海戏剧学院原站及原报明确顾月云与陆军合作创作大型话剧《生命行歌》。本条登记专业作者与舞台作品关联，未取得该剧完整正式文本或转载许可。",
+    "organization": "上海戏剧学院",
+    "url": "https://xxgk.sta.edu.cn/3f/21/c3457a81697/page.htm",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2019-07-11原站134及同日校报PDF2/印第3版工作坊报道，顾月云与陆军合作大型话剧生命行歌；原印署名实看。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "上戏原站合作剧作署名",
+        "url": "https://xxgk.sta.edu.cn/3f/21/c3457a81697/page.htm",
+        "locator": "2019-07-11原站134及同日校报PDF2/印第3版工作坊报道，顾月云与陆军合作大型话剧生命行歌；原印署名实看。"
+      },
+      {
+        "title": "上海戏剧学院报2019-07-11原PDF",
+        "url": "https://www.sta.edu.cn/_upload/article/files/e7/8b/47b8cab34b12848cc77bbd4183c6/38bf22ae-9982-4f13-ba72-dd60ebc3c449.pdf",
+        "locator": "PDF2跨印2/3版，印第3版中部工作坊开班报道，非剧本正文。"
+      }
+    ],
+    "publishedAt": "2019-07-11",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-sta-xiong-foxi",
+    "title": "熊佛西｜具名戏剧创作与刊发关系",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "熊佛西",
+      "洋状元",
+      "一片爱国心",
+      "屠户"
+    ],
+    "summary": "熊佛西的具名戏剧创作关系已据上海戏剧学院原站核对。关联作品：洋状元、一片爱国心、屠户。仅登记作者与舞台作品关系，不代表已取得其完整剧本、全集或全文转载许可。",
+    "organization": "上海戏剧学院",
+    "url": "https://www.sta.edu.cn/_s5/6e/dc/c1753a93916/page.psp",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2020-07-08上戏转载文汇报专业档案88及具体创作98/107，洋状元、一片爱国心、屠户等舞台剧目署名。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "熊佛西具体戏剧创作原站证据",
+        "url": "https://www.sta.edu.cn/_s5/6e/dc/c1753a93916/page.psp",
+        "locator": "2020-07-08上戏转载文汇报专业档案88及具体创作98/107，洋状元、一片爱国心、屠户等舞台剧目署名。"
+      }
+    ],
+    "publishedAt": "2020-07-08",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-sta-yu-yuee",
+    "title": "俞月娥｜具名戏剧创作与刊发关系",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "俞月娥",
+      "公鸡下蛋"
+    ],
+    "summary": "俞月娥的具名戏剧创作关系已据上海戏剧学院原站核对。关联作品：公鸡下蛋。仅登记作者与舞台作品关系，不代表已取得其完整剧本、全集或全文转载许可。",
+    "organization": "上海戏剧学院",
+    "url": "https://www.sta.edu.cn/11/bb/c1551a70075/page.htm",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2019-04-09上戏原站正文明确俞月娥把公鸡下蛋创作为5000字儿童剧并刊登剧本月刊；舞台剧目与作者关系明确。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "上戏2019-04-09具名创作与刊发证据",
+        "url": "https://www.sta.edu.cn/11/bb/c1551a70075/page.htm",
+        "locator": "2019-04-09上戏原站正文明确俞月娥把公鸡下蛋创作为5000字儿童剧并刊登剧本月刊；舞台剧目与作者关系明确。"
+      },
+      {
+        "title": "俞月娥具体戏剧创作原站证据",
+        "url": "https://www.sta.edu.cn/88/0f/c1546a34831/page.htm",
+        "locator": "2018-12-13上戏原站88（另一模板91）明确俞月娥5000字儿童剧公鸡下蛋已刊2018剧本第10期，99/101舞台剧情关联。"
+      }
+    ],
+    "publishedAt": "2019-04-09",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-sta-tan-jie",
+    "title": "谈洁｜具名戏剧创作与刊发关系",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "谈洁",
+      "分手"
+    ],
+    "summary": "谈洁的具名戏剧创作关系已据上海戏剧学院原站核对。关联作品：分手。仅登记作者与舞台作品关系，不代表已取得其完整剧本、全集或全文转载许可。",
+    "organization": "上海戏剧学院",
+    "url": "https://www.sta.edu.cn/88/0f/c1546a34831/page.htm",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2018-12-13上戏原站88（另一模板91）明确谈洁分手已刊2018剧本第11期，118明确其悲剧舞台剧目与作者创作关系。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "谈洁具体戏剧创作原站证据",
+        "url": "https://www.sta.edu.cn/88/0f/c1546a34831/page.htm",
+        "locator": "2018-12-13上戏原站88（另一模板91）明确谈洁分手已刊2018剧本第11期，118明确其悲剧舞台剧目与作者创作关系。"
+      }
+    ],
+    "publishedAt": "2018-12-13",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-script-ncl-xiongfoxi-luoti-1933",
+    "title": "《裸体》｜熊佛西（佛西戏剧第三集，上海商务印书馆，1933年3月初版）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-play"
+    ],
+    "topics": [
+      "裸体",
+      "熊佛西",
+      "独幕剧",
+      "原印扫描"
+    ],
+    "summary": "寺庙中三个青年借神像试探老人的道德言辞，独幕以揭露其言行矛盾落幕。 已核作者出版底本及连续正文至落幕，仅提供原站扫描链接。 上海出版的大陆原作，由台湾国家图书馆提供馆藏扫描；原站仅供网络浏览，全文转载和训练权未授予。",
+    "organization": "台湾国家图书馆／华文电子书库",
+    "url": "https://taiwanebook.ncl.edu.tw/z/book/NCL-9910017959",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": "1933",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "mainland",
+    "status": "verified",
+    "theatreEvidence": "PDF113／印107题名人物，PDF114–129／印108–123连续独幕正文及落幕；PDF130空白、131下一剧；PDF215版权1933年3月初版。",
+    "sourceRefs": [
+      {
+        "title": "佛西戏剧第三集，上海商务印书馆，1933年3月初版原生馆藏扫描",
+        "url": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-9910017959/NCL-9910017959.PDF",
+        "locator": "PDF113／印107题名人物，PDF114–129／印108–123连续独幕正文及落幕；PDF130空白、131下一剧；PDF215版权1933年3月初版。 台湾国家图书馆馆藏扫描，上海出版大陆原作；托管地区为台湾。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "xiongfoxi-luoti",
+      "versionKey": "foxi3-193303-chuban",
+      "author": "熊佛西",
+      "language": "zh",
+      "edition": "佛西戏剧第三集，上海商务印书馆，1933年3月初版",
+      "coverage": "full"
+    },
+    "publicationReview": {
+      "status": "approved",
+      "reviewedAt": "2026-10-31",
+      "evidenceUrl": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-9910017959/NCL-9910017959.PDF",
+      "locator": "PDF113／印107题名人物，PDF114–129／印108–123连续独幕正文及落幕；PDF130空白、131下一剧；PDF215版权1933年3月初版。 用户明确批准本来源及这两条原站链接；台湾馆藏/托管与上海原作出版地分别标识。仅元数据、自编摘要、原站及PDF链接，不转载托管全文、不授权训练。"
+    }
+  },
+  {
+    "id": "dm-script-ncl-dingxilin-sankuai-1946",
+    "title": "《三块钱国币》｜丁西林（收入等太太回来的时候，正中书局，1946年4月沪一版）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-play"
+    ],
+    "topics": [
+      "三块钱国币",
+      "丁西林",
+      "独幕剧",
+      "原印扫描"
+    ],
+    "summary": "围绕女佣打碎花瓶赔偿的争执，学生与房东冲突，最后以和棋收束。 已核作者出版底本及连续正文至落幕，仅提供原站扫描链接。 上海出版的大陆原作，由台湾国家图书馆提供馆藏扫描；原站仅供网络浏览，全文转载和训练权未授予。",
+    "organization": "台湾国家图书馆／华文电子书库",
+    "url": "https://taiwanebook.ncl.edu.tw/zh-tw/book/NCL-004850492",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": "1946",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "mainland",
+    "status": "verified",
+    "theatreEvidence": "PDF87–102／印81–96连续独幕喜剧至幕下；PDF103版权1946年4月沪一版。1941初版月份未裁定，本条不冒充1941初版。",
+    "sourceRefs": [
+      {
+        "title": "收入等太太回来的时候，正中书局，1946年4月沪一版原生馆藏扫描",
+        "url": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-004850492/NCL-004850492.PDF",
+        "locator": "PDF87–102／印81–96连续独幕喜剧至幕下；PDF103版权1946年4月沪一版。1941初版月份未裁定，本条不冒充1941初版。 台湾国家图书馆馆藏扫描，上海出版大陆原作；托管地区为台湾。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "dingxilin-sankuaiqianguobi",
+      "versionKey": "zhengzhong-194604-huyi",
+      "author": "丁西林",
+      "language": "zh",
+      "edition": "收入等太太回来的时候，正中书局，1946年4月沪一版",
+      "coverage": "full"
+    },
+    "publicationReview": {
+      "status": "approved",
+      "reviewedAt": "2026-10-31",
+      "evidenceUrl": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-004850492/NCL-004850492.PDF",
+      "locator": "PDF87–102／印81–96连续独幕喜剧至幕下；PDF103版权1946年4月沪一版。1941初版月份未裁定，本条不冒充1941初版。 用户明确批准本来源及这两条原站链接；台湾馆藏/托管与上海原作出版地分别标识。仅元数据、自编摘要、原站及PDF链接，不转载托管全文、不授权训练。"
+    }
+  }
+]

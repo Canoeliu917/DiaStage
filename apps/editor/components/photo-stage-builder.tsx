@@ -3,10 +3,11 @@
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
-import { compilePhotoStagePlan } from '@/lib/photo-stage/compile'
+import { createPhotoStageScene } from '@/lib/photo-stage/adoption'
 import { PHOTO_STAGE_EXAMPLE } from '@/lib/photo-stage/example'
 import { type PhotoCrop, preparePhoto } from '@/lib/photo-stage/image'
 import { type PhotoStagePlan, PhotoStagePlanSchema } from '@/lib/photo-stage/plan'
+import { replacePhotoStageAsset } from '@/lib/photo-stage/support'
 import { AVAILABLE_STAGE_SCENERY } from '@/lib/stage/prop-assets'
 import { scheduleAttachmentParse } from './stage-entry/attachment-files'
 
@@ -193,22 +194,15 @@ export function PhotoStageBuilder({
   }, [initialFile])
 
   const create = async () => {
-    if (!plan || busy || preparing) return
+    if (!plan || busy || preparing || source !== 'vision') return
     const current = generation.current
     setBusy(true)
     setError('')
     setStatus('正在保存独立布置场景…')
     try {
-      const graph = compilePhotoStagePlan(plan, photo?.sourceImage)
-      const response = await fetch('/api/scenes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: plan.name, graph }),
-      })
-      if (!response.ok) throw new Error(`复原剧目未保存（${response.status}），请重试。`)
-      const meta = (await response.json()) as { id: string }
+      const id = await createPhotoStageScene(plan, photo?.sourceImage)
       if (generation.current !== current) return
-      router.push(`/scene/${encodeURIComponent(meta.id)}?workspace=set`)
+      router.push(`/scene/${encodeURIComponent(id)}?workspace=set`)
     } catch (reason) {
       if (generation.current !== current) return
       setError(reason instanceof Error ? reason.message : '复原剧目未保存。')
@@ -218,24 +212,13 @@ export function PhotoStageBuilder({
   }
 
   const replaceAsset = (index: number, assetId: string) => {
-    const entry = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)
-    if (!plan || !entry || entry.kind === 'camera' || entry.kind === 'performer-marker') return
-    const kind = entry.kind
-    setPlan({
-      ...plan,
-      objects: plan.objects.map((object, i) =>
-        i === index
-          ? {
-              ...object,
-              assetId,
-              kind,
-              profile: undefined,
-              stepCount: undefined,
-              hingeAngles: undefined,
-            }
-          : object,
-      ),
-    })
+    if (!plan || busy) return
+    try {
+      setPlan(replacePhotoStageAsset(plan, index, assetId))
+      setError('')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : '资产更换失败，原方案已保留。')
+    }
   }
 
   const openExample = async () => {
@@ -310,7 +293,7 @@ export function PhotoStageBuilder({
           <p className="photo-stage-hint">尺寸与被遮挡的结构将标为估算；照片不会被当作实测图纸。</p>
           {!modelConfigured && (
             <p className="photo-stage-notice">
-              当前未配置照片识别服务。可先打开下方的本图复原示例，对照原图继续搭建。
+              当前未配置照片识别服务。可先查看下方的人工复原示例。
             </p>
           )}
           <button
@@ -422,7 +405,7 @@ export function PhotoStageBuilder({
               <details className="photo-stage-details">
                 <summary>检查物件与 {AVAILABLE_STAGE_SCENERY.length} 款资产匹配</summary>
                 <p className="photo-stage-hint">
-                  可更换匹配资产；进入舞台后继续调整位置、尺寸、旋转与折角。
+                  可更换匹配资产，始终保留原生尺寸；进入舞台后继续调整位置、旋转与折角。
                 </p>
                 <ol className="photo-stage-objects">
                   {plan.objects.map((object, index) => (
@@ -452,11 +435,16 @@ export function PhotoStageBuilder({
               <button
                 className="photo-stage-primary"
                 type="button"
-                disabled={busy || preparing || !plan.name.trim()}
+                disabled={busy || preparing || !plan.name.trim() || source !== 'vision'}
                 onClick={() => void create()}
               >
                 确认布置并新建场景
               </button>
+              {source === 'example' && (
+                <p className="photo-stage-hint">
+                  旧版人工示例仅供对照。请重新识别照片，生成标准道具方案后确认。
+                </p>
+              )}
               {!embedded && (
                 <p className="photo-stage-hint">
                   保存为独立剧目，使用现有三维、平面、移动、旋转、缩放、折叠及撤销工具继续搭建。

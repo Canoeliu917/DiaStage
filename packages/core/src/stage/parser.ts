@@ -1,4 +1,5 @@
 import { stageObjectsTouch } from './collision'
+import { stageFoldGeometry } from './fold-geometry'
 import { resolveStageObjectSpecs } from './object-registry'
 import { resolveStagePlan, stageObjectBounds } from './plan'
 import {
@@ -213,9 +214,9 @@ export function parseStageText(
       return plan
     }
     const spec = resolveStageObjectSpecs(twoPanel ? 'SCN-FOLD-02' : 'SCN-FOLD-03')[0]!
-    const panel = resolveStageObjectSpecs('SCN-FLAT-090')[0]!.defaultDimensions!
-    const p = panel.width,
-      t = panel.depth
+    const panel = stageFoldGeometry(spec.canonicalId)!.collisionGeometry[0]!.vertices
+    const p = Math.max(...panel.map(([x]) => x)) - Math.min(...panel.map(([x]) => x)),
+      t = Math.max(...panel.map(([, , z]) => z)) - Math.min(...panel.map(([, , z]) => z))
     // Surface-edge hinges add frame thickness beyond the authored catalogue bounds.
     const width = Math.round((twoPanel ? 2 * (p + t) : p + 2 * t) * 100) / 100
     const depth = Math.round((p + t) * 100) / 100

@@ -197,6 +197,10 @@ const PostProcessingPasses = ({
   const retryCountRef = useRef(0)
   const rebuildTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const skippedZeroSizeRef = useRef(false)
+  const reducedMotion = useMemo(
+    () => typeof window === 'undefined' ? null : window.matchMedia('(prefers-reduced-motion: reduce)'),
+    [],
+  )
 
   // Background color uniform — updated every frame via lerp, read by the TSL pipeline.
   // Initialised from the current scene theme so there's no flash on first render.
@@ -709,19 +713,20 @@ const PostProcessingPasses = ({
 
     // Animate background colour toward the current scene theme target (same lerp as AnimatedBackground)
     const bgTheme = getSceneTheme(useViewer.getState().sceneTheme)
+    const themeBlend = reducedMotion?.matches ? 1 : 1 - Math.exp(-Math.min(delta, 0.1) * 20)
     bgTarget.current.set(bgTheme.background)
-    bgCurrent.current.lerp(bgTarget.current, Math.min(delta, 0.1) * 4)
+    bgCurrent.current.lerp(bgTarget.current, themeBlend)
     bgUniform.current.value.copy(bgCurrent.current)
     bgSkyTarget.current.set(bgTheme.backgroundSky ?? bgTheme.background)
-    bgSkyCurrent.current.lerp(bgSkyTarget.current, Math.min(delta, 0.1) * 4)
+    bgSkyCurrent.current.lerp(bgSkyTarget.current, themeBlend)
     bgSkyUniform.current.value.copy(bgSkyCurrent.current)
     bgHazeTarget.current.set(
       horizonHazeColor(bgTheme.backgroundSky ?? bgTheme.background, bgTheme.appearance),
     )
-    bgHazeCurrent.current.lerp(bgHazeTarget.current, Math.min(delta, 0.1) * 4)
+    bgHazeCurrent.current.lerp(bgHazeTarget.current, themeBlend)
     bgHazeUniform.current.value.copy(bgHazeCurrent.current)
     bgSkyDeepTarget.current.set(deepSkyColor(bgTheme.backgroundSky ?? bgTheme.background))
-    bgSkyDeepCurrent.current.lerp(bgSkyDeepTarget.current, Math.min(delta, 0.1) * 4)
+    bgSkyDeepCurrent.current.lerp(bgSkyDeepTarget.current, themeBlend)
     bgSkyDeepUniform.current.value.copy(bgSkyDeepCurrent.current)
     camProjInvUniform.current.value.copy(camera.projectionMatrixInverse)
     camWorldUniform.current.value.copy(camera.matrixWorld)

@@ -179,12 +179,13 @@ function ViewModeControl() {
   )
 }
 
-function openPropSettings(selector: string) {
+export function openPropSettings(selector: string) {
   if (!openStudioPanel('build')) return
   const focus = () => {
     const section = document.querySelector<HTMLElement>(selector)
     if (!section) return false
-    if (section instanceof HTMLDetailsElement) section.open = true
+    for (let ancestor: HTMLElement | null = section; ancestor; ancestor = ancestor.parentElement)
+      if (ancestor instanceof HTMLDetailsElement) ancestor.open = true
     section.scrollIntoView({ block: 'nearest' })
     ;(section.querySelector<HTMLElement>('input, select, button') ?? section).focus()
     return true
@@ -212,7 +213,6 @@ function StageTransformToolbar() {
   const draft = useStagePlacement((state) => state.draft)
   const transformMode = useStageTransform((state) => state.mode)
   const rotating = transformMode === 'rotate'
-  const cameraLocked = useStageTransform((state) => state.cameraLocked)
   const editable = !exclusive && !locked && !!node && ['item', 'block', 'stair'].includes(node.type)
   const select = useCallback(() => {
     cancelStagePlacement()
@@ -306,7 +306,7 @@ function StageTransformToolbar() {
         aria-keyshortcuts="V"
       >
         <MousePointer2 size={14} />
-        选择 <kbd>V</kbd>
+        选择
       </button>
       <button
         type="button"
@@ -319,7 +319,7 @@ function StageTransformToolbar() {
         aria-keyshortcuts="G"
       >
         <Hand size={14} />
-        移动 <kbd>G</kbd>
+        移动
       </button>
       <button
         type="button"
@@ -332,7 +332,7 @@ function StageTransformToolbar() {
         aria-keyshortcuts="T"
       >
         <RotateCw size={14} />
-        旋转 <kbd>T</kbd>
+        旋转
       </button>
       <button
         type="button"
@@ -344,19 +344,24 @@ function StageTransformToolbar() {
         aria-keyshortcuts="R"
       >
         <Maximize2 size={14} />
-        缩放 <kbd>R</kbd>
-      </button>
-      <button
-        type="button"
-        className={cn(TOOLBAR_BTN, 'w-auto gap-1 px-2 text-xs')}
-        aria-label="锁定舞台视角"
-        aria-pressed={cameraLocked}
-        onClick={() => useStageTransform.setState({ cameraLocked: !cameraLocked })}
-      >
-        {cameraLocked ? '视角已锁定' : '锁定视角'}
+        缩放
       </button>
       <StagePlanNavigationRuntime />
     </div>
+  )
+}
+
+function LockCameraButton() {
+  const cameraLocked = useStageTransform((state) => state.cameraLocked)
+  return (
+    <button
+      type="button"
+      aria-label="锁定舞台视角"
+      aria-pressed={cameraLocked}
+      onClick={() => useStageTransform.setState({ cameraLocked: !cameraLocked })}
+    >
+      {cameraLocked ? '视角已锁定' : '锁定视角'}
+    </button>
   )
 }
 
@@ -745,28 +750,32 @@ export function EditorViewerToolbarLeft({ settings }: { settings?: ReactNode } =
       <StageGridToolbar />
       <div className="stage-edit-toolbar">
         <StageTransformToolbar />
-        <div className="stage-display-toolbar" role="group" aria-label="舞台显示与视图">
-          <DisplayMenu />
-          <WallModeToggle />
-          <button type="button" onClick={() => openStudioPanel('view')}>
-            视图 / 归位
-          </button>
-          {settings}
-          <PreviewButton />
-          <details className="stage-controls-help">
-            <summary>操作帮助</summary>
-            <div>
-              <p>V 选择 · G 移动 · T 旋转 · R 尺寸设置；先选中道具，再操作。</p>
-              <p>
-                移动拖三轴杆，旋转拖三轴环；松开确定，Esc 取消。移动时轻按 Shift
-                切换吸附；旋转时按住 Shift 自由调整角度。
-              </p>
-              <p>轻按 Ctrl 循环切换网格：50 → 25 → 10 → 5 cm。</p>
-              <p>WASD 移动视角 · Q 下降 · E 上升 · F 聚焦所选道具。</p>
-              <p>中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远。</p>
-            </div>
-          </details>
-        </div>
+        <details className="stage-more-tools">
+          <summary>更多工具</summary>
+          <div className="stage-display-toolbar" role="group" aria-label="舞台显示与视图">
+            <DisplayMenu />
+            <WallModeToggle />
+            <LockCameraButton />
+            <button type="button" onClick={() => openStudioPanel('view')}>
+              视图 / 归位
+            </button>
+            {settings}
+            <PreviewButton />
+            <details className="stage-controls-help">
+              <summary>操作帮助</summary>
+              <div>
+                <p>V 选择 · G 移动 · T 旋转 · R 尺寸设置；先选中道具，再操作。</p>
+                <p>
+                  移动拖三轴杆，旋转拖三轴环；松开确定，Esc 取消。移动时轻按 Shift
+                  切换吸附；旋转时按住 Shift 自由调整角度。
+                </p>
+                <p>轻按 Ctrl 循环切换网格：50 → 25 → 10 → 5 cm。</p>
+                <p>WASD 移动视角 · Q 下降 · E 上升 · F 聚焦所选道具。</p>
+                <p>中键环绕 · Shift／Alt＋中键平移 · 滚轮推近拉远。</p>
+              </div>
+            </details>
+          </div>
+        </details>
       </div>
     </>
   )
@@ -816,9 +825,22 @@ export function StudioPicturePanel() {
 }
 
 export function EditorViewerToolbarRight() {
+  const viewMode = useEditor((state) => state.viewMode)
+  const setViewMode = useEditor((state) => state.setViewMode)
   return (
     <div className="stage-view-toolbar">
-      <ViewModeControl />
+      <select
+        aria-label="舞台视图"
+        value={viewMode}
+        onChange={(event) => setViewMode(event.target.value as ViewMode)}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        {VIEW_MODES.map((mode) => (
+          <option key={mode.id} value={mode.id}>
+            {mode.label}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }

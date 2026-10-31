@@ -1,26 +1,29 @@
 import { headers } from 'next/headers'
 import { HomeStageSpace } from '@/components/stage-entry/home-stage-space'
-import { StudioWordmark } from '@/components/studio-wordmark'
 import { isAiProviderConfigured } from '@/lib/ai/provider-config'
-import { getAuthMailEnabled, getSession } from '@/lib/auth/server'
-import '@/components/stage-entry/dia-home.css'
+import { getSession } from '@/lib/auth/server'
+import { DIASTAGE_BRAND } from '@/lib/brand'
+import '@/components/diamotif-search/theatre-search.css'
+
+export const metadata = {
+  title: '咫台 DiaStage · 戏剧艺术 AI 平台',
+  description: DIASTAGE_BRAND.product,
+}
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ entry?: string; lit?: string }>
+  searchParams: Promise<{ entry?: string; q?: string; category?: string; topic?: string }>
 }) {
-  const { entry, lit } = await searchParams
+  const { entry, q, category, topic } = await searchParams
   const session = await getSession(await headers())
   return (
-    <main className="ds-library dia-home">
-      <header className="dia-space-brand">
-        <StudioWordmark />
-      </header>
+    <main className="motif-home">
       <HomeStageSpace
         initialEntry={entry}
-        initiallyLit={lit === '1'}
-        emailEnabled={getAuthMailEnabled()}
+        initialQuery={q}
+        initialCategory={category}
+        initialTopic={topic}
         modelConfigured={isAiProviderConfigured()}
         user={
           session

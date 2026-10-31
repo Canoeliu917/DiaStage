@@ -12,6 +12,7 @@ import {
   useLiveTransforms,
   useScene,
 } from '@pascal-app/core'
+import { stageFoldGeometry } from '@pascal-app/core/stage'
 import { useInteractionScope } from '@pascal-app/editor'
 import {
   applyItemFoldControls,
@@ -25,6 +26,7 @@ import { create } from 'zustand'
 import { useStageCommandNotice } from './command-executor'
 import { prepareFoldObstacleCheck } from './model-contact'
 import { STAGE_PROP_MENU } from './prop-assets'
+import { rehearsalKept, snapFoldStop } from './rehearsal-measure'
 
 export const foldKeys = ['fold_angle_1_deg', 'fold_angle_2_deg'] as const
 export const foldHandle = 'stage-fold'
@@ -333,7 +335,47 @@ export function setFoldAngle(
   side: 'left' | 'right' = 'right',
 ) {
   if (beginFoldDrag(id, position, side)) {
-    previewFoldAngle(angle)
+    previewFoldAngle(snapFoldStop(angle))
     finishFoldDrag(true)
   }
+}
+
+export function applyFoldStops(id: string, angles: [number, number]): string {
+  const node = editableNode(id)
+  if (!node) return '这片景现在改不了折角。'
+  if (useInteractionScope.getState().scope.kind !== 'idle') return '先把当前这下做完。'
+  const snapped: [number, number] = [snapFoldStop(angles[0]), snapFoldStop(angles[1])]
+  const count = foldPositionCount(node)
+  let dragged = false
+  for (let index = 0; index < count; index++) {
+    const key = foldKeys[index]!
+    const live = useScene.getState().nodes[id as AnyNodeId]
+    if (live?.type !== 'item') break
+    if (Math.abs(foldControls(live)[key] - snapped[index]!) < 1e-6) continue
+    if (!beginFoldDrag(id, index, 'right')) break
+    previewFoldAngle(snapped[index]!)
+    finishFoldDrag(true)
+    dragged = true
+  }
+  if (dragged) return useStageFolding.getState().notice || '折角改好了。'
+  const controls = { fold_angle_1_deg: snapped[0], fold_angle_2_deg: snapped[1] }
+  const shape = stageFoldGeometry(node.asset.id, controls, [1, 1, 1])
+  if (!shape) return '这件不是折叠景片。'
+  useStageCommandNotice.setState({ error: '' })
+  runAsSingleSceneHistoryStep(useScene, () => {
+    useScene.getState().updateNode(node.id, {
+      controls,
+      asset: { ...node.asset, dimensions: shape.dimensions, boundsCenter: shape.boundsCenter },
+    })
+  })
+  if (useScene.getState().nodes[node.id] === node)
+    return rehearsalKept(
+      useStageCommandNotice.getState().error || '折角没有改。会出界，或会碰到别的景片。',
+    )
+  return snapped.slice(0, count).every((angle) => angle === 180)
+    ? '已经拉成直墙。'
+    : `折角改成 ${snapped
+        .slice(0, count)
+        .map((angle) => `${angle}°`)
+        .join(' / ')}。`
 }

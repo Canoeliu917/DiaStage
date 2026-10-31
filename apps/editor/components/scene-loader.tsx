@@ -19,6 +19,7 @@ import {
   BETA_EXPERT_MEDIA_ENABLED,
   BETA_REHEARSAL_ENABLED,
   BETA_REMOUNT_ENABLED,
+  BETA_STAGE_DIA_ENABLED,
 } from '@/lib/beta-capabilities'
 import { countGraphNodes, isEmptyGraphOverwrite } from '@/lib/empty-graph-guard'
 import { apiGraphSchema } from '@/lib/graph-schema'
@@ -37,7 +38,9 @@ import { CameraPersistence } from './camera-studio/persistence'
 import { DiaDock } from './dia-dock'
 import { PhotoStageReference } from './photo-stage-reference'
 import { SceneBackupControls } from './scene-backup-controls'
+import { LiveStagePlan } from './stage-entry/live-stage-plan'
 import { StageCommandRuntime } from './stage-entry/runtime'
+import { StageFirstVisit } from './stage-entry/stage-first-visit'
 import { useAudienceCover } from './use-audience-cover'
 
 const StagePlacementRuntime = dynamic(
@@ -76,7 +79,6 @@ const RehearsalPartner = dynamic(
   () => import('./theatre/rehearsal-partner').then((m) => m.RehearsalPartner),
   { ssr: false },
 )
-
 const CameraRehearsalSystem = dynamic(
   () => import('./camera-rehearsal-system').then((m) => m.CameraRehearsalSystem),
   { ssr: false },
@@ -480,7 +482,8 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
   )
 
   useEffect(() => {
-    const source = new EventSource(`/api/scenes/${meta.id}/events`)
+    let source: EventSource | null = null
+    let lastEventId = 0
     const controller = new AbortController()
     let pending: LiveSceneEvent | null = null
     let latestVersion = 0
@@ -552,32 +555,51 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
         signature: sceneGraphSignature(useScene.getState()),
       })
     }
-    source.addEventListener('scene', (event) => {
-      let payload: LiveSceneEvent
-      try {
-        payload = JSON.parse((event as MessageEvent<string>).data) as LiveSceneEvent
-      } catch {
-        return
-      }
-      void receive(payload)
-    })
     const retryAssets = () => {
       if (pending) void receive(pending)
     }
     window.addEventListener('scene:retry-assets', retryAssets)
     window.addEventListener('scene:assets-ready', retryAssets)
 
-    source.addEventListener('error', () => {
-      if (source.readyState === EventSource.CLOSED) {
-        setSaveError('场景实时连接已断开，请刷新页面重新连接。')
+    const syncVisibility = () => {
+      // Hidden tabs must release HTTP/1.1 connection slots for scene saves.
+      if (window.document.hidden) {
+        source?.close()
+        source = null
+        return
       }
-    })
+      if (source) return
+      const next = new EventSource(
+        `/api/scenes/${meta.id}/events${lastEventId ? `?after=${lastEventId}` : ''}`,
+      )
+      source = next
+      next.addEventListener('scene', (event) => {
+        if (source !== next || controller.signal.aborted) return
+        let payload: LiveSceneEvent
+        try {
+          payload = JSON.parse((event as MessageEvent<string>).data) as LiveSceneEvent
+        } catch {
+          return
+        }
+        if (payload.sceneId !== meta.id) return
+        if (Number.isSafeInteger(payload.eventId)) lastEventId = Math.max(lastEventId, payload.eventId)
+        void receive(payload)
+      })
+      next.addEventListener('error', () => {
+        if (source === next && !window.document.hidden && next.readyState === EventSource.CLOSED) {
+          setSaveError('场景实时连接已断开，请刷新页面重新连接。')
+        }
+      })
+    }
+    window.document.addEventListener('visibilitychange', syncVisibility)
+    syncVisibility()
 
     return () => {
       controller.abort()
+      window.document.removeEventListener('visibilitychange', syncVisibility)
       window.removeEventListener('scene:retry-assets', retryAssets)
       window.removeEventListener('scene:assets-ready', retryAssets)
-      source.close()
+      source?.close()
     }
   }, [meta.id, scheduleCover])
 
@@ -703,6 +725,13 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
             sceneName={document?.production.name ?? meta.name}
             group={group}
             onGroupChange={onGroupChange}
+            overflowActions={
+              <SceneBackupControls
+                sceneName={document?.production.name ?? meta.name}
+                onExport={exportBackup}
+                disabled={!stageReady || recoveryBusy}
+              />
+            }
             actions={
               <>
                 <span className="studio-save-status" role="status">
@@ -718,14 +747,19 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                     }[saveStatus]
                   }
                 </span>
-                <SceneBackupControls
-                  sceneName={document?.production.name ?? meta.name}
-                  onExport={exportBackup}
-                  disabled={!stageReady || recoveryBusy}
-                />
+                <button
+                  type="button"
+                  disabled={!stageReady || recoveryBusy || !!conflict}
+                  onClick={() => window.dispatchEvent(new Event('scene:retry-save'))}
+                >
+                  保存
+                </button>
               </>
             }
           />
+          {!immersive && (
+            <StageFirstVisit ready={stageReady} readOnly={recoveryBusy || !!conflict} saveStatus={saveStatus} />
+          )}
           {stageReady && !immersive && <PhotoStageReference key={meta.id} sceneId={meta.id} />}
           <div className="dia-stage-layout">
             <div className="dia-editor">
@@ -820,6 +854,17 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                   />
                 }
               />
+              {!BETA_STAGE_DIA_ENABLED && stageReady && !immersive && (
+                <section className="stage-overview-mini" aria-label="舞台俯视图">
+                  <ViewerErrorBoundary
+                    scope="stage-overview-mini"
+                    resetKey={meta.id}
+                    fallback={<p role="alert">俯视图暂不可用，舞台仍可编辑与保存。</p>}
+                  >
+                    <LiveStagePlan title="舞台俯视图" />
+                  </ViewerErrorBoundary>
+                </section>
+              )}
               {cameraEnabled && (
                 <ViewerErrorBoundary
                   fallback={<p role="alert">监看已暂停，场景仍可编辑。</p>}
@@ -832,24 +877,26 @@ export function SceneLoader({ initialScene, meta, modelConfigured = false }: Sce
                 </ViewerErrorBoundary>
               )}
             </div>
-            <DiaDock hidden={immersive}>
-              {stageReady && (
-                <ViewerErrorBoundary
-                  scope="dia-conversation"
-                  resetKey={meta.id}
-                  onError={clearProposalGhost}
-                  fallback={
-                    <p role="alert">Dia 对话暂不可用，舞台仍可编辑与保存。请刷新后重试。</p>
-                  }
-                >
-                  <RehearsalPartner
-                    key={meta.id}
-                    sceneId={meta.id}
-                    modelConfigured={modelConfigured}
-                  />
-                </ViewerErrorBoundary>
-              )}
-            </DiaDock>
+            {BETA_STAGE_DIA_ENABLED && (
+              <DiaDock hidden={immersive}>
+                {stageReady && (
+                  <ViewerErrorBoundary
+                    scope="dia-conversation"
+                    resetKey={meta.id}
+                    onError={clearProposalGhost}
+                    fallback={
+                      <p role="alert">Dia 对话暂不可用，舞台仍可编辑与保存。请刷新后重试。</p>
+                    }
+                  >
+                    <RehearsalPartner
+                      key={meta.id}
+                      sceneId={meta.id}
+                      modelConfigured={modelConfigured}
+                    />
+                  </ViewerErrorBoundary>
+                )}
+              </DiaDock>
+            )}
           </div>
           {recordingEnabled && (
             <ViewerErrorBoundary

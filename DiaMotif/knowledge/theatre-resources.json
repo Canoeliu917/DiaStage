@@ -1,0 +1,886 @@
+[
+  {
+    "id": "dm-resource-folger-plays",
+    "title": "Folger 莎士比亚剧本与作品导读",
+    "category": "scripts",
+    "topics": [
+      "剧本",
+      "莎士比亚",
+      "台词",
+      "角色",
+      "Hamlet",
+      "哈姆雷特"
+    ],
+    "summary": "按作品查阅 Folger 编辑的莎士比亚剧本及相关导读。提供阅读入口；译本、注释和教学材料的再利用须分别核对许可。",
+    "organization": "Folger Shakespeare Library",
+    "url": "https://www.folger.edu/explore/shakespeares-works/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方 Shakespeare's works 页面提供戏剧类别、逐部剧作和完整文本入口。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-dracor-corpora",
+    "title": "DraCor 戏剧语料库目录",
+    "category": "scripts",
+    "topics": [
+      "剧本",
+      "戏剧语料",
+      "人物关系",
+      "数字人文",
+      "易卜生",
+      "TEI"
+    ],
+    "summary": "检索多语种结构化戏剧语料及各库来源。不同语料库许可不同，可用于研究选材；本条只收目录元数据，不导入剧本全文。",
+    "organization": "DraCor Project",
+    "url": "https://dracor.org/doc/corpora",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方目录逐项列出戏剧语料库、维护机构及部分许可证，包括 Ibsen、German 和 Shakespeare Drama Corpus。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-gutenberg-dolls-house",
+    "title": "《玩偶之家》英文剧本：Project Gutenberg",
+    "category": "scripts",
+    "topics": [
+      "剧本",
+      "易卜生",
+      "玩偶之家",
+      "娜拉",
+      "A Doll's House",
+      "英文译本"
+    ],
+    "summary": "易卜生《玩偶之家》的英文译本阅读页，标明译者 R. Farquharson Sharp。页面标注美国公版状态；其他地区及其他译本需另核权利。",
+    "organization": "Project Gutenberg",
+    "url": "https://www.gutenberg.org/ebooks/2542",
+    "access": "public",
+    "recordType": "resource",
+    "theatreEvidence": "官方书目将作品标为 play，列出作者、译者、英语版本和在线文本入口。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-rsc-learning-zone",
+    "title": "RSC 莎士比亚戏剧学习区",
+    "category": "knowledge",
+    "topics": [
+      "戏剧课堂",
+      "教师",
+      "社团",
+      "导演",
+      "表演",
+      "人物关系",
+      "莎士比亚"
+    ],
+    "summary": "按剧目了解人物关系、关键场景和排演过程，含演员与导演工作的视频及演出图片，适合作为课堂和社团排演的参考入口。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/shakespeare-learning-zone",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方说明明确涵盖剧作关键场景、演出照片、演员导演工作及角色关系。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-va-theatre-performance",
+    "title": "V&A 戏剧与表演艺术藏品",
+    "category": "knowledge",
+    "topics": [
+      "舞台美术",
+      "服装",
+      "道具",
+      "布景",
+      "偶戏",
+      "音乐剧",
+      "剧场史"
+    ],
+    "summary": "查询舞台设计、戏剧服装、道具与表演史相关藏品和专题。优先查看戏剧条目；图片、录音和录像的使用权按具体藏品说明核对。",
+    "organization": "Victoria and Albert Museum",
+    "url": "https://www.vam.ac.uk/collections/theatre-performance",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "馆方将戏剧、歌剧、偶戏、音乐剧、服装和布景设计列入 Theatre & Performance 收藏范围。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-folger-teaching",
+    "title": "Folger 戏剧课堂教案与活动",
+    "category": "knowledge",
+    "topics": [
+      "戏剧教育",
+      "课堂",
+      "教师",
+      "学校",
+      "社团",
+      "教案",
+      "莎士比亚"
+    ],
+    "summary": "按剧作、角色、主题等查找课堂活动与教案。部分资料可公开阅读，完整教师资源可能需要会员；适合教师备课选材。",
+    "organization": "Folger Shakespeare Library",
+    "url": "https://www.folger.edu/teach/resources/",
+    "access": "mixed",
+    "recordType": "directory",
+    "theatreEvidence": "官方教学入口按剧作组织 lesson plans 和课堂活动，并区分教师会员权益。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-rsc-associate-artists",
+    "title": "RSC 合作艺术家目录",
+    "category": "people",
+    "topics": [
+      "演员",
+      "导演",
+      "编剧",
+      "舞台设计师",
+      "剧团",
+      "专业履历"
+    ],
+    "summary": "查看 RSC 由剧团确认的合作艺术家名单，以专业合作关系作为人物检索线索。名单不是当前剧目演员表，具体角色与演出版本须另核。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/whos-who/associate-artists",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方页面说明艺术家因对剧团工作的贡献获邀，并直接列出 Associate Artists 名单。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-ncpa-opera-artists",
+    "title": "国家大剧院歌剧演员队",
+    "category": "people",
+    "topics": [
+      "歌剧演员",
+      "声乐",
+      "艺术团体",
+      "剧院",
+      "专业履历"
+    ],
+    "summary": "国家大剧院歌剧演员队官方入口，可作为查找歌剧表演人员与剧院关联的起点。具体角色、演出履历和当期阵容需以对应剧目资料核实。",
+    "organization": "国家大剧院",
+    "url": "https://www.chncpa.org/jmsc_237/zytt/gjyyd/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "国家大剧院官方导航“艺术生产”直接链接至“国家大剧院歌剧演员队”页面。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-ncpa-theatres",
+    "title": "国家大剧院剧场与舞台空间",
+    "category": "venues",
+    "topics": [
+      "剧场",
+      "舞台空间",
+      "歌剧院",
+      "戏剧场",
+      "小剧场",
+      "舞台机械"
+    ],
+    "summary": "了解国家大剧院歌剧院、戏剧场及小剧场等空间和舞台特点。可用于剧场资料检索；参观开放信息以官网当日说明为准。",
+    "organization": "国家大剧院",
+    "url": "https://www.chncpa.org/cgylx/jyjg/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方剧院景观页逐项介绍歌剧院、戏剧场、小剧场及舞台机械等设施。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-globe-theatres",
+    "title": "莎士比亚环球剧场空间与参观资料",
+    "category": "venues",
+    "topics": [
+      "剧场",
+      "舞台空间",
+      "环球剧场",
+      "观演关系",
+      "莎士比亚"
+    ],
+    "summary": "查看 Globe Theatre 与 Sam Wanamaker Playhouse 的场地和观演资料，了解露天剧场等空间条件。入场、参观和演出票另按官方安排查询。",
+    "organization": "Shakespeare's Globe",
+    "url": "https://www.shakespearesglobe.com/visit/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方参观页明确列出两座剧场，并介绍 Globe Theatre 的露天木结构空间。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-royal-shakespeare-theatre",
+    "title": "Royal Shakespeare Theatre 场地介绍",
+    "category": "venues",
+    "topics": [
+      "剧场",
+      "舞台空间",
+      "观众席",
+      "莎士比亚",
+      "剧场导览"
+    ],
+    "summary": "RSC 主剧场的官方场地说明，附虚拟导览、座位图和到访信息，可供舞台空间与观演关系研究。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/your-visit/royal-shakespeare-theatre/",
+    "access": "public",
+    "recordType": "resource",
+    "theatreEvidence": "官方页面说明该场地为常演莎士比亚及其他作品的主剧场，并链接虚拟导览和座位图。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-ncpa-events",
+    "title": "国家大剧院演出查询与官方票讯",
+    "category": "events",
+    "topics": [
+      "演出",
+      "票讯",
+      "话剧",
+      "戏曲",
+      "歌剧",
+      "舞剧",
+      "音乐剧",
+      "北京"
+    ],
+    "summary": "官方演出日历与购票入口，可筛选戏剧、戏曲、歌剧、舞剧及音乐剧。此条是查询目录，不代表某场正在售票，也不提供实时价格或余票。",
+    "organization": "国家大剧院",
+    "url": "https://www.chncpa.org/ycgp_220/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方演出购票页包含演出日历与戏剧、戏曲、歌剧、舞蹈、音乐剧分类。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-rsc-events",
+    "title": "RSC 剧目排期与官方售票入口",
+    "category": "events",
+    "topics": [
+      "演出",
+      "票讯",
+      "音乐剧",
+      "话剧",
+      "英国",
+      "莎士比亚"
+    ],
+    "summary": "查看 RSC 剧作、音乐剧及巡演的官方排期和对应售票链接。仅收来源目录，具体日期、版本、演员、票价及余票需打开当期剧目页核对。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/whats-on/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方 What's On 页面列出舞台作品、演出场地和 BOOK TICKETS 入口。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-globe-events",
+    "title": "环球剧场演出排期与票讯",
+    "category": "events",
+    "topics": [
+      "演出",
+      "票讯",
+      "话剧",
+      "音乐剧",
+      "伦敦",
+      "莎士比亚"
+    ],
+    "summary": "查询环球剧场与 Sam Wanamaker Playhouse 的演出及活动入口。此条不是具体场次或售票状态，演出变更与票务条件以剧目原页为准。",
+    "organization": "Shakespeare's Globe",
+    "url": "https://www.shakespearesglobe.com/whats-on/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方 What's On 页面按剧场列示 PERFORMANCES，并提供剧目详情与票务链接。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-zhongxi-admissions",
+    "title": "中央戏剧学院本科招生入口",
+    "category": "admissions",
+    "topics": [
+      "艺考",
+      "招生",
+      "中戏",
+      "表演",
+      "导演",
+      "舞台美术",
+      "戏剧教育"
+    ],
+    "summary": "查询中央戏剧学院招生章程、专业考试简章、专业介绍及统考对应资料。不同年度、专业和考生类别分开核对，不把预告当作完整招生简章。",
+    "organization": "中央戏剧学院",
+    "url": "https://zhaosheng.zhongxi.cn/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "学校招生网列有本科章程、校考与统考对应表，以及戏剧学、舞台美术史论和戏剧教育等专业资料。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-sta-admissions",
+    "title": "上海戏剧学院本科招生简章",
+    "category": "admissions",
+    "topics": [
+      "艺考",
+      "招生",
+      "上戏",
+      "表演",
+      "戏曲",
+      "戏剧教育"
+    ],
+    "summary": "按年份查阅上海戏剧学院校考、统考、戏曲省际联考及普通批次等招生简章。以适用专业、省份和考生类别的当年原文为准。",
+    "organization": "上海戏剧学院",
+    "url": "https://zs.sta.edu.cn/1181/list.htm",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "学校官方本科招生简章栏目将艺术类校考、统考、戏曲省际联考和普通批次分别列出。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-nacta-admissions",
+    "title": "中国戏曲学院招生信息",
+    "category": "admissions",
+    "topics": [
+      "艺考",
+      "招生",
+      "国戏",
+      "戏曲",
+      "表演",
+      "舞台美术"
+    ],
+    "summary": "中国戏曲学院本科、研究生及留学生招生资料入口。招生方式、考试安排与专业要求须进入对应年度简章核实，本条不提供录取保证或培训推荐。",
+    "organization": "中国戏曲学院",
+    "url": "https://www.nacta.edu.cn/xwgg/zsxx/index.htm",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "学院官方招生信息页面分本科生、研究生、留学生等入口，所属院校专门开展戏曲人才培养。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-rada-acting-admissions",
+    "title": "RADA 戏剧表演本科课程与申请",
+    "category": "admissions",
+    "topics": [
+      "表演训练",
+      "戏剧院校",
+      "招生",
+      "试镜",
+      "台词",
+      "形体",
+      "英国"
+    ],
+    "summary": "了解 RADA 表演本科的戏剧训练内容、申请与试镜流程。仅摘取戏剧表演关联信息；当期资格、费用和日期须回官方课程页核对。",
+    "organization": "Royal Academy of Dramatic Art",
+    "url": "https://www.rada.ac.uk/courses/ba-hons-acting/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方课程页明确列出古典与当代戏剧、台词、形体、文本分析、舞台项目及申请试镜流程。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-rsc-casting",
+    "title": "RSC 演员选角与试镜说明",
+    "category": "opportunities",
+    "topics": [
+      "演员招募",
+      "选角",
+      "试镜",
+      "剧团",
+      "职业发展"
+    ],
+    "summary": "了解 RSC 如何为具体舞台作品选角及联系选角部门。官方说明常规试镜按具体制作邀请，不应当成面向所有人的持续公开招募公告。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/casting",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "剧团官方选角页说明导演和创作团队如何选择演出角色，并提供试镜与演员提交资料的常见问题。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-nt-theatre-jobs",
+    "title": "National Theatre 戏剧制作与舞台岗位",
+    "category": "opportunities",
+    "topics": [
+      "戏剧招聘",
+      "舞台技术",
+      "演出制作",
+      "剧院",
+      "职业发展"
+    ],
+    "summary": "英国国家剧院官方招聘目录，筛选舞台技术、演出制作等直接服务戏剧的岗位。具体空缺、资格和截止日期动态更新，本条不表示当前一定在招。",
+    "organization": "National Theatre",
+    "url": "https://jobs.nationaltheatre.org.uk/",
+    "access": "public",
+    "recordType": "directory",
+    "theatreEvidence": "官方招聘页列有制作管理、舞台技术等剧院岗位，并由 National Theatre 说明其演出制作工作。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "source-directory"
+  },
+  {
+    "id": "dm-resource-rsc-voice",
+    "title": "RSC：演员台词与声音训练",
+    "category": "knowledge",
+    "topics": [
+      "台词训练",
+      "声音训练",
+      "发声",
+      "呼吸",
+      "角色",
+      "莎士比亚",
+      "Voice coaching"
+    ],
+    "summary": "RSC 声音教练介绍排练中如何连接文本、声音与角色，以及身体、呼吸和演前热身的作用。这是剧团实践说明，未收录课程或训练视频全文。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/voice",
+    "theatreEvidence": "官方 Voice coaching for actors 正文说明剧目排练中的文本与声音工作，以及替补角色和演前声音热身。",
+    "sourceRefs": [
+      {
+        "title": "Voice coaching for actors",
+        "locator": "正文：声音与节奏、身体与呼吸、角色和演前热身；页面未标发布日期。",
+        "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/voice"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-rsc-stage-management",
+    "title": "RSC：舞台监督与演出提示分工",
+    "category": "knowledge",
+    "topics": [
+      "舞台监督",
+      "舞台管理",
+      "舞监",
+      "演出提示",
+      "音效",
+      "灯光",
+      "换景",
+      "Stage management",
+      "cue"
+    ],
+    "summary": "介绍 RSC 舞台管理团队如何衔接排练与技术部门，并区分舞台监督、副舞台监督、助理舞台监督的职责。职称与分工属于该剧团实践，不能直接等同所有剧院制度。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/stage-management",
+    "theatreEvidence": "官方 Stage management 正文分别介绍各职位，并说明副舞台监督在演出中发出声音、灯光和换景提示。",
+    "sourceRefs": [
+      {
+        "title": "Stage management",
+        "locator": "职位清单及 Company Manager、Stage Manager、Deputy Stage Manager、Assistant Stage Manager 说明。",
+        "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/stage-management"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-rsc-making-scenery",
+    "title": "RSC：从舞美模型到布景制作",
+    "category": "knowledge",
+    "topics": [
+      "舞台美术",
+      "舞美模型",
+      "布景制作",
+      "舞台设计",
+      "模型箱",
+      "技术图纸",
+      "换景",
+      "Making Scenery"
+    ],
+    "summary": "介绍布景从设计构想、模型箱与技术图纸，到工程、木工、绘景及进场的制作流程，并讨论轮换演出和材料再利用。只收流程资料入口，不提供施工认证或结构承载结论。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/making-scenery",
+    "theatreEvidence": "官方 Making Scenery 的 Drawing office、Scenic Engineering、Carpentry、Paint Shop 与 Leaving the workshop 分节说明舞台布景制作。",
+    "sourceRefs": [
+      {
+        "title": "Making Scenery",
+        "locator": "Drawing office：1:25 模型与技术图纸；后续工程、木工、绘景和进场分节。",
+        "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/making-scenery"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-rsc-making-props",
+    "title": "RSC：道具选用、制作与演出维护",
+    "category": "knowledge",
+    "topics": [
+      "道具制作",
+      "道具管理",
+      "道具选用",
+      "耐用性",
+      "排练道具",
+      "技术合成",
+      "Making Props"
+    ],
+    "summary": "介绍道具需求如何从设计和演员使用方式出发，经过复用、改造或制作，再进入技术排练、定位与日常维护。道具与布景的划分按 RSC 原页语境理解。",
+    "organization": "Royal Shakespeare Company",
+    "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/props",
+    "theatreEvidence": "RSC 剧团官方 Making Props 页面说明舞台道具的定义、选用、制作、演出准备与演后复用，定位为对应五个分节。",
+    "sourceRefs": [
+      {
+        "title": "Making Props",
+        "locator": "Sourcing props：耐用性、材料、演员使用和存放；Preparing for the show：技术排练、道具定位及维护。",
+        "url": "https://www.rsc.org.uk/about-us/how-we-make-theatre/props"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-cad-stanislavski-2024",
+    "title": "中戏：斯坦尼斯拉夫斯基体系与当代研讨（2024）",
+    "category": "knowledge",
+    "topics": [
+      "斯坦尼斯拉夫斯基",
+      "斯氏体系",
+      "表导演",
+      "表演训练",
+      "导演创作",
+      "海鸥",
+      "格洛托夫斯基",
+      "方法派"
+    ],
+    "summary": "中央戏剧学院对2024年研讨会的报道，记录斯氏体系、表导演训练及《海鸥》舞台设计等发言主题。可追溯研究者与讨论方向；这是会议报道，未收录演讲或论文全文。",
+    "organization": "中央戏剧学院",
+    "url": "https://www.chntheatre.edu.cn/cn/xue/detail/22291.html",
+    "theatreEvidence": "学校2024-06-05原文明确记录2024年5月30日至6月1日的研讨会及具名发言，涉及表演体系、导演实践和《海鸥》舞台设计。",
+    "sourceRefs": [
+      {
+        "title": "“斯坦尼斯拉夫斯基体系与当代”国际学术研讨会成功举办",
+        "locator": "发布日期2024-06-05；刘杏林《特里波列夫的舞台》、易立明和姜涛的发言段落。",
+        "url": "https://www.chntheatre.edu.cn/cn/xue/detail/22291.html"
+      }
+    ],
+    "access": "public",
+    "recordType": "resource",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-cad-stanislavski-book",
+    "title": "《斯氏体系在中国》修订本：姜涛著作介绍",
+    "category": "knowledge",
+    "topics": [
+      "斯氏体系在中国",
+      "姜涛",
+      "斯坦尼斯拉夫斯基",
+      "表演教学",
+      "导演教学",
+      "中国演剧学习实践斯氏体系讲略"
+    ],
+    "summary": "中央戏剧学院2019年发布的修订本介绍，核实姜涛著作与旧书名的关系及研究范围。仅收书目介绍和原页链接，不能据此回答未读取的书中章节细节。",
+    "organization": "中央戏剧学院",
+    "url": "https://www.chntheatre.edu.cn/cn/xue/detail/13349.html",
+    "theatreEvidence": "学校2019-03-05原文介绍戏剧导演姜涛著《斯氏体系在中国》修订再版，说明旧题名、修订范围及表导演教学研究背景。",
+    "recordType": "bibliography",
+    "sourceRefs": [
+      {
+        "title": "我院导演系主任姜涛教授著《斯氏体系在中国》（修订本）再版",
+        "locator": "发布日期2019-03-05；旧题名与修订说明段。职务为原文当时标注，不推断现任职务。",
+        "url": "https://www.chntheatre.edu.cn/cn/xue/detail/13349.html"
+      }
+    ],
+    "access": "public",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified"
+  },
+  {
+    "id": "dm-resource-folger-hamlet-text",
+    "title": "《哈姆雷特》英文剧本｜Folger 版",
+    "category": "scripts",
+    "topics": [
+      "哈姆雷特",
+      "Hamlet",
+      "莎士比亚",
+      "William Shakespeare",
+      "Folger版",
+      "英国戏剧",
+      "悲剧",
+      "英文剧本",
+      "独白",
+      "台词",
+      "人物表",
+      "分幕分场",
+      "舞台提示"
+    ],
+    "summary": "Folger 编辑版英文剧本，提供人物表、幕场导航和行号，便于查找对白与舞台提示。公开在线阅读；本站仅收录版本信息与原页链接。",
+    "organization": "Folger Shakespeare Library",
+    "url": "https://www.folger.edu/explore/shakespeares-works/hamlet/read/",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "官方页面标题为 Hamlet - Entire Play，正文提供 Characters in the Play、Act and scene list、带行号的角色对白和舞台提示。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "Hamlet - Entire Play",
+        "url": "https://www.folger.edu/explore/shakespeares-works/hamlet/read/",
+        "locator": "Navigate this work → Act and scene list；Characters in the Play；带行号的剧本正文"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-gutenberg-cherry-orchard-west",
+    "title": "《樱桃园》英文剧本｜Julius West 译本",
+    "category": "scripts",
+    "topics": [
+      "樱桃园",
+      "櫻桃園",
+      "The Cherry Orchard",
+      "契诃夫",
+      "Anton Chekhov",
+      "俄国戏剧",
+      "四幕剧",
+      "英文剧本",
+      "Julius West",
+      "Julius West译本",
+      "人物表",
+      "场景说明",
+      "舞台提示"
+    ],
+    "summary": "收于《契诃夫戏剧第二集》的 Julius West 英译本，可从在线正文目录进入《樱桃园》及其四幕。原站注明美国公版；本站仅收录元数据与来源，不导入全文。",
+    "organization": "Project Gutenberg",
+    "url": "https://www.gutenberg.org/ebooks/7986",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "官方书目 About this eBook 列出作者契诃夫、译者 Julius West、语言 English 及 The cherry orchard；在线正文包含 THE CHERRY ORCHARD、人物表和四幕戏剧文本。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "Plays by Anton Chekhov, Second Series",
+        "url": "https://www.gutenberg.org/ebooks/7986",
+        "locator": "About this eBook → Translator / Contents / Language / Copyright"
+      },
+      {
+        "title": "THE CHERRY ORCHARD — 在线正文",
+        "url": "https://www.gutenberg.org/cache/epub/7986/pg7986-images.html",
+        "locator": "CONTENTS → THE CHERRY ORCHARD → ACT ONE 至 ACT FOUR"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-folger-midsummer-text",
+    "title": "《仲夏夜之梦》英文剧本｜Folger 版",
+    "category": "scripts",
+    "topics": [
+      "仲夏夜之梦",
+      "仲夏夜之夢",
+      "A Midsummer Night's Dream",
+      "A Midsummer Night’s Dream",
+      "莎士比亚",
+      "William Shakespeare",
+      "Folger版",
+      "英国戏剧",
+      "喜剧",
+      "英文剧本",
+      "戏中戏",
+      "人物表",
+      "分幕分场",
+      "台词",
+      "舞台提示"
+    ],
+    "summary": "Folger 编辑版莎士比亚喜剧英文文本，含人物表、幕场导航及带行号的对白与舞台提示。公开在线阅读；可从第一幕第二场和第五幕第一场定位剧中工匠排戏与演出。",
+    "organization": "Folger Shakespeare Library",
+    "url": "https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/",
+    "verifiedAt": "2026-10-30",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "theatreEvidence": "官方页面标题为 A Midsummer Night’s Dream - Entire Play，正文包含人物表、五幕场次与带行号剧本；幕场导读明确标出工匠筹备戏剧及婚礼演出的场景。",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "A Midsummer Night’s Dream - Entire Play",
+        "url": "https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/",
+        "locator": "Navigate this work → Characters in the Play / Act and scene list；Act 1, scene 2；Act 5, scene 1；带行号正文"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-cad-thunderstorm-20260410",
+    "title": "《雷雨》2026版创排说明｜中央戏剧学院",
+    "category": "knowledge",
+    "topics": [
+      "雷雨",
+      "曹禺",
+      "曹艳",
+      "曹艷",
+      "刘杏林",
+      "劉杏林",
+      "导演阐述",
+      "導演闡述",
+      "舞台空间",
+      "舞臺空間",
+      "人物行动",
+      "中国剧目创排计划",
+      "中國劇目創排計劃"
+    ],
+    "summary": "中央戏剧学院2026年4月10日发布的《雷雨》创排介绍，含曹艳的导演阐述及刘杏林对舞台转译的说明，可用于比较人物行动、叙事结构与空间处理。仅收录官方介绍入口，不提供曹禺剧本全文，也不是当前售票信息。",
+    "organization": "中央戏剧学院",
+    "url": "https://www.chntheatre.edu.cn/cn/xiao/detail/25324.html",
+    "access": "public",
+    "recordType": "production",
+    "theatreEvidence": "学院原页标注日期2026-04-10，列出中国剧目创排计划《雷雨》及导演的话、为什么排演《雷雨》等具名创作说明，明确关联话剧排演与舞台创作。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中央戏剧学院：中国剧目创排计划《雷雨》上演",
+        "url": "https://www.chntheatre.edu.cn/cn/xiao/detail/25324.html",
+        "locator": "标题及日期2026-04-10；导演的话（曹艳）；为什么排演《雷雨》（刘杏林）。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-ncpa-rickshaw-boy-2015",
+    "title": "歌剧《骆驼祥子》制作与舞美介绍｜国家大剧院2015专题",
+    "category": "knowledge",
+    "topics": [
+      "骆驼祥子",
+      "駱駝祥子",
+      "歌剧",
+      "歌劇",
+      "郭文景",
+      "徐瑛",
+      "易立明",
+      "舞美设计",
+      "舞美設計",
+      "场景转换",
+      "場景轉換",
+      "老舍",
+      "剧本改编"
+    ],
+    "summary": "国家大剧院2015年专题介绍原创歌剧《骆驼祥子》的音乐、剧本改编与舞台视觉处理，具名介绍郭文景、徐瑛、易立明等主创。用于区分歌剧版本与同名小说、话剧；此页不是剧本、演出全片或当前购票入口。",
+    "organization": "国家大剧院",
+    "url": "https://www.chncpa.org/subsite/ltxz2015/jmjq.html",
+    "access": "public",
+    "recordType": "production",
+    "theatreEvidence": "国家大剧院官方专题的剧目介绍分节列出歌剧作曲、编剧、导演与舞美主创，并说明2014年首演及2015年再演的版本背景。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "国家大剧院原创歌剧《骆驼祥子》：剧目介绍",
+        "url": "https://www.chncpa.org/subsite/ltxz2015/jmjq.html",
+        "locator": "剧目介绍第1段主创；第2段音乐与舞美处理；末段2014年首演、2015年再演说明。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-smg-sleep-no-more-shanghai",
+    "title": "浸入式戏剧《不眠之夜》上海版｜SMG官方作品介绍",
+    "category": "knowledge",
+    "topics": [
+      "不眠之夜",
+      "Sleep No More",
+      "沉浸式戏剧",
+      "沉浸式戲劇",
+      "浸入式戏剧",
+      "浸入式戲劇",
+      "Punchdrunk",
+      "空间叙事",
+      "空間敘事",
+      "观演关系",
+      "觀演關係",
+      "麦克白",
+      "麥克白"
+    ],
+    "summary": "SMG对《不眠之夜》上海版的官方作品介绍，说明其与《麦克白》的改编关系、联合制作机构及观众自由行进的空间结构。页面包含历史运营资料，可供沉浸式戏剧研究；不是演出录像，也不证明当前仍驻演或正在售票。",
+    "organization": "上海广播电视台（SMG）",
+    "url": "https://www.smg.cn/review/202211/0164830.html",
+    "access": "public",
+    "recordType": "production",
+    "theatreEvidence": "SMG原页首段列出浸入式戏剧《不眠之夜》上海版的出品、制作及2016年首演；后续段落说明《麦克白》改编和自由探索空间的观演方式。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "SMG：不眠之夜",
+        "url": "https://www.smg.cn/review/202211/0164830.html",
+        "locator": "首段作品与联合制作机构；次段《麦克白》改编及观众探索空间；运营统计明确截至2021年12月。"
+      }
+    ]
+  },
+  {
+    "id": "dm-resource-smg-phantom-production-cast",
+    "title": "原版音乐剧《剧院魅影》制作与角色介绍｜SMG巡演公告",
+    "category": "knowledge",
+    "topics": [
+      "剧院魅影",
+      "劇院魅影",
+      "音乐剧",
+      "音樂劇",
+      "原版音乐剧",
+      "原版音樂劇",
+      "国际巡演",
+      "國際巡演",
+      "制作团队",
+      "製作團隊",
+      "卡司",
+      "舞台角色",
+      "上海文广演艺集团"
+    ],
+    "summary": "SMG原版音乐剧《剧院魅影》巡演公告，介绍联合呈现机构、所延续的1986年制作版本及该轮角色阵容。供研究音乐剧制作和版本关系；原页未明确显示发布日期，阵容与“今年”表述不视为当前信息，也不提供现时票务状态。",
+    "organization": "上海广播电视台（SMG）",
+    "url": "https://www.smg.cn/review/202404/0165428.html",
+    "access": "public",
+    "recordType": "production",
+    "theatreEvidence": "SMG官方公告将《剧院魅影》明确标为原版音乐剧，正文列明出品、运营及联合呈现机构，说明所延续的制作版本和该轮演出角色。",
+    "verifiedAt": "2026-10-30",
+    "rights": "metadata-only",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "SMG：定了！原版音乐剧《剧院魅影》新一批卡司官宣",
+        "url": "https://www.smg.cn/review/202404/0165428.html",
+        "locator": "正文第2段联合制作与1986年版本说明；第3段该轮角色阵容。页面未显示明确发布日期。"
+      }
+    ]
+  }
+]

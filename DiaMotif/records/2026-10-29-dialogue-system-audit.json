@@ -1,0 +1,87 @@
+{
+  "recordType": "dialogue-integration-audit",
+  "date": "2026-10-29",
+  "scope": "桌面AI置景、照片置景、剧本置景；不含暂缓的排演、复台、语音、移动、平板或投影。",
+  "systemRole": "以千问为基底的戏剧置景AI Agent。DiaMotif提供检索知识、产品规则和评测，不代表基底模型参数已经训练。",
+  "modelObserved": "qwen3.7-flash-2026-07-15",
+  "dialogueProtocol": "diamotif-dialogue-v3",
+  "routes": [
+    {
+      "entry": "DIA当前置景对话",
+      "endpoint": "/api/dia/dialogue",
+      "modelFirst": true,
+      "context": "正式舞台几何、选中项、最近引用、最多8条且共8000字历史、待采用方案、实际检索知识与21件资产目录。过大输入明确拒绝。",
+      "evidence": "真实生产服务调用；离线控制器验证请求/预览/采用/取消/版本竞争；本机未登录POST实测401。",
+      "execution": "模型先决定；本地解算、原生尺寸、身份、支撑、边界、碰撞和编译检查后预览；采用仍需用户操作。",
+      "limits": "服务调用与离线执行不是浏览器端到端验收。模型回复和动作语义仍有不一致；最近引用最多3件。"
+    },
+    {
+      "entry": "首页文字置景及剧本方案文字修订",
+      "endpoint": "/api/stage/plan",
+      "modelFirst": true,
+      "context": "相关对象几何、对象索引、当前场地、补充回答及DiaMotif知识；没有DIA对话历史。",
+      "evidence": "路由与组件检查、生产模式离线测试、结构化提供方隔离测试。未单独完成真实浏览器验收。",
+      "execution": "锁定已有道具身份/尺寸/级数，恢复真实碰撞体；沿用预览及已有明确授权的制景会话机制。"
+    },
+    {
+      "entry": "剧本解析",
+      "endpoint": "/api/script/stage-plan",
+      "modelFirst": true,
+      "context": "筛选后的原文段落、来源位置、实际舞台边界、原生资产碰撞外框和落地原点、DiaMotif术语；知识不是原文证据。",
+      "evidence": "真实模型调用与原文证据核验；原生资产恢复、数量/冲突、坐标及支撑回归。",
+      "execution": "原生资产身份决定尺寸，模型不自由缩放；直立姿态、证据、冲突和几何均须验证。悬空、穿地、越界保留证据并阻止采用。",
+      "limits": "模型仍可能误读前后/相对关系。舞台在请求期间变化可能留下过时预览，正式执行的版本检查阻止写入。"
+    },
+    {
+      "entry": "照片解析及换资产后确认",
+      "endpoint": "/api/photo-stage/analyze",
+      "modelFirst": true,
+      "context": "照片、用户补充、21件原生资产、DiaMotif术语；术语不冒充照片证据。",
+      "evidence": "真实模型图像请求；换资产及确认写入的离线零写入/原生尺寸回归。",
+      "execution": "模型分析与确认写入分开验证；更换恢复原生尺寸与底面高度，采用前再验碰撞、边界及最终落地的实体支撑链。名称不能证明模块数量，仍须逐题语义验收。",
+      "limits": "复杂照片仍存在前后错位、漏项、组合台块数量不足等语义失败。两个图源不足以评价真实剧场照片泛化。"
+    }
+  ],
+  "verificationBoundaries": [
+    "调用日志证明请求携带了哪些知识，不证明模型掌握全部知识或书籍。",
+    "服务返回、语义符合、几何可执行、网页采用与人工认可分别记录；不得用HTTP200代替任务成功。",
+    "固定前文是合成种子状态；提案元数据不代表前一轮真实生成或用户已经采用。",
+    "评测不读取或修改用户正式剧目，原始响应留在被忽略的私有目录。",
+    "内置浏览器控制接口持续不可用；实际页面预览、采用、保存、重开与撤销仍需浏览器/用户验收。",
+    "测试中出现主机长时间停顿及请求超时，异常区间不能用于正常模型速度结论。"
+  ],
+  "liveEvaluation": {
+    "development": "2026-10-29-live-model-final-development.json",
+    "holdout": "2026-10-29-live-model-final-holdout.json",
+    "uniqueCasesAttempted": 30,
+    "finalProviderAttempts": 31,
+    "serviceReturned": 26,
+    "serviceRejected": 4,
+    "allStagesPassed": false,
+    "humanAcceptanceCompleted": 0,
+    "interpretation": "30题均尝试真实调用；开发集内含2次超时，不能说30题都有完整模型输出。服务返回不代表语义、执行或人工验收通过。"
+  },
+  "postEvaluationChecks": [
+    "开发集之后，仅照片adoption.ts/support.ts新增采用前实体支撑防护；开发P02离线重放确认被阻止、0次网络写入。保留集完整记录两文件的哈希差异。",
+    "保留集之后，回归发现取消保护误屏蔽已采用提案的后续修订来源。控制器恢复parent作为引用来源，pendingPlan仍仅表示待采用方案，applied取消硬拒保留。该修复不改模型prompt/schema/server，采用离线回归验证，未追加模型调用。"
+  ],
+  "offlineVerification": {
+    "targetedServerPlannerScriptPhoto": "53 pass / 0 fail；结构化供应商测试在隔离子进程中运行。",
+    "photoFinalSupportBoundary": "44 pass / 0 fail；含全部21资产原生尺寸、零写入及落地支撑链。与其他组有重叠，不相加。",
+    "dialogueControllerAfterRepair": "单文件10 pass / 0 fail，86 assertions。",
+    "openLanguageIntegrationAfterRepair": "单文件7 pass / 0 fail，287 assertions；包含采用、撤销、重做及再次修订。",
+    "combinedRunBeforeRepair": "11文件合跑88 pass / 2 fail / 1 error。几何测试超过120秒后旧任务影响后题；单文件随后又发现真实parent回归，已修复并按上述单文件重新验证。不将原合跑结果改记为通过。",
+    "browserAdoptionBundle": "浏览器目标Bun构建通过，无server-only依赖。",
+    "typeScript": "next typegen及编辑器tsc --noEmit通过；最后状态修复后再次检查。",
+    "realBrowserAcceptance": "pending"
+  },
+  "nextAcceptance": [
+    "靠墙要求不能被省略；左右纠正、入口加宽不能误判为取消。",
+    "模型回复必须准确描述方案及预览→采用顺序，不虚构库内资产。",
+    "剧本保持台口坐标系、真实原文证据和每项空间限制。",
+    "照片布局补足台块数量、前后位置和真实支撑，不把不确定项包装成成功。",
+    "在浏览器用独立测试剧目完成生成→修订→采用→保存→重开→撤销，再请用户验收。"
+  ],
+  "releaseVerdict": "尚未通过完整任务验收，不宣称全面理解、全部可执行或已达到9分。",
+  "trainingEligibility": "not_reviewed"
+}

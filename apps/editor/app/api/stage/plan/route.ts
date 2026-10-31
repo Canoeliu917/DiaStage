@@ -7,6 +7,8 @@ export const OPTIONS = aiPreflight
 
 export function POST(request: Request): Promise<Response> {
   return handleAiRequest(request, async ({ signal }) => ({
-    plan: await planStageRequest(await readJsonBody(request, signal), signal),
+    plan: await planStageRequest(await readJsonBody(request, signal), signal, undefined, {
+      forceModel: true,
+    }),
   }))
 }

@@ -11,7 +11,7 @@ const MAX_WIDTH = 640
 export function DiaDock({ hidden, children }: { hidden: boolean; children: ReactNode }) {
   const [layout, setLayout] = useState({
     width: 370,
-    open: true,
+    open: false,
     locked: false,
     dock: 'right' as 'left' | 'right',
     tabY: null as number | null,
@@ -33,12 +33,14 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
             typeof stored.width === 'number' && Number.isFinite(stored.width)
               ? Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, stored.width))
               : 370,
-          open: stored.open !== false,
+          open: typeof stored.open === 'boolean' ? stored.open : false,
           locked: stored.locked === true,
           dock: 'right',
           tabY:
             typeof stored.tabY === 'number' && Number.isFinite(stored.tabY) ? stored.tabY : null,
         })
+      else if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches)
+        setLayout((previous) => ({ ...previous, open: true }))
     } catch {}
     setHydrated(true)
   }, [])
@@ -92,10 +94,11 @@ export function DiaDock({ hidden, children }: { hidden: boolean; children: React
           <button
             type="button"
             className="dia-restore-tab"
-            aria-label="展开 Dia 对话框"
+            aria-label="打开 DIA"
             onClick={() => setLayout((previous) => ({ ...previous, open: true }))}
           >
             <ChevronLeft size={16} />
+            打开 DIA
           </button>
         ))}
       <aside

@@ -1,0 +1,135 @@
+html:has(.motif-home) { overflow-y: auto; }
+.motif-home { min-height: 100dvh; background: var(--dia-surface); color: var(--dia-text); font-family: var(--dia-font-ui); font-size: 14px; line-height: 1.6; color-scheme: light dark; caret-color: var(--dia-text); }
+.motif-home-space { min-height: 100dvh; display: flex; flex-direction: column; }
+.motif-home ::selection { background: var(--dia-text); color: var(--dia-surface); }
+.motif-home :is(button,input) { font: inherit; }
+.motif-home button { cursor: pointer; }
+.motif-home button:disabled { cursor: wait; opacity: .55; }
+.motif-home :is(a,button,input,summary):focus-visible { outline: 2px solid var(--dia-focus); outline-offset: 5px; }
+.motif-home a { text-underline-offset: 4px; }
+.motif-skip { position: absolute; top: -100px; left: 20px; z-index: 10; padding: 8px 16px; background: var(--dia-text); color: var(--dia-surface); }
+.motif-skip:focus { top: 12px; }
+.motif-header { min-height: 76px; padding: 16px 36px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.motif-small-brand { display: inline-flex; align-items: baseline; gap: 12px; text-decoration: none; font-size: 21px; font-weight: 600; }
+.motif-small-brand span { font-size: 17px; }
+.motif-header nav { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 18px; font-size: 12px; }
+.motif-header :is(button,a) { min-height: 32px; }
+.motif-header nav :is(a,button) { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; height: 32px; font-size: 12px; line-height: 20px; white-space: nowrap; }
+.motif-header .dia-account-menu { display: flex; align-items: center; gap: 14px; font-size: 12px; }
+.motif-header .dia-account-menu > span { display: none; }
+.motif-header .stage-theme-control button { width: 32px; border: 0; background: transparent; display: flex; gap: 6px; align-items: center; padding: 4px; }
+.motif-header .stage-theme-control button > span { display: none; }
+.motif-stage-link { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--dia-text); border-radius: 4px; padding: 5px 13px; }
+.motif-stage-link:hover { background: var(--dia-text); color: var(--dia-surface); }
+.motif-search-area { width: min(840px, calc(100% - 48px)); margin: clamp(50px, 12vh, 130px) auto 76px; text-align: center; }
+.motif-search-area[data-expanded=false] { min-height: calc(100dvh - 148px); margin-block: 0; padding-top: clamp(50px, 12vh, 130px); padding-bottom: 40px; }
+.motif-search-heading { margin-bottom: 24px; }
+.motif-search-heading h1 { margin: 0; display: flex; align-items: baseline; justify-content: center; gap: 22px; font-weight: 500; line-height: 1.25; }
+.motif-search-heading h1 > span:first-child { font-size: clamp(50px, 6vw, 76px); letter-spacing: .07em; }
+.motif-search-heading h1 > span:last-child { font-size: clamp(36px, 4.8vw, 62px); letter-spacing: -.035em; }
+.motif-search-heading > p { margin: 12px 0 0; color: var(--dia-muted); font-size: 14px; }
+.motif-search-form { width: 100%; }
+.motif-search-field { min-height: 64px; border: 1px solid var(--dia-border); border-radius: 34px; padding: 7px 8px 7px 22px; display: flex; align-items: center; gap: 14px; background: var(--dia-surface); transition: border-color 160ms ease; }
+.motif-search-field:focus-within { outline: 2px solid var(--dia-focus); outline-offset: 3px; }
+.motif-search-field > svg { color: var(--dia-muted); flex-shrink: 0; }
+.motif-search-field input { width: 100%; min-width: 0; padding: 6px 0; border: 0; background: transparent; color: var(--dia-text); font-size: 16px; outline: none; }
+.motif-search-field input:focus-visible { outline: none; }
+.motif-search-field input::placeholder { color: var(--dia-muted); opacity: 1; }
+.motif-search-field button { border: 0; display: inline-flex; gap: 6px; align-items: center; justify-content: center; background: transparent; flex-shrink: 0; min-height: 38px; padding: 7px; }
+.motif-search-field .motif-submit { border-radius: 25px; background: var(--dia-text); color: var(--dia-surface); min-height: 46px; padding: 10px 20px; }
+.motif-search-actions { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 10px; }
+.motif-search-actions button { display: inline-flex; align-items: center; justify-content: center; width: 32px; min-height: 32px; }
+.motif-search-actions button:disabled { cursor: default; }
+.motif-search-hint { margin: 4px 0 0; color: var(--dia-muted); font-size: 12px; }
+.motif-categories { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px 20px; margin-top: 18px; }
+.motif-categories button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 1px 7px; min-height: 32px; color: var(--dia-muted); border-bottom: 1px solid transparent; }
+.motif-categories button[aria-pressed=true] { border-color: var(--dia-text); color: var(--dia-text); }
+.motif-categories button[aria-expanded=true] svg { transform: rotate(180deg); }
+.motif-category-group { position: relative; }
+.motif-subcategories { position: absolute; top: 100%; left: 0; z-index: 5; display: flex; flex-direction: column; width: max-content; min-width: 100%; max-height: min(320px, 50dvh); overflow-y: auto; overscroll-behavior: contain; padding: 0 1px; border: 0; border-radius: 3px; background: var(--dia-surface); font-size: 12px; }
+.motif-subcategories button { display: block; min-height: 32px; padding: 1px 12px 9px 0; border: 0; color: var(--dia-muted); text-align: left; white-space: nowrap; }
+.motif-subcategories button:hover { background: var(--dia-divider); color: var(--dia-text); }
+.motif-subcategories button[aria-pressed=true] { color: var(--dia-text); text-decoration: underline; }
+.motif-results-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; margin-top: 10px; font-size: 12px; color: var(--dia-muted); text-decoration: underline; }
+.motif-search-area[data-expanded=true] { margin-top: 24px; margin-bottom: 24px; }
+.motif-search-area[data-expanded=true] .motif-search-heading { margin-bottom: 20px; }
+.motif-search-area[data-expanded=true] .motif-search-heading h1 > span:first-child { font-size: 36px; }
+.motif-search-area[data-expanded=true] .motif-search-heading h1 > span:last-child { font-size: 31px; }
+.motif-search-area[data-expanded=true] .motif-search-heading > p { margin-top: 8px; font-size: 12px; }
+.motif-results { width: min(800px, calc(100% - 48px)); margin: 0 auto 48px; }
+.motif-result-toolbar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--dia-divider); padding-bottom: 12px; margin-bottom: 24px; gap: 16px; }
+.motif-result-toolbar p { margin: 0; color: var(--dia-muted); font-size: 12px; }
+.motif-notice { font-size: 13px; padding: 14px 0; margin: 0 0 16px; border-bottom: 1px solid var(--dia-divider); }
+.motif-notice button { margin-left: 16px; text-decoration: underline; }
+.motif-answer { padding: 0 0 22px; margin-bottom: 26px; border-bottom: 1px solid var(--dia-divider); }
+.motif-answer h2 { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+.motif-answer p { max-width: 74ch; line-height: 1.85; white-space: pre-wrap; }
+.motif-answer small { color: var(--dia-muted); font-size: 12px; }
+.motif-citations { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 0; font-size: 12px; }
+.motif-citations a { text-decoration: underline; }
+.motif-resource { margin-bottom: 30px; scroll-margin-top: 24px; }
+.motif-resource-source { display: flex; align-items: baseline; gap: 14px; color: var(--dia-muted); font-size: 12px; }
+.motif-resource h2 { margin: 5px 0 6px; font-weight: 500; font-size: 21px; line-height: 1.45; }
+.motif-resource h2 a { display: inline; }
+.motif-resource h2 a:hover { text-decoration: underline; }
+.motif-resource h2 svg { display: inline-block; vertical-align: middle; margin-left: 6px; }
+.motif-resource > p { margin: 0; max-width: 72ch; color: var(--dia-text); }
+.motif-resource-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 7px; color: var(--dia-muted); font-size: 12px; }
+.motif-source-detail { margin-top: 9px; font-size: 12px; color: var(--dia-muted); }
+.motif-source-detail summary { cursor: pointer; }
+.motif-source-detail p { max-width: 74ch; margin: 8px 0; }
+.motif-source-detail ul { padding-left: 18px; margin-block: 6px; }
+.motif-source-detail a { text-decoration: underline; }
+.motif-empty { padding: 28px 0 42px; }
+.motif-empty h2 { font-size: 19px; font-weight: 500; }
+.motif-empty p { color: var(--dia-muted); max-width: 66ch; }
+.motif-empty button { text-decoration: underline; min-height: 36px; }
+.motif-stage-follow { display: flex; align-items: center; justify-content: space-between; padding-top: 20px; border-top: 1px solid var(--dia-divider); gap: 16px; }
+.motif-stage-follow p { color: var(--dia-muted); }
+.motif-stage-follow button { display: inline-flex; align-items: center; gap: 10px; min-height: 34px; }
+.motif-pagination { display: flex; gap: 24px; align-items: center; justify-content: center; margin-block: 32px; font-size: 12px; }
+.motif-pagination button { min-height: 34px; text-decoration: underline; }
+.motif-brand { border-top: 1px solid var(--dia-divider); }
+.motif-brand-heading { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 4px 16px; min-height: 48px; padding: 8px 20px; }
+.motif-brand h2 { display: flex; justify-content: center; align-items: center; gap: 8px; min-height: 32px; margin: 0; font-size: 13px; font-weight: 400; line-height: 24px; }
+.motif-brand h2 svg { color: var(--dia-muted); }
+.motif-brand-details { padding: 16px max(20px, 4vw) 20px; }
+.motif-brand-companion { margin: 0 0 6px; font-size: 14px; line-height: 1.5; }
+.motif-brand-product { margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
+.motif-brand dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; }
+.motif-brand dt { font-size: 16px; line-height: 24px; }
+.motif-brand dd { margin: 8px 0 0; color: var(--dia-muted); font-size: 12px; line-height: 1.5; }
+.motif-intake-policy { margin-top: 16px; color: var(--dia-muted); font-size: 12px; }
+.motif-intake-policy summary { cursor: pointer; text-decoration: underline; }
+.motif-intake-policy p { margin: 8px 0 0; line-height: 1.8; }
+.motif-brand-motto { margin: 0; color: var(--dia-muted); font-size: 12px; }
+@supports (animation-timeline: view()) {
+  .motif-brand { animation: motif-brand-reveal linear both; animation-timeline: view(); animation-range: entry 0% entry 100%; }
+}
+@keyframes motif-brand-reveal { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.motif-footer { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; margin-top: auto; padding: 16px 36px; border-top: 1px solid var(--dia-divider); font-size: 12px; color: var(--dia-muted); text-align: center; }
+.motif-contact-links { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 22px; }
+.motif-footer a { min-height: 30px; display: inline-flex; align-items: center; }
+.motif-home .stage-entry-dialog { color: var(--dia-text); background: var(--dia-surface); border: 1px solid var(--dia-border); color-scheme: light dark; }
+.motif-home .dia-space-dialog { width: min(800px, calc(100% - 40px)); padding: 24px; }
+.motif-home .dia-space-dialog > p { margin: 0 0 18px; color: var(--dia-muted); }
+.motif-home .dia-space-dialog h2 { font-size: 22px; }
+.motif-home .dia-space-about { padding-block: 18px; }
+.motif-home .dia-space-about a { text-decoration: underline; }
+.motif-loading { animation: motif-spin 1s linear infinite; }
+@keyframes motif-spin { to { transform: rotate(360deg); } }
+@media (max-width: 760px) {
+  .motif-header { padding: 14px 20px; gap: 12px; flex-wrap: wrap; }
+  .motif-header nav { gap: 12px; }
+  .motif-header .dia-account-menu { gap: 10px; }
+  .motif-search-area { margin-top: 60px; }
+  .motif-search-heading h1 { gap: 12px; }
+  .motif-search-field { padding-left: 15px; gap: 10px; }
+  .motif-search-field input { font-size: 14px; }
+  .motif-search-field .motif-submit { padding-inline: 12px; }
+  .motif-submit > span { display: none; }
+  .motif-categories { gap: 4px 17px; }
+  .motif-brand dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .motif-footer { padding-inline: 22px; }
+}
+@media (prefers-reduced-motion: reduce) { .motif-home * { animation: none !important; transition: none !important; } }

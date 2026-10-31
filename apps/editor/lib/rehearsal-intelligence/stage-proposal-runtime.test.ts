@@ -16,6 +16,7 @@ import { useStagePlanPreview } from '../stage/plan-preview'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { bindRehearsalScene } from './authority'
 import { DiaConversation } from './conversation-controller'
+import { dialogueTestRequest, dialogueTestResponse } from './dialogue.test-helpers'
 import { groundLanguage } from './language-grounding'
 import { parseOpenLanguage } from './open-language'
 import { compileStageProposalPreview } from './stage-proposal-runtime'
@@ -288,15 +289,14 @@ test('C. Dia routes Knowledge through Ghost, Cancel and one-transaction Accept',
   let providerCalls = 0
   // Production confirms non-camera language through this contract; no live provider is used here.
   globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-    expect(url).toBe('/api/dia/ground')
+    expect(url).toBe('/api/dia/dialogue')
     providerCalls++
-    const request = JSON.parse(String(init?.body))
+    const request = dialogueTestRequest(init)
     const grounding = parseOpenLanguage(request.rawUtterance)
     expect(grounding).not.toBeNull()
-    return Response.json({
-      requestId: crypto.randomUUID(),
+    return dialogueTestResponse(request, {
       grounding,
-      provider: 'openai',
+      provider: 'aliyun',
       model: 'mock-provider-not-live',
     })
   }) as typeof fetch
@@ -307,7 +307,7 @@ test('C. Dia routes Knowledge through Ghost, Cancel and one-transaction Accept',
     await dia.send('把二号台块叠在一号台块上。')
     expect(providerCalls).toBe(1)
     expect(dia.buildProposal()?.groundingProvider).toEqual({
-      provider: 'openai',
+      provider: 'aliyun',
       model: 'mock-provider-not-live',
     })
     expect(dia.buildProposal()?.knowledgeProposal?.actions[0]?.type).toBe('stack_on')

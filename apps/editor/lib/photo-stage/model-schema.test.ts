@@ -104,7 +104,7 @@ test('new photo output rejects primitives, dimensions and fields that could alte
     { assetId: null, kind: 'stairs', stepCount: 3 },
     { assetId: null, kind: 'platform', profile: 'rounded-platform' },
     { assetId: 'invented-asset' },
-    { assetId: 'SCN-FLAT-090' },
+    { assetId: 'unknown-stage-asset' },
   ])
     expect(() => format.$parseRaw(JSON.stringify(plan([{ ...object, ...patch }])))).toThrow()
 })

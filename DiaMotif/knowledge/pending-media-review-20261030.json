@@ -1,0 +1,481 @@
+{
+  "version": 1,
+  "checkedAt": "2026-10-30",
+  "scope": "独占复核社会发现候选中的8条；不修改已拒收5条、已入库大麦/可灵，不导入canonical或程序。",
+  "method": "agent-reach只读公开网页与Jina兜底；验证码即停止；无登录、Cookie、下载视频、复制全文、付费调用。",
+  "newSourceDomains": [
+    {
+      "domain": "lmtw.com",
+      "sourceRegion": "mainland",
+      "evidenceUrl": "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1",
+      "evidence": "原页页脚北京创世路信息技术有限公司、京ICP备05059178号-1；文章署名流媒体网/DataEye。仅准许逐条核验的专业媒体来源，不给全站官方身份。"
+    },
+    {
+      "domain": "bjd.com.cn",
+      "sourceRegion": "mainland",
+      "evidenceUrl": "https://xinwen.bjd.com.cn/content/s673823aee4b0e1ace8a86f31.html",
+      "evidence": "具体原报道署北京日报客户端及记者何蕊，内容是清华第二届校园戏剧节；原始新闻机构为北京日报。按professional-media收录。"
+    },
+    {
+      "domain": "tsinghua.edu.cn",
+      "sourceRegion": "mainland",
+      "evidenceUrl": "https://www.tsinghua.edu.cn/info/1182/116238.htm",
+      "evidence": "清华大学新闻网/清华大学新闻中心原站，正文明确同届闭幕式在京举办；该页署源光明日报，按媒体转载层级显示。"
+    },
+    {
+      "domain": "ctnews.com.cn",
+      "sourceRegion": "mainland",
+      "evidenceUrl": "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html",
+      "evidence": "原文署中国旅游报，首段明确浙江嘉兴乌镇；页脚中国旅游报社有限公司及京备案。本批仅作地域佐证，不另加第9条资源。"
+    }
+  ],
+  "candidates": [
+    {
+      "candidateId": "sd-weibo-hongguo-ai-plan",
+      "originalUrl": "https://weibo.com/2/detail/5354406397875235",
+      "checkedAt": "2026-10-30",
+      "outcome": "reviewed-for-admission",
+      "admittedResourceIds": [
+        "dm-resource-hongguo-ai-creation-plan-weibo-2026"
+      ],
+      "originalBodyReadable": true,
+      "detail": "正文可读；另读取账号主页，显示红果官方微博及北京笔墨留香科技有限公司认证主体。原帖日期只有月日，publishedAt留空；AI创作活动信息按平台公告/reference处理，非既有AI作品。",
+      "supportUrls": [
+        "https://www.weibo.com/u/7923525723",
+        "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1"
+      ],
+      "unresolved": [
+        "未打开APP内完整活动规则；不承诺个人资格、奖金或IP授权。"
+      ]
+    },
+    {
+      "candidateId": "sd-weibo-wuzhen-young-2026",
+      "originalUrl": "https://weibo.com/2/detail/5345230930577273",
+      "checkedAt": "2026-10-30",
+      "outcome": "reviewed-for-admission",
+      "admittedResourceIds": [
+        "dm-resource-wuzhen-young-selection-weibo-2026"
+      ],
+      "originalBodyReadable": true,
+      "detail": "原帖全文可读、活动届次明确；官方微博主页经Jina返回非空账号信息，中国旅游报原文证明第十三届位于浙江嘉兴乌镇。保留原帖日期空值，不把已过排期当当前征集。",
+      "supportUrls": [
+        "https://weibo.com/wuzhenfestival",
+        "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html"
+      ],
+      "unresolved": [
+        "入围名单为图片，未抄录未OCR名单；不补写剧组个人履历。"
+      ]
+    },
+    {
+      "candidateId": "sd-weibo-wuzhen-units",
+      "originalUrl": "https://weibo.com/2/detail/5352120674160540",
+      "checkedAt": "2026-10-30",
+      "outcome": "reviewed-for-admission",
+      "admittedResourceIds": [
+        "dm-resource-wuzhen-seven-units-weibo-2026"
+      ],
+      "originalBodyReadable": true,
+      "detail": "原帖七单元及2026.10.15—10.25可读，原发日期只有月日留空；核验时为历史活动，非当前票务。",
+      "supportUrls": [
+        "https://weibo.com/wuzhenfestival",
+        "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html"
+      ],
+      "unresolved": []
+    },
+    {
+      "candidateId": "sd-kuaishou-opera-night",
+      "originalUrl": "https://ir.kuaishou.com/zh-hans/news-releases/news-release-details-130",
+      "checkedAt": "2026-10-30",
+      "outcome": "reviewed-for-admission",
+      "admittedResourceIds": [
+        "dm-resource-kuaishou-opera-starlight-2024"
+      ],
+      "originalBodyReadable": true,
+      "detail": "原IR页全文可读，来源明确为中国网娱乐转载；正文有具体戏曲直播活动、剧种及2024日期。分类历史线上演出活动，非影像回放。",
+      "supportUrls": [],
+      "attemptedAlternativeUrl": "https://ent.china.com.cn/xwtt/detail2_2024_11/25/4470803.html",
+      "alternativeAccess": "timeout",
+      "unresolved": [
+        "中国网原发链接请求超时，保留转载页与署源；不声称读到原发页。"
+      ]
+    },
+    {
+      "candidateId": "sd-wechat-tsinghua-entry",
+      "originalUrl": "https://mp.weixin.qq.com/s/frV51pN7Bhg8rYTJLTRs-A",
+      "checkedAt": "2026-10-30",
+      "outcome": "blocked-original-related-source-admitted",
+      "admittedResourceIds": [
+        "dm-resource-tsinghua-philosophy-drama-close-2024"
+      ],
+      "originalBodyReadable": false,
+      "detail": "web不可打开；Jina返回环境异常/CAPTCHA即停止。未登录、未绕过。主办院校新闻页提供同届已闭幕的相关历史回顾，不能替代或复原原微信入校规则。",
+      "alternateSources": [
+        {
+          "url": "https://www.tsinghua.edu.cn/info/1182/116238.htm",
+          "relation": "related-primary-host-not-equivalent",
+          "supports": "同届活动背景和已闭幕状态；不支持入校操作说明"
+        },
+        {
+          "url": "https://xinwen.bjd.com.cn/content/s673823aee4b0e1ace8a86f31.html",
+          "relation": "publisher-cites-original-link",
+          "supports": "证明原微信链接曾作为2024观演报备入口列出；不证明现时适用"
+        }
+      ],
+      "unresolved": [
+        "原微信标题、正文、作者、发布日期、入校要求未核，保持原候选访问阻断状态。"
+      ]
+    },
+    {
+      "candidateId": "sd-lmtw-hongguo-ai",
+      "originalUrl": "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1",
+      "checkedAt": "2026-10-30",
+      "outcome": "reviewed-for-admission",
+      "admittedResourceIds": [
+        "dm-resource-lmtw-hongguo-ai-plan-20261019"
+      ],
+      "originalBodyReadable": true,
+      "detail": "行业媒体正文公开可读，作者、日期、转载与版权声明齐全。页脚北京公司主体和京备案可核；仅登记元数据与简短说明，不复制正文。",
+      "supportUrls": [
+        "https://weibo.com/2/detail/5354406397875235"
+      ],
+      "unresolved": [
+        "媒体不代替平台规则；网站禁止未经授权转载、摘编、复制，保留metadata-only，不镜像文章。"
+      ]
+    },
+    {
+      "candidateId": "sd-news-tsinghua-festival",
+      "originalUrl": "https://xinwen.bjd.com.cn/content/s673823aee4b0e1ace8a86f31.html",
+      "checkedAt": "2026-10-30",
+      "outcome": "reviewed-for-admission",
+      "admittedResourceIds": [
+        "dm-resource-bjd-tsinghua-philosophy-drama-20241116"
+      ],
+      "originalBodyReadable": true,
+      "detail": "北京日报原报道全文、记者及2024-11-16日期可读，具体剧目与活动可定位；与清华该届闭幕报道交叉核实历史状态。",
+      "supportUrls": [
+        "https://www.tsinghua.edu.cn/info/1182/116238.htm"
+      ],
+      "unresolved": [
+        "文中微信入校原文仍受阻，不据旧报道推断当前规定。"
+      ]
+    }
+  ],
+  "admittedResources": [
+    {
+      "verifiedAt": "2026-10-30",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "status": "verified",
+      "contentRegion": "mainland",
+      "id": "dm-resource-hongguo-ai-creation-plan-weibo-2026",
+      "title": "红果短剧AI短剧创作计划｜平台账号公告",
+      "category": "ai-screen",
+      "subtopics": [
+        "ai-short-drama",
+        "ai-industry"
+      ],
+      "topics": [
+        "红果短剧",
+        "AI短剧",
+        "AIGC",
+        "创作计划",
+        "投稿",
+        "IP授权"
+      ],
+      "organization": "红果短剧app（微博认证主体：北京笔墨留香科技有限公司）",
+      "url": "https://weibo.com/2/detail/5354406397875235",
+      "summary": "红果短剧账号公告列明开放与IP两类AI短剧创作赛道，原帖征稿截止为2027年1月6日，可在APP搜索活动名称进入投稿。这里只登记已核原公告；具体资格、授权条件及后续变更以平台完整规则为准。",
+      "aiEvidence": "原帖正文明确征集AI短剧作品、开放赛道与IP赛道，以及红果短剧APP投稿路径；这是AI影视创作活动资料，不是AI已生成作品。",
+      "aiInvolvement": "reference",
+      "sourceTier": "official",
+      "sourceKind": "announcement",
+      "publishedAt": null,
+      "applicableYear": "2026–2027",
+      "sourceRefs": [
+        {
+          "title": "红果短剧app：AI短剧创作计划公告",
+          "url": "https://weibo.com/2/detail/5354406397875235",
+          "locator": "原页账号名及10-15月日；正文AI创作计划、开放/IP赛道、APP投稿路径。仅记录公告，不补发帖年份。"
+        },
+        {
+          "title": "红果短剧app微博账号资料",
+          "url": "https://www.weibo.com/u/7923525723",
+          "locator": "账号头部显示红果短剧官方微博、北京笔墨留香科技有限公司及2025-12-31审核时间；用于发布主体与大陆地域核验，不引用周边剧集宣传。"
+        },
+        {
+          "title": "流媒体网／DataEye：红果AI短剧计划报道",
+          "url": "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1",
+          "locator": "标题、2026-10-19署名栏及正文说明2026–2027活动届次；不替代平台最新规则。"
+        }
+      ]
+    },
+    {
+      "verifiedAt": "2026-10-30",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "status": "verified",
+      "contentRegion": "mainland",
+      "id": "dm-resource-wuzhen-young-selection-weibo-2026",
+      "title": "第十三届乌镇戏剧节青年竞演入围公告｜2026届",
+      "category": "festivals",
+      "subtopics": [
+        "festival",
+        "festival-open-call"
+      ],
+      "topics": [
+        "乌镇戏剧节",
+        "青年竞演",
+        "2026戏剧节",
+        "入围公告",
+        "原创剧目"
+      ],
+      "organization": "乌镇戏剧节（微博账号）",
+      "url": "https://weibo.com/2/detail/5345230930577273",
+      "summary": "第十三届乌镇戏剧节青年竞演的历史入围公告，说明该届作品征集与入围阶段。正文排期为2026年10月15日至25日，核验时已过；此条不能作为当前征集、预约或在售入口。原帖显示9-20，未补发帖年份。",
+      "theatreEvidence": "原帖明确2026第十三届乌镇戏剧节青年竞演、作品入围及剧节公演安排；由乌镇戏剧节账号发布，关联具体戏剧节届次。",
+      "sourceTier": "official",
+      "sourceKind": "announcement",
+      "publishedAt": null,
+      "applicableYear": "2026",
+      "sourceRefs": [
+        {
+          "title": "乌镇戏剧节：青年竞演入围公告",
+          "url": "https://weibo.com/2/detail/5345230930577273",
+          "locator": "账号乌镇戏剧节；正文2026届标题、报名截止与入围阶段、10月15—25日活动排期；原帖仅月日。"
+        },
+        {
+          "title": "乌镇戏剧节微博主页",
+          "url": "https://weibo.com/wuzhenfestival",
+          "locator": "Jina返回非空账号页面，头部显示乌镇戏剧节官方微博；只核账号资料，不收推荐区。"
+        },
+        {
+          "title": "中国旅游报：乌镇戏剧节演艺在街头",
+          "url": "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html",
+          "locator": "2026-10-19作者日期栏及首段明确浙江嘉兴乌镇西栅、10月15日第十三届开幕；用于本届地域交叉核验。"
+        }
+      ]
+    },
+    {
+      "verifiedAt": "2026-10-30",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "status": "verified",
+      "contentRegion": "mainland",
+      "id": "dm-resource-wuzhen-seven-units-weibo-2026",
+      "title": "第十三届乌镇戏剧节七大单元｜2026历史活动介绍",
+      "category": "festivals",
+      "subtopics": [
+        "festival"
+      ],
+      "topics": [
+        "乌镇戏剧节",
+        "特邀剧目",
+        "青年竞演",
+        "古镇嘉年华",
+        "小镇对话",
+        "戏梦粮仓",
+        "起跑戏剧"
+      ],
+      "organization": "乌镇戏剧节（微博账号）",
+      "url": "https://weibo.com/2/detail/5352120674160540",
+      "summary": "乌镇戏剧节账号对2026届七个单元的介绍，可用于了解剧节结构和活动类型。原帖明确该届排期2026年10月15日至25日，核验时已结束；不表示单场演出、现有预约、余票或新届安排。发帖日期仅显示月日，因此留空。",
+      "theatreEvidence": "原帖列举特邀剧目、青年竞演、古镇嘉年华、戏梦粮仓、小镇对话、戏剧集市、起跑戏剧七个专业节展单元并给出2026届排期。",
+      "sourceTier": "official",
+      "sourceKind": "announcement",
+      "publishedAt": null,
+      "applicableYear": "2026",
+      "sourceRefs": [
+        {
+          "title": "乌镇戏剧节：七大单元与活动安排",
+          "url": "https://weibo.com/2/detail/5352120674160540",
+          "locator": "原页账号、10-9月日及七单元正文；文末2026.10.15—10.25。"
+        },
+        {
+          "title": "乌镇戏剧节微博主页",
+          "url": "https://weibo.com/wuzhenfestival",
+          "locator": "Jina非空账号主页头部官方微博标识，仅用于发布主体交叉核验。"
+        },
+        {
+          "title": "中国旅游报：乌镇戏剧节演艺在街头",
+          "url": "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html",
+          "locator": "正文首段第十三届开幕及浙江嘉兴乌镇地点，支持本届地域信息。"
+        }
+      ]
+    },
+    {
+      "verifiedAt": "2026-10-30",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "status": "verified",
+      "contentRegion": "mainland",
+      "id": "dm-resource-kuaishou-opera-starlight-2024",
+      "title": "非遗戏曲星光夜｜2024快手戏曲直播活动报道",
+      "category": "events",
+      "subtopics": [
+        "event-opera-dance"
+      ],
+      "topics": [
+        "非遗戏曲星光夜",
+        "京剧",
+        "豫剧",
+        "秦腔",
+        "快手艺术",
+        "央视文艺",
+        "戏曲直播"
+      ],
+      "organization": "中国网娱乐（快手科技投资者关系网站转载）",
+      "url": "https://ir.kuaishou.com/zh-hans/news-releases/news-release-details-130",
+      "summary": "快手科技原站转载的2024年戏曲直播活动报道，说明快手艺术与央视文艺围绕京剧、豫剧、秦腔等开展连麦演出。仅为历史活动资料，不是直播回放或当前票务；平台生态统计属于原报道口径，本站未独立验证。",
+      "theatreEvidence": "原站2024-11-25转载页正文明确非遗戏曲星光夜、戏曲创作者连麦演出及京剧、豫剧、秦腔等剧种，属于具体中国戏曲线上演出活动。",
+      "sourceTier": "professional-media",
+      "sourceKind": "professional-media",
+      "publishedAt": "2024-11-25",
+      "applicableYear": "2024",
+      "sourceRefs": [
+        {
+          "title": "快手科技转载：中国网娱乐非遗戏曲星光夜报道",
+          "url": "https://ir.kuaishou.com/zh-hans/news-releases/news-release-details-130",
+          "locator": "2024.11.25日期；来源行中国网娱乐；正文11月21日直播活动与三类戏曲剧种。该页为转载，不按快手原创新闻处理。"
+        }
+      ]
+    },
+    {
+      "verifiedAt": "2026-10-30",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "status": "verified",
+      "contentRegion": "mainland",
+      "id": "dm-resource-tsinghua-philosophy-drama-close-2024",
+      "title": "清华第二届哲学-戏剧节闭幕｜2024历史回顾",
+      "category": "festivals",
+      "subtopics": [
+        "festival",
+        "festival-forum"
+      ],
+      "topics": [
+        "清华哲学戏剧节",
+        "校园戏剧",
+        "哲学戏剧",
+        "风的雾月玫瑰日",
+        "创作者对谈",
+        "2024"
+      ],
+      "organization": "清华大学新闻网（转载光明日报客户端／卢璐）",
+      "url": "https://www.tsinghua.edu.cn/info/1182/116238.htm",
+      "summary": "清华大学新闻网转载的第二届哲学-戏剧节闭幕报道，回顾邀请剧目、校园原创、创作者对谈和京沪高校联动。原文明确该届已闭幕。本条是受阻入校微信候选的相关主办院校资料，不是原微信全文，也不能说明当前进校、购票或预约办法。",
+      "theatreEvidence": "清华新闻网2024-12-25报道明确第二届哲学戏剧节在京闭幕、原创哲学戏剧展演及创作者对谈，具体关联校园戏剧作品和活动。",
+      "sourceTier": "professional-media",
+      "sourceKind": "professional-media",
+      "publishedAt": "2024-12-25",
+      "applicableYear": "2024",
+      "sourceRefs": [
+        {
+          "title": "清华大学：第二届哲学-戏剧节圆满闭幕",
+          "url": "https://www.tsinghua.edu.cn/info/1182/116238.htm",
+          "locator": "来源栏光明日报客户端／卢璐；首段在京闭幕；正文邀请及校园剧目与创作者对谈；页尾2024-12-25。此页并非入校攻略。"
+        }
+      ]
+    },
+    {
+      "verifiedAt": "2026-10-30",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "status": "verified",
+      "contentRegion": "mainland",
+      "id": "dm-resource-lmtw-hongguo-ai-plan-20261019",
+      "title": "红果AI短剧创作计划｜流媒体网DataEye报道",
+      "category": "ai-screen",
+      "subtopics": [
+        "ai-short-drama",
+        "ai-industry"
+      ],
+      "topics": [
+        "AI短剧",
+        "红果短剧",
+        "DataEye",
+        "创作计划",
+        "IP创作",
+        "2026"
+      ],
+      "organization": "流媒体网／DataEye研究院・DataEye短剧观察",
+      "url": "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1",
+      "summary": "流媒体网于2026年10月19日刊载DataEye署名的红果AI短剧创作计划报道，介绍创作赛道与平台协作。本文是行业媒体报道，不是活动完整规则；资格、IP授权、奖励和截止状态须回到平台最新公告确认。仅存书目信息与自写简要说明。",
+      "aiEvidence": "媒体正文明确AI短剧作品征集、创作者身份、IP库与即梦等AI创作生态的活动关系，属于AI影视行业资料而非普通真人短剧宣传。",
+      "aiInvolvement": "reference",
+      "sourceTier": "professional-media",
+      "sourceKind": "professional-media",
+      "publishedAt": "2026-10-19",
+      "applicableYear": "2026–2027",
+      "sourceRefs": [
+        {
+          "title": "流媒体网：红果AI短剧创作计划报道",
+          "url": "https://lmtw.com/mzw/content/detail/id/259157/keyword_id/-1",
+          "locator": "标题、DataEye研究院/DataEye短剧观察署名与2026-10-19日期；正文AI创作赛道。页脚北京创世路信息技术有限公司及京ICP备案证明网站发布机构地域。"
+        },
+        {
+          "title": "红果短剧app平台公告",
+          "url": "https://weibo.com/2/detail/5354406397875235",
+          "locator": "仅交叉核对AI短剧创作计划及APP投稿路径；不以媒体转载代替最新官方完整规则。"
+        }
+      ]
+    },
+    {
+      "verifiedAt": "2026-10-30",
+      "access": "public",
+      "rights": "metadata-only",
+      "recordType": "resource",
+      "status": "verified",
+      "contentRegion": "mainland",
+      "id": "dm-resource-bjd-tsinghua-philosophy-drama-20241116",
+      "title": "清华第二届哲学-戏剧节启动｜北京日报2024报道",
+      "category": "festivals",
+      "subtopics": [
+        "festival",
+        "festival-forum"
+      ],
+      "topics": [
+        "清华哲学戏剧节",
+        "校园戏剧",
+        "等待戈多",
+        "威廉与我",
+        "象棋的故事",
+        "2024"
+      ],
+      "organization": "北京日报客户端／记者何蕊",
+      "url": "https://xinwen.bjd.com.cn/content/s673823aee4b0e1ace8a86f31.html",
+      "summary": "北京日报2024年11月16日关于清华第二届哲学-戏剧节的报道，介绍邀请剧目、校园创作及讲座工作坊。仅供历史节展研究。文中入校微信原链接当前受验证码限制，本条不提供或推断2026年的进校、预约及票务要求。",
+      "theatreEvidence": "媒体原文具体列出第二届清华哲学戏剧节、演出空间、导演及剧目、哲学讲座和工作坊，明确是校园戏剧专业活动而非普通校园新闻。",
+      "sourceTier": "professional-media",
+      "sourceKind": "professional-media",
+      "publishedAt": "2024-11-16",
+      "applicableYear": "2024",
+      "sourceRefs": [
+        {
+          "title": "北京日报：清华第二届哲学-戏剧节启动",
+          "url": "https://xinwen.bjd.com.cn/content/s673823aee4b0e1ace8a86f31.html",
+          "locator": "原页标题、记者何蕊、2024-11-16日期；正文前4段邀请与校园剧目、活动；文末列入校微信，但原微信正文未读取。"
+        },
+        {
+          "title": "清华大学：该届戏剧节已闭幕",
+          "url": "https://www.tsinghua.edu.cn/info/1182/116238.htm",
+          "locator": "首段在京闭幕及页尾2024-12-25，用于确认活动为历史届次，不以2024办法推定当前状态。"
+        }
+      ]
+    }
+  ],
+  "historicalReviewCounts": {
+    "candidates": 8,
+    "originalBodiesReadable": 7,
+    "originalBlocked": 1,
+    "admittedResources": 8
+  },
+  "policyAsOf": "2026-10-31：旧审核统计仅作历史；已删除禁收内容。剩余元数据不自动成为正式知识或完整视频，当前准入以publication审核为准。",
+  "retainedResourceRecords": 7,
+  "retainedCandidates": 7
+}

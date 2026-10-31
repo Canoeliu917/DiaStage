@@ -14,7 +14,11 @@ if (!process.env.CAMERA_PANEL_TEST) {
   })
 } else {
   const { mock } = await import('bun:test')
-  mock.module('@/lib/beta-capabilities', () => ({ BETA_EXPERT_MEDIA_ENABLED: true }))
+  const capabilities = await import('@/lib/beta-capabilities')
+  mock.module('@/lib/beta-capabilities', () => ({
+    ...capabilities,
+    BETA_EXPERT_MEDIA_ENABLED: true,
+  }))
   const React = await import('react')
   const core = await import('@pascal-app/core')
   const editor = await import('@pascal-app/editor')
@@ -59,7 +63,12 @@ if (!process.env.CAMERA_PANEL_TEST) {
   }))
   const { CameraPanel } = await import('./panel')
   const { CameraRehearsalPanel } = await import('../camera-rehearsal-panel')
-  const { EditorViewerToolbarLeft, StudioPicturePanel } = await import('../viewer-toolbar')
+  const {
+    EditorViewerToolbarLeft,
+    EditorViewerToolbarRight,
+    openPropSettings,
+    StudioPicturePanel,
+  } = await import('../viewer-toolbar')
   const { getCameraDirectorState } = await import('../../lib/camera-director')
   const { validateCameraProject } = await import('./model')
 
@@ -293,6 +302,13 @@ if (!process.env.CAMERA_PANEL_TEST) {
   const walls = input(toolbar, '景片显示')
   walls.onChange({ target: { value: 'translucent', valueAsNumber: Number.NaN } })
   assert.equal(viewerStore.getState().wallMode, 'translucent')
+  const more = toolbar.find((entry) => entry.props?.className === 'stage-more-tools')
+  assert.equal(more?.type, 'details')
+  assert.equal(more?.props?.open, undefined, 'secondary tools are collapsed initially')
+  assert.ok(elements(more).some((entry) => entry.props?.children === '操作帮助'))
+  const view = input(elements(EditorViewerToolbarRight()), '舞台视图')
+  view.onChange({ target: { value: '2d', valueAsNumber: Number.NaN } })
+  assert.equal(editorStore.getState().viewMode, '2d')
   const picture = elements(StudioPicturePanel())
   assert.ok(picture.some((entry) => entry.type === 'h2' && entry.props?.children === '显示'))
   assert.ok(!JSON.stringify(picture).includes('光影'))
@@ -300,4 +316,28 @@ if (!process.env.CAMERA_PANEL_TEST) {
     picture.some((entry) => entry.props?.['aria-label'] === '楼层显示'),
     false,
   )
+
+  class Details {
+    open = false
+    constructor(public parentElement: Details | null) {}
+  }
+  const advanced = new Details(null)
+  const dimensions = new Details(advanced)
+  let focused = false
+  const section = {
+    parentElement: dimensions,
+    scrollIntoView: () => assert.ok(advanced.open && dimensions.open),
+    querySelector: () => ({
+      focus: () => {
+        focused = true
+      },
+    }),
+  }
+  Object.defineProperty(globalThis, 'HTMLDetailsElement', { value: Details, configurable: true })
+  Object.defineProperty(globalThis, 'document', {
+    value: { querySelector: () => section },
+    configurable: true,
+  })
+  openPropSettings('[data-stage-dimensions]')
+  assert.ok(focused, 'opening scale settings unfolds all enclosing advanced sections before focus')
 }

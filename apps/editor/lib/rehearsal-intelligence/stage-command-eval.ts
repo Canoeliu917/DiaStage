@@ -46,7 +46,7 @@ const view = (
   clarificationRequired: false,
 })
 export const STAGE_COMMAND_NORMAL_CASES: EvalCase[] = [
-  build('添加单帘景片', 'SCN-FLAT-090'),
+  build('添加二帘组合', 'SCN-FOLD-02'),
   build('添加窗景片', 'SCN-WIN-130'),
   build('添加落地窗', 'SCN-WIN-160'),
   build('添加单门', 'SCN-DOOR-130'),

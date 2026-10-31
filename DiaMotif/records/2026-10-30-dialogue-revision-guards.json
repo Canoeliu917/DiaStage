@@ -1,0 +1,147 @@
+{
+  "id": "DM-20261030-DIALOGUE-REVISION-GUARDS",
+  "recordedAt": "2026-10-30",
+  "source": "synthetic_case",
+  "recordType": "implementation-checkpoint",
+  "scope": "桌面 DIA 置景对话的取消、修订、附加限制、方向与回复一致性；不扩展暂缓功能。",
+  "utterance": null,
+  "contextSummary": "由代理汇总的实现审计与内部离线测试检查点（agent implementation audit），使用现规范的 synthetic_case 来源标记，不表示人工验收。旧真实开发题 R02、R03 曾将方向纠正或附加要求误判为取消；原结果保持不变。本记录不是新增模型输出或用户通过验收。",
+  "expected": [
+    "纠正方向、追加约束与明确取消分开；取消仅撤下未采用方案，不删除正式场景。",
+    "靠墙、整组移动、保留通道和固定物件条件在结构化转换及执行前继续受检。",
+    "舞台坐标中演员台左为 -X；显式观众视角正确转换。",
+    "反馈保存、提案安装或对应动作成功后才追加成功回复；失败保留原预览。",
+    "异步操作完成后检查请求、场景及提案是否仍有效；已采用提案保留为后续修订来源。",
+    "真实模型、执行几何、浏览器闭环与用户认可分别验收。"
+  ],
+  "observed": {
+    "runtimeChanges": [
+      "取消增加意图门禁，防止模型把修订指令错误转换为取消。",
+      "执行校验保留靠墙、整组和通道条件，固定台左规则改用演员台左的 -X。",
+      "模型回复后置；构建或取消反馈失败不残留成功回复，不撤下原预览。",
+      "取消反馈落库后再复核请求、场景、提案和预览状态，防止等待期间覆盖新状态。",
+      "视图操作使用中性回复，不宣称保存或采用；已采用来源与待采用方案继续分开保留。"
+    ],
+    "realModelResult": null,
+    "browserEndToEndResult": null,
+    "userAcceptanceResult": null,
+    "productionDeployed": false
+  },
+  "errorType": [
+    "intent-boundary",
+    "modifier-loss",
+    "direction-mapping",
+    "reply-execution-mismatch",
+    "async-state-race"
+  ],
+  "versions": {
+    "branch": "codex/path9-desktop-ui",
+    "baseCommit": "64562469cba167a33a0ebd94449e6ddc42011d49",
+    "checkpointCommit": null,
+    "ruleOrPromptVersion": "diamotif-dialogue-v4",
+    "provider": null,
+    "model": null,
+    "note": "记录创建于提交前的工作树；提交后以本文件所属 Git 提交定位源码。本轮未调用真实供应商，不沿用旧模型结果冒充当前版本结果。"
+  },
+  "verification": {
+    "evidenceOrigin": "同一任务内各负责代理完成的离线测试与类型检查；本检查点汇总结果，不表示全部测试由记录者重新执行。",
+    "offline": [
+      {
+        "scope": "dialogue server isolated child process",
+        "paths": ["apps/editor/lib/rehearsal-intelligence/dialogue-server.test.ts"],
+        "passed": 29,
+        "failed": 0,
+        "note": "结构化供应商被 mock；父包装测试通过，不再与子测试重复计数。"
+      },
+      {
+        "scope": "dialogue controller",
+        "paths": ["apps/editor/lib/rehearsal-intelligence/dialogue-controller.test.ts"],
+        "passed": 15,
+        "failed": 0,
+        "assertions": 119,
+        "newCases": 5,
+        "note": "含无效方案、提案反馈失败、直接及模型取消反馈失败、异步取消遇新提案；失败不得写入成功回复或清除原预览。"
+      },
+      {
+        "scope": "fixed actor-stage-left regressions",
+        "passed": 256,
+        "failed": 0,
+        "assertions": 630,
+        "fileCount": 2,
+        "note": "固定台左及相关置景回归两文件；与其他组分别报告。"
+      },
+      {
+        "scope": "open-language full integration, isolated file",
+        "paths": ["apps/editor/lib/rehearsal-intelligence/open-language-integration.test.ts"],
+        "passed": 7,
+        "failed": 0,
+        "assertions": 288,
+        "note": "离线交互与几何集，不是浏览器或真实模型验收。"
+      }
+    ],
+    "typeScript": "编辑器类型检查通过。",
+    "biome": "检查通过；open-language.ts 保留一条既存 optional-chain 警告。",
+    "countsAreNotAggregated": true,
+    "contrastCorpus": {
+      "path": "DiaMotif/evals/dialogue-revision-contrasts-20261030.jsonl",
+      "cases": 12,
+      "split": "development",
+      "source": "synthetic_case",
+      "groups": ["cancel-vs-modify", "direction-correction"],
+      "coveragePerGroup": "2 正例、2 反例、1 变式、1 歧义例",
+      "verified": ["JSON 解析", "唯一 ID", "必需字段", "分组覆盖"],
+      "realModelExecuted": false,
+      "browserExecuted": false,
+      "liveRunnerSetupIntegrated": false,
+      "oldThirtyCasesChanged": false,
+      "oldThirtyCaseSha256": "FD2F9D5356DE630A8FD45259DFF042945C46AD59501CAA4DC44C55DF970FC4FF",
+      "note": "题库的前置对话为合成规范，运行时必须通过实际控制器事件生成前置状态；不是未见留出题。"
+    },
+    "realProvider": {
+      "attemptsThisCheckpoint": 0,
+      "status": "not-run",
+      "relatedPriorCases": ["DM-LIVE-R02", "DM-LIVE-R03"],
+      "priorRecord": "DiaMotif/records/2026-10-29-live-model-final-development.json",
+      "note": "旧失败保持原样；离线修复通过不能改记旧题为通过。"
+    },
+    "browser": {
+      "fixturePrepared": true,
+      "fixture": {"widthMeters": 12, "depthMeters": 8, "independentScene": true},
+      "status": "pending",
+      "aiRequestsSent": 0,
+      "adoptionsPerformed": 0,
+      "undoPerformed": 0,
+      "approvedSequence": ["生成", "修订", "预览", "采用", "撤销", "重做", "保存", "重开"],
+      "checks": ["物件身份", "数量", "位置", "附加限制", "回复与实际状态一致", "采用后继续修订"],
+      "undoBoundary": "用户同意同页先撤销、重做，再保存、重开；刷新或重开后不要求保留 undo 历史。",
+      "privateSceneIdPublished": false
+    },
+    "userAcceptance": "pending",
+    "productionDeployment": "not-performed"
+  },
+  "resume": [
+    "先核对分支与未提交修改，读取最新检查点，不覆盖其他电脑已有工作。",
+    "按用户最新优先级整理仅针对戏剧表演的检索平台内容目录与官方视频入口：剧目、剧场、与戏剧强关联的演员及音乐剧演员，学校／社团／老师的课堂资料展示，艺考机构标识与推广，剧目宣传及演员招募；不做影视流量或娱乐新闻。首页尚未修改。",
+    "回到独立测试场景完成已获同意的同页生成、修订、预览、采用、撤销、重做、保存、重开闭环；换电脑先检查环境和登录。",
+    "按实际状态机建立对照题前置状态，复测误取消、靠墙、整组、通道与采用后修订，分别记录真实模型、浏览器和人工结果。",
+    "保留照片自动摆位、剧本置景和发布前待办；本轮没有正式部署。"
+  ],
+  "researchAutomation": {
+    "name": "diamotif",
+    "kind": "Codex heartbeat",
+    "timezone": "Asia/Shanghai",
+    "localTime": "07:21",
+    "frequency": "daily",
+    "maximumCandidateSourcesPerRun": 5,
+    "websiteCrawler": false,
+    "automaticallyWritesFormalKnowledgeBase": false,
+    "note": "当前 Codex 对话的定时跟进，仅整理候选来源；来源、许可及适用性核实后才决定正式收录。"
+  },
+  "publication": {
+    "sanitized": true,
+    "scope": "实现、测试分组、合成题库与接续状态",
+    "excluded": ["账号", "邮箱", "密钥", "私有文件路径", "原场景 ID", "私有剧本正文", "私有照片"]
+  },
+  "trainingEligibility": "not_reviewed",
+  "releaseVerdict": "仅所列离线验证通过；新版本真模型、浏览器闭环和用户验收仍待完成，不宣称全量通过、模型已经掌握或达到 ≥9。"
+}

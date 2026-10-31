@@ -90,6 +90,48 @@ test('simple commands, clarification, and unsupported domains stay offline', asy
   expect(forbidden.questions[0]?.message).toContain('暂未开放灯光')
 })
 
+test('production mode sends recognized commands, view requests, and unknown inputs to the model', async () => {
+  const inputs = ['添加圆桌', '圆桌往台前移动30厘米', '添加桌子', '从观众席看', '添加舞台灯光']
+  const received: PlanRequest[] = []
+  const model: ModelPlanner = async (input) => {
+    received.push(input)
+    return {
+      ...sample(),
+      items: [],
+      questions: [{ id: 'model-question', message: `模型答复：${input.input}`, options: [] }],
+    }
+  }
+  const priorAnswers = [{ questionId: 'side', answer: '观众右侧' }]
+  for (const input of inputs) {
+    const result = await planStageRequest({ ...request, input, priorAnswers }, signal(), model, {
+      forceModel: true,
+    })
+    expect(result.items).toEqual([])
+    expect(result.questions).toEqual([
+      { id: 'model-question', message: `模型答复：${input}`, options: [] },
+    ])
+  }
+  expect(received).toEqual(inputs.map((input) => ({ ...request, input, priorAnswers })))
+  expect(context.objects[0]!.transform.position).toEqual({ x: 0, y: 0, z: 3 })
+})
+
+test('production mode does not replace model failures with local command results', async () => {
+  let calls = 0
+  const providerError = new Error('provider unavailable')
+  await expect(
+    planStageRequest(
+      { ...request, input: '添加圆桌' },
+      signal(),
+      async () => {
+        calls++
+        throw providerError
+      },
+      { forceModel: true },
+    ),
+  ).rejects.toBe(providerError)
+  expect(calls).toBe(1)
+})
+
 test('SDK strict schema rejects unknown fields and is serializable', () => {
   const format = zodTextFormat(StageModelPlanSchema, 'stage_plan')
   expect(format.strict).toBe(true)
@@ -186,12 +228,78 @@ test('model plans receive deterministic relation, bounds, collision, and referen
   ).toBe(true)
   const reference = sample()
   reference.items[0]!.existingNodeId = 'missing'
-  expect(
-    (await planStageRequest(request, signal(), async () => reference)).warnings.some(
-      (warning) => warning.code === 'missing-reference',
-    ),
-  ).toBe(true)
+  await expect(planStageRequest(request, signal(), async () => reference)).rejects.toMatchObject({
+    code: 'PLAN_INVALID',
+  })
   expect(context.objects[0]!.transform.position).toEqual({ x: 0, y: 0, z: 3 })
+})
+
+test('model revisions preserve existing identity and native size instead of scaling or replacing', async () => {
+  for (const change of [
+    (item: StagePlan['items'][number]) => {
+      item.dimensionsMeters.width *= 2
+    },
+    (item: StagePlan['items'][number]) => {
+      item.kind = 'chair'
+    },
+    (item: StagePlan['items'][number]) => {
+      item.stepCount = 2
+    },
+    (item: StagePlan['items'][number]) => {
+      item.libraryAssetId = 'SCN-CHAIR-045'
+    },
+  ]) {
+    const output = sample()
+    change(output.items[0]!)
+    await expect(
+      planStageRequest(request, signal(), async () => output, { forceModel: true }),
+    ).rejects.toMatchObject({ code: 'PLAN_INVALID' })
+  }
+})
+
+test('a valid model move keeps current collision geometry and permits rotation', async () => {
+  const collisionGeometry = [
+    {
+      vertices: [
+        [-0.45, 0, -0.45],
+        [0.45, 0, -0.45],
+        [0.45, 0, 0.45],
+        [-0.45, 0, 0.45],
+        [-0.45, 0.75, -0.45],
+        [0.45, 0.75, -0.45],
+        [0.45, 0.75, 0.45],
+        [-0.45, 0.75, 0.45],
+      ] as [number, number, number][],
+      faces: [
+        [0, 3, 2, 1],
+        [4, 5, 6, 7],
+        [0, 1, 5, 4],
+        [1, 2, 6, 5],
+        [2, 3, 7, 6],
+        [3, 0, 4, 7],
+      ],
+    },
+  ]
+  const current = structuredClone(context)
+  current.objects[0]!.collisionGeometry = collisionGeometry
+  const output = sample()
+  output.items[0]!.transform.rotationDegrees.y = 45
+  const result = await planStageRequest(
+    { ...request, sceneContext: current },
+    signal(),
+    async () => output,
+    { forceModel: true },
+  )
+  expect(result.items[0]).toMatchObject({
+    existingNodeId: 'existing-table',
+    dimensionsMeters: current.objects[0]!.dimensionsMeters,
+    collisionGeometry,
+    transform: {
+      position: { x: 0, y: 0, z: 4 },
+      rotationDegrees: { x: 0, y: 45, z: 0 },
+    },
+  })
+  expect(current.objects[0]!.transform.position).toEqual({ x: 0, y: 0, z: 3 })
 })
 
 test('cancelled model output never returns a usable plan', async () => {

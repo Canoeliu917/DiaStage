@@ -161,7 +161,7 @@ export const KnowledgeExtractionReportSchema = z.strictObject({
 
 export const DiaKnowledgeCatalogSchema = z.strictObject({
   version: id,
-  sources: z.array(KnowledgeSourceSchema).length(6),
+  sources: z.array(KnowledgeSourceSchema).min(6),
   concepts: z.array(DiaKnowledgeConceptSchema).min(80).max(150),
   sceneExamples: z.array(DiaSceneExampleSchema),
   extraction: KnowledgeExtractionReportSchema,

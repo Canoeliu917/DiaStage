@@ -8,7 +8,6 @@ import {
   subscribeSceneCommits,
   useScene,
 } from '@pascal-app/core'
-import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { Group } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
@@ -39,10 +38,7 @@ async function setup(assetIds: string[]) {
     }
   const ids: string[] = []
   for (const [index, assetId] of assetIds.entries()) {
-    const source =
-      assetId === 'SCN-FLAT-090'
-        ? { asset: CATALOG_ITEMS.find((asset) => asset.id === assetId)!, kind: 'scenic-flat' }
-        : AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
+    const source = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
     const node = ItemNode.parse({
       parentId: level.id,
       asset: source.asset,
@@ -76,9 +72,9 @@ async function setup(assetIds: string[]) {
 }
 
 for (const [name, assets, phrase] of [
-  ['corner', ['SCN-FLAT-090', 'SCN-FLAT-090'], '两块景片拐90度'],
+  ['corner', ['SCN-WIN-130', 'SCN-WIN-130'], '两块景片拐90度'],
   ['multi-hinge', ['SCN-FOLD-03'], '三联景片折成U型'],
-  ['partial-enclosure', ['SCN-FLAT-090', 'SCN-FLAT-090'], '用两个景片围一个空间，中间留个入口。'],
+  ['partial-enclosure', ['SCN-WIN-130', 'SCN-WIN-130'], '用两个景片围一个空间，中间留个入口。'],
 ] as const)
   test(`Runtime: ${name} candidate switch, Cancel, one Accept transaction, Undo/Redo`, async () => {
     const ids = await setup([...assets])
@@ -183,8 +179,8 @@ for (const [name, assets, phrase] of [
     }
   }, 120000)
 
-test('Runtime: actual three-flat GLBs produce enclosure and aperture', async () => {
-  const ids = await setup(['SCN-FLAT-090', 'SCN-FLAT-090', 'SCN-FLAT-090'])
+test('Runtime: actual three-window GLBs produce enclosure and aperture', async () => {
+  const ids = await setup(['SCN-WIN-130', 'SCN-WIN-130', 'SCN-WIN-130'])
   try {
     const snapshot = currentStageContext([])
     const proposal = groundLanguage('三块景片围一个空间，中间留一个入口', snapshot)!.placement!

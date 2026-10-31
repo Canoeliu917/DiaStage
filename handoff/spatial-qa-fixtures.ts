@@ -48,9 +48,9 @@ for (const scenario of ['enclosure', 'opening', 'path', 'path-model', 'corner', 
     node.asset = { ...node.asset, ...computeItemFoldBounds(model.scene, node.scale)! }
   }
   else {
-    add('SCN-FLAT-090', '景片甲', [0, 0, 0])
-    add('SCN-FLAT-090', '景片乙', [-2, 0, 0])
-    if (!['corner', 'blocked'].includes(scenario)) add('SCN-FLAT-090', '景片丙', [2, 0, 0])
+    add('SCN-WIN-130', '景片甲', [0, 0, 0])
+    add('SCN-WIN-130', '景片乙', [-2, 0, 0])
+    if (!['corner', 'blocked'].includes(scenario)) add('SCN-WIN-130', '景片丙', [2, 0, 0])
     if (scenario === 'blocked') add('SCN-CUBE-045', '阻挡物', [0, 0, 0.6], [14, 3, 2])
   }
   fixtures.push({ scenario, graph })

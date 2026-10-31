@@ -1,0 +1,255 @@
+{
+  "date": "2026-10-31",
+  "publicTotal": 62,
+  "publicCategories": {
+    "scripts": 0,
+    "knowledge": 9,
+    "videos": 0,
+    "ai-screen": 7,
+    "people": 3,
+    "venues": 4,
+    "events": 5,
+    "admissions": 8,
+    "opportunities": 4,
+    "arts-exams": 8,
+    "festivals": 14
+  },
+  "topicCount": 63,
+  "heldConcepts": 140,
+  "pending": [
+    {
+      "id": "dm-resource-folger-plays",
+      "category": "scripts",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-dracor-corpora",
+      "category": "scripts",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-gutenberg-dolls-house",
+      "category": "scripts",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-rsc-learning-zone",
+      "category": "knowledge",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-va-theatre-performance",
+      "category": "knowledge",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-folger-teaching",
+      "category": "knowledge",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-rsc-voice",
+      "category": "knowledge",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-rsc-stage-management",
+      "category": "knowledge",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-rsc-making-scenery",
+      "category": "knowledge",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-rsc-making-props",
+      "category": "knowledge",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-cad-stanislavski-2024",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-resource-cad-stanislavski-book",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-resource-folger-hamlet-text",
+      "category": "scripts",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-gutenberg-cherry-orchard-west",
+      "category": "scripts",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-folger-midsummer-text",
+      "category": "scripts",
+      "status": "region-deferred",
+      "reason": "区域外来源继续暂缓，不进入正式检索。"
+    },
+    {
+      "id": "dm-resource-cad-thunderstorm-20260410",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-resource-ncpa-rickshaw-boy-2015",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-resource-smg-sleep-no-more-shanghai",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-resource-smg-phantom-production-cast",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-resource-hkrep-script-publications",
+      "category": "scripts",
+      "status": "awaiting-evidence-review",
+      "reason": "未核完整正文和版本；不进正式搜索"
+    },
+    {
+      "id": "dm-knowledge-cao-yu-writing-talks-2010",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-knowledge-cad-cultural-theatre-symposium-2025",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-knowledge-jiao-juyin-rehearsal-zhao-2013",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-knowledge-lan-tianye-yedian-2015",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-knowledge-zhu-xu-lines-2018",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-knowledge-cad-hkapa-scenography-exchange-2025",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-book-cucp-2388",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-book-cucp-2389",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-book-cucp-3299",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-book-cucp-1866",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-book-cucp-1248",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-resource-yixi-xuang-comedy-speech-2015",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-resource-ncpa-li-bai-production-2012",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-script-peiyuan-voices-640",
+      "category": "scripts",
+      "status": "awaiting-evidence-review",
+      "reason": "未核完整正文和版本；不进正式搜索"
+    },
+    {
+      "id": "dm-script-peiyuan-nine-color-deer-329",
+      "category": "scripts",
+      "status": "awaiting-evidence-review",
+      "reason": "未核完整正文和版本；不进正式搜索"
+    },
+    {
+      "id": "dm-script-peiyuan-embroidered-robe-1096",
+      "category": "scripts",
+      "status": "awaiting-evidence-review",
+      "reason": "未核完整正文和版本；不进正式搜索"
+    },
+    {
+      "id": "dm-knowledge-ncpa-yip-love-20220225",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    },
+    {
+      "id": "dm-knowledge-ncpa-yu-jiake-20210630",
+      "category": "knowledge",
+      "status": "awaiting-evidence-review",
+      "reason": "待按机构/院校/文献原文逐条复审；不进正式搜索"
+    }
+  ],
+  "policy": "内部概念与历史来源档案保留供复审，不等于正式知识；字段缺失不推断为虚假。事实或定义冲突先通报，确认前不发布。",
+  "pendingRegional": 25,
+  "pendingForeign": 13,
+  "removedResourceRecords": 17,
+  "removedPreviouslyRegional": 13,
+  "removedCandidateRecords": 2
+}

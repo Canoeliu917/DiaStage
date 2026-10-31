@@ -90,7 +90,7 @@ if (process.env.DIASTAGE_STRUCTURED_TEST_CHILD !== '1') {
   const script = {
     ...stage,
     source: 'script',
-    items: [{ ...stage.items[0], evidenceIds: ['p1:0'] }],
+    items: [{ ...stage.items[0], libraryAssetId: 'SCN-TABLE-090', evidenceIds: ['p1:0'] }],
     evidence: [
       { id: 'p1:0', page: 1, paragraph: 1, excerpt: '舞台中央摆着圆桌', certainty: 'stated' },
     ],
@@ -259,8 +259,48 @@ if (process.env.DIASTAGE_STRUCTURED_TEST_CHILD !== '1') {
       )
     } else expect(body).not.toHaveProperty('vl_high_resolution_images')
     if (name === 'script_stage_plan') {
-      expect(JSON.parse(body.messages[1]!.content as string).note).toBe('圆桌台右留出通道')
+      const payload = JSON.parse(body.messages[1]!.content as string)
+      expect(payload.note).toBe('圆桌台右留出通道')
+      expect(payload.coordinateFrame).toEqual({
+        units: 'meters',
+        origin: 'proscenium-center-at-floor',
+        xPositive: 'performer-right-facing-audience',
+        zPositive: 'upstage',
+        bounds: { x: [-4, 4], y: [0, 4], z: [0, 6] },
+      })
+      expect(payload.availableSceneryLibrary).toHaveLength(21)
+      expect(
+        payload.availableSceneryLibrary.find(
+          (item: { libraryAssetId: string }) => item.libraryAssetId === 'SCN-SOFA-175',
+        ),
+      ).toMatchObject({
+        nativeBoundsCenterMeters: [0, 0.425, 0],
+        localCollisionBoundsMeters: { x: [-0.875, 0.875], y: [0, 0.85], z: [-0.4, 0.4] },
+        groundedPositionY: 0,
+      })
       expect(JSON.stringify(schema)).not.toContain('collisionGeometry')
+      expect(schema).toMatchObject({
+        properties: {
+          items: {
+            items: {
+              properties: {
+                libraryAssetId: { enum: expect.arrayContaining(['SCN-TABLE-090']) },
+                transform: {
+                  properties: {
+                    rotationDegrees: {
+                      properties: {
+                        x: { const: 0 },
+                        y: { minimum: -180, maximum: 180 },
+                        z: { const: 0 },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      })
     }
     const inputTokens = name === 'photo_stage_plan' ? 19384 : 3000
     return Response.json({
@@ -334,6 +374,7 @@ if (process.env.DIASTAGE_STRUCTURED_TEST_CHILD !== '1') {
     requests.length = 0
     missingUsage = false
     openAiRequests = 0
+    replies.script_stage_plan = script
     process.env.DIASTAGE_AI_PROVIDER = 'aliyun'
     process.env.DIASTAGE_USD_CNY_REFERENCE = 'not-used-for-CNY-models'
     process.env.DASHSCOPE_API_KEY = 'synthetic-offline-key'
@@ -456,6 +497,53 @@ if (process.env.DIASTAGE_STRUCTURED_TEST_CHILD !== '1') {
     })
     expect(requests).toHaveLength(0)
     expect((await ledger.summary()).calls).toBe(0)
+  })
+
+  test('script production responses use local native geometry despite rounded dimensions and renamed labels', async () => {
+    const response = structuredClone(script)
+    response.items[0]!.displayName = '圆桌（中间）'
+    response.items[0]!.kind = 'table'
+    response.items[0]!.dimensionsMeters.width = 0.9001
+    replies.script_stage_plan = response
+    const before = structuredClone(sceneContext)
+    const plan = await run(() =>
+      planFromPassages([{ id: 'p1', page: 1, paragraph: 1, text: '舞台中央摆着圆桌' }], signal(), {
+        sceneContext,
+        note: '圆桌台右留出通道',
+      }),
+    )
+    expect(requests).toHaveLength(1)
+    expect(plan.items[0]).toMatchObject({
+      displayName: '圆桌',
+      kind: 'round-table',
+      dimensionsMeters: { width: 0.9, height: 0.75, depth: 0.9 },
+      collisionGeometry: expect.any(Array),
+    })
+    expect(plan.assumptions.some(({ message }) => message.includes('不代表剧本中的实测尺寸'))).toBe(
+      true,
+    )
+    expect(sceneContext).toEqual(before)
+  })
+
+  test('script production rejects a side-flipped model response instead of clamping the rotation', async () => {
+    const response = structuredClone(script)
+    response.items[0]!.transform.rotationDegrees.z = 90
+    replies.script_stage_plan = response
+    const before = structuredClone(sceneContext)
+    await expect(
+      run(() =>
+        planFromPassages(
+          [{ id: 'p1', page: 1, paragraph: 1, text: '舞台中央摆着圆桌' }],
+          signal(),
+          {
+            sceneContext,
+            note: '圆桌台右留出通道',
+          },
+        ),
+      ),
+    ).rejects.toThrow('invalid structured output')
+    expect(requests).toHaveLength(1)
+    expect(sceneContext).toEqual(before)
   })
 
   test('missing usage fails closed and retains the reserved cost without logging input', async () => {

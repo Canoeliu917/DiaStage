@@ -1,11 +1,6 @@
 'use client'
 
-import {
-  parseStageText,
-  type StagePlan,
-  StagePlanSchema,
-  validateStagePlan,
-} from '@pascal-app/core/stage'
+import { type StagePlan, StagePlanSchema, validateStagePlan } from '@pascal-app/core/stage'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
@@ -13,7 +8,6 @@ import { fetchAiWithBudgetConsent } from '@/lib/ai/budget-client'
 import { VOICE_INPUT_ENABLED } from '@/lib/remote-voice/availability'
 import { currentStageContext } from '@/lib/stage/context'
 import { draftContext, mergeDraftPlan } from '@/lib/stage/creation-policy'
-import { groundStageAssets } from '@/lib/stage/ground-assets'
 import {
   confirmedScriptImport,
   type ScriptFile,
@@ -192,24 +186,20 @@ export function ScriptStageInput({
     setError('')
     try {
       const draft = draftContext(context, validateStagePlan(plan, context).plan)
-      const local = parseStageText(revisionText, draft, [], 'voice')
-      let next = local ? groundStageAssets(local) : null
-      if (!next) {
-        const { response } = await fetchAiWithBudgetConsent('/api/stage/plan', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          signal: controller.signal,
-          body: JSON.stringify({
-            input: revisionText,
-            source: 'voice',
-            sceneContext: draft,
-            priorAnswers: [],
-          }),
-        })
-        const json = await response.json()
-        if (!response.ok) throw new Error(json.error?.message ?? '调整方案失败')
-        next = StagePlanSchema.parse(json.plan)
-      }
+      const { response } = await fetchAiWithBudgetConsent('/api/stage/plan', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          input: revisionText,
+          source: 'typed-command',
+          sceneContext: draft,
+          priorAnswers: [],
+        }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error?.message ?? '调整方案失败')
+      const next = StagePlanSchema.parse(json.plan)
       controller.signal.throwIfAborted()
       const reviewed = validateStagePlan(next, draft).plan
       if (reviewed.questions.length)

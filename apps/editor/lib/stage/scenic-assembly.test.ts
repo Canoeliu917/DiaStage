@@ -7,7 +7,6 @@ import {
   type SceneContextSummary,
   stageFootprintGap,
 } from '@pascal-app/core/stage'
-import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { useViewer } from '@pascal-app/viewer'
 import { Box3, BoxGeometry, Group, Mesh, MeshBasicMaterial } from 'three'
@@ -34,7 +33,7 @@ const context = (objects: SceneContextObject[]): SceneContextSummary => ({
   objects,
 })
 beforeAll(async () => {
-  for (const id of ['SCN-FLAT-090', 'SCN-DOOR-130', 'SCN-WIN-130', 'SCN-FOLD-02', 'SCN-FOLD-03']) {
+  for (const id of ['SCN-DOOR-130', 'SCN-WIN-130', 'SCN-FOLD-02', 'SCN-FOLD-03']) {
     const bytes = readFileSync(
       new URL(`../../public/stage-library/models/${id}.glb`, import.meta.url),
     )
@@ -71,13 +70,7 @@ afterEach(() => {
   clearSceneHistory()
 })
 function add(assetId: string): SceneContextObject {
-  const source =
-    assetId === 'SCN-FLAT-090'
-      ? {
-          asset: CATALOG_ITEMS.find((asset) => asset.id === assetId)!,
-          kind: 'scenic-flat' as const,
-        }
-      : AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
+  const source = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
   const level = Object.values(useScene.getState().nodes).find((node) => node.type === 'level')!
   const node = ItemNode.parse({ asset: source.asset, parentId: level.id })
   useScene.getState().createNode(node)
@@ -121,9 +114,9 @@ function connect(moving: SceneContextObject, target: SceneContextObject) {
   return placed
 }
 
-test('A/C: actual flat, door and window GLBs join without a clearance offset', () => {
-  const target = add('SCN-FLAT-090')
-  for (const id of ['SCN-FLAT-090', 'SCN-DOOR-130', 'SCN-WIN-130']) {
+test('A/C: actual door and window GLBs join without a clearance offset', () => {
+  const target = add('SCN-WIN-130')
+  for (const id of ['SCN-DOOR-130', 'SCN-WIN-130']) {
     const moving = add(id)
     const placed = connect(moving, target)
     expect(extent(placed, 0)[0]).toBeCloseTo(extent(target, 0)[1]!, 10)
@@ -131,9 +124,9 @@ test('A/C: actual flat, door and window GLBs join without a clearance offset', (
   }
 })
 
-test('B: a rotated actual flat makes a 90 degree surface junction', () => {
-  const target = add('SCN-FLAT-090'),
-    moving = add('SCN-FLAT-090')
+test('B: a rotated actual window flat makes a 90 degree surface junction', () => {
+  const target = add('SCN-WIN-130'),
+    moving = add('SCN-WIN-130')
   moving.transform.rotationDegrees.y = 90
   const placed = connect(moving, target)
   expect(placed.transform.rotationDegrees).toEqual({ x: 0, y: 90, z: 0 })
@@ -168,28 +161,28 @@ test('E/F/G: independent tri-flat joints invalidate bounds and real snap geometr
   applyItemFoldControls(sceneRegistry.nodes.get(item.id)!, after.controls)
   useViewer.getState().bumpGeometryRevision()
   expect(stageVisibleFootprints(item)).not.toEqual(before)
-  connect(item, add('SCN-FLAT-090'))
+  connect(item, add('SCN-WIN-130'))
 })
 
 test('grounding uses transformed GLB bottom including tilt, with no saved epsilon', () => {
-  const item = add('SCN-FLAT-090')
+  const item = add('SCN-WIN-130')
   item.transform.rotationDegrees = { x: 20, y: 35, z: -10 }
   const result = snapStageObject({ x: 2, y: 5, z: 1 }, item, context([]), options)
   expect(result.position.y).toBe(-stageModelBottom(item)!)
 })
 
 test('edge contact outranks the ordinary grid even when the target is off-grid', () => {
-  const target = add('SCN-FLAT-090'),
-    moving = add('SCN-FLAT-090')
+  const target = add('SCN-WIN-130'),
+    moving = add('SCN-WIN-130')
   target.transform.position.x = -0.17
-  const result = snapStageObject({ x: 0.79, y: 0, z: 0 }, moving, context([target]), {
+  const result = snapStageObject({ x: 1.19, y: 0, z: 0 }, moving, context([target]), {
     grid: 0.5,
     guides: true,
   })
   const placed = { ...moving, transform: { ...moving.transform, position: result.position } }
   expect(result.labels).toContain(`贴合 ${target.name}`)
   expect(gap(placed, target)).toBeLessThan(1e-10)
-  expect(result.position.x).toBeCloseTo(0.73, 6)
+  expect(result.position.x).toBeCloseTo(1.13, 6)
   expect(
     snapStageObject(result.position, moving, context([target]), { grid: 0.5, guides: true })
       .position,
@@ -202,7 +195,7 @@ test('door and window GLBs also connect directly', () => {
 
 test('I: the same collision probe changes after folding, not just the dimension label', () => {
   const item = add('SCN-FOLD-03'),
-    probe = add('SCN-FLAT-090')
+    probe = add('SCN-WIN-130')
   probe.transform.position = { x: 1.6, y: 0, z: 0 }
   // The query probe is hypothetical; keep its rendered obstacle out of the fold sweep.
   sceneRegistry.nodes.get(probe.id)!.position.x = -10

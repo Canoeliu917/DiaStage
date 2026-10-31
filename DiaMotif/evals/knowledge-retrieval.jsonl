@@ -6,7 +6,7 @@
 {"id":"knowledge-006","query":{"kind":"alias","value":"右边"},"expected":{"result":"ambiguous","conceptIds":["audience-right","stage-right"],"clarificationRequired":true}}
 {"id":"knowledge-007","query":{"kind":"alias","value":"前面"},"expected":{"result":"ambiguous","conceptIds":["downstage","foreground"],"clarificationRequired":true}}
 {"id":"knowledge-008","query":{"kind":"domain","value":"stage_assets","status":"ACTIVE"},"expected":{"result":"list","count":9}}
-{"id":"knowledge-009","query":{"kind":"domain","value":"scenic_flats","status":"ACTIVE"},"expected":{"result":"list","count":18}}
+{"id":"knowledge-009","query":{"kind":"domain","value":"scenic_flats","status":"ACTIVE"},"expected":{"result":"list","count":17}}
 {"id":"knowledge-010","query":{"kind":"domain","value":"spatial_directing","status":"ACTIVE"},"expected":{"result":"list","count":23}}
 {"id":"knowledge-011","query":{"kind":"relation","value":"stage-left","relationType":"distinct_from"},"expected":{"result":"list","conceptIds":["audience-left"]}}
 {"id":"knowledge-012","query":{"kind":"relation","value":"fold-flat","relationType":"distinct_from"},"expected":{"result":"list","conceptIds":["rotate-whole"]}}

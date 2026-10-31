@@ -1,17 +1,16 @@
-import { DEFAULT_ANGLE_STEP } from '@pascal-app/core'
+import { snapFoldStop } from './rehearsal-measure'
 
-export const FOLD_ANGLE_STEP = Number(((DEFAULT_ANGLE_STEP * 180) / Math.PI).toPrecision(12))
+export const FOLD_ANGLE_STEP = 45
 export type FoldAngleDrag = { startAngle: number; pointerRadians: number; turnRadians: number }
 
-export function advanceFoldAngle(drag: FoldAngleDrag, pointerRadians: number, free = false) {
+export function advanceFoldAngle(drag: FoldAngleDrag, pointerRadians: number, _free = false) {
   const difference = pointerRadians - drag.pointerRadians
   const turnRadians = drag.turnRadians + Math.atan2(Math.sin(difference), Math.cos(difference))
   const degrees = drag.startAngle - (turnRadians * 180) / Math.PI
-  const snapped = free ? degrees : Math.round(degrees / FOLD_ANGLE_STEP) * FOLD_ANGLE_STEP
   return {
     drag: { ...drag, pointerRadians, turnRadians },
-    // The gesture tracks pointer motion; the manifest constrains the edited joint at preview time.
-    angle: snapped,
+    // Fold flats only stop every 45°. Shift does not open a free angle.
+    angle: snapFoldStop(degrees),
   }
 }
 

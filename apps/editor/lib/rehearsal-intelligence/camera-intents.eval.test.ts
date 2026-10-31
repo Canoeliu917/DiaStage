@@ -4,10 +4,7 @@ import { resolve } from 'node:path'
 import { parseViewCommand } from './view-commands'
 
 const cases = readFileSync(
-  resolve(
-    import.meta.dir,
-    '../../../../.agents/skills/dia-language-trainer/evals/camera-intents.jsonl',
-  ),
+  resolve(import.meta.dir, '../../../../DiaMotif/evals/camera-intents.jsonl'),
   'utf8',
 )
   .trim()

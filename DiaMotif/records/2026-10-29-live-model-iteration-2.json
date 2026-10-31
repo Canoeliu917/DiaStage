@@ -1,0 +1,671 @@
+{
+  "schemaVersion": 1,
+  "title": "DiaMotif 统一对话第二次开发集迭代：传输异常后停止",
+  "recordType": "sanitized-live-model-development-iteration",
+  "iteration": 2,
+  "status": "stopped-incomplete",
+  "runId": "d8041ed7-8513-4e9b-adbd-395ccda5c557",
+  "baselineRecord": "DiaMotif/records/2026-10-29-live-model-baseline.json",
+  "previousRecord": "DiaMotif/records/2026-10-29-live-model-iteration-1.json",
+  "startedAt": "2026-10-29T08:10:15.124Z",
+  "completedAt": "2026-10-29T08:43:22.078Z",
+  "gitHead": "ea3c6e33720f149ba2ec5393f6e4cd9f028e4514",
+  "suite": {
+    "path": "DiaMotif/evals/live-model-acceptance.jsonl",
+    "sha256": "fd2f9d5356de630a8fd45259dff042945c46ad59501caa4dc44c55df970fc4ff",
+    "totalCases": 30,
+    "requestedSplit": "development",
+    "requestedCases": 20,
+    "attemptedCases": 15,
+    "unrunDevelopmentCases": [
+      "DM-LIVE-P03",
+      "DM-LIVE-P04",
+      "DM-LIVE-E01",
+      "DM-LIVE-E02",
+      "DM-LIVE-E03"
+    ],
+    "holdoutCases": 10,
+    "holdoutStatus": "not-run-at-this-iteration",
+    "frozenBeforeRun": true
+  },
+  "runtime": {
+    "provider": "aliyun",
+    "model": "qwen3.7-flash-2026-07-15",
+    "dialogueVersion": "diamotif-dialogue-v1",
+    "dialogueContract": "candidateAccepted plus nullable stageAction/grounding",
+    "dialogueService": "respondDiaDialogue",
+    "scriptService": "planFromPassages(forceModel=true)",
+    "photoService": "analyzePhotoStage",
+    "scope": "直接生产服务调用及离线几何复核，不是浏览器采用验收。",
+    "codeSnapshot": "基于gitHead的未提交迭代，由生产源文件哈希标识。",
+    "productionChangedDuringRun": false,
+    "sourceSha256": {
+      "apps/editor/lib/rehearsal-intelligence/dialogue-server.ts": "1aa8975663b31a81a433f3f372d9a966350233ca9f446d15d1534c4b9c910c57",
+      "apps/editor/lib/rehearsal-intelligence/dialogue-schema.ts": "87d080336d11effb3e76310d670f23be9888ad9f61893b266aadb29ccb6e95cf",
+      "apps/editor/lib/rehearsal-intelligence/dialogue-stage-actions.ts": "43da48e2a9a8b8b6ef336cffe52f9fb55257188446cdae2cc69a7d9ae2612f7f",
+      "apps/editor/lib/rehearsal-intelligence/open-language.ts": "fc1b667aa47fd913d42b6ae120476c2567d2e554dae8c4314d2269895e934626",
+      "apps/editor/lib/scripts/script-planner.ts": "4510b837eaae945f0bdafa19a18308e1ef973cc0f015da133e914c1d78b75f9c",
+      "apps/editor/lib/scripts/stage-facts.ts": "07447a6f08d4f9f8b571beb594d4d7d0227e3ab8e8ce3fa2ace7c3af38efce35",
+      "apps/editor/lib/photo-stage/analyze-server.ts": "46e2a30df41b4f7db82dfa711cc7ec0571e3c8904cdc34bf2fca78dc40f94751"
+    },
+    "runnerSha256": "835081d78cdb092ea24cb2d7778bd88538f2eceb8c5922f7a6a7dc49036896b4",
+    "fixtureBuilderSha256": "dcb7d12359c7e1d1ea0849f33ff72e7e69f975c46665c49d49d08ce7f064acdd"
+  },
+  "measurements": {
+    "requested": 20,
+    "attempted": 15,
+    "unrun": 5,
+    "providerAttempts": 16,
+    "http200Responses": 13,
+    "attemptsWithoutHttpResponse": 3,
+    "productionReturned": 8,
+    "productionRejected": 7,
+    "inputTokens": 52584,
+    "outputTokens": 4943,
+    "estimatedOrReservedCostCny": 0.0901912,
+    "costBasis": "应用估算/预留，包括未完成请求可能保留的估额；不是供应商结算账单。",
+    "semanticPassCount": null,
+    "endToEndPassCount": null,
+    "humanReviewed": 0,
+    "interpretation": "只尝试15题；8次返回不等于8题通过，7次拒绝需区分语义校验与无响应传输异常。"
+  },
+  "stop": {
+    "reason": "THREE_CONSECUTIVE_TRANSPORT_FAILURES",
+    "consecutiveTransportFailureCases": [
+      "DM-LIVE-S04",
+      "DM-LIVE-P01",
+      "DM-LIVE-P02"
+    ],
+    "automaticRetryAfterStop": false,
+    "diagnosis": "S04超时及随后两次无HTTP连接错误；环境/网络原因待核实，不能归因模型不理解照片。"
+  },
+  "timing": {
+    "normalLatencySummary": null,
+    "excludedFromModelLatency": [
+      "DM-LIVE-S04"
+    ],
+    "anomalousRecordedDurationMs": 1936490,
+    "explanation": "记录跨度可能包含系统停顿或墙钟异常；不报告为模型正常响应时间，也不用于平均/分位耗时。"
+  },
+  "evidenceLimits": [
+    "15个已尝试题的合成场景快照未变，没有采用、持久化或用户场景写入证据。",
+    "T04只离线验证纯几何求解器；真实模型就绪/锁定/可写权限需浏览器验证。",
+    "R02只离线编译正确方向候选，没有完成候选替换的人机交互验收。",
+    "T02后墙可容纳的离线反事实检验不是模型输出，不能记作该题通过。",
+    "5道开发集题未运行；10道holdout仍未运行。",
+    "本记录的离线审阅未追加任何模型请求。"
+  ],
+  "imageFixtures": {
+    "reference-stage": {
+      "path": "apps/editor/public/photo-stage/reference-stage.jpg",
+      "sha256": "335921739e6720156e264ce36c91573d84461cf1c8423ebc5bc4eb369f770ac9"
+    },
+    "synthetic-table-chairs": {
+      "path": "DiaMotif/evals/fixtures/synthetic-table-chairs.png",
+      "sha256": "987a3102ed41883e3bf9d50fa0e6c622a8d6c853f94cefc9958ab0e2fc0ce91c"
+    }
+  },
+  "review": {
+    "reviewerType": "agent",
+    "humanReview": "pending",
+    "score": null,
+    "gate": "not-passed",
+    "offlineAdditionalProviderRequests": 0
+  },
+  "cases": [
+    {
+      "caseId": "DM-LIVE-T01",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 2539,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "table-two-chairs",
+        "middle-front",
+        "native-assets",
+        "no-overlap",
+        "preview-only"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "passed-mechanical-plan-checks",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "真实生成一张SCN-TABLE-090和两把SCN-CHAIR-045，区域为中前区，明确默认数量及采用后才改变舞台。",
+        "三件原生尺寸、底面接地、范围、无碰撞与编译均通过；没有采用或保存。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-T02",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 2420,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "one-sofa",
+        "audience-right-rear",
+        "back-wall-contact",
+        "no-overlap",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "mechanically-valid-but-task-wrong",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "实际创建长沙发，却把右后靠墙要求改成front-right、wall=null，位置X=-4、Z=2。",
+        "模型称后墙已满不能贴墙，没有依据；离线非模型对照可在同一夹具安全生成后右贴墙沙发Z=7.5589。",
+        "返回方案本身原生尺寸、范围、碰撞和编译通过，但位置语义失败。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-T03",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 1649,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "one-window-flat",
+        "middle-rear",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "passed-mechanical-plan-checks",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "真实新增SCN-WIN-130窗景片，位置X=0、Z=6，为舞台后区中央。",
+        "原生尺寸和窗资产身份保持，接地、范围、无碰撞与编译通过。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-T04",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 1030,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "connect-edge",
+        "preserve-object-ids",
+        "edge-contact",
+        "no-overlap",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "passed-pure-geometry-browser-gate-pending",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型明确接受候选，应用返回正确connect-edge语义，目标为两件现有景片。",
+        "离线纯空间求解器给出两个可行贴边直墙候选；中心距1.3米与原生景片宽一致、身份保持、校验和编译通过。",
+        "真实场景节点的模型就绪、锁定与可写入检查不在合成夹具内，浏览器预览/采用仍待验。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-T05",
+      "category": "text",
+      "route": "dia-dialogue",
+      "productionResult": "rejected",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 2497,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "form-enclosure",
+        "audience-opening",
+        "preserve-object-ids",
+        "no-overlap",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "rejected-semantic",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型没有接受完整围合候选，改写为connect-edge意图加form-enclosure/leave-opening约束。",
+        "knowledgeConceptIds缺少connect-edge所需映射且混合动作，被校验拒绝；没有可用U形方案。"
+      ],
+      "productionError": {
+        "code": "AMBIGUOUS_COMMAND",
+        "message": "Knowledge concept 与 canonical intent 不一致。"
+      }
+    },
+    {
+      "caseId": "DM-LIVE-R01",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "rejected",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 1877,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "group-translation-0.5",
+        "preserve-relative-geometry",
+        "preserve-object-ids",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "rejected-action-fields",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "理解正确三件对象、观众右及0.5米，但translate同时填写region=front-center。",
+        "移动模式互斥字段校验拒绝，不会默默忽略区域或距离；没有返回可用移动计划。"
+      ],
+      "productionError": {
+        "code": "AMBIGUOUS_COMMAND",
+        "message": "整组平移需要明确方向和距离；区域或靠墙请作为另一个调整。"
+      }
+    },
+    {
+      "caseId": "DM-LIVE-R02",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 1921,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "correction-audience-right",
+        "preserve-object-ids",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "passed-offline-geometry-ui-replacement-pending",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "返回audience-right及correction，保留同一选中沙发，回复仍额外请求确认。",
+        "离线按生产适配器与编译器生成同一沙发X=-5.125、Z=4的观众右侧候选，身份、尺寸与几何校验通过。",
+        "旧候选替换及实际未改变正式场景仍需浏览器验收。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-R03",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "rejected",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 2715,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "wider-and-keep-stage-left",
+        "preserve-fixed-flat",
+        "preview-only"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "rejected-mixed-clarification-action",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型一边要求澄清距离，一边返回wider、keep_stage_left_fixed及其他动作/通道约束。",
+        "待澄清回复不能同时含动作，生产拒绝；没有实际加宽候选。"
+      ],
+      "productionError": {
+        "code": "AMBIGUOUS_COMMAND",
+        "message": "待澄清回复不能同时包含舞台动作。"
+      }
+    },
+    {
+      "caseId": "DM-LIVE-R04",
+      "category": "revision",
+      "route": "dia-dialogue",
+      "productionResult": "rejected",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 3008,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "reject-current-proposal",
+        "preserve-scene",
+        "no-creation"
+      ],
+      "semanticStatus": "failed",
+      "applicationGeometryStatus": "rejected-semantic",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "模型尝试reject但同时填corner-angle，知识映射不符；current_proposal引用也夹带无效text/index。",
+        "回复称已撤销不能代替取消动作；生产未返回可执行拒绝。"
+      ],
+      "productionError": {
+        "code": "AMBIGUOUS_COMMAND",
+        "message": "Knowledge concept 与 canonical intent 不一致。"
+      }
+    },
+    {
+      "caseId": "DM-LIVE-S01",
+      "category": "script",
+      "route": "script",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 10331,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "script-table-two-chairs",
+        "evidence-exact",
+        "stage-8x6",
+        "assumptions-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "failed-bounds",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "提取一圆桌两椅，原文证据可核对，原生映射3件且椅子改为绕Y轴正确平面旋转。",
+        "圆桌及两椅均Z=0，完整外框跨出台口，不能按物件中心在边界上认定合规。",
+        "无多椅误冲突问题，但范围检查及编译失败。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-S02",
+      "category": "script",
+      "route": "script",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 11341,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "script-window-door",
+        "actor-stage-left",
+        "passage-1.2",
+        "evidence-exact",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "partial",
+      "applicationGeometryStatus": "failed-bounds-and-clarification",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "原生窗与单门映射成功、证据可核对。",
+        "窗Z=-3、门Z=0，不符合台口原点、Z正向台后的坐标范围；两件均越界。",
+        "1.2米通道仍未形成可执行净空约束并有三条待确认问题；编译失败。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-S03",
+      "category": "script",
+      "route": "script",
+      "productionResult": "returned",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        200
+      ],
+      "recordedDurationMs": 7306,
+      "latencyEligibleForNormalModelSummary": true,
+      "requiredChecks": [
+        "script-only-sofa",
+        "exclude-metaphor-and-effects",
+        "evidence-exact",
+        "assumptions-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "passed",
+      "applicationGeometryStatus": "failed-bounds-and-support",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "文本事实提取只保留台后长沙发，原生资产尺寸正确，未把比喻、人物和灯光转成物件。",
+        "输出Y=0.425、Z=-5.6，把物件半高当落点并使用错误前后符号；沙发悬空且舞台范围外。",
+        "范围检查与编译失败；文本提取成功不等于可用置景。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-S04",
+      "category": "script",
+      "route": "script",
+      "productionResult": "rejected",
+      "providerAttempts": 2,
+      "httpStatuses": [
+        200,
+        null
+      ],
+      "recordedDurationMs": 1936490,
+      "latencyEligibleForNormalModelSummary": false,
+      "requiredChecks": [
+        "script-conflict-question",
+        "evidence-exact",
+        "no-silent-overwrite",
+        "preview-only"
+      ],
+      "semanticStatus": "not-assessable",
+      "applicationGeometryStatus": "transport-timeout",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "有一次HTTP 200返回后进入重试，第二次未收到HTTP响应并超时，最终没有可供采用的服务结果。",
+        "记录的1,936,490毫秒跨度显著超过正常请求超时设置，受系统停顿/墙钟异常影响的可能性尚待调查；不能作为正常模型推理延迟或吞吐依据。"
+      ],
+      "productionError": {
+        "code": "TIMEOUT"
+      }
+    },
+    {
+      "caseId": "DM-LIVE-P01",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "rejected",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        null
+      ],
+      "recordedDurationMs": 105,
+      "latencyEligibleForNormalModelSummary": false,
+      "requiredChecks": [
+        "photo-single-stage",
+        "photo-major-elements",
+        "native-assets",
+        "photo-estimates-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "not-assessable",
+      "applicationGeometryStatus": "transport-failed",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "请求没有收到HTTP响应，服务返回无法连接照片识别服务。",
+        "本题没有可评照片输出；不能计作照片识别或几何失败。"
+      ],
+      "productionError": {
+        "code": "INTERNAL_ERROR",
+        "message": "无法连接照片识别服务，请管理员检查模型服务的网络连接后重试。"
+      }
+    },
+    {
+      "caseId": "DM-LIVE-P02",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "rejected",
+      "providerAttempts": 1,
+      "httpStatuses": [
+        null
+      ],
+      "recordedDurationMs": 27,
+      "latencyEligibleForNormalModelSummary": false,
+      "requiredChecks": [
+        "photo-audience-directions",
+        "photo-rear-sofa",
+        "full-bounds-inside",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "not-assessable",
+      "applicationGeometryStatus": "transport-failed",
+      "fixtureUnchanged": true,
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "请求没有收到HTTP响应，服务返回无法连接照片识别服务。",
+        "连续第三项传输失败触发停测；本题没有可评照片输出。"
+      ],
+      "productionError": {
+        "code": "INTERNAL_ERROR",
+        "message": "无法连接照片识别服务，请管理员检查模型服务的网络连接后重试。"
+      }
+    },
+    {
+      "caseId": "DM-LIVE-P03",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "not-run",
+      "providerAttempts": 0,
+      "requiredChecks": [
+        "photo-modular-platform",
+        "actual-support",
+        "no-overlap",
+        "native-assets",
+        "preview-only"
+      ],
+      "semanticStatus": "not-run",
+      "applicationGeometryStatus": "not-run",
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "连续传输异常停测后尚未执行；无本轮模型结果。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-P04",
+      "category": "photo",
+      "route": "photo",
+      "productionResult": "not-run",
+      "providerAttempts": 0,
+      "requiredChecks": [
+        "photo-table-two-chairs",
+        "actual-support",
+        "native-assets",
+        "photo-estimates-labeled",
+        "preview-only"
+      ],
+      "semanticStatus": "not-run",
+      "applicationGeometryStatus": "not-run",
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "连续传输异常停测后尚未执行；无本轮模型结果。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-E01",
+      "category": "explanation",
+      "route": "open-language",
+      "productionResult": "not-run",
+      "providerAttempts": 0,
+      "requiredChecks": [
+        "second-curtain-distinct",
+        "concise-explanation",
+        "no-action"
+      ],
+      "semanticStatus": "not-run",
+      "applicationGeometryStatus": "not-run",
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "连续传输异常停测后尚未执行；无本轮模型结果。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-E02",
+      "category": "explanation",
+      "route": "open-language",
+      "productionResult": "not-run",
+      "providerAttempts": 0,
+      "requiredChecks": [
+        "theatre-spaces-distinct",
+        "source-bounded",
+        "no-action"
+      ],
+      "semanticStatus": "not-run",
+      "applicationGeometryStatus": "not-run",
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "连续传输异常停测后尚未执行；无本轮模型结果。"
+      ]
+    },
+    {
+      "caseId": "DM-LIVE-E03",
+      "category": "explanation",
+      "route": "open-language",
+      "productionResult": "not-run",
+      "providerAttempts": 0,
+      "requiredChecks": [
+        "unknown-source-honesty",
+        "no-fabricated-page",
+        "no-action"
+      ],
+      "semanticStatus": "not-run",
+      "applicationGeometryStatus": "not-run",
+      "userReview": "pending",
+      "browserPreviewAdoption": "not-tested",
+      "observations": [
+        "连续传输异常停测后尚未执行；无本轮模型结果。"
+      ]
+    }
+  ],
+  "nextVerification": [
+    "先排查停测期间系统/网络异常，不把重试当成本轮已完成。",
+    "继续处理候选选择、目标区域与墙要求不被替换、互斥动作字段及提案取消/修订。",
+    "剧本修复台口原点坐标、完整外框范围及真实落地，不放宽原生资产或几何校验。",
+    "模型与运行时修复后另建开发集运行记录；最终冻结后再执行holdout。"
+  ]
+}

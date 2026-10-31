@@ -35,3 +35,6 @@
 .stage-plan-legend-number { flex:none;font-variant-numeric:tabular-nums; }
 .stage-plan-drawing--compact figcaption { opacity:1; }
 .stage-plan-drawing--compact figcaption > p { margin:0;font-size:11px;line-height:1.4; }
+.stage-plan-review .stage-plan-evidence { margin-top:8px; padding-top:6px; border-top:1px solid var(--dia-divider); color:var(--dia-muted); }
+.stage-plan-review .stage-plan-evidence p { margin:2px 0; font-size:12px; line-height:1.5; }
+.stage-plan-evidence span { font-variant-numeric:tabular-nums; }

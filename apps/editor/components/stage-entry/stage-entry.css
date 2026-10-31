@@ -8,9 +8,12 @@
 .stage-entry-actions { display:flex;flex-wrap:wrap;gap:8px; }
 .stage-entry-actions button { flex:1; }
 .dia-attachment-drop,.dia-attachment-controls,.dia-attachment-panel { display:flex;flex-direction:column;gap:12px;min-width:0;max-width:100%; }
-.dia-attachment-controls p { font-size:13px;line-height:1.65;overflow-wrap:anywhere; }
+.dia-attachment-controls { display:grid;grid-template-columns:44px minmax(0,1fr);align-items:center;gap:8px; }
+.dia-attachment-controls p { margin:0;font-size:14px;line-height:1.6;overflow-wrap:anywhere; }
+.dia-attachment-controls .dia-attachment-add { display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:0; }
 .dia-attachment-hint > span { display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.dia-attachment-file { display:flex;align-items:center;gap:8px;min-width:0; }
+.dia-attachment-file { grid-column:1 / -1;display:flex;align-items:center;gap:8px;min-width:0; }
+.dia-attachment-file + .dia-attachment-hint { grid-column:1 / -1; }
 .dia-attachment-file > span { flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .dia-attachment-file > button { flex:none; }
 .dia-attachment-drop textarea,.dia-attachment-panel :is(input,textarea,select) { font-size:16px;min-width:0;max-width:100%; }
@@ -37,16 +40,17 @@
 .stage-plan-review [role=alert] { color:var(--dia-error); }
 .stage-plan-review h2 { font-size:22px;line-height:1.4; }
 .stage-plan-review h3,.stage-plan-review legend { font-size:15px;font-weight:600;margin-bottom:10px; }
-.stage-plan-review p,.stage-plan-review li,.stage-plan-review figcaption { font-size:12px;line-height:1.75; }
+.stage-plan-review p,.stage-plan-review li,.stage-plan-review figcaption { font-size:14px;line-height:1.6; }
 .stage-plan-review ul { list-style:disc;padding-left:20px; }
 .stage-plan-item { padding:18px 0;border-top:1px solid #888;display:flex;flex-direction:column;gap:12px; }
 .stage-plan-item > label { flex-direction:row;align-items:center;font-weight:600; }
 .stage-plan-item input[type=checkbox] { min-height:18px;width:18px;accent-color:currentColor; }
 .stage-plan-item details summary { cursor:pointer;min-height:32px; }
-.stage-plan-item blockquote { border-left:2px solid #999;padding:4px 10px; }
+.stage-plan-item blockquote { margin:8px 0 0;padding:8px 0 0;border:0;border-top:1px solid var(--dia-border,#777);color:var(--dia-muted,inherit);font-size:14px; }
+.stage-plan-item blockquote small { display:block;font-size:inherit; }
 .stage-plan-drawing { margin:0; }
 .stage-plan-drawing svg { width:100%;max-height:360px;display:block; }
-.stage-plan-drawing figcaption { opacity:.75; }
+.stage-plan-drawing figcaption { color:var(--dia-muted,inherit); }
 .stage-plan-handle { cursor:grab; touch-action:none; }
 .stage-plan-handle:active { cursor:grabbing; }
 .stage-plan-handle[data-selected=true] { filter:drop-shadow(0 0 2px var(--dia-ivory)); }

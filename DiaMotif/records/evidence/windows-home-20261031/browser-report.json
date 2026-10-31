@@ -1,0 +1,42 @@
+{
+  "base": "http://127.0.0.1:4318",
+  "checks": [
+    "Public catalog: 62 total, knowledge 9, scripts 0, full performance 0; AI disabled",
+    "Knowledge category renders 9 public records",
+    "Merged AI topic and Escape focus return",
+    "Removed categories absent and outside-click closes menu",
+    "Results collapse and expand",
+    "Day/night themes and no horizontal overflow at 1365px",
+    "Source title opens the registered URL in a new tab; external body not verified",
+    "Legacy ai-tools URL safely falls back to category browsing",
+    "Corrected 谐白 entry is retrievable via free URL search",
+    "Login page reachable with email/password fields; no account or scene mutations",
+    "pageerror=0; no paid or mutating API requests attempted"
+  ],
+  "pageErrors": [],
+  "blockedPaidRequests": [],
+  "api": {
+    "all": {
+      "total": 62,
+      "aiStatus": "disabled"
+    },
+    "knowledge": {
+      "total": 9,
+      "aiStatus": "disabled"
+    },
+    "scripts": {
+      "total": 0,
+      "aiStatus": "disabled"
+    },
+    "videos": {
+      "total": 0,
+      "aiStatus": "disabled"
+    }
+  },
+  "source": {
+    "expectedUrl": "https://www.cucp.com.cn/Book/Details/1347",
+    "actualUrl": "https://www.cucp.com.cn/Book/Details/1347",
+    "bodyVerified": false
+  },
+  "worksMenu": "剧本\n完整剧本\n译本\n改编本\n话剧剧本\n戏曲与歌剧\n音乐剧剧本\n儿童戏剧\n演出影像\n完整演出"
+}

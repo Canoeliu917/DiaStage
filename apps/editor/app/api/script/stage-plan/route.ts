@@ -9,7 +9,10 @@ export function POST(request: Request): Promise<Response> {
   return handleAiRequest(request, async ({ signal }) => {
     const upload = await readScriptUpload(request, signal)
     const document = await extractDocument(upload.file, signal)
-    const plan = await planFromPassages(document.passages, signal, upload.options)
+    const plan = await planFromPassages(document.passages, signal, {
+      ...upload.options,
+      forceModel: true,
+    })
     return { file: document.file, plan }
   })
 }

@@ -17,10 +17,7 @@ export type StageProposalEvalRow = {
 }
 
 export const STAGE_PROPOSAL_CASES = readFileSync(
-  new URL(
-    '../../../../.agents/skills/dia-language-trainer/evals/stage-proposal-integration.jsonl',
-    import.meta.url,
-  ),
+  new URL('../../../../DiaMotif/evals/stage-proposal-integration.jsonl', import.meta.url),
   'utf8',
 )
   .trim()

@@ -46,9 +46,9 @@ export const Grid = ({
 }) => {
   const isDark = useViewer((state) => getSceneTheme(state.sceneTheme).appearance === 'dark')
 
-  // Use slightly lighter colors for dark themes' grid to make it apparent
-  const effectiveCellColor = isDark ? '#555566' : cellColor
-  const effectiveSectionColor = isDark ? '#666677' : sectionColor
+  const effectiveCellColor = isDark ? '#2e2e2e' : cellColor
+  const effectiveSectionColor = isDark ? '#3a3a3a' : sectionColor
+  const effectiveFadeDistance = isDark ? Math.min(fadeDistance, 24) : fadeDistance
 
   const cursorPositionRef = useRef(new Vector2(0, 0))
   // Scratch for reading a moving node's world Y (surface elevation) each frame.
@@ -112,7 +112,7 @@ export const Grid = ({
 
     // Distance fade from center
     const dist = pos.length()
-    const fade = float(1).sub(dist.div(fadeDistance).min(1)).pow(fadeStrength)
+    const fade = float(1).sub(dist.div(effectiveFadeDistance).min(1)).pow(fadeStrength)
 
     // Cursor reveal effect - distance from cursor
     const cursorDist = pos.sub(cursorPos).length()
@@ -152,7 +152,7 @@ export const Grid = ({
     sectionSize,
     sectionThickness,
     effectiveSectionColor,
-    fadeDistance,
+    effectiveFadeDistance,
     fadeStrength,
     revealRadiusUniform,
     baseAlphaUniform,
@@ -279,7 +279,7 @@ export const Grid = ({
     const showGrid = useViewer.getState().showGrid
     const snapPatchVisible = isGridSnapActive()
     revealRadiusUniform.value = PLACEMENT_REVEAL_RADIUS
-    baseAlphaUniform.value = 0.45
+    baseAlphaUniform.value = isDark ? 0.25 : 0.45
     cellSizeUniform.value = useEditor.getState().gridSnapStep
     patchAlphaUniform.value = snapPatchVisible ? 1.5 : 0.8
     gridRef.current.visible = showGrid

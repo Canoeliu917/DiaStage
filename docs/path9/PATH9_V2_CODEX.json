@@ -1,0 +1,369 @@
+{
+  "meta": {
+    "title": "DiaStage PATH9-V2 · 系统冲≥9.0（Codex 执行）",
+    "baseline_commit": "c2691e6f506fd7a3e006c312f879d65c9ebfa132",
+    "baseline_pr": "https://github.com/Canoeliu917/DiaStage/pull/4",
+    "baseline_score": 7.6,
+    "target_score": 9,
+    "scope": "desktop UI/UX/visual; AI-surface intelligence/convenience/simplicity; no model/API core",
+    "font_lock": {
+      "stack_css": "var(--font-dia-latin), var(--font-huiwen-mincho), var(--font-source-han-sans), \"Microsoft YaHei\", serif",
+      "latin": "Courier New / --font-dia-latin",
+      "zh": "汇文明朝 --font-huiwen-mincho + 思源黑体 --font-source-han-sans",
+      "forbid": [
+        "Inter",
+        "Roboto",
+        "Arial as primary",
+        "system-ui as primary",
+        "Geist as UI primary",
+        "removing huiwen-mincho",
+        "removing source-han-sans"
+      ]
+    },
+    "ai_patterns_to_imitate": [
+      "Perplexity: quiet chrome, footnote citations, reading focus",
+      "ChatGPT: bottom composer, + attachment menu, send↔stop",
+      "Claude: side deliverable panel (成稿台), propose-then-apply",
+      "Doubao: 3–5 scene task cards",
+      "Kimi: low-density first screen",
+      "Notion AI: in-context propose → confirm"
+    ],
+    "north_star": "排练室+成稿台；不懂AI的戏剧人渐进学会AI"
+  },
+  "scoreboard_targets": [
+    {
+      "id": "score.layout",
+      "from": 7.8,
+      "to": 9,
+      "weight": 0.18
+    },
+    {
+      "id": "score.color",
+      "from": 7.4,
+      "to": 9,
+      "weight": 0.16
+    },
+    {
+      "id": "score.nav",
+      "from": 8.3,
+      "to": 9,
+      "weight": 0.14
+    },
+    {
+      "id": "score.empty",
+      "from": 7.8,
+      "to": 9,
+      "weight": 0.14
+    },
+    {
+      "id": "score.input",
+      "from": 8.2,
+      "to": 9,
+      "weight": 0.12
+    },
+    {
+      "id": "score.tools",
+      "from": 7.7,
+      "to": 9,
+      "weight": 0.14
+    },
+    {
+      "id": "score.mobile",
+      "from": 5.5,
+      "to": "deferred_exclude_from_pass_or_keep_weight_but_document",
+      "weight": 0.12,
+      "note": "用户暂缓；报≥9时用电脑六维加权（权重重归一化到1.0）或明确写移动不计"
+    }
+  ],
+  "pass_rule": "六维电脑加权（layout/color/nav/empty/input/tools）每项≥9.0且加权均值≥9.0；字体锁未破；gate全过。移动端 deferred 不计入本轮否决。",
+  "tasks": [
+    {
+      "id": "FONT1",
+      "pillar": "font_lock",
+      "status": "done",
+      "do": "审计并锁定字体栈：全站 UI 必须走 --dia-font-ui；禁止新增第三品牌字体；英文走 --font-dia-latin/Courier，中文走汇文明朝+思源",
+      "touch": [
+        "apps/editor/app/design-tokens.css",
+        "apps/editor/app/layout.tsx",
+        "apps/editor/app/globals.css",
+        "apps/editor/app/stage-theme.css",
+        "DESIGN.md"
+      ],
+      "patch_spec": "1) 在 design-tokens.css 顶部加注释 /* FONT LOCK: do not replace */。2) grep 全仓 font-family，凡覆盖工作室/首页/剧目库主文的，改为 var(--dia-font-ui)。3) 不删除 apps/editor/app/fonts/huiwen-mincho 与 source-han-sans。4) 不加 Inter/Geist 作为 .studio-workspace 主字体。",
+      "verify": "DevTools Computed：正文 font-family 链含 dia-latin 或 Courier，且含 huiwen-mincho 或 source-han-sans；无 Inter",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "N1",
+      "pillar": "color_soft",
+      "status": "todo",
+      "score_lifts": [
+        "score.color"
+      ],
+      "do": "夜场真正压暗三维视口：clearcolor/天空/地面网格随 [data-stage-theme=night] 或 .dark 变深灰，非仅 chrome 变暗",
+      "touch": [
+        "apps/editor/app/stage-theme.css",
+        "apps/editor/components/stage-theme.tsx",
+        "theatre/viewer clearcolor 相关"
+      ],
+      "patch_spec": "日场保持浅灰舞台；夜场舞台背景与网格线对比降低但仍可读网格（建议背景约 #1a1a1a–#222，网格约 #2e2e2e）。截图日/夜各一张。",
+      "verify": "夜场截图：侧栏与舞台同属暗场；非「暗壳亮台」",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done",
+      "remaining": "最后一批修正已通过源码检查，待重新构建及浏览器确认"
+    },
+    {
+      "id": "T1",
+      "pillar": "color_soft",
+      "status": "done",
+      "score_lifts": [
+        "score.color"
+      ],
+      "do": "正文可读性回调：鼠标桌面 --dia-type-ui/--dia-type-body 提升到 14px（0.875rem），线高 body ≥1.5；辅助 caption 保持 12px；控件最小高度仍 32px（紧凑）",
+      "touch": [
+        "apps/editor/app/design-tokens.css",
+        "apps/editor/app/stage-theme.css",
+        "compact media queries"
+      ],
+      "patch_spec": "在 hover:hover and pointer:fine 紧凑媒体查询内：正文/输入 font-size:14px; line-height:1.5–1.55；勿用 transform:scale 全页缩放。控件 min-height:32px 保留。",
+      "verify": "DevTools：工作室室正文 14px；附件钮仍约 32px",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "L1",
+      "pillar": "layout_simplicity",
+      "status": "done",
+      "score_lifts": [
+        "score.layout"
+      ],
+      "do": "首访默认只展开一侧栏：优先展开左「舞台库」，右「DIA」默认收起为窄轨或图标；一键展开。主舞台视觉宽度体感 ≥60%",
+      "touch": [
+        "studio layout",
+        "apps/editor/components/theatre/*",
+        "sidebar collapse state"
+      ],
+      "patch_spec": "localStorage 键如 diastage.sidebar.diaCollapsed 默认 true（仅首次）；提供可见「打开 DIA」按钮。已展开过的用户保留其偏好。",
+      "verify": "新会话截图：舞台中心主导；DIA 可一键打开",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "L2",
+      "pillar": "layout_simplicity",
+      "status": "done",
+      "score_lifts": [
+        "score.layout",
+        "score.tools"
+      ],
+      "do": "顶栏极简：常驻仅「保存 + 同步状态 + 日夜切换」；备份/恢复/版本/历史/剧目库收入「···」溢出菜单",
+      "touch": [
+        "studio-navigation",
+        "apps/editor/components/*navigation*"
+      ],
+      "patch_spec": "顶栏可见主按钮 ≤3（不含品牌）。溢出菜单键盘可及、focus-visible 保留。",
+      "verify": "截图顶栏主操作 ≤3；溢出可打开备份与版本",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "F1",
+      "pillar": "tools_simplicity",
+      "status": "done",
+      "score_lifts": [
+        "score.tools"
+      ],
+      "do": "默认工具轨只显示图标，隐藏 V/G/R/S 等 DCC 字母；快捷键说明放入「更多工具」",
+      "touch": [
+        "apps/editor/components/viewer-toolbar.tsx",
+        "stage-transform-toolbar"
+      ],
+      "patch_spec": "默认：选择/移动/旋转/缩放仅图标+中文短标签（可选）。kbd 字母仅在「更多工具」或 title/aria 中。首访文案禁止 UE5/Blender/DCC。",
+      "verify": "首屏工具轨无可见 V G R S 字母墙",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "C1",
+      "pillar": "assets_scan",
+      "status": "done",
+      "score_lifts": [
+        "score.nav",
+        "score.layout"
+      ],
+      "do": "道具卡片高度提到 72–80px，缩略图可扫；保持三 Tab 布景/家具/道具与 21 件上限",
+      "touch": [
+        "items-panel / catalog-items",
+        "studio-sidebar.css",
+        "stage-theme.css"
+      ],
+      "patch_spec": "卡片 min-height:72px；缩略图区域 ≥48px；内距可 6–8px。面板条目必须 ===21。",
+      "verify": "测量卡片高 ≥72；面板仍 21 件",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "AI1",
+      "pillar": "intelligence",
+      "status": "done",
+      "score_lifts": [
+        "score.empty",
+        "score.input"
+      ],
+      "do": "智能化空状态：3 张任务卡点击后把戏剧向占位句预填进 Composer（不自动发送）；文案动词开头",
+      "touch": [
+        "stage-first-visit.tsx",
+        "command-input / rehearsal-partner",
+        "dia-home"
+      ],
+      "patch_spec": "卡片例：放一件道具 / 描述一套布景 / 导入照片或剧本。点击 → input.value 预填对应排练说明 → focus 输入框。禁止出现 Prompt/Token。参照豆包场景卡 + ChatGPT starter pills。",
+      "verify": "点击卡后输入框有中文预填且未自动提交",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "AI2",
+      "pillar": "intelligence",
+      "status": "done",
+      "score_lifts": [
+        "score.input"
+      ],
+      "do": "智能化审阅：方案卡脚注样式标注「剧本明确写出 / 系统推测 / 需要确认」；确认前舞台仅 Ghost；可取消",
+      "touch": [
+        "plan-review.tsx",
+        "相关测试"
+      ],
+      "patch_spec": "参照 Perplexity 脚注 + Claude propose-then-apply。已有则补齐视觉层级（脚注更小字、成稿区与对话区分）。取消路径测试必须绿。",
+      "verify": "取消无写正式节点；脚注三级可见",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "AI3",
+      "pillar": "convenience",
+      "status": "todo",
+      "score_lifts": [
+        "score.input"
+      ],
+      "do": "便捷 Composer：底栏常驻仅「+」「输入」「发送」；生成中发送变「停止」；失败保留草稿+重试",
+      "touch": [
+        "command-input",
+        "conversation-controller"
+      ],
+      "patch_spec": "模仿 ChatGPT Composer。+ 打开附件（图/PDF）。语音保持隐藏。busy 时 Stop；失败 toast 轻量、输入不丢。",
+      "verify": "底栏常驻控件 ≤3；失败路径草稿仍在",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done",
+      "remaining": "最后一批修正已通过源码检查，待重新构建及浏览器确认"
+    },
+    {
+      "id": "S1",
+      "pillar": "simplicity_chrome",
+      "status": "done",
+      "score_lifts": [
+        "score.layout",
+        "score.tools"
+      ],
+      "do": "简洁化：工具轨/侧栏默认降对比（opacity 或浅边），悬停/焦点才实显；舞台始终最高对比",
+      "touch": [
+        "theatre.css",
+        "stage-theme.css"
+      ],
+      "patch_spec": "非悬停 chrome 使用更淡 border/背景；:hover/:focus-within 恢复。尊重 prefers-reduced-motion。",
+      "verify": "眯眼测试：焦点在舞台",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "S2",
+      "pillar": "simplicity_onboarding",
+      "status": "done",
+      "score_lifts": [
+        "score.empty"
+      ],
+      "do": "场内三步条「放景 → 调整 → 保存」可关闭、不挡舞台中心；完成后自动收起",
+      "touch": [
+        "stage-first-visit.tsx"
+      ],
+      "patch_spec": "位置靠边缘；Esc 或「知道了」关闭；localStorage 记录完成。",
+      "verify": "关闭后舞台中心无遮挡",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "H1",
+      "pillar": "motion",
+      "status": "done",
+      "score_lifts": [
+        "score.color"
+      ],
+      "do": "动效 100–400ms ease-out；prefers-reduced-motion 下瞬间切；用系统设置实测并截证",
+      "touch": [
+        "globals.css",
+        "stage-theme.css"
+      ],
+      "patch_spec": "已有 reduce 规则则补证据：操作系统开启减少动态后截图/录屏说明无长动画。",
+      "verify": "evidence 含 reduced-motion 实测说明",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "G1",
+      "pillar": "desktop_targets",
+      "status": "done",
+      "score_lifts": [
+        "score.tools"
+      ],
+      "do": "电脑鼠标常用控件 ≥32px、工具轨 ≥40px；人工点按确认无明显误点；不宣称触屏通过",
+      "touch": [
+        "stage-theme.css",
+        "theatre.css"
+      ],
+      "patch_spec": "保持紧凑策略；主路径按钮命中盒达标。在 docs/path9 记录人工误点结论。",
+      "verify": "docs 写明误点可接受；尺寸测量表更新",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "done"
+    },
+    {
+      "id": "GATE",
+      "pillar": "acceptance",
+      "status": "todo",
+      "do": "总验收：真实或代理生手无讲解 5 分钟走通 打开→放景→调整→保存；日夜截图；自估六维均 ≥9 且加权 ≥9.0；字体锁审计通过",
+      "touch": [
+        "docs/path9/PATH9_V2_ACCEPTANCE.md"
+      ],
+      "patch_spec": "新建验收文档，粘贴分数表与截图路径。未过不得在 PR 写 ≥9.0。",
+      "verify": "PATH9_V2_ACCEPTANCE.md 存在且分数表齐全",
+      "evidence": "PATH9_V2_ACCEPTANCE.md",
+      "implementation_status": "pending",
+      "remaining": "保存超时修复的多标签浏览器复测、五分钟全流程、最新截图及重新评分；未报告>=9"
+    }
+  ],
+  "out_of_scope": [
+    "更换或删除汇文明朝/思源/Courier 个性字体栈",
+    "模型/密钥/付费调用",
+    "手机平板投影复台（deferred）",
+    "霓虹/赛博默认主题",
+    "恢复非21件道具"
+  ],
+  "gate": [
+    "all tasks except deferred mobile = done",
+    "font_lock audit passed",
+    "novice_5min place→adjust→save",
+    "day+night screenshots (true night stage)",
+    "desktop six-dimension scores each >=9.0, weighted >=9.0"
+  ],
+  "execution": {
+    "date": "2026-10-28",
+    "timezone": "Asia/Shanghai",
+    "source_commit": "74cf3f7fe72f3114892fb2c72716e17c991d6bef",
+    "browser_tested_commit": "e7264823e8c3badcd4bd6f00204986c47b65c74e",
+    "done": 12,
+    "todo": 3,
+    "gate_passed": false,
+    "first_review_weighted_score": 8.77,
+    "current_final_score": null,
+    "next": "先构建最新源码并复测保存，再完成日夜/Composer与5分钟总验收"
+  }
+}

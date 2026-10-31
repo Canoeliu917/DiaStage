@@ -315,15 +315,15 @@ function LeftColumn({
     const hidden = !hasSlot ? isCollapsed : pane === 'tools' ? toolsHidden : overviewHidden
     const locked = pane === 'tools' ? toolsLocked : overviewLocked
     return (
-      <header className="editor-pane-controls editor-dock-controls flex h-9 shrink-0 items-center justify-between gap-2 border-border/50 border-b px-2 text-xs">
-        <span>{title}</span>
-        <div className="flex gap-1">
+      <header className="editor-pane-controls editor-dock-controls flex h-12 shrink-0 items-center justify-between gap-2 border-border/50 border-b px-2 text-xs">
+        <span className="min-w-0 truncate">{title}</span>
+        <div className="flex shrink-0 gap-1">
           <button
             type="button"
             aria-label={`${locked ? '解锁' : '锁定'}${title}布局`}
             aria-pressed={locked}
             title={locked ? '解锁后可调整大小或隐藏' : '锁定大小和显示，内容仍可操作'}
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-accent"
+            className="flex h-11 w-11 items-center justify-center rounded hover:bg-accent"
             onClick={() => setLayout((previous) => ({ ...previous, [`${pane}Locked`]: !locked }))}
           >
             {locked ? <LockKeyhole size={14} /> : <LockKeyholeOpen size={14} />}
@@ -333,7 +333,7 @@ function LeftColumn({
             aria-label={`${hidden ? '展开' : '隐藏'}${title}`}
             disabled={locked}
             aria-expanded={!hidden}
-            className="flex h-7 w-7 items-center justify-center rounded hover:bg-accent disabled:opacity-35"
+            className="flex h-11 w-11 items-center justify-center rounded hover:bg-accent disabled:opacity-35"
             onClick={() => {
               if (locked) return
               if (!hasSlot) setIsCollapsed(true)
@@ -354,7 +354,7 @@ function LeftColumn({
       style={{
         width: toolsHidden && overviewHidden ? 160 : RAIL_WIDTH + width,
         transition: isDragging ? 'none' : 'width 150ms ease',
-        gridTemplateRows: `${toolsHidden ? '36px' : `minmax(0, ${overviewHidden ? 1 : topRatio}fr)`} ${splitVisible ? SPLIT_HANDLE_HEIGHT : 0}px ${overviewHidden ? '36px' : `minmax(0, ${toolsHidden ? 1 : 1 - topRatio}fr)`}`,
+        gridTemplateRows: `${toolsHidden ? 'var(--editor-pane-header-height, 48px)' : `minmax(0, ${overviewHidden ? 1 : topRatio}fr)`} ${splitVisible ? SPLIT_HANDLE_HEIGHT : 0}px ${overviewHidden ? 'var(--editor-pane-header-height, 48px)' : `minmax(0, ${toolsHidden ? 1 : 1 - topRatio}fr)`}`,
         alignContent: toolsHidden && overviewHidden ? 'start' : undefined,
       }}
     >

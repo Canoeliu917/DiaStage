@@ -35,3 +35,9 @@
 .stage-overview-footer button { padding: 6px 8px; border: 1px solid var(--dia-border); }
 .stage-overview-empty { padding: 24px 16px; color: var(--dia-muted); font-size: 12px; }
 .stage-overview-settings { min-height: 0; flex: 1; overflow: hidden; }
+.editor-sidebar-split .stage-overview button { min-width: 44px; min-height: 44px; }
+.editor-sidebar-split .stage-overview-search { padding-block: 0; }
+.editor-sidebar-split .stage-overview-search input { min-height: 44px; font-size: 14px; }
+.editor-sidebar-split .stage-overview table { min-width: 246px; }
+.editor-sidebar-split .stage-overview-state-column, .editor-sidebar-split .stage-overview-action-column { width: 44px; }
+.editor-sidebar-split .stage-overview td:nth-last-child(-n+2) { padding-inline: 0; }

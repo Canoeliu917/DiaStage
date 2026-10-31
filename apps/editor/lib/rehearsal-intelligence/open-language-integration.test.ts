@@ -9,16 +9,17 @@ import {
   useScene,
 } from '@pascal-app/core'
 import { validateStagePlan } from '@pascal-app/core/stage'
-import { CATALOG_ITEMS } from '@pascal-app/editor/catalog'
 import { applyItemFoldControls } from '@pascal-app/nodes/item-fold'
 import { Group } from 'three'
 import { ItemGLTFLoader } from '../../../../packages/nodes/src/item/model-loader'
 import { SceneJournal } from '../scene-journal'
+import { currentStageContext } from '../stage/context'
 import { useStagePlanPreview } from '../stage/plan-preview'
 import { AVAILABLE_STAGE_SCENERY } from '../stage/prop-assets'
 import { createTheatreSceneGraph } from '../theatre/new-production'
 import { bindRehearsalScene } from './authority'
 import { DiaConversation } from './conversation-controller'
+import { dialogueTestRequest, dialogueTestResponse } from './dialogue.test-helpers'
 import { parseOpenLanguage } from './open-language'
 
 globalThis.requestAnimationFrame ??= () => 0
@@ -33,10 +34,7 @@ async function setup(assets: string[]) {
     }
   const ids: string[] = []
   for (const [index, assetId] of assets.entries()) {
-    const source =
-      assetId === 'SCN-FLAT-090'
-        ? { asset: CATALOG_ITEMS.find((asset) => asset.id === assetId)!, kind: 'scenic-flat' }
-        : AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
+    const source = AVAILABLE_STAGE_SCENERY.find(({ asset }) => asset.id === assetId)!
     const node = ItemNode.parse({
       parentId: level.id,
       asset: source.asset,
@@ -74,7 +72,7 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
       scenario === 'fold'
         ? ['SCN-FOLD-03']
         : Array(scenario === 'enclosure' ? 3 : scenario === 'direction' ? 1 : 2).fill(
-            'SCN-FLAT-090',
+            'SCN-WIN-130',
           ),
     )
     const sceneId = crypto.randomUUID(),
@@ -92,21 +90,26 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
     const originalFetch = globalThis.fetch
     let providerCalls = 0
     globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
-      expect(url).toBe('/api/dia/ground')
+      expect(url).toBe('/api/dia/dialogue')
       providerCalls++
-      const request = JSON.parse(String(init?.body))
-      expect(request.context.objects.some((o: object) => 'transform' in o)).toBe(false)
-      return Response.json({
-        requestId: crypto.randomUUID(),
-        grounding: {
-          ...(parseOpenLanguage(request.rawUtterance) ?? parseOpenLanguage('两块景片拐90度')),
-          rawUtterance: request.rawUtterance,
-        },
-        provider: 'openai',
+      const request = dialogueTestRequest(init)
+      expect(request.openContext.objects.some((o: object) => 'transform' in o)).toBe(false)
+      const grounding = {
+        ...(parseOpenLanguage(request.rawUtterance) ?? parseOpenLanguage('两块景片拐90度')!),
+        rawUtterance: request.rawUtterance,
+      }
+      return dialogueTestResponse(request, {
+        grounding,
+        reply: grounding.requiresClarification
+          ? `需要澄清：${grounding.ambiguities.join('；')}`
+          : '已提供 Stage Proposal，先预览再采用。',
+        provider: 'aliyun',
         model: 'mock-provider-not-live',
       })
     }) as typeof fetch
+    let messagesSent = 0
     const send = async (text: string) => {
+      messagesSent++
       await dia.send(text)
       return dia.store.getState().thread!.messages.at(-1)?.content
     }
@@ -128,7 +131,7 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
       const message = await send(phrase)
       expect(dia.buildProposal()?.structuredGrounding, message).toBeDefined()
       expect(dia.buildProposal()!.groundingProvider).toEqual({
-        provider: 'openai',
+        provider: 'aliyun',
         model: 'mock-provider-not-live',
       })
       if (scenario === 'enclosure') {
@@ -182,18 +185,13 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
       expect(commits, dia.store.getState().notice).toBe(1)
       expect(useScene.temporal.getState().pastStates).toHaveLength(1)
       const accepted = JSON.stringify(useScene.getState().nodes)
-      const acceptedLeft =
-        scenario === 'partial'
-          ? [...dia.buildProposal()!.spatialSolution!.candidates]
-              .find(
-                (candidate) =>
-                  candidate.candidateId ===
-                  dia.buildProposal()!.spatialSolution!.selectedCandidateId,
-              )!
-              .resolvedTransforms.toSorted(
-                (a, b) => b.transform.position.x - a.transform.position.x,
-              )[0]!.subject
-          : null
+      const acceptedLeft = scenario === 'partial' ? ids[0]! : null
+      if (acceptedLeft) {
+        const positions = currentStageContext().objects
+        expect(
+          positions.find((item) => item.id === acceptedLeft)!.transform.position.x,
+        ).toBeLessThan(positions.find((item) => item.id === ids[1])!.transform.position.x)
+      }
       const acceptedLeftTransform = acceptedLeft
         ? JSON.stringify({
             position: (useScene.getState().nodes[acceptedLeft] as ItemNode).position,
@@ -223,9 +221,7 @@ for (const scenario of ['enclosure', 'partial', 'corner', 'fold', 'direction', '
           }),
         ).toBe(acceptedLeftTransform)
       }
-      expect(providerCalls).toBe(
-        scenario === 'enclosure' ? 4 : ['partial', 'direction'].includes(scenario) ? 3 : 2,
-      )
+      expect(providerCalls).toBe(messagesSent)
     } finally {
       globalThis.fetch = originalFetch
       dia.dispose()
@@ -253,9 +249,10 @@ test('Integration: compound stage stays Ghost-only until one Accept transaction'
   const dia = new DiaConversation(sceneId, () => null, undefined, false)
   const originalFetch = globalThis.fetch
   let providerCalls = 0
-  globalThis.fetch = (async () => {
+  globalThis.fetch = (async (url: unknown, init?: RequestInit) => {
     providerCalls++
-    throw new Error('compound stage must stay deterministic')
+    expect(url).toBe('/api/dia/dialogue')
+    return dialogueTestResponse(dialogueTestRequest(init))
   }) as typeof fetch
   const phrase = '生成一个有三帘景片和二帘景片联合搭成的舞台，舞台中有桌子椅子沙发'
   try {
@@ -269,7 +266,7 @@ test('Integration: compound stage stays Ghost-only until one Accept transaction'
       'SCN-CHAIR-045',
       'SCN-SOFA-175',
     ])
-    expect(providerCalls).toBe(0)
+    expect(providerCalls).toBe(1)
     expect(commits).toBe(0)
     expect(JSON.stringify(useScene.getState().nodes)).toBe(before)
     await dia.previewBuild(dia.buildProposal()!.plan)
@@ -291,7 +288,7 @@ test('Integration: compound stage stays Ghost-only until one Accept transaction'
     expect(JSON.stringify(useScene.getState().nodes)).toBe(before)
     useScene.temporal.getState().redo()
     expect(JSON.stringify(useScene.getState().nodes)).toBe(accepted)
-    expect(providerCalls).toBe(0)
+    expect(providerCalls).toBe(3)
   } finally {
     globalThis.fetch = originalFetch
     dia.dispose()

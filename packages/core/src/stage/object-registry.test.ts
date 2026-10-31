@@ -5,14 +5,14 @@ import {
   STAGE_OBJECT_REGISTRY,
 } from './object-registry'
 
-test('guide catalog has 22 stable identities in the six source categories', () => {
-  expect(STAGE_OBJECT_REGISTRY).toHaveLength(22)
-  expect(new Set(STAGE_OBJECT_REGISTRY.map((spec) => spec.canonicalId)).size).toBe(22)
+test('guide catalog has 21 stable identities in the six source categories', () => {
+  expect(STAGE_OBJECT_REGISTRY).toHaveLength(21)
+  expect(new Set(STAGE_OBJECT_REGISTRY.map((spec) => spec.canonicalId)).size).toBe(21)
   expect(
     STAGE_OBJECT_CATEGORIES.map(
       (category) => STAGE_OBJECT_REGISTRY.filter((entry) => entry.category === category).length,
     ),
-  ).toEqual([3, 5, 4, 2, 4, 4])
+  ).toEqual([2, 5, 4, 2, 4, 4])
 })
 
 test('approved dimensions remain meters at 1:1 and folded extents are not guessed', () => {
@@ -44,14 +44,24 @@ test('generic categories retain alternatives instead of inventing a default obje
   expect(resolveStageObjectSpecs('门')).toHaveLength(2)
   expect(resolveStageObjectSpecs('窗')).toHaveLength(2)
   expect(resolveStageObjectSpecs('台块')).toHaveLength(3)
+  for (const name of ['景片', '景墙'])
+    expect(resolveStageObjectSpecs(name).map((spec) => spec.canonicalId)).toEqual([
+      'SCN-FOLD-02',
+      'SCN-FOLD-03',
+      'SCN-WIN-130',
+      'SCN-WIN-160',
+      'SCN-DOOR-130',
+      'SCN-DOOR-160',
+    ])
+  expect(resolveStageObjectSpecs('单帘景片')).toEqual([])
 })
 
 test('manifest instance extents remain separate from panel and frame specifications', () => {
   const folded = resolveStageObjectSpecs('二帘组合')[0]!
   expect(folded.defaultDimensions).toBeNull()
   expect(folded.sourceDimensions).toBe('单片宽0.90m')
-  expect(folded.modelDimensions).toEqual({ width: 0.92, height: 2.4, depth: 0.92 })
-  expect(resolveStageObjectSpecs('三帘组合')[0]!.modelDimensions!.depth).toBeCloseTo(0.94)
+  expect(folded.modelDimensions).toEqual({ width: 0.94, height: 2.4, depth: 0.94 })
+  expect(resolveStageObjectSpecs('三帘组合')[0]!.modelDimensions!.depth).toBeCloseTo(0.98)
   const door = resolveStageObjectSpecs('单门景片')[0]!
   expect(door.defaultDimensions!.depth).toBe(0.08)
   expect(door.modelDimensions!.depth).toBeCloseTo(0.48669697251359767)

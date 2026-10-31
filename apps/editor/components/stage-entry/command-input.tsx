@@ -3,7 +3,6 @@
 import { useScene } from '@pascal-app/core'
 import {
   compileStagePlan,
-  parseStageText,
   type SceneContextSummary,
   type StageCommand,
   type StagePlan,
@@ -32,7 +31,6 @@ import {
   draftContext,
   mergeDraftPlan,
 } from '@/lib/stage/creation-policy'
-import { groundStageAssets } from '@/lib/stage/ground-assets'
 import type { ScriptImport } from '@/lib/stage/import-metadata'
 import { createManualStageGraph } from '@/lib/stage/initial-stage'
 import { AVAILABLE_STAGE_ASSET_IDS } from '@/lib/stage/prop-assets'
@@ -223,7 +221,8 @@ export function StageCommandInput({
     input = text,
     inputSource = source,
   ): Promise<string> => {
-    if (handleControl(input)) return '已处理本地停止、取消或撤销指令；请查看桌面结果'
+    if (inputSource === 'voice' && handleControl(input))
+      return '已处理本地停止、取消或撤销指令；请查看桌面结果'
     if (!input.trim() || busy) return '桌面正在处理，请稍后重试；没有执行新操作'
     abort.current?.abort()
     const controller = new AbortController()
@@ -232,7 +231,7 @@ export function StageCommandInput({
     setError('')
     const remote = remoteCommand.current
     try {
-      if (sceneId) {
+      if (sceneId && inputSource === 'voice') {
         const commands = deleteRecentlyAdded(input) ?? localSceneryOperation(input)
         if (commands) {
           if (lease && !remote) {
@@ -277,30 +276,25 @@ export function StageCommandInput({
         !remote && lease?.mode === 'draft' && draft.current
           ? draftContext(draft.current.context, draft.current.plan)
           : full
-      const parsed = parseStageText(input, current, priorAnswers, inputSource)
-      const local = parsed ? groundStageAssets(parsed) : null
-      const request = local
-        ? null
-        : await fetchAiWithBudgetConsent('/api/stage/plan', {
-            method: 'POST',
-            signal: controller.signal,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              source: inputSource,
-              input,
-              sceneContext: current,
-              priorAnswers,
-            }),
-          })
-      const response = request?.response
-      const result = local ? { plan: local, requestId: createUUID() } : await response!.json()
-      if (response && !response.ok)
-        throw new Error(result.error?.message || '方案生成失败，请稍后重试')
+      const request = await fetchAiWithBudgetConsent('/api/stage/plan', {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: inputSource,
+          input,
+          sceneContext: current,
+          priorAnswers,
+        }),
+      })
+      const response = request.response
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error?.message || '方案生成失败，请稍后重试')
       const next = StagePlanSchema.parse(result.plan)
       if (controller.signal.aborted || !mounted.current) return '已取消，没有执行'
       requestId.current = remote?.id ?? result.requestId
       setContext(current)
-      if (!remote && sceneId && lease && !next.questions.length && !request?.budgetApproved) {
+      if (!remote && sceneId && lease && !next.questions.length && !request.budgetApproved) {
         const compiled = compileStagePlan(next, current, {
           transactionId: result.requestId,
           issuedAt: new Date().toISOString(),
@@ -406,7 +400,7 @@ export function StageCommandInput({
   }
   const sendDisabled = attachments.pending
     ? processing || attachments.busy
-    : attachments.open || (busy && !localControl(text)) || !text.trim()
+    : attachments.open || (busy && !(source === 'voice' && localControl(text))) || !text.trim()
   const send = () => {
     if (sendDisabled) return
     if (attachments.pending) attachments.send(text)
@@ -417,7 +411,7 @@ export function StageCommandInput({
       <details>
         <summary>AI 使用详情与隐私</summary>
         <p>
-          复杂口令和筛选后的剧本片段会发送至模型服务。建议模式逐次确认；本机连续制景须主动授权。
+          发送的口令、当前舞台摘要和筛选后的剧本片段会提交模型服务。建议模式逐次确认；本机连续制景须主动授权。
           <a href="/privacy" target="_blank" rel="noreferrer">
             查看数据说明
           </a>
@@ -436,7 +430,7 @@ export function StageCommandInput({
               if (![daily, monthly, dailyLimit, monthlyLimit].every(Number.isFinite))
                 throw new Error('用量格式无效')
               setUsageDetail(
-                `${body.invited ? '内测 AI 已开通，费用由网站承担。' : '尚未获邀开通内测 AI，可继续使用本地口令和手动置景。'}今日已用 ${formatCostCny(daily)} / ¥${dailyLimit.toFixed(2)}；本月已用 ${formatCostCny(monthly)} / ¥${monthlyLimit.toFixed(2)}。按北京时间重置。用量含进行中的预留费用，按内部参考价估算，不是供应商账单。${body.site ? `全站本月估算：${formatCostCny(Number(body.site.costCny))} / ¥${Number(body.site.limitCny).toFixed(2)}。` : ''}`,
+                `${body.invited ? '内测 AI 已开通，费用由网站承担。' : '尚未获邀开通内测 AI，可继续手动置景。'}今日已用 ${formatCostCny(daily)} / ¥${dailyLimit.toFixed(2)}；本月已用 ${formatCostCny(monthly)} / ¥${monthlyLimit.toFixed(2)}。按北京时间重置。用量含进行中的预留费用，按内部参考价估算，不是供应商账单。${body.site ? `全站本月估算：${formatCostCny(Number(body.site.costCny))} / ¥${Number(body.site.limitCny).toFixed(2)}。` : ''}`,
               )
             } catch (failure) {
               setUsageDetail(failure instanceof Error ? failure.message : '无法读取用量')
@@ -446,6 +440,17 @@ export function StageCommandInput({
           查看我的 AI 额度
         </button>
         {usageDetail && <p role="status">{usageDetail}</p>}
+        <button
+          type="button"
+          onClick={() => {
+            setText(STAGE_EXAMPLE)
+            setSource('typed-command')
+            setAnswers([])
+          }}
+          disabled={busy}
+        >
+          试用示例
+        </button>
       </details>
       {sceneId && (
         <CreationModeControl
@@ -526,6 +531,7 @@ export function StageCommandInput({
                 readOnly={attachments.open && !attachments.pending}
                 onChange={(event) => {
                   setText(event.target.value)
+                  setSource('typed-command')
                   setAnswers([])
                 }}
                 onKeyDown={(event) => {
@@ -539,24 +545,25 @@ export function StageCommandInput({
             {attachments.controls}
           </div>
           <div className="stage-entry-actions">
-            <button
-              type="button"
-              onClick={() => {
-                setText(STAGE_EXAMPLE)
-                setSource('typed-command')
-                setAnswers([])
-              }}
-              disabled={busy}
-            >
-              试用示例
-            </button>
-            <button type="button" onClick={send} disabled={sendDisabled}>
-              {attachments.pending
-                ? '发送生成'
-                : state === 'planning'
-                  ? '正在理解台位…'
-                  : '生成舞台方案'}
-            </button>
+            {state === 'planning' || attachments.busy ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (attachments.busy) attachments.stop()
+                  else {
+                    rejectRemote()
+                    abort.current?.abort()
+                    setState('idle')
+                  }
+                }}
+              >
+                停止
+              </button>
+            ) : (
+              <button type="button" onClick={send} disabled={sendDisabled}>
+                {attachments.pending ? '发送生成' : state === 'error' ? '重试生成' : '发送'}
+              </button>
+            )}
           </div>
         </>
       )}
@@ -659,7 +666,7 @@ export function StageCommandInput({
           </button>
         </section>
       )}
-      {['planning', 'applying'].includes(state) && (
+      {plan && ['planning', 'applying'].includes(state) && (
         <button
           type="button"
           onClick={() => {

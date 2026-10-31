@@ -29,7 +29,9 @@ import {
 } from 'three'
 import { stageContactIds } from '@/lib/stage/contacts'
 import { stageFrame } from '@/lib/stage/context'
+import { centerFromPivot } from '@/lib/stage/edge-run'
 import { useStageContext } from '@/lib/stage/live-context'
+import { describeStagePoint, rehearsalBlock } from '@/lib/stage/rehearsal-measure'
 import { DIA_COLORS } from '@/lib/visual-system'
 import {
   cameraFloorplanMatrix,
@@ -73,8 +75,8 @@ export function stagePlacementPreview(
     color: !result.valid || contact ? DIA_COLORS.error : DIA_COLORS.blue,
     valid: result.valid,
     message: result.warnings
-      .filter((warning) => warning.blocking)
-      .map((warning) => warning.message)
+      .filter((warning) => warning.blocking || warning.code === 'collision')
+      .map((warning) => rehearsalBlock(warning.message))
       .join(' '),
   }
 }
@@ -175,6 +177,13 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
   const frame = stageFrame()
   const { height } = draft.item.dimensionsMeters
   const point = draft.item.transform.position
+  const shown = draft.foldPlacement
+    ? centerFromPivot(
+        point,
+        draft.item.transform.rotationDegrees.y,
+        draft.foldPlacement.centerOffset,
+      )
+    : point
   const position = stageToWorldPosition(point, frame)
   const rotation = stageToWorldRotation(draft.item.transform.rotationDegrees)
   const venue = state.context.venue
@@ -202,14 +211,14 @@ export function StagePlacementSystem({ enabled }: { enabled: boolean }) {
         {!draft.item.existingNodeId && <PlacementVolume item={draft.item} color={state.color} />}
         <Html position={[0, height + 0.15, 0]} center style={{ pointerEvents: 'none' }}>
           <div className="stage-ghost-label">
-            {draft.item.displayName} · {stagePositionLabel(point, venue.depthMeters)}
-            {draft.item.libraryAssetId !== null && !draft.item.existingNodeId && ' · 轮廓参考'}
+            {draft.item.displayName} · {stagePositionLabel(shown, venue.depthMeters)}
+            {draft.foldPlacement ? ' · 直墙' : ''}
             <br />
-            距中心线 {Math.abs(point.x).toFixed(2)} 米 · 距台口 {point.z.toFixed(2)} 米
-            {!state.valid && (
+            {describeStagePoint(shown, venue.depthMeters)}
+            {state.message && (
               <>
                 <br />
-                请调整：{state.message}
+                {state.message}
               </>
             )}
           </div>
@@ -264,6 +273,13 @@ export function StagePlacementFloorplan({ enabled }: { enabled: boolean }) {
     return `${p[0]},${p[2]}`
   }
   const { position } = draft.item.transform
+  const shown = draft.foldPlacement
+    ? centerFromPivot(
+        position,
+        draft.item.transform.rotationDegrees.y,
+        draft.foldPlacement.centerOffset,
+      )
+    : position
   const footprints = draft.item.existingNodeId ? [] : stageObjectFootprints(draft.item)
   const label = cameraPlanPoint(stageToWorldPosition(position, stage), frame)
   const unit = context.unitsPerPixel
@@ -314,7 +330,7 @@ export function StagePlacementFloorplan({ enabled }: { enabled: boolean }) {
           fontSize={12 * unit}
           fill={context.palette.measurementLabelText}
         >
-          {draft.item.displayName} · {stagePositionLabel(position, venue.depthMeters)}
+          {draft.item.displayName} · {stagePositionLabel(shown, venue.depthMeters)}
         </text>
         <text
           x={label[0]}
@@ -323,9 +339,7 @@ export function StagePlacementFloorplan({ enabled }: { enabled: boolean }) {
           fontSize={11 * unit}
           fill={context.palette.measurementLabelText}
         >
-          {state.valid
-            ? `中心线 ${Math.abs(position.x).toFixed(2)} 米 · 台口 ${position.z.toFixed(2)} 米`
-            : '此处不可落位，请调整'}
+          {state.message || describeStagePoint(shown, venue.depthMeters)}
         </text>
       </g>
     </g>

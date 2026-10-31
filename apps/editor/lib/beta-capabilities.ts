@@ -2,6 +2,7 @@ export const BETA_EXPERT_MEDIA_ENABLED = false
 export const BETA_LIGHTING_PRODUCTION_ENABLED = false
 export const BETA_REHEARSAL_ENABLED = false
 export const BETA_REMOUNT_ENABLED = false
+export const BETA_STAGE_DIA_ENABLED = false
 
 export function betaCapabilityNotice(text: string): string | null {
   if (
