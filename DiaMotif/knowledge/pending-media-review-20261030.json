@@ -3,12 +3,6 @@
   "checkedAt": "2026-10-30",
   "scope": "独占复核社会发现候选中的8条；不修改已拒收5条、已入库大麦/可灵，不导入canonical或程序。",
   "method": "agent-reach只读公开网页与Jina兜底；验证码即停止；无登录、Cookie、下载视频、复制全文、付费调用。",
-  "counts": {
-    "candidates": 8,
-    "originalBodiesReadable": 7,
-    "originalBlocked": 1,
-    "admittedResources": 8
-  },
   "newSourceDomains": [
     {
       "domain": "lmtw.com",
@@ -87,23 +81,6 @@
         "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html"
       ],
       "unresolved": []
-    },
-    {
-      "candidateId": "sd-weibo-wuzhen-live",
-      "originalUrl": "https://weibo.com/2/detail/5353603750691922",
-      "checkedAt": "2026-10-30",
-      "outcome": "reviewed-for-admission",
-      "admittedResourceIds": [
-        "dm-resource-wuzhen-creators-live-weibo-2026"
-      ],
-      "originalBodyReadable": true,
-      "detail": "原页正文及04:27:33视频元数据可读；仅作为微博戏剧平台节目页，不称主办方原始公告，也不称已观看直播全片。",
-      "supportUrls": [
-        "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html"
-      ],
-      "unresolved": [
-        "没有逐段播放或字幕；不保证当前完整回放可用，不作舞台全剧。"
-      ]
     },
     {
       "candidateId": "sd-kuaishou-opera-night",
@@ -330,48 +307,6 @@
     },
     {
       "verifiedAt": "2026-10-30",
-      "access": "mixed",
-      "rights": "metadata-only",
-      "recordType": "resource",
-      "status": "verified",
-      "contentRegion": "mainland",
-      "id": "dm-resource-wuzhen-creators-live-weibo-2026",
-      "title": "乌镇戏剧节青年竞演主创接力直播｜节目页",
-      "category": "videos",
-      "subtopics": [
-        "video-live-replay",
-        "video-interview"
-      ],
-      "topics": [
-        "乌镇戏剧节",
-        "青年竞演",
-        "主创访谈",
-        "直播节目页",
-        "戏剧创作"
-      ],
-      "organization": "微博戏剧（平台账号）",
-      "url": "https://weibo.com/2/detail/5353603750691922",
-      "summary": "微博戏剧账号的青年竞演主创接力直播节目页，正文围绕18组主创的剧目与幕后故事，页面显示04:27:33视频元数据。仅核节目页及专业关联，未逐段播放或核字幕；不当作舞台全剧录像，也不保证当前完整回放可用。",
-      "theatreEvidence": "节目页正文明确乌镇戏剧节青年竞演、18组主创接力直播及创作故事，视频元数据在正文下方可见；属于具体戏剧创作者专业访谈节目线索。",
-      "sourceTier": "platform",
-      "sourceKind": "announcement",
-      "publishedAt": null,
-      "applicableYear": "2026",
-      "sourceRefs": [
-        {
-          "title": "微博戏剧：青年竞演主创接力直播",
-          "url": "https://weibo.com/2/detail/5353603750691922",
-          "locator": "原页账号微博戏剧、10-13月日、正文主创和幕后主题，以及下方04:27:33视频元数据；未读取视频全片。"
-        },
-        {
-          "title": "中国旅游报：第十三届乌镇戏剧节地域报道",
-          "url": "https://www.ctnews.com.cn/dongtai/m/content/2026-10/19/content_193345.html",
-          "locator": "2026年10月19日原文首段明确本届在浙江嘉兴乌镇西栅举办；不用于确认直播拍摄位置或每位嘉宾履历。"
-        }
-      ]
-    },
-    {
-      "verifiedAt": "2026-10-30",
       "access": "public",
       "rights": "metadata-only",
       "recordType": "resource",
@@ -533,5 +468,14 @@
         }
       ]
     }
-  ]
+  ],
+  "historicalReviewCounts": {
+    "candidates": 8,
+    "originalBodiesReadable": 7,
+    "originalBlocked": 1,
+    "admittedResources": 8
+  },
+  "policyAsOf": "2026-10-31：旧审核统计仅作历史；已删除禁收内容。剩余元数据不自动成为正式知识或完整视频，当前准入以publication审核为准。",
+  "retainedResourceRecords": 7,
+  "retainedCandidates": 7
 }

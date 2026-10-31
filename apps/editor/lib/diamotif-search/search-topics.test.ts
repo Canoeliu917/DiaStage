@@ -51,7 +51,6 @@ test('explicit nonknowledge memberships match the actual resource category witho
 })
 
 test.each([
-  ['videos', 'video-excerpt', 'dm-resource-cctv-thunderstorm-20170501-part1'],
   ['people', 'person-actor', 'dm-resource-ncpa-opera-artists'],
   ['venues', 'venue-organization', 'dm-resource-hkrep-company-profile'],
   ['admissions', 'admission-hk-macao', 'dm-resource-hkapa-drama-admissions'],
@@ -64,20 +63,24 @@ test.each([
   expect(result.results.every((resource) => topicMatches(resource, topic))).toBe(true)
 })
 
-test('partial recordings and unreviewed resources are not promoted to full performances', () => {
-  const part = SEARCH_RESOURCES.find(
-    ({ id }) => id === 'dm-resource-cctv-thunderstorm-20170501-part1',
-  )!
-  expect(topicMatches(part, 'video-full')).toBe(false)
-  expect(topicMatches(part, 'video-excerpt')).toBe(true)
-  const unreviewed = { ...part, id: 'new-video-without-reviewed-facets' }
-  expect(topicMatches(unreviewed, 'all')).toBe(true)
-  expect(topicMatches(unreviewed, 'video-full')).toBe(false)
-  expect(topicMatches(unreviewed, 'video-excerpt')).toBe(false)
+test('removed media facets cannot be requested or displayed', () => {
+  for (const topic of [
+    'video-excerpt',
+    'video-documentary',
+    'video-lecture',
+    'video-live-replay',
+    'video-interview',
+    'video-rehearsal',
+    'script-excerpt',
+    'script-monologue',
+    'ai-tools',
+  ])
+    expect(SearchTopicSchema.safeParse(topic).success).toBe(false)
+  expect(searchDiaMotif({ category: 'videos' }).results).toHaveLength(0)
 })
 
 test('AI screen records require actual AI creative evidence without a fabricated theatre association', () => {
-  const base = SEARCH_RESOURCES.find(({ id }) => id === 'dm-resource-cad-thunderstorm-20260410')!
+  const base = SEARCH_RESOURCES.find(({ category }) => category === 'events')!
   const resource = {
     ...base,
     id: 'synthetic-ai-animation',
@@ -94,7 +97,7 @@ test('AI screen records require actual AI creative evidence without a fabricated
   expect(parsed.theatreEvidence).toBeUndefined()
   expect(topicMatches(parsed, 'ai-animation')).toBe(true)
   expect(topicMatches(parsed, 'ai-tv')).toBe(false)
-  expect(topicMatches(parsed, 'video-documentary')).toBe(false)
+  expect(topicMatches(parsed, 'video-full')).toBe(false)
   for (const invalid of [
     { ...resource, aiEvidence: undefined },
     { ...resource, aiInvolvement: undefined },
@@ -128,13 +131,13 @@ test('AI screen records require actual AI creative evidence without a fabricated
   const reference = SearchResourceSchema.parse({
     ...resource,
     aiInvolvement: 'reference',
-    subtopics: ['ai-tools', 'ai-techniques'],
+    subtopics: ['ai-techniques'],
     aiEvidence: '技术文档介绍AI视频生成接口与调用方法，不属于具体影视作品。',
   })
   expect(isProfessionalResource(reference)).toBe(true)
   expect(reference.aiInvolvement).toBe('reference')
   expect(AI_INVOLVEMENT_LABELS[reference.aiInvolvement!]).toBe('AI创作资料')
-  expect(topicMatches(reference, 'ai-tools')).toBe(true)
+  expect(topicMatches(reference, 'ai-techniques')).toBe(true)
   expect(topicMatches(reference, 'ai-film')).toBe(false)
   expect(SearchResourceSchema.safeParse({ ...aboutAi, publishedAt: '20261030' }).success).toBe(
     false,

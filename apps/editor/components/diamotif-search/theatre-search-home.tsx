@@ -468,7 +468,7 @@ export function TheatreSearchHome({
                     : response
                       ? response.webStatus === 'searched'
                         ? `本次资料 ${response.results.length} 条 · 联网来源 ${response.results.filter(({ status }) => status === 'web-candidate').length} 条`
-                        : `${response.topic !== 'all' ? `${SEARCH_TOPICS.find(({ id }) => id === response.topic)!.label} · ` : ''}共 ${response.total} 条已收录记录，显示 ${response.results.length} 条`
+                        : `${response.topic !== 'all' ? `${SEARCH_TOPICS.find(({ id }) => id === response.topic)?.label ?? '资料'} · ` : ''}共 ${response.total} 条已收录记录，显示 ${response.results.length} 条`
                       : '检索结果'}
             </p>
           </div>
@@ -662,7 +662,7 @@ export function TheatreSearchHome({
           <details className="motif-intake-policy">
             <summary>Dia 收录准则</summary>
             <p>
-              仅收录中国大陆及港澳的戏剧艺术与AI影视专业资料，国外暂缓；排除娱乐八卦，人物须关联可核实作品，AI影视注明AI参与依据，正文与视频按许可访问。
+              剧本与影视作品只收已核完整版本，知识注明机构或文献依据；不收采访、片段与宣发内容，存在出入先核对，正文与视频按许可访问。
             </p>
           </details>
         </div>

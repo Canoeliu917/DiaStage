@@ -254,7 +254,7 @@
   },
   {
     "id": "dm-knowledge-ncpa-chang-nianbai-20200629",
-    "title": "常秋月谈京剧花旦三种念白｜京白、韵白与方言",
+    "title": "常秋月谈京剧花旦三种念白｜京白、韵白与谐白",
     "category": "knowledge",
     "subtopics": [
       "voice",
@@ -268,11 +268,12 @@
       "京白",
       "韵白",
       "韻白",
-      "方言",
       "台词",
-      "臺詞"
+      "臺詞",
+      "谐白",
+      "諧白"
     ],
-    "summary": "国家大剧院公开常秋月讲解京剧花旦念白的图文，以具体剧目及人物说明不同念白的表达特点。属于京剧表演与台词资料，不能直接替代话剧台词训练规范。正文可读，未确认独立视频播放，未转录或下载影像。",
+    "summary": "国家大剧院原文列京白、韵白、谐白三种念白，主讲常秋月，2020年6月29日。仅作京剧花旦表演与台词文字资料，保留原作者观点，不替代话剧训练规范；不收讲座视频。",
     "organization": "国家大剧院／常秋月",
     "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxq/202011/t20201130_223439.shtml",
     "access": "public",
@@ -288,49 +289,9 @@
     "applicableYear": null,
     "sourceRefs": [
       {
-        "title": "常秋月谈京剧花旦三种念白｜京白、韵白与方言",
+        "title": "常秋月谈京剧花旦三种念白｜京白、韵白与谐白",
         "url": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxq/202011/t20201130_223439.shtml",
         "locator": "原页主讲人与2020/06/29日期；京白及后续念白讲解章节。只读取图文，未确认播放器。"
-      }
-    ]
-  },
-  {
-    "id": "dm-video-cctv-parasite-rehearsal-20240807",
-    "title": "话剧《寄生虫》排练探访｜央视2024年报道片段",
-    "category": "videos",
-    "subtopics": [
-      "video-rehearsal",
-      "video-documentary"
-    ],
-    "topics": [
-      "寄生虫",
-      "寄生蟲",
-      "话剧排练",
-      "話劇排練",
-      "吴樾",
-      "吳樾",
-      "排练探班",
-      "排練探班"
-    ],
-    "summary": "央视网《中国电影报道》2024年8月7日发布的话剧《寄生虫》排练探访视频入口，简介说明吴樾在排练现场指导。虽然栏目名称含电影，具体内容关联舞台话剧；这是排练报道片段，不是电影、全剧演出或完整排练档案。本轮核对原站视频元数据，未观看或转录全片。",
-    "organization": "中央广播电视总台央视网",
-    "url": "https://tv.cctv.com/2024/08/07/VIDEozWHdXcJ7J8gQheVsDWA240807.shtml",
-    "access": "public",
-    "recordType": "resource",
-    "theatreEvidence": "央视原站标题与视频简介明确“话剧《寄生虫》排练现场”，并标2024-08-07 22:28及来源央视网，内容对象为戏剧排练。",
-    "sourceTier": "professional-media",
-    "sourceKind": "professional-media",
-    "publishedAt": "2024-08-07",
-    "verifiedAt": "2026-10-30",
-    "rights": "metadata-only",
-    "status": "verified",
-    "contentRegion": "mainland",
-    "applicableYear": null,
-    "sourceRefs": [
-      {
-        "title": "话剧《寄生虫》排练探访｜央视2024年报道片段",
-        "url": "https://tv.cctv.com/2024/08/07/VIDEozWHdXcJ7J8gQheVsDWA240807.shtml",
-        "locator": "原站视频标题、来源与更新时间、视频简介。仅核元数据与观看入口，不证明全片已看或可转载。"
       }
     ]
   }

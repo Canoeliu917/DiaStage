@@ -14,8 +14,6 @@ AI参与程度另列 `aiInvolvement`：《中国神话》依据原文列为 `gen
 
 ## AI影视：7条
 
-- `dm-ai-cmg-chinese-mythology-2024`：[总台2024年《中国神话》启播说明](https://www.cctv.com/2024/03/22/ARTImxwnEZa0LYYPusv8E57A240322.shtml)。正文日期2024-03-22，具体列出AI参与美术、分镜、视频、配音、配乐及制作合作方。标为制作方原始发布；不另造戏剧关联，归AI微短剧及制作技术。
-- `dm-ai-cmg-poetry-animation-2024`：[总台2024年《千秋诗颂》启播说明](https://news.cctv.com/2024/02/26/ARTIxQBqr2yFDGQ0jJkm1ygK240226.shtml)。正文日期2024-02-26，明确AI图像、人物动态、文生视频及后期环节。保留首批2024版本，不将原文效率宣传或首发措辞当作独立结论。
 - `dm-ai-shlab-poetry-production-2024`：[上海AI实验室参与《千秋诗颂》的技术说明](https://www.shlab.org.cn/news/5443872)。正文日期2024-02-23，技术参与方具名介绍书生·筑梦、AnimateDiff等方法。与总台作品发布为不同来源及技术视角，未复制全篇，也未收录其境外代码跳转链接。
 - `dm-ai-aliyun-wan3-video-api`：[阿里云万相3.0视频生成API参考](https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference)。核验模型版本、输入类型、任务创建与轮询流程，来源级别为平台原始文档。正文读取未显示独立发布日期，不补造更新时间。工具可用性、地区、参数及计费仍以供应商当前文档为准，没有执行示例调用。
 - `dm-ai-nrta-mediaaiac5-2026`：[广电总局第五届MediaAIAC通知](https://www.nrta.gov.cn/art/2026/7/21/art_113_73728.html)。页面日期2026-07-21、文件落款2026-07-19；明确AI内容生产与增强等赛道。原截止日期2026-08-31已过，保留历史行业活动，不显示为当前报名机会。

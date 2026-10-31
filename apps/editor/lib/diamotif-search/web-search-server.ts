@@ -8,12 +8,14 @@ import { QWEN_TRIAL_MODEL } from '../ai/model-pricing'
 import { getAiProviderConfig } from '../ai/provider-config'
 import { trackAiCall } from '../ai/usage'
 import {
+  DISCOVERY_CONTENT_POLICY,
   isEntertainmentQuery,
+  isExcludedMedia,
   SEARCH_CATEGORIES,
   type SearchCategory,
   type SearchResource,
 } from './catalog'
-import type { SearchResponse } from './search'
+import { SEARCH_RESOURCES, type SearchResponse } from './search'
 import { SEARCH_TOPICS, type SearchTopic, topicFitsCategory } from './search-topics'
 import { sourceRegion } from './source-scope'
 
@@ -41,7 +43,11 @@ const aiScreen = (value: string) =>
   )
 const unavailable = () => new AiError('PLAN_INVALID', '联网检索未返回可验证来源，请稍后重试。', 502)
 
-function sourceResource(raw: unknown, category: SearchCategory): SearchResource | null {
+function sourceResource(
+  raw: unknown,
+  category: SearchCategory,
+  localEvidence?: SearchResource[],
+): SearchResource | null {
   const parsed = SourceSchema.safeParse(raw)
   if (!parsed.success) return null
   const source = parsed.data
@@ -55,6 +61,15 @@ function sourceResource(raw: unknown, category: SearchCategory): SearchResource 
     ) &&
       professional.test(source.site_name ?? ''))
   const aiRelated = aiScreen(source.title)
+  const matching = SEARCH_RESOURCES.filter(
+    (resource) =>
+      resource.url === source.url && (category === 'all' || resource.category === category),
+  )
+  const reviewed =
+    localEvidence?.find((resource) => resource.url === source.url) ??
+    (matching.length === 1
+      ? matching[0]
+      : matching.find((resource) => source.title.includes(resource.title)))
   if (
     !['https:', 'http:'].includes(url.protocol) ||
     url.username ||
@@ -65,7 +80,23 @@ function sourceResource(raw: unknown, category: SearchCategory): SearchResource 
     /(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(host) ||
     !sourceRegion(source.url) ||
     isEntertainmentQuery(evidence) ||
+    isExcludedMedia(source.title) ||
     (category === 'ai-screen' ? !aiRelated : !theatreRelated && (category !== 'all' || !aiRelated))
+  )
+    return null
+  if (reviewed) return reviewed
+  // Search metadata cannot establish full-text coverage or validate a definition.
+  if (
+    ['scripts', 'videos', 'knowledge'].includes(category) ||
+    /剧本|劇本|全文|全[剧劇]|正片|完整版|片段|选段|選段|花絮|[纪紀][录錄]|讲座|講座|回放|[术術][语語]|定义|定義|概念|知识|知識|教学|教學|理论|理論|视频|視頻|动画|動畫|电影|電影|短剧|短劇|漫剧|漫劇/.test(
+      source.title,
+    )
+  )
+    return null
+  if (
+    !/公告|开票|開票|票[务務]|招生|招聘|招募|征集|徵集|报名|報名|[艺藝]考[说說]明|考试说明|考試說明/.test(
+      source.title,
+    )
   )
     return null
   url.hash = ''
@@ -129,7 +160,7 @@ async function readSearchStream(
     if (found !== undefined) {
       if (!Array.isArray(found) || found.length > 100) throw unavailable()
       for (const source of found) {
-        const resource = sourceResource(source, category)
+        const resource = sourceResource(source, category, evidence)
         if (resource?.url && sources.size < 24) sources.set(resource.url, resource)
         const index = source?.index
         if (Number.isSafeInteger(index) && index > 0) {
@@ -218,6 +249,7 @@ export async function searchDiaMotifWeb(
   const config = getAiProviderConfig()
   if (config?.provider !== 'aliyun') throw unavailable()
   if (!query.trim() || query.length > 500 || isEntertainmentQuery(query)) throw unavailable()
+  if (isExcludedMedia(query.replace(/《[^》]*》/g, ''))) throw unavailable()
   if (!topicFitsCategory(category, topic)) throw unavailable()
   const body = {
     model: QWEN_TRIAL_MODEL,
@@ -226,6 +258,7 @@ export async function searchDiaMotifWeb(
         {
           role: 'system',
           content: [
+            { text: DISCOVERY_CONTENT_POLICY },
             {
               text: `仅检索中国大陆、香港、澳门的戏剧、剧场、舞台艺术与AI影视专业资料。国外资料、国外网站及其他地区来源暂缓。戏剧与AI影视分开：AI影视涵盖明确涉及AI创作的电影、电视、短剧、漫剧、动画及制作技术，不扩展普通影视娱乐。优先发布主体原站，也可发现国内专业媒体和创作者在小红书、微博、抖音、哔哩哔哩、微信公众号、豆瓣等平台的公开专业内容；不能把平台身份或创作者自述当作官方认证。仅采集公开可访问的元数据、来源链接与许可范围内摘要，不绕过登录、付费或访问限制，不下载受限正文或视频。分类边界：${SEARCH_CATEGORIES.filter(
                 ({ id }) => id !== 'all',

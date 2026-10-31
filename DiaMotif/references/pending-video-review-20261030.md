@@ -20,7 +20,6 @@ agent-reach doctor本轮显示B站公开搜索API可达，bili-cli/OpenCLI未安
 
 - [一席：徐昂《喜剧的忧伤》](https://admin.yixi.tv/h5/speech/366/)：经Jina取得原站完整文本，本地仅存元数据与自编短摘要。
 - [国家大剧院：经典话剧《李白》首登国家大剧院](https://www.chncpa.org/zxdt_331/zxdtlm/yczx_332/201608/t20160823_110282.shtml)：历史制作说明，非当前演出票讯及视频授权证明。
-- [抖音：田沁鑫谈CNT现场](https://jingxuan.douyin.com/m/video/7564664718482345265)：实际读到原帖、记者署名及2025-10-24日期，不代表已播放专访或核实账号认证。
 
 这些是资料核验结果，不是全网爬虫覆盖、模型训练完成或真人视频验收。剩余项及每次访问结果均在JSON逐项保留。
 

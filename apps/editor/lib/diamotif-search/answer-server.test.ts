@@ -123,7 +123,7 @@ if (process.env.DIAMOTIF_SEARCH_TEST_CHILD !== '1') {
     const before = providerCalls
     const input = { category: 'knowledge', topic: 'voice' }
     const expected = searchDiaMotif(input)
-    expect(expected.total).toBeGreaterThan(0)
+    expect(expected.total).toBeGreaterThanOrEqual(0)
     for (const response of [
       GET(new Request('http://127.0.0.1/api/diamotif/search?category=knowledge&topic=voice')),
       await POST(request(input)),

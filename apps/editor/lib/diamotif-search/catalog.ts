@@ -1,6 +1,15 @@
 import { z } from 'zod'
 import { SearchTopicSchema, topicFitsCategory } from './search-topics'
 
+export const DISCOVERY_CONTENT_POLICY =
+  '禁止收录采访报道、专访、排练采访、探班花絮、宣传视频、预告片和宣发娱乐内容。剧本只收已核验完整版本，同一作品去重后最多三个版本，不虚构搜索量排名。演出与AI影视作品只收已核验可访问的完整正片，不收片段、纪录、讲座或回放目录。戏剧知识必须有机构、院校或文献原文及定位依据；未审定义不展示。发现来源冲突、版本出入或定义差异先通报用户，确认前不得进入正式库或回答证据。没有合格资源不补位，不能声称已搜尽全网。正式演出、开票、招生和报名公告可保留，不与视频预告片混淆。'
+
+export function isExcludedMedia(value: string) {
+  return /采访|採訪|访谈|訪談|专访|專訪|探班|花絮|(?:宣[传傳]|宣[发發]|推广|推廣).{0,6}(?:片|视频|視頻|短片)|[预預]告片|(?:排[练練]).{0,8}(?:视频|視頻|影像|探[访訪]|[现現]场|[纪紀][实實])|\b(?:interview|trailer|teaser)\b/i.test(
+    value.normalize('NFKC'),
+  )
+}
+
 export const AI_INVOLVEMENT_LABELS = {
   generated: 'AI生成',
   assisted: 'AI辅助制作',
@@ -14,7 +23,7 @@ export const SEARCH_CATEGORIES = [
   {
     id: 'scripts',
     label: '剧本',
-    description: '剧本文本、译本、选段与版本来源；剧情简介和演出录像另分',
+    description: '经完整性核验的剧本原本、译本与改编本；不收简介、选段或受限正文申请目录',
   },
   {
     id: 'knowledge',
@@ -24,7 +33,7 @@ export const SEARCH_CATEGORIES = [
   {
     id: 'videos',
     label: '演出影像',
-    description: '舞台录像、剧目片段、创作纪录及专业访谈；不含影视剧和娱乐视频',
+    description: '已核验可访问的完整舞台演出；片段、采访、纪录、讲座、宣传和预告片不收录',
   },
   {
     id: 'ai-screen',
@@ -138,6 +147,24 @@ export const SearchResourceSchema = z
       )
       .optional(),
     definitionStatus: z.string().optional(),
+    publicationReview: z
+      .object({
+        status: z.enum(['approved', 'pending-user']),
+        reviewedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        evidenceUrl: sourceUrl,
+        locator: z.string().min(8),
+      })
+      .optional(),
+    completeVersion: z
+      .object({
+        workKey: z.string().trim().min(1),
+        versionKey: z.string().trim().min(1),
+        author: z.string().trim().min(1),
+        language: z.string().trim().min(1),
+        edition: z.string().trim().min(1),
+        coverage: z.literal('full'),
+      })
+      .optional(),
   })
   .refine((resource) => resource.category !== null || resource.status === 'web-candidate', {
     path: ['category'],
@@ -149,6 +176,12 @@ export const SearchResourceSchema = z
       (resource.category !== null &&
         resource.subtopics.every((topic) => topicFitsCategory(resource.category!, topic))),
     { path: ['subtopics'], message: '细分方向须与资料分类一致，待分类候选不预设方向。' },
+  )
+  .refine(
+    (resource) =>
+      !isExcludedMedia(`${resource.title} ${resource.topics.join(' ')}`) &&
+      resource.sourceKind !== 'promotion',
+    { path: ['title'], message: '采访、排练探班与宣传预告内容不予存储。' },
   )
   .refine(
     (resource) =>
@@ -179,6 +212,8 @@ export function isEntertainmentQuery(query: string) {
 }
 
 export function isProfessionalResource(resource: SearchResource) {
+  if (isExcludedMedia(`${resource.title} ${resource.topics.join(' ')}`)) return false
+  if (resource.sourceKind === 'promotion') return false
   if (isEntertainmentQuery(`${resource.title} ${resource.summary}`)) return false
   if (resource.category === 'ai-screen')
     return (

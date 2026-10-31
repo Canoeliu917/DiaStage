@@ -11,18 +11,6 @@ export const SEARCH_TOPICS = [
     description: '可核实完整范围的剧本文本；目录或剧情简介不作全文',
   },
   {
-    id: 'script-excerpt',
-    category: 'scripts',
-    label: '剧本选段',
-    description: '剧本片段、幕次与选场，明确对应作品和版本',
-  },
-  {
-    id: 'script-monologue',
-    category: 'scripts',
-    label: '独白',
-    description: '可核实作品出处的独白文本与剧本选段',
-  },
-  {
     id: 'script-translation',
     category: 'scripts',
     label: '译本',
@@ -38,7 +26,7 @@ export const SEARCH_TOPICS = [
     id: 'script-play',
     category: 'scripts',
     label: '话剧剧本',
-    description: '话剧文本、译本、选段与版本来源；不以演出简介代替剧本',
+    description: '经完整性审核的话剧原本与译本；不以目录或选段代替完整剧本',
   },
   {
     id: 'script-opera',
@@ -56,7 +44,7 @@ export const SEARCH_TOPICS = [
     id: 'script-children',
     category: 'scripts',
     label: '儿童戏剧',
-    description: '儿童戏剧文本与选段；不把课程招生或活动介绍当剧本',
+    description: '经完整性审核的儿童戏剧文本；不收选段、课程招生或活动介绍',
   },
   ...KNOWLEDGE_TOPICS.filter(({ id }) => id !== 'all').map((topic) => ({
     ...topic,
@@ -67,42 +55,6 @@ export const SEARCH_TOPICS = [
     category: 'videos',
     label: '完整演出',
     description: '可核实为完整版本的舞台录像；分集缺失或选段不作全剧',
-  },
-  {
-    id: 'video-excerpt',
-    category: 'videos',
-    label: '剧目片段',
-    description: '舞台选段、分部录像与演出片段，注明覆盖范围',
-  },
-  {
-    id: 'video-documentary',
-    category: 'videos',
-    label: '创作纪实',
-    description: '剧目制作、排练探班及幕后纪实；不自动等同演出全片',
-  },
-  {
-    id: 'video-interview',
-    category: 'videos',
-    label: '专业访谈',
-    description: '戏剧创作者就表演、导演、剧作及制作展开的专业影像访谈',
-  },
-  {
-    id: 'video-rehearsal',
-    category: 'videos',
-    label: '排练影像',
-    description: '明确记录戏剧排练、训练与创作过程的公开影像',
-  },
-  {
-    id: 'video-lecture',
-    category: 'videos',
-    label: '专业讲座',
-    description: '戏剧专业课程、讲座及学术交流的影像来源；不以活动简介代替视频',
-  },
-  {
-    id: 'video-live-replay',
-    category: 'videos',
-    label: '直播回放',
-    description: '有原播出或活动依据的戏剧直播及回放；注明录制范围和访问条件',
   },
   {
     id: 'person-actor',
@@ -383,14 +335,8 @@ export const SEARCH_TOPICS = [
   {
     id: 'ai-techniques',
     category: 'ai-screen',
-    label: '创作技法',
-    description: 'AI影视的叙事、分镜、镜头、声音与制作实践',
-  },
-  {
-    id: 'ai-tools',
-    category: 'ai-screen',
-    label: '工具与教程',
-    description: '可核实的AI影视工具、功能文档与公开操作教程',
+    label: '创作与教程',
+    description: 'AI影视创作技法、分镜、制作工作流、工具文档与公开教程',
   },
   {
     id: 'ai-industry',

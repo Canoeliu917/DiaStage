@@ -2,15 +2,24 @@ import { expect, test } from 'bun:test'
 import cases from '../../../../DiaMotif/evals/search-intake-20261030.json'
 import batch3Cases from '../../../../DiaMotif/evals/search-intake-20261030-batch3.json'
 import regionalResources from '../../../../DiaMotif/knowledge/theatre-regional-intake-20261030.json'
-import { searchDiaMotif } from './search'
+import { SEARCH_RESOURCES, searchDiaMotif } from './search'
 import { sourceRegion } from './source-scope'
 
 const historicalCases = [...cases, ...batch3Cases]
 
 test.each(
   historicalCases.filter(({ url }) => sourceRegion(url)),
-)('retained regional source is discoverable: $query', ({ query, category, expectedId, url }) => {
+)('historical regional fixture respects the current publication decision: $query', ({
+  query,
+  category,
+  expectedId,
+  url,
+}) => {
   const result = searchDiaMotif({ query, category })
+  if (!SEARCH_RESOURCES.some(({ id }) => id === expectedId)) {
+    expect(result.results.some(({ id }) => id === expectedId)).toBe(false)
+    return
+  }
   const source = result.results.slice(0, 3).find(({ id }) => id === expectedId)
   expect(source).toBeDefined()
   expect(source?.url).toBe(url)

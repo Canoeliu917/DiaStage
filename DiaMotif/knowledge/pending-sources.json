@@ -2,24 +2,21 @@
   "version": 1,
   "updatedAt": "2026-10-30",
   "scope": "本阶段23条社交与媒体发现的当前状态；本文件覆盖旧发现批次中的过时待核状态。",
-  "policy": "只优先处理pending及需要原视频的相关来源项；blocked不反复撞验证，rejected不自动重试。可信替代资料不等于原链接已通过。",
+  "policy": "只优先处理pending及需要原视频的相关来源项；blocked不反复撞验证，rejected不自动重试。可信替代资料不等于原链接已通过。 新规则优先：不再保留采访、片段或宣发视频线索；完整剧本和知识冲突须先通报用户。",
   "reviewFiles": [
     "pending-media-review-20261030.json",
     "pending-video-review-20261030.json"
   ],
   "counts": {
     "originalCandidates": 23,
-    "admittedOriginals": 10,
+    "admittedOriginals": 8,
     "pending-original-with-related-source": 2,
     "pending": 4,
     "blocked": 4,
-    "rejected": 3
+    "rejected": 3,
+    "removedByLatestPolicy": 2
   },
   "resolved": [
-    {
-      "candidateId": "sd-douyin-cnt-tianqinxin",
-      "resourceId": "dm-resource-douyin-cnt-tianqinxin-20251024"
-    },
     {
       "candidateId": "sd-weibo-hongguo-ai-plan",
       "resourceId": "dm-resource-hongguo-ai-creation-plan-weibo-2026"
@@ -31,10 +28,6 @@
     {
       "candidateId": "sd-weibo-wuzhen-units",
       "resourceId": "dm-resource-wuzhen-seven-units-weibo-2026"
-    },
-    {
-      "candidateId": "sd-weibo-wuzhen-live",
-      "resourceId": "dm-resource-wuzhen-creators-live-weibo-2026"
     },
     {
       "candidateId": "sd-kuaishou-kling4",

@@ -1,0 +1,132 @@
+{
+  "date": "2026-10-31",
+  "policy": "用户提供的18个来源入口；非正式检索资源，不代表所有来源已准入或全部正文已核验。下一轮先验证主体/地区和具体原页。",
+  "items": [
+    {
+      "id": "saoju",
+      "url": "https://y.saoju.net/yyj/",
+      "region": "mainland",
+      "status": "pending-detail-review",
+      "note": "音乐剧排期、卡司、制作与历史记录；本轮只核入口，未核全部详情"
+    },
+    {
+      "id": "damai",
+      "url": "https://www.damai.cn/",
+      "region": "mainland",
+      "status": "pending-detail-review",
+      "note": "继续追具体戏剧演出与正式票务"
+    },
+    {
+      "id": "polyt",
+      "url": "https://www.polyt.cn/",
+      "region": "mainland",
+      "status": "pending-detail-review",
+      "note": "网页读取仅动态空壳，待可读原页"
+    },
+    {
+      "id": "douban",
+      "url": "https://www.douban.com/location/drama/",
+      "region": "mainland",
+      "status": "pending-detail-review",
+      "note": "版本与评论须区分；不是剧本正文"
+    },
+    {
+      "id": "chinatheatre",
+      "url": "https://www.chinatheatre.org.cn/",
+      "region": "mainland",
+      "status": "pending-detail-review",
+      "note": "协会公告、征集与节展"
+    },
+    {
+      "id": "wuzhen",
+      "url": "https://www.wuzhenfestival.com/",
+      "region": "mainland",
+      "status": "pending-detail-review",
+      "note": "网页读取仅动态空壳，待当届具体公告"
+    },
+    {
+      "id": "act",
+      "url": "https://www.actfest.cn/",
+      "region": "mainland",
+      "status": "pending-detail-review",
+      "note": "已见2026节目和工作坊入口；跳过媒体中心"
+    },
+    {
+      "id": "art-mate",
+      "url": "https://www.art-mate.net/",
+      "region": "hong-kong",
+      "status": "pending-detail-review",
+      "note": "已见剧场、戏曲、人员及招聘入口；跳过电影与无关活动"
+    },
+    {
+      "id": "lcsd-performing-arts",
+      "url": "https://www.performing-arts.gov.hk/tc/homepage.html",
+      "region": "hong-kong",
+      "status": "pending-detail-review",
+      "note": "已见康文署目录；动态日历不代表已核具体场次"
+    },
+    {
+      "id": "iatc",
+      "url": "https://www.iatc.com.hk/",
+      "region": "hong-kong",
+      "status": "pending-detail-review",
+      "note": "剧本出版、年鉴与剧评目录；逐份核文献"
+    },
+    {
+      "id": "urbtix",
+      "url": "https://www.urbtix.hk/",
+      "region": "hong-kong",
+      "status": "pending-detail-review",
+      "note": "待核具体正式票务页"
+    },
+    {
+      "id": "drama-archive",
+      "url": "https://www.drama-archive.hk/",
+      "region": "hong-kong",
+      "status": "pending-detail-review",
+      "note": "仅制作记录、剧事年表和资料库；口述采访不收"
+    },
+    {
+      "id": "dart",
+      "url": "https://www.dartmacau.com/",
+      "region": "macao",
+      "status": "pending-detail-review",
+      "note": "原站读取超时，留待访问条件变化"
+    },
+    {
+      "id": "ccm",
+      "url": "https://www.ccm.gov.mo/whatson/",
+      "region": "macao",
+      "status": "pending-detail-review",
+      "note": "按具体演出而非场馆首页充数"
+    },
+    {
+      "id": "icm",
+      "url": "https://www.icm.gov.mo/cn",
+      "region": "macao",
+      "status": "pending-detail-review",
+      "note": "已见文化局目录，筛剧场及节展正式公告"
+    },
+    {
+      "id": "macauticket",
+      "url": "https://www.macauticket.com/",
+      "region": "macao",
+      "status": "pending-detail-review",
+      "note": "待核具体戏剧票务页"
+    },
+    {
+      "id": "enjoymacao",
+      "url": "https://ticketing.enjoymacao.mo/",
+      "region": "macao",
+      "status": "pending-detail-review",
+      "note": "已见文化局票务入口，动态卡片尚非场次核验"
+    },
+    {
+      "id": "prd-culture",
+      "url": "https://www.prdculture.org.cn/",
+      "region": "mainland",
+      "status": "pending-detail-review",
+      "note": "已见大湾区文化目录，旅游与视频宣传不收"
+    }
+  ]
+}

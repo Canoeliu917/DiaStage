@@ -1,7 +1,5 @@
 {
   "script-full": [],
-  "script-excerpt": [],
-  "script-monologue": [],
   "script-translation": [],
   "script-adaptation": [],
   "script-play": [],
@@ -9,36 +7,37 @@
   "script-musical": [],
   "script-children": [],
   "video-full": [],
-  "video-excerpt": [
-    "dm-resource-ncpa-opera-highlights",
-    "dm-resource-cctv-mudanting-youyuan-20191114",
-    "dm-resource-cctv-red-detachment-changqing-20250405",
-    "dm-resource-cctv-thunderstorm-20170501-part1"
+  "person-actor": [
+    "dm-resource-ncpa-opera-artists"
   ],
-  "video-documentary": [
-    "dm-resource-ncpa-production-documentaries",
-    "dm-resource-cctv-on-the-road-backstage-20210716"
-  ],
-  "video-interview": [],
-  "video-rehearsal": [],
-  "video-lecture": [],
-  "video-live-replay": [],
-  "person-actor": ["dm-resource-ncpa-opera-artists"],
   "person-director-writer": [],
   "person-design-tech": [],
   "person-production": [],
   "person-composer-choreographer": [],
   "person-voice-coach": [],
-  "venue-state": ["dm-resource-ncpa-theatres"],
+  "venue-state": [
+    "dm-resource-ncpa-theatres"
+  ],
   "venue-independent": [],
-  "venue-space": ["dm-resource-ncpa-theatres", "dm-resource-macao-ccm-venue-profile"],
-  "venue-organization": ["dm-resource-hkrep-company-profile"],
+  "venue-space": [
+    "dm-resource-ncpa-theatres",
+    "dm-resource-macao-ccm-venue-profile"
+  ],
+  "venue-organization": [
+    "dm-resource-hkrep-company-profile"
+  ],
   "venue-campus": [],
   "venue-community": [],
   "venue-new-space": [],
-  "event-play": ["dm-resource-ncpa-events"],
-  "event-opera-dance": ["dm-resource-ncpa-events"],
-  "event-musical": ["dm-resource-ncpa-events"],
+  "event-play": [
+    "dm-resource-ncpa-events"
+  ],
+  "event-opera-dance": [
+    "dm-resource-ncpa-events"
+  ],
+  "event-musical": [
+    "dm-resource-ncpa-events"
+  ],
   "event-immersive": [],
   "event-children": [],
   "admission-undergraduate": [
@@ -47,8 +46,12 @@
     "dm-resource-nacta-admissions",
     "dm-resource-hkapa-drama-admissions"
   ],
-  "admission-postgraduate": ["dm-resource-nacta-admissions"],
-  "admission-hk-macao": ["dm-resource-hkapa-drama-admissions"],
+  "admission-postgraduate": [
+    "dm-resource-nacta-admissions"
+  ],
+  "admission-hk-macao": [
+    "dm-resource-hkapa-drama-admissions"
+  ],
   "opportunity-casting": [],
   "opportunity-crew": [],
   "opportunity-design-tech": [],
@@ -65,13 +68,17 @@
     "dm-resource-bjeea-arts-exam-2027-faq",
     "dm-resource-guangdong-arts-exam-2027-policy"
   ],
-  "exam-registration-results": ["dm-resource-bjeea-arts-exam-2027-faq"],
+  "exam-registration-results": [
+    "dm-resource-bjeea-arts-exam-2027-faq"
+  ],
   "exam-policy": [
     "dm-resource-bjeea-arts-exam-2027-faq",
     "dm-resource-shmeea-arts-exam-2027-guide",
     "dm-resource-guangdong-arts-exam-2027-policy"
   ],
-  "festival": ["dm-resource-hk-chinese-opera-festival-2026"],
+  "festival": [
+    "dm-resource-hk-chinese-opera-festival-2026"
+  ],
   "workshop": [
     "dm-resource-hk-chinese-opera-festival-2026",
     "dm-resource-hk-theatre-workshops-2026"
@@ -80,7 +87,10 @@
   "festival-residency": [],
   "festival-incubation": [],
   "festival-reading": [],
-  "festival-forum": ["dm-resource-hk-chinese-opera-festival-2026", "dm-resource-hk-theatre-workshops-2026"],
+  "festival-forum": [
+    "dm-resource-hk-chinese-opera-festival-2026",
+    "dm-resource-hk-theatre-workshops-2026"
+  ],
   "festival-funding": [],
   "festival-award": [],
   "ai-film": [],
@@ -89,6 +99,5 @@
   "ai-comic": [],
   "ai-animation": [],
   "ai-techniques": [],
-  "ai-tools": [],
   "ai-industry": []
 }

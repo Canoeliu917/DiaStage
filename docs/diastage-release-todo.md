@@ -1,12 +1,28 @@
 # DiaStage 上线待办执行队列
 
-更新日期：2026-10-30（北京时间，保留此前历史证据）。对应[原 19 项清单](diastage-release-readiness-20261025.md)。
+更新日期：2026-10-31（北京时间，保留此前历史证据）。对应[原 19 项清单](diastage-release-readiness-20261025.md)。
 
 按用户要求，需要决定或补充的事项统一保留在[发布待决事项](diastage-release-decisions.md)，不反复询问；其余按本队列继续完成。
 
 ## 跨电脑接续入口：繼續工作
 
-仓库为 [Canoeliu917/DiaStage](https://github.com/Canoeliu917/DiaStage)，当前工作分支为 **`codex/path9-desktop-ui`**（[PR #4](https://github.com/Canoeliu917/DiaStage/pull/4)）；`codex/private-scene-accounts-v01-20261014` 是此 PR 的基线分支。在另一台电脑打开当前工作分支，先读本页 **2026-10-30 首页检索检查点**及[首页检索记录](../DiaMotif/records/2026-10-30-search-home.md)，再输入 **「繼續工作」或「继续工作」**，即可按 [AGENTS.md](../AGENTS.md) 中的接续规则开始剩余待办。[对话修订防护记录](../DiaMotif/records/2026-10-30-dialogue-revision-guards.json)及[PATH9-V2 交接及验收记录](path9/PATH9_V2_ACCEPTANCE.md)保留原有验收范围，不能代替当前版本验收。
+仓库为 [Canoeliu917/DiaStage](https://github.com/Canoeliu917/DiaStage)，当前工作分支为 **`codex/path9-desktop-ui`**（[PR #4](https://github.com/Canoeliu917/DiaStage/pull/4)）；`codex/private-scene-accounts-v01-20261014` 是此 PR 的基线分支。在另一台电脑打开当前工作分支，先读[2026-10-31最新交接](diastage-handoff-20261031.md)及本页最新检查点及[首页检索记录](../DiaMotif/records/2026-10-30-search-home.md)，再输入 **「繼續工作」或「继续工作」**，即可按 [AGENTS.md](../AGENTS.md) 中的接续规则开始剩余待办。[对话修订防护记录](../DiaMotif/records/2026-10-30-dialogue-revision-guards.json)及[PATH9-V2 交接及验收记录](path9/PATH9_V2_ACCEPTANCE.md)保留原有验收范围，不能代替当前版本验收。
+
+## 2026-10-31：最新跨电脑接续检查点
+
+**先读[本次交接](diastage-handoff-20261031.md)及[审核记录](../DiaMotif/records/2026-10-31-content-review.md)，覆盖下方旧收录与补选段的计划。** 工作分支仍为codex/path9-desktop-ui，从d7f080f继续，本次代码与交接一起推送；最新SHA以远端分支tip为准。
+
+- [x] 清除采访、排练探班、花絮、宣发及未核完整影像的旧资源与候选副本；不只前台隐藏。
+- [x] 完整剧本/正片发布审核、同作品最多3个完整版本及知识原文依据门禁已写入运行检索；140个旧概念暂不公开，未删除舞台内部知识。
+- [x] 常秋月条目先通报，获用户同意后按原文更正为京白、韵白、谐白，保留文字知识。
+- [x] 删除研究纪录、专业讲座、直播回放及片段等方向；AI技法与工具教程合并为创作与教程。
+- [x] 当前公开62条，知识9；完整剧本0、完整演出0，AI类7条均为创作参考。未通过审核的旧记录不再充数。
+- [x] 本机早晚任务新提示已保存，仍为07:21/19:21；配置不随Git迁移，新电脑须查重、核连接与路径，下一次执行尚未验证。
+- [ ] 本地浏览器菜单收放、键盘、日夜截图、来源跳转验收；当前控制连接不可用，仅免费API核验，不记网页验收通过。
+- [ ] 从用户18个入口深入核具体完整文本/正片，复审25条地域内待核资料及140概念；差异先报用户，确认前不发布。
+- [ ] 真实千问引用及预告时态复测，完整正文/播放器验收；旧失败不因离线通过而关闭。
+
+离线/类型/格式最终证据见审核记录；没有新增付费调用、生产构建或公网部署。另一台电脑保留本机修改，拉取本分支后说“继续工作”，按交接顺序开展。
 
 ## 2026-10-30：首页戏剧检索与知识问答检查点
 

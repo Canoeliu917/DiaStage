@@ -102,7 +102,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
           search_info: {
             search_results: [
               {
-                title: '戏剧专业教学资料',
+                title: '话剧演出正式开票公告',
                 url: 'https://www.chntheatre.edu.cn/synthetic-test',
                 site_name: '戏剧学院',
               },
@@ -123,7 +123,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
           search_info: {
             search_results: [
               {
-                title: '戏剧专业教学资料',
+                title: '话剧演出正式开票公告',
                 url: 'https://www.chntheatre.edu.cn/synthetic-test',
                 site_name: '戏剧学院',
               },
@@ -187,7 +187,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
           search_info: {
             search_results: [
               {
-                title: '戏剧表演艺考资讯',
+                title: '戏剧表演艺考报名公告',
                 url: 'https://www.chntheatre.edu.cn/synthetic-arts-exam',
                 site_name: '戏剧学院',
               },
@@ -226,7 +226,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
           search_info: {
             search_results: [
               {
-                title: '戏剧演员声音训练',
+                title: '话剧演员声音训练',
                 url: 'https://www.chntheatre.edu.cn/synthetic-voice',
                 site_name: '戏剧学院',
               },
@@ -241,8 +241,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     ).json()
     expect(result.webStatus).toBe('searched')
     expect(result.topic).toBe('voice')
-    expect(result.results).toHaveLength(1)
-    expect(result.results[0]).toMatchObject({ category: null, status: 'web-candidate' })
+    expect(result.results).toHaveLength(0)
     const topic = KNOWLEDGE_TOPICS.find(({ id }) => id === 'voice')!
     const instructions = JSON.stringify(body.input.messages[0])
     expect(instructions).toContain(topic.label)
@@ -280,17 +279,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     ).json()
     expect(result.webStatus).toBe('searched')
     expect(result.topic).toBe('ai-animation')
-    expect(result.results).toHaveLength(1)
-    expect(result.results[0]).toMatchObject({
-      category: null,
-      status: 'web-candidate',
-      verifiedAt: null,
-    })
-    expect(result.results[0].aiEvidence).toContain('未核验正文')
-    expect(result.results[0].aiInvolvement).toBe('unverified')
-    expect(result.results[0].theatreEvidence).toBeUndefined()
-    expect(result.results[0].subtopics).toBeUndefined()
-    expect(result.results[0].sourceTier).toBeUndefined()
+    expect(result.results).toHaveLength(0)
     const instructions = JSON.stringify(body.input.messages[0])
     expect(instructions).toContain('AI动画')
     expect(instructions).toContain('小红书')
@@ -341,11 +330,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     const result = await (await POST(request({ query: '舞台与AI影视资料', category }))).json()
     expect(result.webStatus).toBe('searched')
     expect(result.results.map((item: { title: string }) => item.title)).toEqual(
-      category === 'ai-screen'
-        ? ['AI电视剧分镜与视频制作方法']
-        : category === 'knowledge'
-          ? ['话剧《雷雨》舞台演出资料', '戏剧影视表演专业艺考说明']
-          : ['话剧《雷雨》舞台演出资料', '戏剧影视表演专业艺考说明', 'AI电视剧分镜与视频制作方法'],
+      category === 'ai-screen' ? [] : category === 'knowledge' ? [] : ['戏剧影视表演专业艺考说明'],
     )
     for (const candidate of result.results) {
       expect(candidate.category).toBeNull()
@@ -398,7 +383,7 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
     sources: unknown[] = [
       {
         index: 1,
-        title: '戏剧专业教学资料',
+        title: '话剧演出正式开票公告',
         url: 'https://www.chntheatre.edu.cn/synthetic-smart-test',
       },
     ],
@@ -410,6 +395,46 @@ if (process.env.DIAMOTIF_WEB_TEST_CHILD !== '1') {
       output: { choices: [{ finish_reason: 'stop', message: { content: text.slice(4) } }] },
     },
   ]
+
+  test('excluded media queries never call a provider or reserve a budget', async () => {
+    const before = calls
+    const reserved = reservations.length
+    for (const query of ['话剧演员专访', '舞台探班花絮', 'AI电影预告片']) {
+      const result = await (await POST(request({ query, smart: true }))).json()
+      expect(result.results).toHaveLength(0)
+      expect(result.answer).toBeNull()
+    }
+    expect(calls).toBe(before)
+    expect(reservations).toHaveLength(reserved)
+  })
+
+  test('native titles cannot certify full works or unreviewed knowledge, even on approved hosts', async () => {
+    for (const category of ['scripts', 'videos', 'knowledge', 'ai-screen', 'all']) {
+      frames = smartFrames('未核内容不能作为事实[ref_1]。', [
+        {
+          index: 1,
+          title: '话剧《合成作品》完整剧本',
+          url: 'https://www.chntheatre.edu.cn/synthetic-unread-script',
+        },
+        {
+          index: 2,
+          title: '话剧完整演出正片',
+          url: 'https://tv.cctv.com/synthetic-unwatched-film',
+        },
+        {
+          index: 3,
+          title: '戏剧知识术语定义',
+          url: 'https://www.chntheatre.edu.cn/synthetic-unreviewed-term',
+        },
+        { index: 4, title: 'AI电影宣传视频', url: 'https://tv.cctv.com/synthetic-promo' },
+      ])
+      const result = await (
+        await POST(request({ category, smart: true, query: '合成新资料zzzz' }))
+      ).json()
+      expect(result.results).toHaveLength(0)
+      expect(result.answer).toBeNull()
+    }
+  })
 
   test('smart search answers with native sources even when the local catalog has no hit', async () => {
     frames = smartFrames('这份戏剧资料可供继续查阅[ref_1]。')

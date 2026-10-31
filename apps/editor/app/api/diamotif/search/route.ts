@@ -1,7 +1,7 @@
 import { AiError, handleAiRequest, readBoundedBody } from '@/lib/ai/api'
 import { isAiProviderConfigured } from '@/lib/ai/provider-config'
 import { answerDiaMotifSearch } from '@/lib/diamotif-search/answer-server'
-import { isEntertainmentQuery } from '@/lib/diamotif-search/catalog'
+import { isEntertainmentQuery, isExcludedMedia } from '@/lib/diamotif-search/catalog'
 import { SearchInputSchema, searchDiaMotif } from '@/lib/diamotif-search/search'
 import { searchDiaMotifWeb } from '@/lib/diamotif-search/web-search-server'
 import { guardSceneApiRequest, sceneApiJson, sceneApiPreflight } from '@/lib/scene-api-security'
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     )
   if (
     isEntertainmentQuery(input.query) ||
+    isExcludedMedia(input.query.replace(/《[^》]*》/g, '')) ||
     !input.useAi ||
     !input.query ||
     (!input.useWeb && !search.results.length)
@@ -98,7 +99,7 @@ export async function POST(request: Request) {
         webStatus: 'searched',
         notice: input.smart
           ? answer
-            ? 'DIA 根据本次检索资料回答；联网内容待复核，请沿引用查看原站。'
+            ? 'DIA 根据本次可用资料回答；联网公告待复核，知识与完整作品仅展示已审核来源。'
             : '联网检索已完成，但回答缺少有效引用或引用未通过范围校验，未显示答案；已保留可用资料。'
           : results.length
             ? '以下为大陆及港澳来源站点的联网候选，正文、内容地区、时效与许可待核验；未自动入库，请打开原站确认。'

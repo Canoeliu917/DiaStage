@@ -1,87 +1,5 @@
 [
   {
-    "id": "dm-ai-cmg-chinese-mythology-2024",
-    "title": "AI微短剧《中国神话》｜总台2024启播与制作说明",
-    "category": "ai-screen",
-    "subtopics": [
-      "ai-short-drama",
-      "ai-techniques"
-    ],
-    "topics": [
-      "中国神话",
-      "中國神話",
-      "AI微短剧",
-      "AI微短劇",
-      "生成式影视",
-      "央视频",
-      "分镜",
-      "配音",
-      "美术生成"
-    ],
-    "summary": "总台2024年3月22日发布《中国神话》启播说明，列出六集主题及合作制作机构，并说明AI参与美术、分镜、视频、配音和配乐。用于了解该AI微短剧的生产环节；这是制作方当时的发布，不是独立效果评测，也不代表已获得影片转载或素材训练许可。",
-    "organization": "中央广播电视总台",
-    "url": "https://www.cctv.com/2024/03/22/ARTImxwnEZa0LYYPusv8E57A240322.shtml",
-    "verifiedAt": "2026-10-30",
-    "access": "public",
-    "rights": "metadata-only",
-    "recordType": "production",
-    "aiEvidence": "总台原文明确将《中国神话》标为AI全流程微短剧，并具名列出央视频、总台人工智能工作室及合作高校，具体说明AI参与美术、分镜、视频、配音和配乐。",
-    "status": "verified",
-    "sourceRefs": [
-      {
-        "title": "总台之声：《中国神话》启播与央视频AI频道上线",
-        "url": "https://www.cctv.com/2024/03/22/ARTImxwnEZa0LYYPusv8E57A240322.shtml",
-        "locator": "原页来源及日期2024-03-22；六集主题、合作机构及AI制作环节段落。"
-      }
-    ],
-    "sourceKind": "professional-media",
-    "publishedAt": "2024-03-22",
-    "applicableYear": "2024",
-    "sourceTier": "professional-media",
-    "aiInvolvement": "generated",
-    "contentRegion": "mainland"
-  },
-  {
-    "id": "dm-ai-cmg-poetry-animation-2024",
-    "title": "AI动画《千秋诗颂》｜总台2024启播说明",
-    "category": "ai-screen",
-    "subtopics": [
-      "ai-animation"
-    ],
-    "topics": [
-      "千秋诗颂",
-      "千秋詩頌",
-      "AI动画",
-      "AI動畫",
-      "文生视频",
-      "央视听媒体大模型",
-      "国风动画",
-      "古诗词"
-    ],
-    "summary": "总台2024年2月26日介绍《千秋诗颂》及首批诗词动画，说明可控图像、人物动态与文生视频技术在制作中的参与。保留2024年启播批次的版本背景，不将当年的首批集数、播出安排或效率描述当作当前全集状态与普遍制作指标。",
-    "organization": "中央广播电视总台央视新闻",
-    "url": "https://news.cctv.com/2024/02/26/ARTIxQBqr2yFDGQ0jJkm1ygK240226.shtml",
-    "verifiedAt": "2026-10-30",
-    "access": "public",
-    "rights": "metadata-only",
-    "recordType": "production",
-    "aiEvidence": "制作方原文明确《千秋诗颂》由央视听媒体大模型及AIGC技术辅助制作，并逐项提及可控图像生成、人物动态生成、文生视频和后期成片环节。",
-    "status": "verified",
-    "sourceRefs": [
-      {
-        "title": "央视新闻：《千秋诗颂》2024年启播",
-        "url": "https://news.cctv.com/2024/02/26/ARTIxQBqr2yFDGQ0jJkm1ygK240226.shtml",
-        "locator": "页面来源及日期2024-02-26；首批动画介绍、央视听媒体大模型与AI制作环节说明。"
-      }
-    ],
-    "sourceKind": "professional-media",
-    "publishedAt": "2024-02-26",
-    "applicableYear": "2024",
-    "sourceTier": "professional-media",
-    "aiInvolvement": "assisted",
-    "contentRegion": "mainland"
-  },
-  {
     "id": "dm-ai-shlab-poetry-production-2024",
     "title": "《千秋诗颂》AIGC制作技术｜上海AI实验室一手说明",
     "category": "ai-screen",
@@ -127,7 +45,7 @@
     "title": "万相3.0视频生成｜阿里云官方API与异步工作流",
     "category": "ai-screen",
     "subtopics": [
-      "ai-tools",
+      "ai-techniques",
       "ai-techniques"
     ],
     "topics": [

@@ -1,16 +1,18 @@
 import { z } from 'zod'
 import discoveryResources from '../../../../DiaMotif/knowledge/domestic-discovery.json'
+import publicationReviews from '../../../../DiaMotif/knowledge/search-publication-reviews.json'
 import regionalResources from '../../../../DiaMotif/knowledge/theatre-regional-intake-20261030.json'
 import resources from '../../../../DiaMotif/knowledge/theatre-resources.json'
 import { DIA_KNOWLEDGE, explainConcept } from '../rehearsal-intelligence/knowledge/retrieval'
 import {
   isEntertainmentQuery,
-  isProfessionalResource,
+  isExcludedMedia,
   type SearchCategory,
   SearchCategorySchema,
   type SearchResource,
   SearchResourceSchema,
 } from './catalog'
+import { selectPublicationResources } from './publication-policy'
 import {
   type SearchTopic,
   SearchTopicSchema,
@@ -76,7 +78,13 @@ const registered: SearchResource[] = [
       sourceRefs: [
         ...concept.authorityRefs.map(({ title, url }) =>
           sourceRegion(url)
-            ? { title, url }
+            ? {
+                title,
+                url,
+                locator: (publicationReviews as Record<string, { locator: string }>)[
+                  `concept:${concept.id}`
+                ]?.locator,
+              }
             : { title, locator: '历史术语参考；区域外原站暂缓跳转' },
         ),
         ...sourceRefs.map((ref) => ({
@@ -104,14 +112,31 @@ const registered: SearchResource[] = [
     }),
   ),
 ]
-export const SEARCH_RESOURCES = SearchResourceSchema.array()
-  .parse([
-    ...[...resources, ...regionalResources, ...discoveryResources].filter((resource) =>
-      sourceRegion(resource.url),
+export const SEARCH_RESOURCES = selectPublicationResources(
+  SearchResourceSchema.array()
+    .parse([
+      ...[...resources, ...regionalResources, ...discoveryResources].filter((resource) =>
+        sourceRegion(resource.url),
+      ),
+      ...registered,
+    ])
+    .map((resource) =>
+      SearchResourceSchema.parse({
+        ...resource,
+        publicationReview:
+          (publicationReviews as Record<string, unknown>)[resource.id] ??
+          resource.publicationReview,
+        ...(publicationReviews[resource.id as keyof typeof publicationReviews]?.status ===
+        'approved'
+          ? {
+              verifiedAt:
+                publicationReviews[resource.id as keyof typeof publicationReviews].reviewedAt,
+              status: 'verified',
+            }
+          : {}),
+      }),
     ),
-    ...registered,
-  ])
-  .filter(isProfessionalResource)
+)
 const normalize = (value: string) =>
   value
     .normalize('NFKC')
@@ -181,6 +206,12 @@ export function searchDiaMotif(raw: unknown): SearchResponse {
     return {
       ...base,
       notice: 'Dia 只收录戏剧专业资料及AI影视创作信息，不检索八卦、绯闻或私生活。',
+    }
+  if (isExcludedMedia(query.replace(/《[^》]*》/g, '')))
+    return {
+      ...base,
+      notice:
+        'Dia 不收录采访、排练探班、宣传视频与预告片。可查剧本、实际演出、专业教学或正式公告。',
     }
   const normalized = normalizeQuery(query)
   const workTitles = [...query.matchAll(/《([^》]+)》/g)].map((match) => normalize(match[1]!))

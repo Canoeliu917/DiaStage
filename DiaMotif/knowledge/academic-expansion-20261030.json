@@ -282,45 +282,6 @@
     ]
   },
   {
-    "id": "dm-knowledge-cucp-performance-textbooks-2026",
-    "title": "表演专业教材出版动态｜中传出版社2026说明",
-    "url": "https://www.cucp.com.cn/News/Details/3231",
-    "organization": "中国传媒大学出版社",
-    "category": "knowledge",
-    "subtopics": [
-      "performance",
-      "voice"
-    ],
-    "topics": [
-      "表演教材",
-      "台词教程",
-      "对白与独白",
-      "形体表演",
-      "声乐教程",
-      "教材版本",
-      "十五五"
-    ],
-    "summary": "出版社2026年10月24日介绍表演、台词、形体和声乐教材及版本安排。文中2026年11月至2027年2月的新版本属于计划，不能说已经出版；本条为出版社推广说明，不是独立教材质量评价。",
-    "publishedAt": "2026-10-24",
-    "sourceTier": "official",
-    "sourceKind": "promotion",
-    "verifiedAt": "2026-10-30",
-    "access": "public",
-    "rights": "metadata-only",
-    "recordType": "resource",
-    "status": "verified",
-    "contentRegion": "mainland",
-    "applicableYear": null,
-    "theatreEvidence": "原始页面明确属于戏剧表演、导演、剧作、台词声乐或舞台美术专业资料；书籍仅保存公开书目和阅读范围，经验与观点保留作者归属。",
-    "sourceRefs": [
-      {
-        "title": "表演专业教材出版动态｜中传出版社2026说明",
-        "url": "https://www.cucp.com.cn/News/Details/3231",
-        "locator": "页首来源、作者及2026-10-24日期；“系列教材”、版本计划与“推荐购买”各段。"
-      }
-    ]
-  },
-  {
     "id": "dm-book-cucp-1347",
     "title": "《表演艺术概论》｜林洪桐·出版社书目与目录",
     "category": "knowledge",
@@ -390,11 +351,6 @@
         "title": "《表演基础教程（第2版）》｜张晰·出版社书目与目录",
         "url": "https://www.cucp.com.cn/Book/Details/2388",
         "locator": "书目标题、作者、ISBN 978-7-5657-4013-8、出版时间2025-10及公开目录／简介。书目仅给年月，不补造出版日；作者张晰由同站2026-10-24教材说明交叉核实；本详情未显示目录。"
-      },
-      {
-        "title": "出版社教材说明：作者与专业范围",
-        "url": "https://www.cucp.com.cn/News/Details/3231",
-        "locator": "对应《表演基础教程》第2版张晰及《表演片段教程》第2版黄迎的作者与内容栏目。"
       }
     ]
   },
@@ -430,11 +386,6 @@
         "title": "《表演片段教程（第2版）》｜黄迎·出版社书目与目录",
         "url": "https://www.cucp.com.cn/Book/Details/2389",
         "locator": "书目标题、作者、ISBN 978-7-5657-4040-4、出版时间2025-10及公开目录／简介。书目仅给年月，不补造出版日；详情未显示目录，专业内容仅用同站教材说明定位。"
-      },
-      {
-        "title": "出版社教材说明：作者与专业范围",
-        "url": "https://www.cucp.com.cn/News/Details/3231",
-        "locator": "对应《表演基础教程》第2版张晰及《表演片段教程》第2版黄迎的作者与内容栏目。"
       }
     ]
   },

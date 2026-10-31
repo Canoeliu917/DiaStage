@@ -49,11 +49,6 @@ JSON 顶层是数组；每条含 `id/title/category/topics/summary/organization/
 | `dm-resource-rsc-learning-zone` | [RSC 莎士比亚戏剧学习区](https://www.rsc.org.uk/shakespeare-learning-zone) | 官方说明明确涵盖剧作关键场景、演出照片、演员导演工作及角色关系。 |
 | `dm-resource-va-theatre-performance` | [V&A 戏剧与表演艺术藏品](https://www.vam.ac.uk/collections/theatre-performance) | 馆方将戏剧、歌剧、偶戏、音乐剧、服装和布景设计列入 Theatre & Performance 收藏范围。 |
 | `dm-resource-folger-teaching` | [Folger 戏剧课堂教案与活动](https://www.folger.edu/teach/resources/) | 官方教学入口按剧作组织 lesson plans 和课堂活动，并区分教师会员权益。 |
-| `dm-resource-ncpa-opera-highlights` | [国家大剧院：歌剧与戏剧演出片段](https://ncpa-classic.cntv.cn/highlights/more/index.shtml?type=2) | 官方精彩瞬间栏目提供歌剧、舞剧、戏剧戏曲分类，并展示会员权益。 |
-| `dm-resource-ncpa-production-documentaries` | [国家大剧院：剧目制作与剧院纪录片](https://ncpa-classic.cntv.cn/documentaries/more/index.shtml?type=2) | 官方纪录片页面设置“剧目制作”和“剧院纪实”题材选项。 |
-| `dm-resource-nt-at-home` | [National Theatre at Home 演出录像](https://www.ntathome.com/products) | 官方产品页列出 theatre streaming 订阅以及多部舞台作品的租看入口。 |
-| `dm-resource-nt-collection-schools` | [National Theatre Collection 学校教学资源](https://www.dramaonlinelibrary.com/national-theatre-collection-for-schools) | 官方页面说明演出录像与主题、表演、技巧教学资料配套，并列出机构访问条件。 |
-| `dm-resource-digital-theatre-plus` | [Digital Theatre+ 戏剧教学与演出资源](https://www.digitaltheatreplus.com/faq) | 官方 FAQ 将服务定义为戏剧文本与表演艺术教育平台，并区分机构教育和个人观看授权。 |
 | `dm-resource-rsc-associate-artists` | [RSC 合作艺术家目录](https://www.rsc.org.uk/about-us/whos-who/associate-artists) | 官方页面说明艺术家因对剧团工作的贡献获邀，并直接列出 Associate Artists 名单。 |
 | `dm-resource-ncpa-opera-artists` | [国家大剧院歌剧演员队](https://www.chncpa.org/jmsc_237/zytt/gjyyd/) | 国家大剧院官方导航“艺术生产”直接链接至“国家大剧院歌剧演员队”页面。 |
 | `dm-resource-ncpa-theatres` | [国家大剧院剧场与舞台空间](https://www.chncpa.org/cgylx/jyjg/) | 官方剧院景观页逐项介绍歌剧院、戏剧场、小剧场及舞台机械等设施。 |
@@ -69,7 +64,6 @@ JSON 顶层是数组；每条含 `id/title/category/topics/summary/organization/
 | `dm-resource-rsc-casting` | [RSC 演员选角与试镜说明](https://www.rsc.org.uk/about-us/how-we-make-theatre/casting) | 剧团官方选角页说明导演和创作团队如何选择演出角色，并提供试镜与演员提交资料的常见问题。 |
 | `dm-resource-nt-theatre-jobs` | [National Theatre 戏剧制作与舞台岗位](https://jobs.nationaltheatre.org.uk/) | 官方招聘页列有制作管理、舞台技术等剧院岗位，并由 National Theatre 说明其演出制作工作。 |
 
-访问限制分别核实于 [Digital Theatre+ FAQ](https://www.digitaltheatreplus.com/faq)、[NT Collection 学校说明](https://www.dramaonlinelibrary.com/national-theatre-collection-for-schools)及 [NT at Home 产品页](https://www.ntathome.com/products)。各类观看许可不能互相替代。
 
 开放文本也须逐项看许可：[DraCor 语料目录](https://dracor.org/doc/corpora)列有 CC0、含非商业限制等不同许可；[《玩偶之家》书目](https://www.gutenberg.org/ebooks/2542)仅标注该版本在美国的公版状态。因此本批没有把整个资源库标成可任意商用全文。
 

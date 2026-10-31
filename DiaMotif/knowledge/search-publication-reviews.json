@@ -1,0 +1,56 @@
+{
+  "concept:border-curtain": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.mct.gov.cn/whzx/zxgz/wlbzhgz/201906/W020190605427032219053.pdf",
+    "locator": "3.5 檐幕；PDF第6页"
+  },
+  "concept:main-curtain": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.mct.gov.cn/whzx/zxgz/wlbzhgz/201906/W020190605427032219053.pdf",
+    "locator": "3.3 大幕；PDF第5页"
+  },
+  "concept:cyclorama": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.mct.gov.cn/whzx/zxgz/wlbzhgz/201906/W020190605427032219053.pdf",
+    "locator": "3.11 天幕；PDF第6页"
+  },
+  "concept:scrim": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.mct.gov.cn/whzx/zxgz/wlbzhgz/201906/W020190605427032219053.pdf",
+    "locator": "3.9 纱幕；PDF第6页"
+  },
+  "concept:act-curtain": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.mct.gov.cn/whzx/zxgz/wlbzhgz/201906/W020190605427032219053.pdf",
+    "locator": "3.6 二道幕；PDF第6页"
+  },
+  "dm-book-cucp-1347": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.cucp.com.cn/Book/Details/1347",
+    "locator": "原页书名、林洪桐、ISBN 978-7-5657-3201-0、2023-04及公开目录；只审核书目元数据，不声称已读全书"
+  },
+  "dm-book-cucp-1205": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.cucp.com.cn/Book/Details/1205",
+    "locator": "原页书名、黄凯、ISBN 978-7-5657-2960-7、2021-10与对白/独白篇目录；只审核书目元数据"
+  },
+  "dm-knowledge-ncpa-wang-jane-eyre-20210309": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxj/202103/t20210310_227082.shtml",
+    "locator": "主讲人与2021/03/09日期；正文一演员选择及二演员年龄与角色年龄。只审核文字创作经验，不作行业通则或视频"
+  },
+  "dm-knowledge-ncpa-chang-nianbai-20200629": {
+    "status": "approved",
+    "reviewedAt": "2026-10-30",
+    "evidenceUrl": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxq/202011/t20201130_223439.shtml",
+    "locator": "2020/06/29主讲常秋月；正文一京白、二韵白、三谐白；用户已确认按原文纠正旧标题第三项，不收讲座视频"
+  }
+}

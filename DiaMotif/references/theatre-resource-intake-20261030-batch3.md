@@ -17,8 +17,6 @@ SMG两篇原页未显式显示发布日期，不把网址中的年月直接当�
 | `dm-resource-cad-thunderstorm-20260410` | [中戏2026版《雷雨》创排说明](https://www.chntheatre.edu.cn/cn/xiao/detail/25324.html) | 标题及2026-04-10日期；“导演的话”曹艳署名；“为什么排演《雷雨》”刘杏林署名。只摘要当前版本的创作说明，不将观点当通用导演规则。 |
 | `dm-resource-ncpa-rickshaw-boy-2015` | [国家大剧院原创歌剧《骆驼祥子》](https://www.chncpa.org/subsite/ltxz2015/jmjq.html) | “剧目介绍”第1段主创，第2段音乐与舞美处理，末段2014首演、2015再演。 |
 | `dm-resource-smg-sleep-no-more-shanghai` | [SMG：《不眠之夜》](https://www.smg.cn/review/202211/0164830.html) | 首段作品英文名、出品制作与2016首演；次段《麦克白》改编及自由探索空间；后文历史运营截止时间。 |
-| `dm-resource-cctv-on-the-road-backstage-20210716` | [央视新闻：音乐剧《在远方》演出探班](https://m.news.cctv.com/2021/07/16/ARTIIzKLs3mIoDRAe7Dq0QD3210716.shtml) | 2021-07-16 20:20；正文演出探班及出品演出机构；原页HTML含 `videoGuidCode1` 和嵌入视频配置。 |
-| `dm-resource-cctv-thunderstorm-20170501-part1` | [央视话剧《雷雨》1/2](https://tv.cctv.com/2017/05/01/VIDEMQ9dyZ4261XqCzMNL9OY170501.shtml) | 节目标题与1/2标注；更新时间2017-05-01 03:04；简介开头的演员—角色对应表。 |
 | `dm-resource-smg-phantom-production-cast` | [SMG：《剧院魅影》巡演与角色介绍](https://www.smg.cn/review/202404/0165428.html) | 第2段出品、运营、联合呈现与所延续的制作版本；第3段该轮角色阵容。 |
 
 ## 核验路径与排除项

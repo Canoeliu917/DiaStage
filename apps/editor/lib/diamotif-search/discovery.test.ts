@@ -1,6 +1,8 @@
 import { expect, test } from 'bun:test'
 import discoveries from '../../../../DiaMotif/knowledge/domestic-discovery.json'
+import reviews from '../../../../DiaMotif/knowledge/search-publication-reviews.json'
 import { isProfessionalResource, SearchResourceSchema } from './catalog'
+import { isPublishableResource } from './publication-policy'
 import { SEARCH_RESOURCES, searchDiaMotif } from './search'
 import { SEARCH_TOPICS, topicFitsCategory, topicMatches } from './search-topics'
 import { sourceRegion } from './source-scope'
@@ -9,12 +11,26 @@ test('canonical discovery records have unique IDs and links and are admitted onc
   expect(new Set(discoveries.map(({ id }) => id)).size).toBe(discoveries.length)
   expect(new Set(discoveries.map(({ url }) => url)).size).toBe(discoveries.length)
   expect(new Set(SEARCH_RESOURCES.map(({ id }) => id)).size).toBe(SEARCH_RESOURCES.length)
-  for (const { id } of discoveries)
-    expect(SEARCH_RESOURCES.filter((resource) => resource.id === id)).toHaveLength(1)
+  for (const raw of discoveries)
+    expect(SEARCH_RESOURCES.filter((resource) => resource.id === raw.id)).toHaveLength(
+      isPublishableResource(
+        SearchResourceSchema.parse({
+          ...raw,
+          publicationReview: (reviews as Record<string, unknown>)[raw.id],
+        }),
+      )
+        ? 1
+        : 0,
+    )
 })
 
-test.each(discoveries)('canonical professional source is valid and searchable: $id', (raw) => {
-  const resource = SearchResourceSchema.parse(raw)
+test.each(
+  discoveries,
+)('canonical metadata is valid; publication review controls search eligibility: $id', (raw) => {
+  const resource = SearchResourceSchema.parse({
+    ...raw,
+    publicationReview: (reviews as Record<string, unknown>)[raw.id],
+  })
   expect(isProfessionalResource(resource)).toBe(true)
   expect(resource.url).not.toBeNull()
   expect(sourceRegion(resource.url!)).not.toBeNull()
@@ -25,6 +41,10 @@ test.each(discoveries)('canonical professional source is valid and searchable: $
   for (const ref of resource.sourceRefs ?? []) {
     expect(ref.locator?.length ?? 0).toBeGreaterThan(0)
     if (ref.url) expect(sourceRegion(ref.url)).not.toBeNull()
+  }
+  if (!isPublishableResource(resource)) {
+    expect(SEARCH_RESOURCES.some(({ id }) => id === resource.id)).toBe(false)
+    return
   }
   if (!resource.subtopics?.length) {
     expect(resource.recordType).toBe('directory')

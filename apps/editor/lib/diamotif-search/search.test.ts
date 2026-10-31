@@ -18,7 +18,9 @@ test('public catalog exposes regional sources without foreign links or private p
   expect(JSON.stringify(SEARCH_RESOURCES)).not.toMatch(/D:\/Obsidian|localFileRef|apiKey|SecretKey/)
   for (const resource of resources) {
     expect(SEARCH_RESOURCES.some(({ id }) => id === resource.id)).toBe(
-      sourceRegion(resource.url) !== null,
+      sourceRegion(resource.url) !== null &&
+        resource.category !== 'scripts' &&
+        resource.category !== 'knowledge',
     )
   }
   for (const item of SEARCH_RESOURCES) {
@@ -33,7 +35,7 @@ test('public catalog exposes regional sources without foreign links or private p
     expect(item.rights).toBe('metadata-only')
   }
   expect(SEARCH_RESOURCES.some(({ status, url }) => status === 'registered' && url === null)).toBe(
-    true,
+    false,
   )
   expect(DIA_KNOWLEDGE.concepts).toHaveLength(145)
   expect(DIA_KNOWLEDGE.sources).toHaveLength(12)
@@ -47,9 +49,7 @@ test('specific theatre terms outrank broad keyword overlap and retain source qua
   expect(result.aiStatus).toBe('disabled')
   expect(result.notice).toBeNull()
   const theory = searchDiaMotif({ query: '舞台区位', category: 'knowledge' })
-  expect(theory.results.find((item) => item.id === 'concept:stage-zone')?.summary).toContain(
-    '非普遍规律',
-  )
+  expect(theory.results.some((item) => item.id === 'concept:stage-zone')).toBe(false)
 })
 
 test('all categories browse curated records; random input does not become invented recommendations', () => {
@@ -68,7 +68,7 @@ test('specific topics do not return generic directories on a shared theatre frag
     expect(result.results.map(({ id }) => id)).not.toContain('dm-resource-ncpa-opera-highlights')
     expect(result.results.map(({ id }) => id)).not.toContain('dm-resource-nt-collection-schools')
   }
-  expect(searchDiaMotif({ query: '戏剧', category: 'videos' }).results.length).toBeGreaterThan(0)
+  expect(searchDiaMotif({ query: '戏剧', category: 'videos' }).results).toHaveLength(0)
 })
 
 test('named plays constrain sources instead of matching only the word script', () => {

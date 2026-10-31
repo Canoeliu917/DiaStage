@@ -37,10 +37,6 @@
 | `dm-resource-cad-stanislavski-book` | [《斯氏体系在中国》修订本：姜涛著作介绍](https://www.chntheatre.edu.cn/cn/xue/detail/13349.html) | knowledge | 发布日期2019-03-05；旧题名与修订说明段。职务为原文当时标注，不推断现任职务。 |
 | `dm-resource-folger-hamlet-text` | [《哈姆雷特》英文剧本｜Folger 版](https://www.folger.edu/explore/shakespeares-works/hamlet/read/) | scripts | Navigate this work → Act and scene list；Characters in the Play；带行号的剧本正文 |
 | `dm-resource-gutenberg-cherry-orchard-west` | [《樱桃园》英文剧本｜Julius West 译本](https://www.gutenberg.org/ebooks/7986) | scripts | About this eBook → Translator / Contents / Language / Copyright；CONTENTS → THE CHERRY ORCHARD → ACT ONE 至 ACT FOUR |
-| `dm-resource-folger-macbeth-2008-video` | [《麦克白》舞台全剧影像｜Folger Theatre 2008](https://www.folger.edu/explore/shakespeare-in-performance/video-folger-theatre-2008-macbeth/) | videos | Watch online for free；Full performance → Part 1 / Part 2；Special features；Credits |
-| `dm-resource-cctv-mudanting-youyuan-20191114` | [昆曲《牡丹亭·游园》｜央视像音像2019年版](https://tv.cctv.com/2019/11/14/VIDEIj5avldRfzedfSczu4ym191114.shtml) | videos | 节目标题；来源与更新时间；视频简介中的剧目、作者及角色演员 |
-| `dm-resource-cctv-bawangbieji-20190711` | [京剧《霸王别姬》｜央视像音像2019年版](https://tv.cctv.com/2019/07/11/VIDEqNgR1KvLf6lfNGjj3qKb190711.shtml) | videos | 节目标题；来源与更新时间；视频简介中的剧情及演员角色 |
-| `dm-resource-cctv-red-detachment-changqing-20250405` | [芭蕾舞剧《红色娘子军·常青指路》选段｜央视影像](https://tv.cctv.com/2025/04/05/VIDEpk30m2NfYiQGAbBvT5mg250405.shtml) | videos | 视频标题；来源与更新时间2025-04-05 21:32；视频简介中的作品、选段及表演团体 |
 | `dm-resource-folger-midsummer-text` | [《仲夏夜之梦》英文剧本｜Folger 版](https://www.folger.edu/explore/shakespeares-works/a-midsummer-nights-dream/read/) | scripts | Navigate this work → Characters in the Play / Act and scene list；Act 1, scene 2；Act 5, scene 1；带行号正文 |
 
 ## 检索修正及验证
