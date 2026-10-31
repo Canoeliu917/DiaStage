@@ -9,6 +9,19 @@ export const PRIORITY_MAINLAND_PLAYWRIGHTS = [
   '丁西林',
 ] as const
 
+const bibliographicUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((value) => {
+    try {
+      const url = new URL(value)
+      return url.protocol === 'https:' && !url.username && !url.password
+    } catch {
+      return false
+    }
+  }, '来源链接须是不带账号的 https 地址。')
+
 const HundredPlayCardSchema = z
   .object({
     id: z.string().regex(/^hundred-[a-z0-9-]+$/),
@@ -20,10 +33,17 @@ const HundredPlayCardSchema = z
     hosting: z.literal('metadata-only'),
     publicSearch: z.literal(false),
     fullText: z.null(),
-    sourceUrl: z.null(),
+    firstPublishedYear: z.number().int().min(1900).max(2026).nullable(),
+    copyrightStatus: z.literal('hosting-not-cleared'),
+    sourceUrl: bibliographicUrl.nullable(),
+    sourceLabel: z.string().trim().min(1).max(80).nullable(),
     note: z.string().trim().min(8).max(200),
   })
   .strict()
+  .refine((card) => (card.sourceUrl === null) === (card.sourceLabel === null), {
+    path: ['sourceUrl'],
+    message: '有来源链接时要写来源名称；没有链接时不要写来源名称。',
+  })
 
 export const HundredPlayChecklistSchema = z
   .object({
@@ -44,6 +64,8 @@ export type HundredPlayChecklist = z.infer<typeof HundredPlayChecklistSchema>
 export function summarizeHundredCards(doc: HundredPlayChecklist) {
   return {
     listedCards: doc.cards.length,
+    withYear: doc.cards.filter((card) => card.firstPublishedYear !== null).length,
+    withSourceUrl: doc.cards.filter((card) => card.sourceUrl !== null).length,
     reviewedFullTexts: 0,
     publicSearchCards: doc.cards.filter((card) => card.publicSearch).length,
   }

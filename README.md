@@ -18,8 +18,11 @@
 1. 打开 `/contribute`，用链接提交一条资料，应进入 `/contribute/success`，并写明审核通过前不会公开展示。
 2. 回到首页搜索刚提交的题名，结果应为 0。
 3. 搜索语料中不存在的词（例如 `zzzzqqqq999999`）同样为空，不会用待审或清单卡片补位。
-4. `bun test apps/editor/lib/diamotif-search/contributions.test.ts`
-5. `bun scripts/diamotif-manual-intake.ts` 只打印清单；`--promote` 与 `--scrape` 会被拒绝。
+4. `bun test apps/editor/lib/diamotif-search/contributions.test.ts apps/editor/lib/diamotif-search/daily-intake.test.ts`
+5. `bun scripts/diamotif-daily-intake.ts` 报告当日主动收录，默认不写公开检索。
+6. `bun scripts/diamotif-contribution-queue.ts` 查看投稿队列。`bun scripts/diamotif-manual-intake.ts` 只打印书目卡。
+
+主服务器上的收录是每天可再跑的日课，目录和环境变量见 [DiaMotif/references/preflight-directories.md](DiaMotif/references/preflight-directories.md)。社区投稿和主动打开的网页都先留在审核队列。
 
 DiaStage 咫台以21件标准道具为基础，把文字想法、剧场照片和已有剧本中的场景布置转成可预览、可调整、可保存的三维排练方案。Dia 是统一入口，结合真实模型理解、资产约束和几何检查，先预览，再由人确认采用。
 

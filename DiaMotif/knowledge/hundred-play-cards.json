@@ -1,7 +1,7 @@
 {
   "schema": "diamotif.hundred-play-card/1",
   "program": "话剧百部",
-  "purpose": "优先核验的大陆话剧元数据清单。不是已收录数量，不含正文，未审核不得进入公开检索。",
+  "purpose": "优先核验的大陆话剧元数据清单。年份和链接只帮助核对书目，不是已收录数量，不含正文，未审核不得进入公开检索。",
   "policy": "仅中国大陆作者与作品。完整原作、已核译本或逐卷核完的剧作集。港澳主动征集暂停。节选、改编、排练删改不收。权利不明只保留题名、作者、链接和短摘要。",
   "cards": [
     {
@@ -14,8 +14,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/fwzj/wxds/7.shtml",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1934,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网曹禺人物页，不是剧本全文"
     },
     {
       "id": "hundred-caoyu-richu",
@@ -27,8 +30,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/fwzj/wxds/7.shtml",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1936,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网曹禺人物页，不是剧本全文"
     },
     {
       "id": "hundred-caoyu-yuanye",
@@ -40,8 +46,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/fwzj/wxds/7.shtml",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1937,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网曹禺人物页，不是剧本全文"
     },
     {
       "id": "hundred-caoyu-beijingren",
@@ -53,8 +62,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/fwzj/wxds/7.shtml",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1941,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网曹禺人物页，不是剧本全文"
     },
     {
       "id": "hundred-laoshe-chaguan",
@@ -66,8 +78,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491384.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1957,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网老舍人物页，不是剧本全文"
     },
     {
       "id": "hundred-laoshe-longxugou",
@@ -79,8 +94,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491384.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1951,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网老舍人物页，不是剧本全文"
     },
     {
       "id": "hundred-tianhan-mingyouzhisi",
@@ -93,7 +111,10 @@
       "publicSearch": false,
       "fullText": null,
       "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "note": "常见书目年份。作家网人物页未写入本卡，链接留空。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1929,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": null
     },
     {
       "id": "hundred-tianhan-guanhanqing",
@@ -106,7 +127,10 @@
       "publicSearch": false,
       "fullText": null,
       "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "note": "常见书目年份。作家网人物页未写入本卡，链接留空。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1958,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": null
     },
     {
       "id": "hundred-xiayan-wuyanxia",
@@ -118,8 +142,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404951-28495120.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1937,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网夏衍人物页，不是剧本全文"
     },
     {
       "id": "hundred-xiayan-faxisi",
@@ -131,8 +158,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404951-28495120.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1942,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网夏衍人物页，不是剧本全文"
     },
     {
       "id": "hundred-guomoruo-quyuan",
@@ -144,8 +174,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/xdzj/302.shtml",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1942,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网郭沫若人物页，不是剧本全文"
     },
     {
       "id": "hundred-guomoruo-hufu",
@@ -157,8 +190,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/xdzj/302.shtml",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1942,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网郭沫若人物页，不是剧本全文"
     },
     {
       "id": "hundred-dingxilin-yizhimafeng",
@@ -170,8 +206,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/wutai/2016/2016-07-04/275598.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1923,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网丁西林文章页，不是剧本全文"
     },
     {
       "id": "hundred-dingxilin-yapo",
@@ -183,8 +222,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/wutai/2016/2016-07-04/275598.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1926,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网丁西林文章页，不是剧本全文"
     },
     {
       "id": "hundred-dingxilin-sankuaiqian",
@@ -196,8 +238,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/wutai/2016/2016-07-04/275598.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1939,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网丁西林文章页，不是剧本全文"
     },
     {
       "id": "hundred-hongshen-zhaoyanwang",
@@ -209,8 +254,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404935-28488703.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1922,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网洪深人物页，不是剧本全文"
     },
     {
       "id": "hundred-chenbaichen-shengguantu",
@@ -222,8 +270,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487929.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1945,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网陈白尘人物页，不是剧本全文"
     },
     {
       "id": "hundred-wuzuguang-fengxue",
@@ -235,8 +286,11 @@
       "hosting": "metadata-only",
       "publicSearch": false,
       "fullText": null,
-      "sourceUrl": null,
-      "note": "待核大陆正式出版的完整原作。此卡只有题名与作者，不含正文。"
+      "sourceUrl": "https://www.chinawriter.com.cn/n1/2017/0531/c405174-29307870.html",
+      "note": "常见书目年份，不是版本核验。链接是人物或文章页。不托管正文，不进入公开检索。",
+      "firstPublishedYear": 1942,
+      "copyrightStatus": "hosting-not-cleared",
+      "sourceLabel": "中国作家网吴祖光人物页，不是剧本全文"
     }
   ]
 }

@@ -23,7 +23,7 @@ if (summary.publicSearchCards !== 0 || summary.reviewedFullTexts !== 0) {
 }
 
 console.log(
-  `话剧百部清单：${summary.listedCards} 张待核元数据卡。这不是已收录数量，也不是 1000。公开检索未改动。`,
+  `话剧百部清单：${summary.listedCards} 张元数据卡，其中 ${summary.withYear} 张有书目年份，${summary.withSourceUrl} 张有来源链接。托管全文 ${summary.reviewedFullTexts}。公开检索未改动。`,
 )
 for (const card of doc.cards)
   console.log(`- ${card.playwright}《${card.title}》 ${card.reviewStatus} ${card.hosting}`)

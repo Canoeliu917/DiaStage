@@ -96,11 +96,14 @@ export type StoredContributionFile = {
   originalName: string
 }
 
+export type ContributionQueueStatus = 'pending-review' | 'marked-reviewed' | 'rejected'
+
 export type StoredContribution = Omit<ContributionDraft, 'file' | 'notes' | 'externalUrl'> & {
   id: string
-  status: 'pending-review'
+  status: ContributionQueueStatus
   publicSearch: false
   submittedAt: string
+  markedAt?: string
   externalUrl: string | null
   notes: string
   file: StoredContributionFile | null

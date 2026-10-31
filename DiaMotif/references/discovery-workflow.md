@@ -4,7 +4,7 @@
 
 ## 2026-10-31 覆盖旧规则
 
-当前已按用户要求暂停资料收集，自动接续为PAUSED；本次继续仅完成GitHub交接。完整约束见[收录规则](script-intake-policy-20261031.md)，实测结果见[暂停报告](../records/2026-10-31-script-intake-pause.md)。未审核原始候选、扫描及完整本机过程日志不上传公开仓库。
+当前已按用户要求暂停自动高量抓取。2026-10-31 晚起，可重复执行的日课入口是 `bun scripts/diamotif-daily-intake.ts`，默认不写公开检索。完整约束见[收录规则](script-intake-policy-20261031.md)，预发目录见[预发说明](preflight-directories.md)。未审核原始候选、扫描及完整本机过程日志不上传公开仓库。
 
 人工核准、而不恢复高量抓取的一轮操作见[人工核准说明](manual-intake-round.md)。百部清单和 `/contribute` 待审投稿都不是正式库。
 

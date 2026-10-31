@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto'
-import { chmod, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { z } from 'zod'
@@ -8,9 +8,10 @@ import { type ContributionDraft, ContributionError, type StoredContribution } fr
 const StoredContributionSchema = z
   .object({
     id: z.string().regex(/^c[a-f0-9]{16}$/),
-    status: z.literal('pending-review'),
+    status: z.enum(['pending-review', 'marked-reviewed', 'rejected']),
     publicSearch: z.literal(false),
     submittedAt: z.string().datetime(),
+    markedAt: z.string().datetime().optional(),
     title: z.string().min(1),
     author: z.string().min(1),
     category: z.enum(['script', 'stage-video', 'knowledge', 'other']),
@@ -111,8 +112,75 @@ export async function savePendingContribution(draft: ContributionDraft, director
   return parsed
 }
 
-export async function readPendingContribution(directory: string, id: string) {
+async function readStoredContribution(directory: string, id: string) {
   assertContributionId(id)
   const raw = JSON.parse(await readFile(join(directory, 'records', `${id}.json`), 'utf8'))
   return StoredContributionSchema.parse(raw)
+}
+
+export async function readPendingContribution(directory: string, id: string) {
+  const record = await readStoredContribution(directory, id)
+  if (record.status !== 'pending-review') throw new ContributionError('这条记录不在待审状态。')
+  return record
+}
+
+export type ContributionQueueRow = {
+  id: string
+  title: string
+  author: string
+  status: StoredContribution['status']
+  submittedAt: string
+  rights: StoredContribution['rights']
+  publicSearch: false
+}
+
+export async function listContributionQueue(directory: string): Promise<ContributionQueueRow[]> {
+  let names: string[] = []
+  try {
+    names = await readdir(join(directory, 'records'))
+  } catch {
+    return []
+  }
+  const rows: ContributionQueueRow[] = []
+  for (const name of names) {
+    if (!name.endsWith('.json')) continue
+    const record = await readStoredContribution(directory, name.slice(0, -'.json'.length))
+    rows.push({
+      id: record.id,
+      title: record.title,
+      author: record.author,
+      status: record.status,
+      submittedAt: record.submittedAt,
+      rights: record.rights,
+      publicSearch: false,
+    })
+  }
+  return rows.sort((a, b) => (a.submittedAt < b.submittedAt ? 1 : -1))
+}
+
+export async function setContributionQueueStatus(
+  directory: string,
+  id: string,
+  status: Exclude<StoredContribution['status'], 'pending-review'> | 'pending-review',
+) {
+  const record = await readStoredContribution(directory, id)
+  const next = StoredContributionSchema.parse({
+    ...record,
+    status,
+    publicSearch: false,
+    markedAt: new Date().toISOString(),
+  })
+  await privateFile(join(directory, 'records', `${id}.json`), `${JSON.stringify(next, null, 2)}\n`)
+  return next
+}
+
+export function contributionPublicIndexPlan(rows: ContributionQueueRow[], writePublic = false) {
+  return {
+    dryRun: !writePublic,
+    wrotePublicIndex: false,
+    considered: rows.length,
+    message: writePublic
+      ? '已拒绝写入公开检索。标记已审或拒绝只改投稿状态，不进入正式目录。'
+      : '未写入公开检索。这是待审队列的只读核对。',
+  }
 }

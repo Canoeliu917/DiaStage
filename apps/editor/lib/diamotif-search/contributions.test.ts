@@ -3,7 +3,13 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import checklist from '../../../../DiaMotif/knowledge/hundred-play-cards.json'
-import { readPendingContribution, savePendingContribution } from './contribution-store'
+import {
+  contributionPublicIndexPlan,
+  listContributionQueue,
+  readPendingContribution,
+  savePendingContribution,
+  setContributionQueueStatus,
+} from './contribution-store'
 import { ContributionError, contributionFromFields, contributionFromRequest } from './contributions'
 import {
   HundredPlayChecklistSchema,
@@ -121,6 +127,9 @@ test('hundred-play cards are metadata candidates, not a padded corpus', () => {
   const summary = summarizeHundredCards(doc)
   expect(summary.listedCards).toBe(doc.cards.length)
   expect(summary.listedCards).toBeLessThan(40)
+  expect(summary.withYear).toBeGreaterThan(0)
+  expect(summary.withSourceUrl).toBeGreaterThan(0)
+  expect(summary.withSourceUrl).toBeLessThanOrEqual(summary.listedCards)
   expect(summary.reviewedFullTexts).toBe(0)
   expect(summary.publicSearchCards).toBe(0)
   for (const playwright of PRIORITY_MAINLAND_PLAYWRIGHTS)
@@ -128,6 +137,8 @@ test('hundred-play cards are metadata candidates, not a padded corpus', () => {
   for (const card of doc.cards) {
     expect(card.fullText).toBeNull()
     expect(card.publicSearch).toBe(false)
+    expect(card.copyrightStatus).toBe('hosting-not-cleared')
+    if (card.sourceUrl) expect(card.sourceUrl.startsWith('https://')).toBe(true)
     expect(SEARCH_RESOURCES.some((item) => item.id === card.id)).toBe(false)
     const found = searchDiaMotif({ query: `${card.playwright}${card.title}` })
     expect(
@@ -137,4 +148,31 @@ test('hundred-play cards are metadata candidates, not a padded corpus', () => {
   expect(intakeCommandRefusal(['--list'])).toBeNull()
   expect(intakeCommandRefusal(['--scrape'])).toContain('拒绝')
   expect(intakeCommandRefusal(['--promote'])).toContain('公开检索')
+})
+
+test('the review queue can be listed and marked without entering search', async () => {
+  const directory = await tempDirectory()
+  const saved = await savePendingContribution(contributionFromFields(linkOnly, null), directory)
+  const listed = await listContributionQueue(directory)
+  expect(listed).toEqual([
+    {
+      id: saved.id,
+      title: saved.title,
+      author: saved.author,
+      status: 'pending-review',
+      submittedAt: saved.submittedAt,
+      rights: 'unclear',
+      publicSearch: false,
+    },
+  ])
+  expect(JSON.stringify(listed)).not.toContain('contactEmail')
+  const marked = await setContributionQueueStatus(directory, saved.id, 'marked-reviewed')
+  expect(marked.status).toBe('marked-reviewed')
+  expect(marked.publicSearch).toBe(false)
+  expect(searchDiaMotif({ query: saved.title }).results.some((item) => item.id === saved.id)).toBe(
+    false,
+  )
+  const plan = contributionPublicIndexPlan(await listContributionQueue(directory), true)
+  expect(plan.wrotePublicIndex).toBe(false)
+  expect(plan.message).toContain('拒绝')
 })
