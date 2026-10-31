@@ -15,12 +15,11 @@ import {
   type SearchCategory,
   type SearchResource,
 } from './catalog'
+import { QWEN_NOTICES, qwenNativeSearchEndpoint } from './qwen-search'
 import { SEARCH_RESOURCES, type SearchResponse } from './search'
 import { SEARCH_TOPICS, type SearchTopic, topicFitsCategory } from './search-topics'
 import { sourceRegion } from './source-scope'
 
-const endpoint =
-  'https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation'
 const SourceSchema = z.object({
   title: z.string().trim().min(1).max(300),
   url: z.string().max(2048).url(),
@@ -41,7 +40,7 @@ const aiScreen = (value: string) =>
   /影视|影視|电影|電影|电视|電視|短剧|短劇|漫剧|漫劇|动画|動畫|视频|視頻|分镜|分鏡|镜头|鏡頭|film|cinema|animation|video/i.test(
     value,
   )
-const unavailable = () => new AiError('PLAN_INVALID', '联网检索未返回可验证来源，请稍后重试。', 502)
+const unavailable = () => new AiError('PLAN_INVALID', QWEN_NOTICES.callFailed, 502)
 
 function sourceResource(
   raw: unknown,
@@ -247,7 +246,9 @@ export async function searchDiaMotifWeb(
   evidence?: SearchResource[],
 ) {
   const config = getAiProviderConfig()
-  if (config?.provider !== 'aliyun') throw unavailable()
+  if (config?.provider !== 'aliyun' || !config.baseURL)
+    throw new AiError('INTERNAL_ERROR', QWEN_NOTICES.keyMissing, 503)
+  const endpoint = qwenNativeSearchEndpoint(config.baseURL)
   if (!query.trim() || query.length > 500 || isEntertainmentQuery(query)) throw unavailable()
   if (isExcludedMedia(query.replace(/《[^》]*》/g, ''))) throw unavailable()
   if (!topicFitsCategory(category, topic)) throw unavailable()
@@ -299,17 +300,22 @@ export async function searchDiaMotifWeb(
     QWEN_TRIAL_MODEL,
     signal,
     async () => {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        redirect: 'error',
-        signal,
-        headers: {
-          Authorization: `Bearer ${config.apiKey}`,
-          'Content-Type': 'application/json',
-          'X-DashScope-SSE': 'enable',
-        },
-        body: payload,
-      })
+      let response: Response
+      try {
+        response = await fetch(endpoint, {
+          method: 'POST',
+          redirect: 'error',
+          signal,
+          headers: {
+            Authorization: `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json',
+            'X-DashScope-SSE': 'enable',
+          },
+          body: payload,
+        })
+      } catch {
+        throw new AiError('PLAN_INVALID', QWEN_NOTICES.callFailed, 502)
+      }
       return readSearchStream(response, signal, category, evidence)
     },
     (response) => response.usage,

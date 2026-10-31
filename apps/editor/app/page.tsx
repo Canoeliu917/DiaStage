@@ -3,6 +3,7 @@ import { HomeStageSpace } from '@/components/stage-entry/home-stage-space'
 import { isAiProviderConfigured } from '@/lib/ai/provider-config'
 import { getSession } from '@/lib/auth/server'
 import { DIASTAGE_BRAND } from '@/lib/brand'
+import { motifClosedBetaEnabled } from '@/lib/diamotif-search/motif-beta'
 import '@/components/diamotif-search/theatre-search.css'
 
 export const metadata = {
@@ -25,6 +26,7 @@ export default async function Home({
         initialCategory={category}
         initialTopic={topic}
         modelConfigured={isAiProviderConfigured()}
+        showBeta={motifClosedBetaEnabled()}
         user={
           session
             ? { id: session.user.id, email: session.user.email, name: session.user.name }

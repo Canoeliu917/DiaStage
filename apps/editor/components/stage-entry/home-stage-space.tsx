@@ -38,6 +38,7 @@ export function HomeStageSpace({
   initialTopic,
   modelConfigured = false,
   user,
+  showBeta = true,
 }: {
   initialEntry?: string
   initialQuery?: string
@@ -45,6 +46,7 @@ export function HomeStageSpace({
   initialTopic?: string
   modelConfigured?: boolean
   user: AccountUser | null
+  showBeta?: boolean
 }) {
   const [entry, setEntry] = useState<Entry | null>(null)
   const [draft, setDraft] = useState('')
@@ -90,6 +92,7 @@ export function HomeStageSpace({
         initialTopic={initialTopic}
         openStage={() => open('manual')}
         openScript={() => open('script')}
+        showBeta={showBeta}
       />
       {entry && (
         <dialog

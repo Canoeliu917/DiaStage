@@ -10,6 +10,8 @@ html:has(.motif-home) { overflow-y: auto; }
 .motif-skip { position: absolute; top: -100px; left: 20px; z-index: 10; padding: 8px 16px; background: var(--dia-text); color: var(--dia-surface); }
 .motif-skip:focus { top: 12px; }
 .motif-header { min-height: 76px; padding: 16px 36px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.motif-brand-lockup { display: inline-flex; align-items: center; gap: 10px; }
+.motif-beta-badge { display: inline-flex; align-items: center; height: 22px; padding: 0 6px; border: 1px solid currentColor; font-size: 11px; letter-spacing: 0.14em; line-height: 1; }
 .motif-small-brand { display: inline-flex; align-items: baseline; gap: 12px; text-decoration: none; font-size: 21px; font-weight: 600; }
 .motif-small-brand span { font-size: 17px; }
 .motif-header nav { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 18px; font-size: 12px; }
@@ -131,5 +133,21 @@ html:has(.motif-home) { overflow-y: auto; }
   .motif-categories { gap: 4px 17px; }
   .motif-brand dl { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .motif-footer { padding-inline: 22px; }
+}
+.motif-contribute { width: min(720px, calc(100% - 40px)); margin: 12px auto 64px; }
+.motif-contribute h1 { margin: 0 0 12px; font-size: 28px; font-weight: 500; letter-spacing: 0.04em; }
+.motif-contribute > p { margin: 0 0 22px; color: var(--dia-muted); }
+.motif-contribute-form { display: flex; flex-direction: column; gap: 16px; }
+.motif-contribute-form label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.motif-contribute-form :is(input, select, textarea) { min-height: 44px; width: 100%; box-sizing: border-box; border: 1px solid var(--dia-border); border-radius: 4px; background: var(--dia-surface); color: var(--dia-text); padding: 10px 12px; font: inherit; }
+.motif-contribute-form textarea { min-height: 120px; resize: vertical; }
+.motif-contribute-form input[type="file"] { padding: 8px; }
+.motif-contribute-form .motif-check { flex-direction: row; align-items: flex-start; gap: 10px; }
+.motif-contribute-form .motif-check input { width: 18px; height: 18px; min-height: 0; margin-top: 3px; }
+.motif-contribute-form button[type="submit"] { min-height: 44px; border: 1px solid var(--dia-text); border-radius: 4px; background: var(--dia-text); color: var(--dia-surface); padding: 10px 18px; }
+.motif-form-note { margin: 0; color: var(--dia-muted); font-size: 12px; line-height: 1.7; }
+.motif-form-error { margin: 0; border: 1px solid var(--dia-border); padding: 10px 12px; }
+@media (max-width: 760px) {
+  .motif-contribute { width: min(720px, calc(100% - 32px)); }
 }
 @media (prefers-reduced-motion: reduce) { .motif-home * { animation: none !important; transition: none !important; } }

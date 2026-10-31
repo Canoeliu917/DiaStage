@@ -52,6 +52,7 @@ export function TheatreSearchHome({
   initialTopic,
   openStage,
   openScript,
+  showBeta = true,
 }: {
   user: AccountUser | null
   initialQuery?: string
@@ -59,6 +60,7 @@ export function TheatreSearchHome({
   initialTopic?: string
   openStage: () => void
   openScript: () => void
+  showBeta?: boolean
 }) {
   const [query, setQuery] = useState(initialQuery?.slice(0, 500) ?? '')
   const [category, setCategory] = useState<SearchCategory>(
@@ -244,10 +246,14 @@ export function TheatreSearchHome({
         跳到检索
       </a>
       <header className="motif-header">
-        <Link href="/" className="motif-small-brand" aria-label="咫台 DiaStage 首页">
-          DiaStage<span>咫台</span>
-        </Link>
+        <div className="motif-brand-lockup">
+          <Link href="/" className="motif-small-brand" aria-label="咫台 DiaStage 首页">
+            DiaStage<span>咫台</span>
+          </Link>
+          {showBeta ? <span className="motif-beta-badge">内测</span> : null}
+        </div>
         <nav aria-label="账号与舞台">
+          <Link href="/contribute">投稿</Link>
           <StageThemeControl />
           <button type="button" onClick={openScript}>
             导入剧本
@@ -671,6 +677,7 @@ export function TheatreSearchHome({
       <footer className="motif-footer">
         <p className="motif-brand-motto">AI 虽能拓展想象，但还请你坚信直觉。</p>
         <div className="motif-contact-links">
+          <Link href="/contribute">投稿资料</Link>
           <a href="mailto:21@diastage.art">联系咫台</a>
           <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">
             粤ICP备2026162365号
