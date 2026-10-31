@@ -52,5 +52,173 @@
     "reviewedAt": "2026-10-30",
     "evidenceUrl": "https://www.chncpa.org/zwzt/spzt/jdysjtzt/videos/ztxq/202011/t20201130_223439.shtml",
     "locator": "2020/06/29主讲常秋月；正文一京白、二韵白、三谐白；用户已确认按原文纠正旧标题第三项，不收讲座视频"
+  },
+  "dm-script-lcsd-butterfly-lovers-en-v1": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Butterfly_Lovers.pdf",
+    "locator": "PDF共61页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+  },
+  "dm-script-lcsd-forsaken-woman-en-v1": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Forsaken_Woman.pdf",
+    "locator": "PDF共74页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+  },
+  "dm-script-lcsd-snow-in-june-en-v1": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Snow_in_June.pdf",
+    "locator": "PDF共72页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+  },
+  "dm-script-lcsd-red-phoenix-en-v1": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/TheHappyMarriageofRedPhoenix.pdf",
+    "locator": "PDF共72页；第1页署名、演出本年份及Version 1.0；第2页许可；四幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+  },
+  "dm-book-sarah-kane-hu-2006": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://opac.uibe.edu.cn/opac/book/6945bc638dfe002fed066e92e45ee465",
+    "locator": "书目详细信息：题名责任者、ISBN/价格、出版发行项、载体形态项、丛编项及内容提要。只核公开书目，没有取得书内正文。"
+  },
+  "dm-person-chinawriter-shen-ximeng": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404946-28492854.html",
+    "locator": "人物标题“沈西蒙”；正文笔名段及“著有歌剧剧本”“话剧剧本”作品段。《甲申记》标合作；电影文学剧本不混作舞台剧本。"
+  },
+  "dm-person-chinawriter-cao-yumei": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487971.html",
+    "locator": "人物标题“曹雨煤”；正文笔名、戏剧文学专业及戏剧作品清单。小说、电视剧与戏剧作品分别列示；未把剧作选书目当完整剧本。"
+  },
+  "dm-person-chinawriter-chen-baichen": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487929.html",
+    "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+  },
+  "dm-person-chinawriter-li-jianwu": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491139.html",
+    "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+  },
+  "dm-person-chinawriter-laoshe": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491384.html",
+    "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+  },
+  "dm-person-chinawriter-li-bozhao": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491310.html",
+    "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。《红军不怕远征难》明确标合作。"
+  },
+  "dm-person-chinawriter-wu-zuguang": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2017/0531/c405174-29307870.html",
+    "locator": "2017-05-31文章首段、四川江安创作段与序幕/三幕/尾声结构段；仅专业人物—舞台作品关联，不将演出、电影或转载文本当完整原作。"
+  },
+  "dm-person-chinawriter-xia-yan": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404951-28495120.html",
+    "locator": "人物标题及正文25行话剧剧本清单；仅专业身份与舞台作品关联，原名/历史任职等未采集。"
+  },
+  "dm-person-chinawriter-hong-shen": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404935-28488703.html",
+    "locator": "人物标题及正文25行话剧剧本清单；不将《少奶奶的扇子》等译改本冒充原创，赵阎王底本关系仍另留待核。"
+  },
+  "dm-person-chinawriter-guo-moruo": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/xdzj/302.shtml",
+    "locator": "著作书目41/43/44/47/77行剧本项目；仅舞台作品关联，不将列表当取得剧本，改编《西厢》和电影不填作同类原创。"
+  },
+  "dm-person-chinawriter-ding-xilin": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/wutai/2016/2016-07-04/275598.html",
+    "locator": "2016-07-04评论10/13/16行；观剧评论非采访，仅采专业身份/舞台剧目关联，不把当次舞台文本当原版剧本。"
+  },
+  "dm-person-chinawriter-song-zhidi": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/xdzj/407.shtml",
+    "locator": "现代作家辞典5行明确《雾重庆》为五幕话剧、《保卫和平》为话剧，9–24/40行的著作书目区分舞台与电影；这里只采雾重庆/保卫和平的专业作品关联，不采出生年份残缺等字段。"
+  },
+  "dm-person-chinawriter-ouyang-yuqian": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404942-28492002.html",
+    "locator": "会员辞典25行明确话剧剧本《潘金莲》《忠王李秀成》；仅采专业作者及作品关系，不把其他京剧/桂剧/电影混为同一文本或宣称均属原作。"
+  },
+  "dm-person-chinawriter-lu-jun": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28489858.html",
+    "locator": "辞典22行剧作家与剧作选；上戏校报印5编剧署名明确与袁香荷共同创作护士日记。"
+  },
+  "dm-person-chinawriter-yuan-xianghe": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2020/0426/c418957-31688781.html",
+    "locator": "江南2020年第2期目录28行、74行列话剧护士日记，陆军与袁香荷合作署名；上戏校报印5、8可交叉核编剧姓名。"
+  },
+  "dm-person-chinawriter-hong-tianyi": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.chinawriter.com.cn/n1/2024/0508/c418960-40231496.html",
+    "locator": "花城2024年第3期目录62行明确湖边假期为剧本、洪天贻署名；培源本人专业页10/14行明确北京工作与刊发关联。"
+  },
+  "dm-person-chinawriter-zou-jingzhi": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://wyb.chinawriter.com.cn/content/202502/26/content78274.html",
+    "locator": "2025-02-26文艺报40行明确邹静之断金刊发北京文学2024年第10期，为同名话剧文学剧本。"
+  },
+  "dm-person-sta-gu-yueyun": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://xxgk.sta.edu.cn/3f/21/c3457a81697/page.htm",
+    "locator": "2019-07-11原站134及同日校报PDF2/印第3版工作坊报道，顾月云与陆军合作大型话剧生命行歌；原印署名实看。"
+  },
+  "dm-person-sta-xiong-foxi": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.sta.edu.cn/_s5/6e/dc/c1753a93916/page.psp",
+    "locator": "2020-07-08上戏转载文汇报专业档案88及具体创作98/107，洋状元、一片爱国心、屠户等舞台剧目署名。"
+  },
+  "dm-person-sta-yu-yuee": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.sta.edu.cn/11/bb/c1551a70075/page.htm",
+    "locator": "2019-04-09上戏原站正文明确俞月娥把公鸡下蛋创作为5000字儿童剧并刊登剧本月刊；舞台剧目与作者关系明确。"
+  },
+  "dm-person-sta-tan-jie": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://www.sta.edu.cn/88/0f/c1546a34831/page.htm",
+    "locator": "2018-12-13上戏原站88（另一模板91）明确谈洁分手已刊2018剧本第11期，118明确其悲剧舞台剧目与作者创作关系。"
+  },
+  "dm-script-ncl-xiongfoxi-luoti-1933": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-9910017959/NCL-9910017959.PDF",
+    "locator": "PDF113／印107题名人物，PDF114–129／印108–123连续独幕正文及落幕；PDF130空白、131下一剧；PDF215版权1933年3月初版。 用户明确批准本来源及这两条原站链接；台湾馆藏/托管与上海原作出版地分别标识。仅元数据、自编摘要、原站及PDF链接，不转载托管全文、不授权训练。"
+  },
+  "dm-script-ncl-dingxilin-sankuai-1946": {
+    "status": "approved",
+    "reviewedAt": "2026-10-31",
+    "evidenceUrl": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-004850492/NCL-004850492.PDF",
+    "locator": "PDF87–102／印81–96连续独幕喜剧至幕下；PDF103版权1946年4月沪一版。1941初版月份未裁定，本条不冒充1941初版。 用户明确批准本来源及这两条原站链接；台湾馆藏/托管与上海原作出版地分别标识。仅元数据、自编摘要、原站及PDF链接，不转载托管全文、不授权训练。"
   }
 }

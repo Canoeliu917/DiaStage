@@ -73,6 +73,12 @@ og-test
 # DiaMotif raw trials and licensed source files remain private.
 /DiaMotif/private/
 
+# Unreviewed script research and its detailed local log are not public intake.
+/DiaMotif/knowledge/playwright-script-discovery-20261031.json
+/DiaMotif/knowledge/script-discovery-day-20261031.json
+/DiaMotif/records/2026-10-31-script-discovery-day.md
+/DiaMotif/references/playwright-script-retrieval.md
+
 # Generated review matrices/intermediate snapshots stay local; only curated final evidence is tracked.
 /.impeccable/review/**
 !/.impeccable/review/**/

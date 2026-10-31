@@ -6,6 +6,7 @@ test.each([
   'https://tv.cctv.com/2017/05/01/video.shtml',
   'https://mtaihu.chncpa.org/cg_8085/index.html',
   'https://zwgk.mct.gov.cn/publication.pdf',
+  'https://opac.uibe.edu.cn/opac/book/6945bc638dfe002fed066e92e45ee465',
 ])('verified mainland source domain remains eligible: %s', (url) => {
   expect(sourceRegion(url)).toBe('mainland')
 })
@@ -39,6 +40,8 @@ test.each([
   'https://theatre.example.cn/',
   'https://www.chntheatre.edu.cn.attacker.invalid/',
   'https://evilchntheatre.edu.cn/',
+  'https://opac.uibe.edu.cn.attacker.invalid/opac/book/synthetic',
+  'https://taiwanebook.ncl.edu.tw.attacker.invalid/zh-tw/book/NCL-004850492',
   'https://chntheatre.edu.cn@attacker.invalid/',
   'https://user:password@www.chntheatre.edu.cn/',
   'https://www.chntheatre.edu.cn:8443/',
@@ -48,4 +51,11 @@ test.each([
   'not a URL',
 ])('unknown, out-of-scope and misleading domains are rejected: %s', (url) => {
   expect(sourceRegion(url)).toBeNull()
+})
+
+test('approved Taiwan archive retains its host region separately from mainland original content', () => {
+  expect(sourceRegion('https://taiwanebook.ncl.edu.tw/z/book/NCL-9910017959')).toBe('taiwan')
+  expect(
+    sourceRegion('https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-004850492/NCL-004850492.PDF'),
+  ).toBe('taiwan')
 })

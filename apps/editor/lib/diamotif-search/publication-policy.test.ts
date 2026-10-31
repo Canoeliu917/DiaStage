@@ -113,6 +113,35 @@ test('knowledge is not authenticated by a verified label or an institutional dom
   ).toBe(false)
 })
 
+test('only the two approved NCL original scans enter search, with pending records still blocked', () => {
+  for (const [id, query, edition] of [
+    ['dm-script-ncl-xiongfoxi-luoti-1933', '裸体', '1933年3月初版'],
+    ['dm-script-ncl-dingxilin-sankuai-1946', '三块钱国币', '1946年4月沪一版'],
+  ]) {
+    const record = SEARCH_RESOURCES.find((resource) => resource.id === id)!
+    expect(record).toBeDefined()
+    expect(record.contentRegion).toBe('mainland')
+    expect(record.rights).toBe('metadata-only')
+    expect(record.completeVersion?.edition).toContain(edition)
+    expect(
+      searchDiaMotif({ query, category: 'scripts' }).results.some((resource) => resource.id === id),
+    ).toBe(true)
+    expect(
+      isPublishableResource({
+        ...record,
+        publicationReview: { ...record.publicationReview!, status: 'pending-user' },
+      }),
+    ).toBe(false)
+    expect(isPublishableResource({ ...record, publicationReview: undefined })).toBe(false)
+    expect(isPublishableResource({ ...record, completeVersion: undefined })).toBe(false)
+  }
+  expect(
+    SEARCH_RESOURCES.filter((resource) => resource.url?.includes('taiwanebook.ncl.edu.tw/'))
+      .map(({ id }) => id)
+      .sort(),
+  ).toEqual(['dm-script-ncl-dingxilin-sankuai-1946', 'dm-script-ncl-xiongfoxi-luoti-1933'])
+})
+
 test('AI and stage films require full-version review; technical reference records stay distinct', () => {
   const ai = {
     ...complete,
@@ -129,7 +158,11 @@ test('AI and stage films require full-version review; technical reference record
     isPublishableResource({ ...ai, aiInvolvement: 'reference', completeVersion: undefined }),
   ).toBe(true)
   for (const category of ['scripts', 'videos'] as const)
-    expect(searchDiaMotif({ category }).total).toBe(0)
+    for (const resource of searchDiaMotif({ category }).results) {
+      expect(resource.completeVersion?.coverage).toBe('full')
+      expect(resource.publicationReview?.status).toBe('approved')
+      expect(resource.recordType).toBe('resource')
+    }
 })
 
 test('interview and promotional records are rejected before publication, while formal notices remain valid', () => {

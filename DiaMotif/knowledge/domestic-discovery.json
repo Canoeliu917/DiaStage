@@ -2524,5 +2524,1109 @@
         "locator": "原页主讲人与2020/06/29日期；京白及后续念白讲解章节。只读取图文，未确认播放器。"
       }
     ]
+  },
+  {
+    "id": "dm-script-lcsd-butterfly-lovers-en-v1",
+    "title": "《梁祝恨史》｜伍榮仲（NG Wing Chung）英译完整剧本（Version 1.0）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-translation",
+      "script-opera"
+    ],
+    "topics": [
+      "梁祝恨史",
+      "梁祝恨史",
+      "Butterfly Lovers",
+      "潘一帆",
+      "伍榮仲（NG Wing Chung）",
+      "粤剧",
+      "粵劇",
+      "英译剧本",
+      "英语译本",
+      "完整剧本"
+    ],
+    "summary": "康文署公开的香港粤剧英译剧本：潘一帆编剧，伍榮仲（NG Wing Chung）翻译，基于芳艷芬1955演出本，译本标记2012年Version 1.0。共61页，六幕正文至终幕可读；这是该演出版本的英语全文，不是中文原本或音乐剧。本站只存元数据与原站链接；原PDF标示CC BY-NC 3.0及商业英文字幕用途的特殊条件，其他使用须按原许可另核。",
+    "organization": "香港康乐及文化事务署／岭南大学香港粤剧经典剧目翻译计划",
+    "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Butterfly_Lovers.pdf",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": null,
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "hong-kong",
+    "status": "verified",
+    "theatreEvidence": "康文署剧本英译本栏目直接链接岭南大学香港粤剧经典剧目翻译计划PDF，文件有角色、唱白、舞台提示、连续幕次与终幕。",
+    "sourceRefs": [
+      {
+        "title": "梁祝恨史英译剧本PDF",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Butterfly_Lovers.pdf",
+        "locator": "PDF共61页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+      },
+      {
+        "title": "康文署：粤剧剧本字幕及英译本",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/tc/misc.html",
+        "locator": "剧本英译本标签下，香港粤剧经典剧目翻译计划栏目所列具体PDF；与字幕折子戏栏目区分。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "cantonese-opera-butterfly-lovers",
+      "versionKey": "fong-yim-fun-1955-en-v1-2012",
+      "author": "潘一帆",
+      "language": "en",
+      "edition": "芳艷芬1955演出本；伍榮仲（NG Wing Chung）英译Version 1.0（2012）",
+      "coverage": "full"
+    }
+  },
+  {
+    "id": "dm-script-lcsd-forsaken-woman-en-v1",
+    "title": "《程大嫂》｜YEE Siu Ying Grace英译完整剧本（Version 1.0）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-translation",
+      "script-opera"
+    ],
+    "topics": [
+      "程大嫂",
+      "程大嫂",
+      "The Forsaken Woman",
+      "唐滌生",
+      "YEE Siu Ying Grace",
+      "粤剧",
+      "粵劇",
+      "英译剧本",
+      "英语译本",
+      "完整剧本"
+    ],
+    "summary": "康文署公开的香港粤剧英译剧本：唐滌生编剧，YEE Siu Ying Grace翻译，基于芳艷芬1954演出本，译本标记2012年Version 1.0。共74页，六幕正文至终幕可读；这是该演出版本的英语全文，不是中文原本或音乐剧。本站只存元数据与原站链接；原PDF标示CC BY-NC 3.0及商业英文字幕用途的特殊条件，其他使用须按原许可另核。",
+    "organization": "香港康乐及文化事务署／岭南大学香港粤剧经典剧目翻译计划",
+    "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Forsaken_Woman.pdf",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": null,
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "hong-kong",
+    "status": "verified",
+    "theatreEvidence": "康文署剧本英译本栏目直接链接岭南大学香港粤剧经典剧目翻译计划PDF，文件有角色、唱白、舞台提示、连续幕次与终幕。",
+    "sourceRefs": [
+      {
+        "title": "程大嫂英译剧本PDF",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Forsaken_Woman.pdf",
+        "locator": "PDF共74页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+      },
+      {
+        "title": "康文署：粤剧剧本字幕及英译本",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/tc/misc.html",
+        "locator": "剧本英译本标签下，香港粤剧经典剧目翻译计划栏目所列具体PDF；与字幕折子戏栏目区分。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "cantonese-opera-forsaken-woman",
+      "versionKey": "fong-yim-fun-1954-en-v1-2012",
+      "author": "唐滌生",
+      "language": "en",
+      "edition": "芳艷芬1954演出本；YEE Siu Ying Grace英译Version 1.0（2012）",
+      "coverage": "full"
+    }
+  },
+  {
+    "id": "dm-script-lcsd-snow-in-june-en-v1",
+    "title": "《六月雪》｜Frederick Lau英译完整剧本（Version 1.0）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-translation",
+      "script-opera"
+    ],
+    "topics": [
+      "六月雪",
+      "六月雪",
+      "Snow in June",
+      "唐滌生",
+      "Frederick Lau",
+      "粤剧",
+      "粵劇",
+      "英译剧本",
+      "英语译本",
+      "完整剧本"
+    ],
+    "summary": "康文署公开的香港粤剧英译剧本：唐滌生编剧，Frederick Lau翻译，基于芳艷芬1956演出本，译本标记2012年Version 1.0。共72页，六幕正文至终幕可读；这是该演出版本的英语全文，不是中文原本或音乐剧。本站只存元数据与原站链接；原PDF标示CC BY-NC 3.0及商业英文字幕用途的特殊条件，其他使用须按原许可另核。",
+    "organization": "香港康乐及文化事务署／岭南大学香港粤剧经典剧目翻译计划",
+    "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Snow_in_June.pdf",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": null,
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "hong-kong",
+    "status": "verified",
+    "theatreEvidence": "康文署剧本英译本栏目直接链接岭南大学香港粤剧经典剧目翻译计划PDF，文件有角色、唱白、舞台提示、连续幕次与终幕。",
+    "sourceRefs": [
+      {
+        "title": "六月雪英译剧本PDF",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/Snow_in_June.pdf",
+        "locator": "PDF共72页；第1页署名、演出本年份及Version 1.0；第2页许可；六幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+      },
+      {
+        "title": "康文署：粤剧剧本字幕及英译本",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/tc/misc.html",
+        "locator": "剧本英译本标签下，香港粤剧经典剧目翻译计划栏目所列具体PDF；与字幕折子戏栏目区分。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "cantonese-opera-snow-in-june",
+      "versionKey": "fong-yim-fun-1956-en-v1-2012",
+      "author": "唐滌生",
+      "language": "en",
+      "edition": "芳艷芬1956演出本；Frederick Lau英译Version 1.0（2012）",
+      "coverage": "full"
+    }
+  },
+  {
+    "id": "dm-script-lcsd-red-phoenix-en-v1",
+    "title": "《红鸾喜》｜Alice Chow（周陳燕雯）、Siu Leung LI（李小良）英译完整剧本（Version 1.0）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-translation",
+      "script-opera"
+    ],
+    "topics": [
+      "红鸾喜",
+      "紅鸞喜",
+      "The Happy Marriage of Red Phoenix",
+      "李少芸",
+      "Alice Chow（周陳燕雯）、Siu Leung LI（李小良）",
+      "粤剧",
+      "粵劇",
+      "英译剧本",
+      "英语译本",
+      "完整剧本"
+    ],
+    "summary": "康文署公开的香港粤剧英译剧本：李少芸编剧，Alice Chow（周陳燕雯）、Siu Leung LI（李小良）翻译，基于芳艷芬1957演出本，译本标记2014年Version 1.0。共72页，四幕正文至终幕可读；这是该演出版本的英语全文，不是中文原本或音乐剧。本站只存元数据与原站链接；原PDF标示CC BY-NC 3.0及商业英文字幕用途的特殊条件，其他使用须按原许可另核。",
+    "organization": "香港康乐及文化事务署／岭南大学香港粤剧经典剧目翻译计划",
+    "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/TheHappyMarriageofRedPhoenix.pdf",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": null,
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "hong-kong",
+    "status": "verified",
+    "theatreEvidence": "康文署剧本英译本栏目直接链接岭南大学香港粤剧经典剧目翻译计划PDF，文件有角色、唱白、舞台提示、连续幕次与终幕。",
+    "sourceRefs": [
+      {
+        "title": "紅鸞喜英译剧本PDF",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/misc/pdf/TheHappyMarriageofRedPhoenix.pdf",
+        "locator": "PDF共72页；第1页署名、演出本年份及Version 1.0；第2页许可；四幕正文连续，终页有终幕标识；已目视核对封面与终页。"
+      },
+      {
+        "title": "康文署：粤剧剧本字幕及英译本",
+        "url": "https://www.lcsd.gov.hk/CE/CulturalService/Programme/tc/misc.html",
+        "locator": "剧本英译本标签下，香港粤剧经典剧目翻译计划栏目所列具体PDF；与字幕折子戏栏目区分。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "cantonese-opera-red-phoenix",
+      "versionKey": "fong-yim-fun-1957-en-v1-2014",
+      "author": "李少芸",
+      "language": "en",
+      "edition": "芳艷芬1957演出本；Alice Chow（周陳燕雯）、Siu Leung LI（李小良）英译Version 1.0（2014）",
+      "coverage": "full"
+    }
+  },
+  {
+    "id": "dm-book-sarah-kane-hu-2006",
+    "title": "《萨拉·凯恩戏剧集》｜胡开奇译·新星出版社2006年版书目",
+    "category": "knowledge",
+    "subtopics": [
+      "dramaturgy",
+      "history-theory"
+    ],
+    "topics": [
+      "萨拉凯恩戏剧集",
+      "萨拉·凯恩戏剧集",
+      "Sarah Kane",
+      "胡开奇",
+      "新星出版社",
+      "7801488652",
+      "戏剧译本",
+      "剧本集书目"
+    ],
+    "summary": "对外经济贸易大学图书馆公开书目登记：萨拉·凯恩著，胡开奇译，新星出版社2006年版，ISBN 7-80148-865-2，属“剧场和戏丛书”。本条只核书名、责任者、版本与馆藏书目信息；没有读到《摧毁》等剧本正文，不计为已核完整剧本，也不据内容提要提炼整书理论或授权转载。",
+    "organization": "对外经济贸易大学图书馆",
+    "url": "https://opac.uibe.edu.cn/opac/book/6945bc638dfe002fed066e92e45ee465",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": "2006",
+    "access": "mixed",
+    "rights": "metadata-only",
+    "recordType": "bibliography",
+    "theatreEvidence": "大学图书馆将本书登记为英国现代戏剧文学剧本作品集，题名责任者明确作者及胡开奇译本，属于戏剧译本书目。",
+    "sourceTier": "official",
+    "contentRegion": "mainland",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "萨拉·凯恩戏剧集：大学图书馆书目",
+        "url": "https://opac.uibe.edu.cn/opac/book/6945bc638dfe002fed066e92e45ee465",
+        "locator": "书目详细信息：题名责任者、ISBN/价格、出版发行项、载体形态项、丛编项及内容提要。只核公开书目，没有取得书内正文。"
+      }
+    ]
+  },
+  {
+    "id": "dm-person-chinawriter-shen-ximeng",
+    "title": "沈西蒙｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "沈西蒙",
+      "沈西门",
+      "重庆交响乐",
+      "买卖公平",
+      "杨根思",
+      "甲申记",
+      "话剧编剧",
+      "歌剧编剧"
+    ],
+    "summary": "中国作家网会员辞典列出沈西蒙的笔名及话剧、歌剧作品，包含《重庆交响乐》《杨根思》《买卖公平》；《甲申记》明确标注合作。用于核对作者与舞台剧目的关联，不提供剧本全文，也不将历史任职当作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404946-28492854.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "官方辞典正文明确其创作歌剧剧本《买卖公平》、话剧《重庆交响乐》《杨根思》等舞台剧目，并区分《甲申记》的合作署名。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：沈西蒙",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404946-28492854.html",
+        "locator": "人物标题“沈西蒙”；正文笔名段及“著有歌剧剧本”“话剧剧本”作品段。《甲申记》标合作；电影文学剧本不混作舞台剧本。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-cao-yumei",
+    "title": "曹雨煤｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "曹雨煤",
+      "雨煤",
+      "泥巴路，茅草房",
+      "乌江云，巴山雨",
+      "母亲河",
+      "姊妹崖",
+      "夜郎悲歌",
+      "雨煤剧作选",
+      "剧作家"
+    ],
+    "summary": "中国作家网会员辞典将曹雨煤与《乌江云，巴山雨》《母亲河》《姊妹崖》《泥巴路，茅草房》等戏剧文学作品关联，另列《雨煤剧作选》。只登记专业创作资料，不代表已取得剧作集或完整剧本；历史工作履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487971.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "官方辞典明确曹雨煤笔名雨煤、上海戏剧学院戏剧文学学习经历及戏剧文学作品，所列舞台剧目包括《母亲河》《姊妹崖》《泥巴路，茅草房》。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：曹雨煤",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487971.html",
+        "locator": "人物标题“曹雨煤”；正文笔名、戏剧文学专业及戏剧作品清单。小说、电视剧与戏剧作品分别列示；未把剧作选书目当完整剧本。"
+      }
+    ],
+    "applicableYear": null,
+    "publishedAt": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-chen-baichen",
+    "title": "陈白尘｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "陈白尘",
+      "升官图",
+      "大地回春",
+      "大渡河",
+      "第二个回合",
+      "大风歌"
+    ],
+    "summary": "辞典正文明确列出《升官图》《大地回春》《大渡河》《第二个回合》《大风歌》等剧本，并与电影文学作品分列。这里只登记人物与作品关联及原页链接，不代表取得完整剧本或全集；历史履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487929.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典正文明确列出《升官图》《大地回春》《大渡河》《第二个回合》《大风歌》等剧本，并与电影文学作品分列。所列舞台剧目支持戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：陈白尘",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404930-28487929.html",
+        "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-li-jianwu",
+    "title": "李健吾｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "李健吾",
+      "刘西渭",
+      "这不过是春天",
+      "以身作则",
+      "黄花",
+      "青春",
+      "母亲的梦"
+    ],
+    "summary": "辞典正文明确笔名刘西渭，列出《母亲的梦》《以身作则》《这不过是春天》《黄花》等舞台剧目；戏剧创作、改编与译著须逐剧区分。这里只登记人物与作品关联及原页链接，不代表取得完整剧本或全集；历史履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491139.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典正文明确笔名刘西渭，列出《母亲的梦》《以身作则》《这不过是春天》《黄花》等舞台剧目；戏剧创作、改编与译著须逐剧区分。所列舞台剧目支持戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：李健吾",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491139.html",
+        "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-laoshe",
+    "title": "老舍｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "老舍",
+      "舒庆春",
+      "茶馆",
+      "龙须沟",
+      "张自忠",
+      "女店员",
+      "全家福"
+    ],
+    "summary": "辞典正文将《茶馆》《龙须沟》《张自忠》《女店员》《全家福》等列为剧本，与小说和文集书目分列。这里只登记人物与作品关联及原页链接，不代表取得完整剧本或全集；历史履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491384.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典正文将《茶馆》《龙须沟》《张自忠》《女店员》《全家福》等列为剧本，与小说和文集书目分列。所列舞台剧目支持戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：老舍",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491384.html",
+        "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-li-bozhao",
+    "title": "李伯钊｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "李伯钊",
+      "长征",
+      "红军不怕远征难",
+      "歌剧编剧"
+    ],
+    "summary": "辞典正文明确其创作舞台歌剧《长征》及《红军不怕远征难》，后者标注合作；不能把合作剧目写成独著。这里只登记人物与作品关联及原页链接，不代表取得完整剧本或全集；历史履历不写作现任。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491310.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典正文明确其创作舞台歌剧《长征》及《红军不怕远征难》，后者标注合作；不能把合作剧目写成独著。所列舞台剧目支持戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：李伯钊",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28491310.html",
+        "locator": "会员辞典人物标题及正文作品清单；仅核姓名、笔名与舞台作品关联，历史任职不当现任，小说和电影不当舞台剧。《红军不怕远征难》明确标合作。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-wu-zuguang",
+    "title": "吴祖光｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "吴祖光",
+      "风雪夜归人",
+      "凤凰城",
+      "正气歌",
+      "话剧编剧"
+    ],
+    "summary": "中国作家网《文艺报》文章明确《风雪夜归人》由吴祖光创作于四川江安时期，并联系其前作《凤凰城》《正气歌》。这里只登记人物与舞台作品关联及原页链接，不代表取得完整剧本、初版或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2017/0531/c405174-29307870.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "《文艺报》文章明确吴祖光创作话剧《风雪夜归人》，讨论序幕、三幕与尾声及其戏剧结构，并列《凤凰城》《正气歌》为先前剧作。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "《文艺报》：《风雪夜归人》问世与反响",
+        "url": "https://www.chinawriter.com.cn/n1/2017/0531/c405174-29307870.html",
+        "locator": "2017-05-31文章首段、四川江安创作段与序幕/三幕/尾声结构段；仅专业人物—舞台作品关联，不将演出、电影或转载文本当完整原作。"
+      }
+    ],
+    "publishedAt": "2017-05-31",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-xia-yan",
+    "title": "夏衍｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "夏衍",
+      "上海屋檐下",
+      "法西斯细菌",
+      "芳草天涯",
+      "心防"
+    ],
+    "summary": "会员辞典明确将《上海屋檐下》《法西斯细菌》《芳草天涯》《心防》等列为话剧剧本，并与电影剧本、报告文学和译著分列。这里只登记人物及作品关联和原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404951-28495120.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "会员辞典明确将《上海屋檐下》《法西斯细菌》《芳草天涯》《心防》等列为话剧剧本，并与电影剧本、报告文学和译著分列。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：夏衍",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404951-28495120.html",
+        "locator": "人物标题及正文25行话剧剧本清单；仅专业身份与舞台作品关联，原名/历史任职等未采集。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-hong-shen",
+    "title": "洪深｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "洪深",
+      "五奎桥",
+      "香稻米",
+      "飞将军",
+      "包得行"
+    ],
+    "summary": "会员辞典将《五奎桥》《香稻米》《飞将军》《包得行》等列为话剧剧本，与电影、译著及论著分列。这里只登记人物及作品关联和原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404935-28488703.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "会员辞典将《五奎桥》《香稻米》《飞将军》《包得行》等列为话剧剧本，与电影、译著及论著分列。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网会员辞典：洪深",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404935-28488703.html",
+        "locator": "人物标题及正文25行话剧剧本清单；不将《少奶奶的扇子》等译改本冒充原创，赵阎王底本关系仍另留待核。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-guo-moruo",
+    "title": "郭沫若｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "郭沫若",
+      "屈原",
+      "棠棣之花",
+      "虎符",
+      "孔雀胆",
+      "蔡文姬"
+    ],
+    "summary": "现代作家辞典著作书目列有《屈原》《棠棣之花》《虎符》《孔雀胆》《蔡文姬》等剧本，并与诗集、小说、史论和翻译书目区分。这里只登记人物及作品关联和原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/xdzj/302.shtml",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "现代作家辞典著作书目列有《屈原》《棠棣之花》《虎符》《孔雀胆》《蔡文姬》等剧本，并与诗集、小说、史论和翻译书目区分。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网现代作家辞典：郭沫若",
+        "url": "https://www.chinawriter.com.cn/xdzj/302.shtml",
+        "locator": "著作书目41/43/44/47/77行剧本项目；仅舞台作品关联，不将列表当取得剧本，改编《西厢》和电影不填作同类原创。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-ding-xilin",
+    "title": "丁西林｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "丁西林",
+      "一只马蜂",
+      "瞎了一只眼",
+      "独幕喜剧"
+    ],
+    "summary": "《光明日报》阎晶明的观剧评论明确丁西林的剧作家身份，并关联《一只马蜂》《瞎了一只眼》等独幕喜剧。这里只登记人物及作品关联和原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/wutai/2016/2016-07-04/275598.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "《光明日报》阎晶明的观剧评论明确丁西林的剧作家身份，并关联《一只马蜂》《瞎了一只眼》等独幕喜剧。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网《光明日报》：戏外思考——观《丁西林民国喜剧三则》",
+        "url": "https://www.chinawriter.com.cn/wutai/2016/2016-07-04/275598.html",
+        "locator": "2016-07-04评论10/13/16行；观剧评论非采访，仅采专业身份/舞台剧目关联，不把当次舞台文本当原版剧本。"
+      }
+    ],
+    "publishedAt": "2016-07-04",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-song-zhidi",
+    "title": "宋之的｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "宋之的",
+      "雾重庆",
+      "保卫和平"
+    ],
+    "summary": "中国作家网现代作家辞典记载宋之的创作话剧《雾重庆》《保卫和平》。舞台剧本与电影、报告文学分列；这里只登记专业人物、作品关联及原页链接，不代表取得完整剧本或全集。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/xdzj/407.shtml",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "中国作家网现代作家辞典记载宋之的创作话剧《雾重庆》《保卫和平》。舞台剧本与电影、报告文学分列；这里只登记专业人物、作品关联及原页链接，不代表取得完整剧本或全集。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网：宋之的",
+        "url": "https://www.chinawriter.com.cn/xdzj/407.shtml",
+        "locator": "现代作家辞典5行明确《雾重庆》为五幕话剧、《保卫和平》为话剧，9–24/40行的著作书目区分舞台与电影；这里只采雾重庆/保卫和平的专业作品关联，不采出生年份残缺等字段。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-ouyang-yuqian",
+    "title": "欧阳予倩｜中国作家网剧作与作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "欧阳予倩",
+      "潘金莲",
+      "忠王李秀成"
+    ],
+    "summary": "中国作家网会员辞典列欧阳予倩所著话剧剧本《潘金莲》《忠王李秀成》，支持其剧作家身份。这里只登记专业人物、作品关联及原页链接，具体原作、改编和版本仍须逐剧核验。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404942-28492002.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "中国作家网会员辞典列欧阳予倩所著话剧剧本《潘金莲》《忠王李秀成》，支持其剧作家身份。这里只登记专业人物、作品关联及原页链接，具体原作、改编和版本仍须逐剧核验。所列舞台剧目支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "中国作家网：欧阳予倩",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404942-28492002.html",
+        "locator": "会员辞典25行明确话剧剧本《潘金莲》《忠王李秀成》；仅采专业作者及作品关系，不把其他京剧/桂剧/电影混为同一文本或宣称均属原作。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-lu-jun",
+    "title": "陆军｜正式剧本署名与舞台作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "陆军",
+      "护士日记（合作）",
+      "还你半个月亮"
+    ],
+    "summary": "陆军的专业剧作身份与作品署名已据正式刊物资料核对。《护士日记》为与袁香荷合作剧本，不能计为独著。本条只登记专业作者与作品关联，不代表其完整剧本已公开收录或已取得转载许可。",
+    "organization": "中国作家网／中国作家协会",
+    "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28489858.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "辞典22行剧作家与剧作选；上戏校报印5编剧署名明确与袁香荷共同创作护士日记。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "陆军的正式戏剧作品署名与专业关联",
+        "url": "https://www.chinawriter.com.cn/n1/2016/0627/c404939-28489858.html",
+        "locator": "辞典22行剧作家与剧作选；上戏校报印5编剧署名明确与袁香荷共同创作护士日记。"
+      },
+      {
+        "title": "护士日记上戏校报修定稿署名",
+        "url": "https://www.sta.edu.cn/_upload/article/files/ee/9b/de3d8a5648bbac5cb67a5c90eefe/6c0329f6-6040-4a83-9319-c0eebae574ba.pdf",
+        "locator": "PDF4/印5编剧陆军、袁香荷；PDF7/印8专业作者介绍，仅核合作署名，不合并版本。"
+      }
+    ],
+    "publishedAt": null,
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-yuan-xianghe",
+    "title": "袁香荷｜正式剧本署名与舞台作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "袁香荷",
+      "护士日记（合作）"
+    ],
+    "summary": "袁香荷的专业剧作身份与作品署名已据正式刊物资料核对。《护士日记》为与陆军合作剧本，不能计为独著。本条只登记专业作者与作品关联，不代表其完整剧本已公开收录或已取得转载许可。",
+    "organization": "中国作家网／江南编辑部",
+    "url": "https://www.chinawriter.com.cn/n1/2020/0426/c418957-31688781.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "江南2020年第2期目录28行、74行列话剧护士日记，陆军与袁香荷合作署名；上戏校报印5、8可交叉核编剧姓名。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "袁香荷的正式戏剧作品署名与专业关联",
+        "url": "https://www.chinawriter.com.cn/n1/2020/0426/c418957-31688781.html",
+        "locator": "江南2020年第2期目录28行、74行列话剧护士日记，陆军与袁香荷合作署名；上戏校报印5、8可交叉核编剧姓名。"
+      },
+      {
+        "title": "护士日记上戏校报修定稿署名",
+        "url": "https://www.sta.edu.cn/_upload/article/files/ee/9b/de3d8a5648bbac5cb67a5c90eefe/6c0329f6-6040-4a83-9319-c0eebae574ba.pdf",
+        "locator": "PDF4/印5编剧陆军、袁香荷；PDF7/印8专业作者介绍，仅核合作署名，不合并版本。"
+      }
+    ],
+    "publishedAt": "2020-04-26",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-hong-tianyi",
+    "title": "洪天贻｜正式剧本署名与舞台作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "洪天贻",
+      "湖边假期",
+      "你喜欢高椰子树，还是矮椰子树？"
+    ],
+    "summary": "洪天贻的专业剧作身份与作品署名已据正式刊物资料核对。关联作品：湖边假期、你喜欢高椰子树，还是矮椰子树？。本条只登记专业作者与作品关联，不代表其完整剧本已公开收录或已取得转载许可。",
+    "organization": "中国作家网／花城编辑部",
+    "url": "https://www.chinawriter.com.cn/n1/2024/0508/c418960-40231496.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "花城2024年第3期目录62行明确湖边假期为剧本、洪天贻署名；培源本人专业页10/14行明确北京工作与刊发关联。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "洪天贻的正式戏剧作品署名与专业关联",
+        "url": "https://www.chinawriter.com.cn/n1/2024/0508/c418960-40231496.html",
+        "locator": "花城2024年第3期目录62行明确湖边假期为剧本、洪天贻署名；培源本人专业页10/14行明确北京工作与刊发关联。"
+      },
+      {
+        "title": "培源洪天贻专业作品页",
+        "url": "https://peiyuanproject.com/home/membership/1015",
+        "locator": "10/14行明确北京专业工作和两部剧本的正式刊发，受限文件未取。"
+      }
+    ],
+    "publishedAt": "2024-05-08",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-chinawriter-zou-jingzhi",
+    "title": "邹静之｜正式剧本署名与舞台作品关联",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "邹静之",
+      "断金"
+    ],
+    "summary": "邹静之的专业剧作身份与作品署名已据正式刊物资料核对。关联作品：断金。本条只登记专业作者与作品关联，不代表其完整剧本已公开收录或已取得转载许可。",
+    "organization": "文艺报／中国作家网",
+    "url": "https://wyb.chinawriter.com.cn/content/202502/26/content78274.html",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2025-02-26文艺报40行明确邹静之断金刊发北京文学2024年第10期，为同名话剧文学剧本。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "邹静之的正式戏剧作品署名与专业关联",
+        "url": "https://wyb.chinawriter.com.cn/content/202502/26/content78274.html",
+        "locator": "2025-02-26文艺报40行明确邹静之断金刊发北京文学2024年第10期，为同名话剧文学剧本。"
+      }
+    ],
+    "publishedAt": "2025-02-26",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-sta-gu-yueyun",
+    "title": "顾月云｜生命行歌合作剧作署名",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "顾月云",
+      "生命行歌"
+    ],
+    "summary": "上海戏剧学院原站及原报明确顾月云与陆军合作创作大型话剧《生命行歌》。本条登记专业作者与舞台作品关联，未取得该剧完整正式文本或转载许可。",
+    "organization": "上海戏剧学院",
+    "url": "https://xxgk.sta.edu.cn/3f/21/c3457a81697/page.htm",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2019-07-11原站134及同日校报PDF2/印第3版工作坊报道，顾月云与陆军合作大型话剧生命行歌；原印署名实看。上述舞台剧目署名支持其戏剧创作身份。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "上戏原站合作剧作署名",
+        "url": "https://xxgk.sta.edu.cn/3f/21/c3457a81697/page.htm",
+        "locator": "2019-07-11原站134及同日校报PDF2/印第3版工作坊报道，顾月云与陆军合作大型话剧生命行歌；原印署名实看。"
+      },
+      {
+        "title": "上海戏剧学院报2019-07-11原PDF",
+        "url": "https://www.sta.edu.cn/_upload/article/files/e7/8b/47b8cab34b12848cc77bbd4183c6/38bf22ae-9982-4f13-ba72-dd60ebc3c449.pdf",
+        "locator": "PDF2跨印2/3版，印第3版中部工作坊开班报道，非剧本正文。"
+      }
+    ],
+    "publishedAt": "2019-07-11",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-sta-xiong-foxi",
+    "title": "熊佛西｜具名戏剧创作与刊发关系",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "熊佛西",
+      "洋状元",
+      "一片爱国心",
+      "屠户"
+    ],
+    "summary": "熊佛西的具名戏剧创作关系已据上海戏剧学院原站核对。关联作品：洋状元、一片爱国心、屠户。仅登记作者与舞台作品关系，不代表已取得其完整剧本、全集或全文转载许可。",
+    "organization": "上海戏剧学院",
+    "url": "https://www.sta.edu.cn/_s5/6e/dc/c1753a93916/page.psp",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2020-07-08上戏转载文汇报专业档案88及具体创作98/107，洋状元、一片爱国心、屠户等舞台剧目署名。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "熊佛西具体戏剧创作原站证据",
+        "url": "https://www.sta.edu.cn/_s5/6e/dc/c1753a93916/page.psp",
+        "locator": "2020-07-08上戏转载文汇报专业档案88及具体创作98/107，洋状元、一片爱国心、屠户等舞台剧目署名。"
+      }
+    ],
+    "publishedAt": "2020-07-08",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-sta-yu-yuee",
+    "title": "俞月娥｜具名戏剧创作与刊发关系",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "俞月娥",
+      "公鸡下蛋"
+    ],
+    "summary": "俞月娥的具名戏剧创作关系已据上海戏剧学院原站核对。关联作品：公鸡下蛋。仅登记作者与舞台作品关系，不代表已取得其完整剧本、全集或全文转载许可。",
+    "organization": "上海戏剧学院",
+    "url": "https://www.sta.edu.cn/11/bb/c1551a70075/page.htm",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2019-04-09上戏原站正文明确俞月娥把公鸡下蛋创作为5000字儿童剧并刊登剧本月刊；舞台剧目与作者关系明确。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "上戏2019-04-09具名创作与刊发证据",
+        "url": "https://www.sta.edu.cn/11/bb/c1551a70075/page.htm",
+        "locator": "2019-04-09上戏原站正文明确俞月娥把公鸡下蛋创作为5000字儿童剧并刊登剧本月刊；舞台剧目与作者关系明确。"
+      },
+      {
+        "title": "俞月娥具体戏剧创作原站证据",
+        "url": "https://www.sta.edu.cn/88/0f/c1546a34831/page.htm",
+        "locator": "2018-12-13上戏原站88（另一模板91）明确俞月娥5000字儿童剧公鸡下蛋已刊2018剧本第10期，99/101舞台剧情关联。"
+      }
+    ],
+    "publishedAt": "2019-04-09",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-person-sta-tan-jie",
+    "title": "谈洁｜具名戏剧创作与刊发关系",
+    "category": "people",
+    "subtopics": [
+      "person-director-writer"
+    ],
+    "topics": [
+      "谈洁",
+      "分手"
+    ],
+    "summary": "谈洁的具名戏剧创作关系已据上海戏剧学院原站核对。关联作品：分手。仅登记作者与舞台作品关系，不代表已取得其完整剧本、全集或全文转载许可。",
+    "organization": "上海戏剧学院",
+    "url": "https://www.sta.edu.cn/88/0f/c1546a34831/page.htm",
+    "verifiedAt": "2026-10-31",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "person",
+    "theatreEvidence": "2018-12-13上戏原站88（另一模板91）明确谈洁分手已刊2018剧本第11期，118明确其悲剧舞台剧目与作者创作关系。",
+    "sourceTier": "official",
+    "status": "verified",
+    "sourceRefs": [
+      {
+        "title": "谈洁具体戏剧创作原站证据",
+        "url": "https://www.sta.edu.cn/88/0f/c1546a34831/page.htm",
+        "locator": "2018-12-13上戏原站88（另一模板91）明确谈洁分手已刊2018剧本第11期，118明确其悲剧舞台剧目与作者创作关系。"
+      }
+    ],
+    "publishedAt": "2018-12-13",
+    "applicableYear": null,
+    "contentRegion": "mainland"
+  },
+  {
+    "id": "dm-script-ncl-xiongfoxi-luoti-1933",
+    "title": "《裸体》｜熊佛西（佛西戏剧第三集，上海商务印书馆，1933年3月初版）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-play"
+    ],
+    "topics": [
+      "裸体",
+      "熊佛西",
+      "独幕剧",
+      "原印扫描"
+    ],
+    "summary": "寺庙中三个青年借神像试探老人的道德言辞，独幕以揭露其言行矛盾落幕。 已核作者出版底本及连续正文至落幕，仅提供原站扫描链接。 上海出版的大陆原作，由台湾国家图书馆提供馆藏扫描；原站仅供网络浏览，全文转载和训练权未授予。",
+    "organization": "台湾国家图书馆／华文电子书库",
+    "url": "https://taiwanebook.ncl.edu.tw/z/book/NCL-9910017959",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": "1933",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "mainland",
+    "status": "verified",
+    "theatreEvidence": "PDF113／印107题名人物，PDF114–129／印108–123连续独幕正文及落幕；PDF130空白、131下一剧；PDF215版权1933年3月初版。",
+    "sourceRefs": [
+      {
+        "title": "佛西戏剧第三集，上海商务印书馆，1933年3月初版原生馆藏扫描",
+        "url": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-9910017959/NCL-9910017959.PDF",
+        "locator": "PDF113／印107题名人物，PDF114–129／印108–123连续独幕正文及落幕；PDF130空白、131下一剧；PDF215版权1933年3月初版。 台湾国家图书馆馆藏扫描，上海出版大陆原作；托管地区为台湾。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "xiongfoxi-luoti",
+      "versionKey": "foxi3-193303-chuban",
+      "author": "熊佛西",
+      "language": "zh",
+      "edition": "佛西戏剧第三集，上海商务印书馆，1933年3月初版",
+      "coverage": "full"
+    },
+    "publicationReview": {
+      "status": "approved",
+      "reviewedAt": "2026-10-31",
+      "evidenceUrl": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-9910017959/NCL-9910017959.PDF",
+      "locator": "PDF113／印107题名人物，PDF114–129／印108–123连续独幕正文及落幕；PDF130空白、131下一剧；PDF215版权1933年3月初版。 用户明确批准本来源及这两条原站链接；台湾馆藏/托管与上海原作出版地分别标识。仅元数据、自编摘要、原站及PDF链接，不转载托管全文、不授权训练。"
+    }
+  },
+  {
+    "id": "dm-script-ncl-dingxilin-sankuai-1946",
+    "title": "《三块钱国币》｜丁西林（收入等太太回来的时候，正中书局，1946年4月沪一版）",
+    "category": "scripts",
+    "subtopics": [
+      "script-full",
+      "script-play"
+    ],
+    "topics": [
+      "三块钱国币",
+      "丁西林",
+      "独幕剧",
+      "原印扫描"
+    ],
+    "summary": "围绕女佣打碎花瓶赔偿的争执，学生与房东冲突，最后以和棋收束。 已核作者出版底本及连续正文至落幕，仅提供原站扫描链接。 上海出版的大陆原作，由台湾国家图书馆提供馆藏扫描；原站仅供网络浏览，全文转载和训练权未授予。",
+    "organization": "台湾国家图书馆／华文电子书库",
+    "url": "https://taiwanebook.ncl.edu.tw/zh-tw/book/NCL-004850492",
+    "verifiedAt": "2026-10-31",
+    "publishedAt": null,
+    "applicableYear": "1946",
+    "access": "public",
+    "rights": "metadata-only",
+    "recordType": "resource",
+    "sourceTier": "official",
+    "contentRegion": "mainland",
+    "status": "verified",
+    "theatreEvidence": "PDF87–102／印81–96连续独幕喜剧至幕下；PDF103版权1946年4月沪一版。1941初版月份未裁定，本条不冒充1941初版。",
+    "sourceRefs": [
+      {
+        "title": "收入等太太回来的时候，正中书局，1946年4月沪一版原生馆藏扫描",
+        "url": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-004850492/NCL-004850492.PDF",
+        "locator": "PDF87–102／印81–96连续独幕喜剧至幕下；PDF103版权1946年4月沪一版。1941初版月份未裁定，本条不冒充1941初版。 台湾国家图书馆馆藏扫描，上海出版大陆原作；托管地区为台湾。"
+      }
+    ],
+    "completeVersion": {
+      "workKey": "dingxilin-sankuaiqianguobi",
+      "versionKey": "zhengzhong-194604-huyi",
+      "author": "丁西林",
+      "language": "zh",
+      "edition": "收入等太太回来的时候，正中书局，1946年4月沪一版",
+      "coverage": "full"
+    },
+    "publicationReview": {
+      "status": "approved",
+      "reviewedAt": "2026-10-31",
+      "evidenceUrl": "https://taiwanebook.ncl.edu.tw/ebkFiles/NCL-004850492/NCL-004850492.PDF",
+      "locator": "PDF87–102／印81–96连续独幕喜剧至幕下；PDF103版权1946年4月沪一版。1941初版月份未裁定，本条不冒充1941初版。 用户明确批准本来源及这两条原站链接；台湾馆藏/托管与上海原作出版地分别标识。仅元数据、自编摘要、原站及PDF链接，不转载托管全文、不授权训练。"
+    }
   }
 ]
